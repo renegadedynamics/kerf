@@ -77,7 +77,7 @@ internal static class GeometryTestCurveCommands
         {
             return 1;
         }
-        Curve2D? r = Projections.To2d(C, P.Pln());
+        Curve2D? r = Projections.To2d(C, P.Plane);
         DrawTrSurf.Set(theDI, a[1], r);
         return 0;
     }
@@ -115,7 +115,7 @@ internal static class GeometryTestCurveCommands
         {
             return 1;
         }
-        Curve3D r = Projections.To3d(C, P.Pln());
+        Curve3D r = Projections.To3d(C, P.Plane);
 
         DrawTrSurf.Set(theDI, a[1], r);
         return 0;
@@ -152,7 +152,7 @@ internal static class GeometryTestCurveCommands
 
         double tolerance = global::Kerf.Engine.Foundation.Precision.Confusion();
 
-        GS.Bounds(out double U1, out double U2, out double V1, out double V2);
+        GS.ParameterBounds(out double U1, out double U2, out double V1, out double V2);
 
         bool Verif = false;
         int NbPoints = 0;
@@ -208,16 +208,16 @@ internal static class GeometryTestCurveCommands
             }
 
             double DistMax = -1.0;
-            U1 = GC.FirstParameter();
-            U2 = GC.LastParameter();
+            U1 = GC.FirstParameter;
+            U2 = GC.LastParameter;
             double dU = (U2 - U1) / (NbPoints + 1);
             for (int i = 0; i <= NbPoints + 1; i++)
             {
                 double U = U1 + i * dU;
                 Point3D P1 = GC.Value(U);
                 Point2D P2d = G2d.Value(U);
-                Point3D P2 = GS.Value(P2d.X(), P2d.Y());
-                double Dist = P1.Distance(P2);
+                Point3D P2 = GS.Value(P2d.X, P2d.Y);
+                double Dist = P1.DistanceTo(P2);
                 di.Append(" Parameter = ").Append(U).Append("\tDistance = ").Append(Dist).Append("\n");
                 if (Dist > DistMax)
                 {
@@ -271,7 +271,7 @@ internal static class GeometryTestCurveCommands
         }
         else
         {
-            D = Pl.Pln().Position().Direction();
+            D = Pl.Plane.Position.Direction;
         }
 
         Curve3D? Res = global::Kerf.Engine.Geometry.Projection.GeomProjLib.ProjectOnPlane(C, Pl, D, Param);
@@ -396,7 +396,7 @@ internal static class GeometryTestCurveCommands
         theImax = 0;
 
         // take knots
-        IReadOnlyList<double> aKnots = thePnts.Knots();
+        IReadOnlyList<double> aKnots = thePnts.Knots;
         int nbp = aKnots.Count;
 
         for (int i = 1; i < nbp; ++i)

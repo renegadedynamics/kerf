@@ -314,10 +314,10 @@ public partial class PrmPrmIntersection
                                                 Point3D p21 = verPointDebut.Value();
                                                 Point3D p22 = verPointFin.Value();
                                                 //
-                                                d11 = point3dDebut.Distance(p21);
-                                                d12 = point3dDebut.Distance(p22);
-                                                d21 = point3dFin.Distance(p21);
-                                                d22 = point3dFin.Distance(p22);
+                                                d11 = point3dDebut.DistanceTo(p21);
+                                                d12 = point3dDebut.DistanceTo(p22);
+                                                d21 = point3dFin.DistanceTo(p21);
+                                                d22 = point3dFin.DistanceTo(p22);
                                                 //
                                                 if ((d11 <= tolTangency && d22 <= tolTangency)
                                                     || (d12 <= tolTangency && d21 <= tolTangency))
@@ -336,7 +336,7 @@ public partial class PrmPrmIntersection
                                                         Point3D p1 = pw.Value(m).Value();
                                                         Point3D p2 = pw.Value(m + 1).Value();
                                                         Vector3D vec12 = new(p1, p2);
-                                                        if (vec12.SquareMagnitude() < 1.0e-20)
+                                                        if (vec12.SquareMagnitude < 1.0e-20)
                                                         {
                                                             continue;
                                                         }
@@ -344,7 +344,7 @@ public partial class PrmPrmIntersection
                                                         //
                                                         Direction3D dir12 = new(vec12);
                                                         Line3D lin12 = new(p1, dir12);
-                                                        dx = lin12.Distance(px);
+                                                        dx = lin12.DistanceTo(px);
 
                                                         // modified by NIZNHY-PKV Tue May 10 11:08:07 2011f
                                                         if (dx <= 2.0 * epsilon)
@@ -566,13 +566,13 @@ public partial class PrmPrmIntersection
 
                                         PntOn2S verPointDebut = verwline.Point(1);
                                         PntOn2S verPointFin = verwline.Point(verwline.NbPnts());
-                                        if (point3dDebut.Distance(verPointDebut.Value()) < tolTangency)
+                                        if (point3dDebut.DistanceTo(verPointDebut.Value()) < tolTangency)
                                         {
                                             rejectLine = true;
                                         }
                                         else
                                         {
-                                            if (point3dFin.Distance(verPointFin.Value()) < tolTangency)
+                                            if (point3dFin.DistanceTo(verPointFin.Value()) < tolTangency)
                                             {
                                                 rejectLine = true;
                                             }
@@ -762,8 +762,8 @@ public partial class PrmPrmIntersection
 
                                 PntOn2S verPointDebut = verwline.Point(1);
                                 PntOn2S verPointFin = verwline.Point(verwline.NbPnts());
-                                if ((point3dDebut.Distance(verPointDebut.Value()) < tolTangency)
-                                    || (point3dFin.Distance(verPointFin.Value()) < tolTangency))
+                                if ((point3dDebut.DistanceTo(verPointDebut.Value()) < tolTangency)
+                                    || (point3dFin.DistanceTo(verPointFin.Value()) < tolTangency))
                                 {
                                     rejetLigne = true;
                                     break;
@@ -1102,14 +1102,14 @@ public partial class PrmPrmIntersection
             {
                 ipd.XIP1(i, j) = -1;
                 Point3D p = ipd.XP1(i, j);
-                ipd.XP1DS2(i, j) = (byte)CodeReject(x20, y20, z20, x21, y21, z21, p.X(), p.Y(), p.Z());
-                int ix = CppTruncate((p.X() - x0 + dx2) / dx);
+                ipd.XP1DS2(i, j) = (byte)CodeReject(x20, y20, z20, x21, y21, z21, p.X, p.Y, p.Z);
+                int ix = CppTruncate((p.X - x0 + dx2) / dx);
                 if (DansGrille(ix) != 0)
                 {
-                    int iy = CppTruncate((p.Y() - y0 + dy2) / dy);
+                    int iy = CppTruncate((p.Y - y0 + dy2) / dy);
                     if (DansGrille(iy) != 0)
                     {
-                        int iz = CppTruncate((p.Z() - z0 + dz2) / dz);
+                        int iz = CppTruncate((p.Z - z0 + dz2) / dz);
                         if (DansGrille(iz) != 0)
                         {
                             ipd.XIP1(i, j) = GrilleInteger(ix, iy, iz);
@@ -1125,14 +1125,14 @@ public partial class PrmPrmIntersection
             {
                 ipd.XIP2(i, j) = -1;
                 Point3D p = ipd.XP2(i, j);
-                ipd.XP2DS1(i, j) = (byte)CodeReject(x10, y10, z10, x11, y11, z11, p.X(), p.Y(), p.Z());
-                int ix = CppTruncate((p.X() - x0 + dx2) / dx);
+                ipd.XP2DS1(i, j) = (byte)CodeReject(x10, y10, z10, x11, y11, z11, p.X, p.Y, p.Z);
+                int ix = CppTruncate((p.X - x0 + dx2) / dx);
                 if (DansGrille(ix) != 0)
                 {
-                    int iy = CppTruncate((p.Y() - y0 + dy2) / dy);
+                    int iy = CppTruncate((p.Y - y0 + dy2) / dy);
                     if (DansGrille(iy) != 0)
                     {
-                        int iz = CppTruncate((p.Z() - z0 + dz2) / dz);
+                        int iz = CppTruncate((p.Z - z0 + dz2) / dz);
                         if (DansGrille(iz) != 0)
                         {
                             ipd.XIP2(i, j) = GrilleInteger(ix, iy, iz);
@@ -1288,7 +1288,7 @@ public partial class PrmPrmIntersection
                         for (v = resv0, j = 0; j < sv1; v += dv1, j++)
                         {
                             //-- On place les 3 meilleures valeurs dans Dist1,Dist2,Dist3
-                            double t = ipd.XP1(i, j).SquareDistance(p);
+                            double t = ipd.XP1(i, j).SquareDistanceTo(p);
                             SortThreeNearest(dist3, u3, v3);
                             //-- la plus grande valeur est dans Dist3[0]
                             if (t < dist3[0])
@@ -1309,7 +1309,7 @@ public partial class PrmPrmIntersection
                         for (v = v0, j = 0; j < sv2; v += dv2, j++)
                         {
                             //-- On place les 3 meilleures valeurs dans Dist1,Dist2,Dist3
-                            double t = ipd.XP2(i, j).SquareDistance(p);
+                            double t = ipd.XP2(i, j).SquareDistanceTo(p);
                             SortThreeNearest(dist3, u3, v3);
                             //-- la plus grande valeur est dans Dist3[0]
                             if (t < dist3[0])

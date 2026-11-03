@@ -190,11 +190,11 @@ public class TriangleSet : PrimitiveSet<double, NCollection_Vec3<double>>
         bool isOK = true; // OCCT: isOK stops the loop at a shape without a mesh, but Init returns true regardless
         for (int shapeIdx = 0; shapeIdx < shapes.Count && isOK; ++shapeIdx)
         {
-            if (shapes[shapeIdx].ShapeType() == ShapeType.Face)
+            if (shapes[shapeIdx].Type == ShapeType.Face)
             {
                 isOK = InitFace(ShapeCasts.Face(shapes[shapeIdx]), shapeIdx);
             }
-            else if (shapes[shapeIdx].ShapeType() == ShapeType.Edge)
+            else if (shapes[shapeIdx].Type == ShapeType.Edge)
             {
                 isOK = InitEdge(ShapeCasts.Edge(shapes[shapeIdx]), shapeIdx);
             }
@@ -228,7 +228,7 @@ public class TriangleSet : PrimitiveSet<double, NCollection_Vec3<double>>
 
         int vertOffset = _vertexArray.Size() - 1;
 
-        InitNodes(triangulation.MapNodeArray()!.ChangeArray1(), location.Transformation(), index);
+        InitNodes(triangulation.MapNodeArray()!.ChangeArray1(), location.Transformation, index);
 
         for (int triIdx = 1; triIdx <= triangulation.TriangleCount; ++triIdx)
         {
@@ -255,7 +255,7 @@ public class TriangleSet : PrimitiveSet<double, NCollection_Vec3<double>>
 
         int vertOffset = _vertexArray.Size() - 1;
 
-        InitNodes(polygon.Nodes(), location.Transformation(), index);
+        InitNodes(polygon.Nodes(), location.Transformation, index);
 
         for (int vertIdx = 1; vertIdx < polygon.NodeCount; ++vertIdx)
         {
@@ -276,7 +276,7 @@ public class TriangleSet : PrimitiveSet<double, NCollection_Vec3<double>>
 
             vertex = vertex.Transformed(trsf);
 
-            _vertexArray.Append(new NCollection_Vec3<double>(vertex.X(), vertex.Y(), vertex.Z()));
+            _vertexArray.Append(new NCollection_Vec3<double>(vertex.X, vertex.Y, vertex.Z));
             _shapeIdxOfVtxVec.Add(index);
         }
 

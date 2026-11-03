@@ -55,14 +55,14 @@ public sealed partial class AnalyticCirc2d2TanRad
         }
         Line2D l1     = qualified1.Qualified();
         Line2D l2     = qualified2.Qualified();
-        double   x1dir  = (l1.Direction()).X();
-        double   y1dir  = (l1.Direction()).Y();
-        double   lx1loc = (l1.Location()).X();
-        double   ly1loc = (l1.Location()).Y();
-        double   x2dir  = (l2.Direction()).X();
-        double   y2dir  = (l2.Direction()).Y();
-        double   lx2loc = (l2.Location()).X();
-        double   ly2loc = (l2.Location()).Y();
+        double   x1dir  = (l1.Direction).X;
+        double   y1dir  = (l1.Direction).Y;
+        double   lx1loc = (l1.Location).X;
+        double   ly1loc = (l1.Location).Y;
+        double   x2dir  = (l2.Direction).X;
+        double   y2dir  = (l2.Direction).Y;
+        double   lx2loc = (l2.Location).X;
+        double   ly2loc = (l2.Location).Y;
         Point2D origin1 = new(lx1loc, ly1loc);
         Point2D origin2 = new(lx2loc, ly2loc);
         // OCCT: normL1 and normL2 are the lines' directions, not their normals, so the qualifiers computed below for
@@ -75,7 +75,7 @@ public sealed partial class AnalyticCirc2d2TanRad
         }
         else
         {
-            if (l1.Direction().IsParallel(l2.Direction(), global::Kerf.Engine.Foundation.Precision.Angular()))
+            if (l1.Direction.IsParallel(l2.Direction, global::Kerf.Engine.Foundation.Precision.Angular()))
             {
                 _wellDone = true;
             }
@@ -165,10 +165,10 @@ public sealed partial class AnalyticCirc2d2TanRad
                     {
                         Line2D linint1 = new(new Point2D(lx1loc - cote1[jcote1] * y1dir * radius,
                                                                             ly1loc + cote1[jcote1] * x1dir * radius),
-                                                          l1.Direction());
+                                                          l1.Direction);
                         Line2D linint2 = new(new Point2D(lx2loc - cote2[jcote2] * y2dir * radius,
                                                                             ly2loc + cote2[jcote2] * x2dir * radius),
-                                                          l2.Direction());
+                                                          l2.Direction);
                         AnalyticIntersection intp = new(linint1, linint2);
                         if (intp.IsDone)
                         {

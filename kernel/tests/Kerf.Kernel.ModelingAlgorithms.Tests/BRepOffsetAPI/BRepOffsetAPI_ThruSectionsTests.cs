@@ -354,7 +354,7 @@ public class BRepOffsetAPI_ThruSectionsTests
         Assert.True(aMakeArc1.IsDone);
         TrimmedCurve3D aArc1 = aMakeArc1.Value();
 
-        MakeEdge aMakeEdge1 = new(aArc1, aArc1.StartPoint(), aArc1.EndPoint());
+        MakeEdge aMakeEdge1 = new(aArc1, aArc1.StartPoint, aArc1.EndPoint);
         Assert.True(aMakeEdge1.IsDone);
         MakeWire aMakeWire1 = new(aMakeEdge1.Edge());
         Assert.True(aMakeWire1.IsDone);
@@ -370,7 +370,7 @@ public class BRepOffsetAPI_ThruSectionsTests
         Assert.True(aMakeArc2.IsDone);
         TrimmedCurve3D aArc2 = aMakeArc2.Value();
 
-        MakeEdge aMakeEdge2 = new(aArc2, aArc2.StartPoint(), aArc2.EndPoint());
+        MakeEdge aMakeEdge2 = new(aArc2, aArc2.StartPoint, aArc2.EndPoint);
         Assert.True(aMakeEdge2.IsDone);
         MakeWire aMakeWire2 = new(aMakeEdge2.Edge());
         Assert.True(aMakeWire2.IsDone);
@@ -410,7 +410,7 @@ public class BRepOffsetAPI_ThruSectionsTests
         Assert.True(aLoft.IsDone);
         Shape aResult = aLoft.Shape();
         Assert.True(aResult.TShape()!.IsFrozen);
-        Assert.Equal(theSolid ? ShapeType.Solid : ShapeType.Shell, aResult.ShapeType());
+        Assert.Equal(theSolid ? ShapeType.Solid : ShapeType.Shell, aResult.Type);
         // CompatibleWires cuts the sections into 5 edges (the circle's seam and the squares' corners)
         Assert.Equal(theRuled ? 10 : 5, Count(aResult, ShapeType.Face) - (theSolid ? 2 : 0));
         for (int i = 0; i < aWires.Length; i++)
@@ -436,7 +436,7 @@ public class BRepOffsetAPI_ThruSectionsTests
         {
             ISchematiqList<Shape> anEdges = aLoft.Generated(anExp.Current());
             Assert.Equal(theRuled ? 2 : 1, anEdges.Count);
-            Assert.All(anEdges, e => Assert.True(aResultMap.Contains(e) && e.ShapeType() == ShapeType.Edge));
+            Assert.All(anEdges, e => Assert.True(aResultMap.Contains(e) && e.Type == ShapeType.Edge));
         }
         if (theSolid)
         {

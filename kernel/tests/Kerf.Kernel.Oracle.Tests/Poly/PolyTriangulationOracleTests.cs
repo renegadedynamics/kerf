@@ -31,9 +31,9 @@ public class PolyTriangulationOracleTests(ITestOutputHelper output)
                 {
                     using N.gp_Dir aND = aNative.Normal(k);
                     Direction3D aPD = aPort.Normal(k);
-                    anOracle.Same(aND.X(), aPD.X(), $"Normal({k}).X");
-                    anOracle.Same(aND.Y(), aPD.Y(), $"Normal({k}).Y");
-                    anOracle.Same(aND.Z(), aPD.Z(), $"Normal({k}).Z");
+                    anOracle.Same(aND.X(), aPD.X, $"Normal({k}).X");
+                    anOracle.Same(aND.Y(), aPD.Y, $"Normal({k}).Y");
+                    anOracle.Same(aND.Z(), aPD.Z, $"Normal({k}).Z");
                 }
             }
         }
@@ -105,7 +105,7 @@ public class PolyTriangulationOracleTests(ITestOutputHelper output)
                 aNative.SetNode(k, aNP);
                 aPort.SetNode(k, aP);
                 var anUV = new Point2D(anOracle.Real(), anOracle.Real());
-                using var aNUV = new N.gp_Pnt2d(anUV.X(), anUV.Y());
+                using var aNUV = new N.gp_Pnt2d(anUV.X, anUV.Y);
                 aNative.SetUVNode(k, aNUV);
                 aPort.SetUVNode(k, anUV);
             }
@@ -115,8 +115,8 @@ public class PolyTriangulationOracleTests(ITestOutputHelper output)
                 using N.gp_Pnt aNP = aNative.Node(k);
                 anOracle.Same(Oracle.FromNative(aNP).XYZ(), aPort.Node(k).XYZ(), "single precision Node");
                 using N.gp_Pnt2d aNUV = aNative.UVNode(k);
-                anOracle.Same(aNUV.X(), aPort.UVNode(k).X(), "single precision UVNode.X");
-                anOracle.Same(aNUV.Y(), aPort.UVNode(k).Y(), "single precision UVNode.Y");
+                anOracle.Same(aNUV.X(), aPort.UVNode(k).X, "single precision UVNode.X");
+                anOracle.Same(aNUV.Y(), aPort.UVNode(k).Y, "single precision UVNode.Y");
             }
         }
 
@@ -205,7 +205,7 @@ public class PolyTriangulationOracleTests(ITestOutputHelper output)
             if (theWithUV)
             {
                 var anUV = new Point2D(theOracle.Real(), theOracle.Real());
-                using var aNUV = new N.gp_Pnt2d(anUV.X(), anUV.Y());
+                using var aNUV = new N.gp_Pnt2d(anUV.X, anUV.Y);
                 aNative.SetUVNode(k, aNUV);
                 aPort.SetUVNode(k, anUV);
             }
@@ -248,8 +248,8 @@ public class PolyTriangulationOracleTests(ITestOutputHelper output)
             if (thePort.HasUVNodes)
             {
                 using N.gp_Pnt2d aNUV = theNative.UVNode(k);
-                theOracle.Same(aNUV.X(), thePort.UVNode(k).X(), $"{theWhat} UVNode.X");
-                theOracle.Same(aNUV.Y(), thePort.UVNode(k).Y(), $"{theWhat} UVNode.Y");
+                theOracle.Same(aNUV.X(), thePort.UVNode(k).X, $"{theWhat} UVNode.X");
+                theOracle.Same(aNUV.Y(), thePort.UVNode(k).Y, $"{theWhat} UVNode.Y");
             }
         }
 

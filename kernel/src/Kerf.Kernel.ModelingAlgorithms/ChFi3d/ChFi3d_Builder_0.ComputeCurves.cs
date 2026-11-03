@@ -46,8 +46,8 @@ internal static partial class Builder_0
         Point3D pdeb2 = s2.Value(pardeb[3], pardeb[4]);
         Point3D pfin2 = s2.Value(parfin[3], parfin[4]);
 
-        double distrefdeb = pdeb1.Distance(pdeb2); // checks the worthiness
-        double distreffin = pfin1.Distance(pfin2); // of input data
+        double distrefdeb = pdeb1.DistanceTo(pdeb2); // checks the worthiness
+        double distreffin = pfin1.DistanceTo(pfin2); // of input data
         if (distrefdeb < tol3d)
         {
             distrefdeb = tol3d;
@@ -61,7 +61,7 @@ internal static partial class Builder_0
         pdeb = pdeb.WithXYZ(pdeb1.XYZ().Added(pdeb2.XYZ()).Multiplied(0.5));
         pfin = pfin.WithXYZ(pfin1.XYZ().Added(pfin2.XYZ()).Multiplied(0.5));
 
-        double distref = 0.005 * pdeb.Distance(pfin);
+        double distref = 0.005 * pdeb.DistanceTo(pfin);
         if (distref < distrefdeb)
         {
             distref = distrefdeb;
@@ -101,8 +101,8 @@ internal static partial class Builder_0
             if (impKK.TypeInter() == Ellipse)
             {
                 Ellipse3D el = impKK.Ellipse(1);
-                double majorR = el.MajorRadius();
-                double minorR = el.MinorRadius();
+                double majorR = el.MajorRadius;
+                double minorR = el.MinorRadius;
                 isIntDone = (majorR < 100000.0 * minorR);
             }
 
@@ -121,7 +121,7 @@ internal static partial class Builder_0
                             c1 = impKK.Line(ilin);
                             udeb = global::Kerf.Engine.Geometry.ElCLib.Parameter(c1, pdeb);
                             Point3D ptest = global::Kerf.Engine.Geometry.ElCLib.Value(udeb, c1);
-                            if (ptest.Distance(pdeb) < tol3d)
+                            if (ptest.DistanceTo(pdeb) < tol3d)
                             {
                                 break;
                             }
@@ -260,8 +260,8 @@ internal static partial class Builder_0
                             double uf = 0.0, ul = 0.0;
                             if (wholeCurv)
                             {
-                                uf = c3d.FirstParameter();
-                                ul = c3d.LastParameter();
+                                uf = c3d.FirstParameter;
+                                ul = c3d.LastParameter;
                                 ptestdeb = c3d.Value(uf);
                                 ptestfin = c3d.Value(ul);
                             }
@@ -299,14 +299,14 @@ internal static partial class Builder_0
 
                                 if (failedF && failedL)
                                 {
-                                    uf = c3d.FirstParameter();
-                                    ul = c3d.LastParameter();
+                                    uf = c3d.FirstParameter;
+                                    ul = c3d.LastParameter;
                                 }
                                 else if (failedF || failedL)
                                 {
                                     // select right end parameter
                                     double uok = failedF ? ul : uf;
-                                    double u1 = c3d.FirstParameter(), u2 = c3d.LastParameter();
+                                    double u1 = c3d.FirstParameter, u2 = c3d.LastParameter;
                                     uok = Math.Abs(uok - u1) > Math.Abs(uok - u2) ? u1 : u2;
                                     if (failedF)
                                     {
@@ -348,25 +348,25 @@ internal static partial class Builder_0
                             pc1 = new TrimmedCurve2D(pc1!, uf, ul);
                             pc2 = new TrimmedCurve2D(pc2!, uf, ul);
                             // is it necessary to invert ?
-                            double distDebToDeb = ptestdeb.Distance(pdeb);
-                            double distDebToFin = ptestdeb.Distance(pfin);
-                            double distFinToFin = ptestfin.Distance(pfin);
-                            double distFinToDeb = ptestfin.Distance(pdeb);
+                            double distDebToDeb = ptestdeb.DistanceTo(pdeb);
+                            double distDebToFin = ptestdeb.DistanceTo(pfin);
+                            double distFinToFin = ptestfin.DistanceTo(pfin);
+                            double distFinToDeb = ptestfin.DistanceTo(pdeb);
 
                             if (distDebToDeb > distDebToFin && distFinToFin > distFinToDeb)
                             {
                                 c3d.Reverse();
                                 pc1.Reverse();
                                 pc2.Reverse();
-                                ptestdeb = c3d.Value(c3d.FirstParameter());
-                                ptestfin = c3d.Value(c3d.LastParameter());
-                                distDebToDeb = ptestdeb.Distance(pdeb);
-                                distFinToFin = ptestfin.Distance(pfin);
+                                ptestdeb = c3d.Value(c3d.FirstParameter);
+                                ptestfin = c3d.Value(c3d.LastParameter);
+                                distDebToDeb = ptestdeb.DistanceTo(pdeb);
+                                distFinToFin = ptestfin.DistanceTo(pfin);
                             }
                             if (distDebToDeb < distref && distFinToFin < distref)
                             {
-                                uf = c3d.FirstParameter();
-                                ul = c3d.LastParameter();
+                                uf = c3d.FirstParameter;
+                                ul = c3d.LastParameter;
                                 ChFi3d_ReparamPcurv(uf, ul, ref pc1);
                                 ChFi3d_ReparamPcurv(uf, ul, ref pc2);
                                 double x, y;
@@ -404,7 +404,7 @@ internal static partial class Builder_0
             // Attention the parameters of arrow for the path and
             // the tolerance for the approximation can't be taken as those of the
             // Builder, so they are reestimated as much as possible.
-            double fleche = 1.0e-3 * pdeb.Distance(pfin);
+            double fleche = 1.0e-3 * pdeb.DistanceTo(pfin);
             double tolap = 1.0e-7;
             PWalking intKK = new(s1, s2, tol3d, tol3d, fleche, step);
 
@@ -452,13 +452,13 @@ internal static partial class Builder_0
 
                 Point3D codeb1 = s1.Value(pardeb[1], pardeb[2]);
                 Point3D codeb2 = s2.Value(pardeb[3], pardeb[4]);
-                double tol1 = Math.Max(codeb1.Distance(codeb2), tol3d);
+                double tol1 = Math.Max(codeb1.DistanceTo(codeb2), tol3d);
                 bool bondeb = (tol1 == tol3d);
                 Point3D pntd = new(codeb1.Coord().Added(codeb2.Coord()).Multiplied(0.5));
 
                 Point3D cofin1 = s1.Value(parfin[1], parfin[2]);
                 Point3D cofin2 = s2.Value(parfin[3], parfin[4]);
-                double tol2 = Math.Max(cofin1.Distance(cofin2), tol3d);
+                double tol2 = Math.Max(cofin1.DistanceTo(cofin2), tol3d);
                 bool bonfin = (tol2 == tol3d);
                 Point3D pntf = new(cofin1.Coord().Added(cofin2.Coord()).Multiplied(0.5));
 
@@ -469,13 +469,13 @@ internal static partial class Builder_0
                 int indd = 0, indf = 0;
                 for (i = 1; i <= nbp; i++)
                 {
-                    dd = l2S.Value(i).Value().Distance(pntd);
+                    dd = l2S.Value(i).Value().DistanceTo(pntd);
                     if (dd <= ddeb)
                     {
                         ddeb = dd;
                         indd = i;
                     }
-                    dd = l2S.Value(i).Value().Distance(pntf);
+                    dd = l2S.Value(i).Value().DistanceTo(pntf);
                     if (dd < dfin)
                     {
                         dfin = dd;
@@ -516,14 +516,14 @@ internal static partial class Builder_0
                     p1.SetValue(pntd, pardeb[1], pardeb[2], pardeb[3], pardeb[4]);
                     if (v1.Dot(v3) < 0)
                     {
-                        if (v3.Magnitude() < 0.2 * v2.Magnitude())
+                        if (v3.Magnitude < 0.2 * v2.Magnitude)
                         {
                             l2S.RemovePoint(1);
                             nbp--;
                         }
                         l2S.Value(1, p1);
                     }
-                    else if (v1.Magnitude() > 0.2 * v2.Magnitude())
+                    else if (v1.Magnitude > 0.2 * v2.Magnitude)
                     {
                         l2S.InsertBefore(1, p1);
                         nbp++;
@@ -544,14 +544,14 @@ internal static partial class Builder_0
                     p1.SetValue(pntf, parfin[1], parfin[2], parfin[3], parfin[4]);
                     if (v1.Dot(v3) < 0)
                     {
-                        if (v3.Magnitude() < 0.2 * v2.Magnitude())
+                        if (v3.Magnitude < 0.2 * v2.Magnitude)
                         {
                             l2S.RemovePoint(nbp);
                             nbp--;
                         }
                         l2S.Value(nbp, p1);
                     }
-                    else if (v1.Magnitude() > 0.2 * v2.Magnitude())
+                    else if (v1.Magnitude > 0.2 * v2.Magnitude)
                     {
                         l2S.Add(p1);
                         nbp++;

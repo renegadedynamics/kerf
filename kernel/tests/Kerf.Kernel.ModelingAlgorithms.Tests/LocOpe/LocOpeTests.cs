@@ -49,7 +49,7 @@ public class LocOpeTests
     internal static bool Shares(in Shape theResult, in Shape theSub)
     {
         var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
-        Exploration.MapShapes(theResult, theSub.ShapeType(), aMap);
+        Exploration.MapShapes(theResult, theSub.Type, aMap);
         return aMap.Contains(theSub);
     }
 
@@ -83,7 +83,7 @@ public class LocOpeTests
         {
             var aProps = new Properties();
             MassPropertiesBuilder.SurfaceProperties(anExp.Current(), aProps);
-            if (Math.Abs(aProps.CentreOfMass().Z() - 30) < 1e-9)
+            if (Math.Abs(aProps.CentreOfMass().Z - 30) < 1e-9)
             {
                 return ShapeCasts.Face(anExp.Current());
             }
@@ -218,7 +218,7 @@ public class LocOpeTests
             Edge anEdge = ShapeCasts.Edge(anExp.Current());
             Curve3D aC = Tool.Curve(anEdge, out double f, out double l)!;
             Point3D aMid = aC.Value((f + l) / 2);
-            if (Math.Abs(aMid.Y()) < 1e-9 || Math.Abs(aMid.Y() - 20) < 1e-9)
+            if (Math.Abs(aMid.Y) < 1e-9 || Math.Abs(aMid.Y - 20) < 1e-9)
             {
                 anEnds.Add((anEdge, (f + l) / 2, aMid));
             }
@@ -356,7 +356,7 @@ public class LocOpeTests
         }
         var aBuild = new global::Kerf.Engine.Features.Local.BuildShape(aFaces);
         Shape aRes = aBuild.Shape();
-        Assert.Equal(ShapeType.Solid, aRes.ShapeType());
+        Assert.Equal(ShapeType.Solid, aRes.Type);
         Assert.Equal(6000, Volume(aRes), 6);
     }
 
@@ -490,7 +490,7 @@ public class LocOpeTests
         {
             var aProps = new Properties();
             MassPropertiesBuilder.SurfaceProperties(anExp.Current(), aProps);
-            if (Math.Abs(aProps.CentreOfMass().Z() - 30) < 1e-9)
+            if (Math.Abs(aProps.CentreOfMass().Z - 30) < 1e-9)
             {
                 aBottom = ShapeCasts.Face(anExp.Current());
             }
@@ -526,7 +526,7 @@ public class LocOpeTests
         {
             var aProps = new Properties();
             MassPropertiesBuilder.SurfaceProperties(anExp.Current(), aProps);
-            if (Math.Abs(aProps.CentreOfMass().Z() - 30) < 1e-9)
+            if (Math.Abs(aProps.CentreOfMass().Z - 30) < 1e-9)
             {
                 aBottom = ShapeCasts.Face(anExp.Current());
             }
@@ -624,7 +624,7 @@ public class LocOpeTests
         {
             var aProps = new Properties();
             MassPropertiesBuilder.SurfaceProperties(anExp.Current(), aProps);
-            if (Math.Abs(aProps.CentreOfMass().X() - 10) < 1e-9)
+            if (Math.Abs(aProps.CentreOfMass().X - 10) < 1e-9)
             {
                 aSide = ShapeCasts.Face(anExp.Current());
             }

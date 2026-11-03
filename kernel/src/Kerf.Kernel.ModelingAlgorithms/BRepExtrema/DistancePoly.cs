@@ -67,7 +67,7 @@ public static class DistancePoly
             tr = Tool.Triangulation(f, out l);
             if (tr is not null)
             {
-                Transform3D trsf = l.Transformation();
+                Transform3D trsf = l.Transformation;
                 n = tr.NodeCount;
                 for (i = 1; i <= n; i++)
                 {
@@ -85,7 +85,7 @@ public static class DistancePoly
             tr = Tool.Triangulation(f, out l);
             if (tr is not null)
             {
-                Transform3D trsf = l.Transformation();
+                Transform3D trsf = l.Transformation;
                 n = tr.NodeCount;
                 for (i = 1; i <= n; i++)
                 {
@@ -102,7 +102,7 @@ public static class DistancePoly
             for (i2 = 1; i2 <= nbn2; i2++)
             {
                 Point3D pp2 = tp2[i2];
-                double dCur = pp1.Distance(pp2);
+                double dCur = pp1.DistanceTo(pp2);
                 if (dist > dCur)
                 {
                     p1 = pp1;

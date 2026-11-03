@@ -18,13 +18,13 @@ internal readonly struct PlaneHasher(double theCompTolerance, double theHashTole
     public ulong Hash(PlaneSurface plane)
     {
         var axisHasher = new AxisPlacement(CompTolerance, HashTolerance);
-        return axisHasher.Hash(plane.Position().Ax2());
+        return axisHasher.Hash(plane.Position.Frame);
     }
 
     // Compares two planes.
     public bool IsEqual(PlaneSurface plane1, PlaneSurface plane2)
     {
         var axisHasher = new AxisPlacement(CompTolerance, HashTolerance);
-        return axisHasher.IsEqual(plane1.Position().Ax2(), plane2.Position().Ax2());
+        return axisHasher.IsEqual(plane1.Position.Frame, plane2.Position.Frame);
     }
 }

@@ -392,8 +392,8 @@ public class Walking
                     _recdomain1.Next();
                 }
                 p2d = HCurve2dTool.Value(_recdomain1.Value(), solrst1[1]);
-                parSol[1] = p2d.X();
-                parSol[2] = p2d.Y();
+                parSol[1] = p2d.X;
+                parSol[2] = p2d.Y;
                 parSol[3] = solrst1[3];
                 parSol[4] = solrst1[4];
             }
@@ -413,8 +413,8 @@ public class Walking
                 p2d = HCurve2dTool.Value(_recdomain2.Value(), solrst2[1]);
                 parSol[1] = solrst2[3];
                 parSol[2] = solrst2[4];
-                parSol[3] = p2d.X();
-                parSol[4] = p2d.Y();
+                parSol[3] = p2d.X;
+                parSol[4] = p2d.Y;
             }
         }
         else if (recad1)
@@ -430,8 +430,8 @@ public class Walking
                 _recdomain1.Next();
             }
             p2d = HCurve2dTool.Value(_recdomain1.Value(), solrst1[1]);
-            parSol[1] = p2d.X();
-            parSol[2] = p2d.Y();
+            parSol[1] = p2d.X;
+            parSol[2] = p2d.Y;
             parSol[3] = solrst1[3];
             parSol[4] = solrst1[4];
             Point3D thePntOnRst = HSurfaceTool.Value(_surf1, parSol[1], parSol[2]);
@@ -457,8 +457,8 @@ public class Walking
             p2d = HCurve2dTool.Value(_recdomain2.Value(), solrst2[1]);
             parSol[1] = solrst2[3];
             parSol[2] = solrst2[4];
-            parSol[3] = p2d.X();
-            parSol[4] = p2d.Y();
+            parSol[3] = p2d.X;
+            parSol[4] = p2d.Y;
             Point3D thePntOnRst = HSurfaceTool.Value(_surf2, parSol[3], parSol[4]);
             if (CorrectExtremityOnOneRst(2, parSol[1], parSol[2], _param, thePntOnRst, ref correctedU, ref correctedV,
                                          ref correctedPnt, ref _correctedParam))
@@ -934,10 +934,10 @@ public class Walking
         }
 
         Vector3D corde = new(prevP, psurf);
-        norme = corde.SquareMagnitude();
+        norme = corde.SquareMagnitude;
         if (!prevpointistangent)
         {
-            prevNorme = prevTg.SquareMagnitude();
+            prevNorme = prevTg.SquareMagnitude;
         }
 
         double toler3d = 0.01 * _tolpoint3d;
@@ -968,7 +968,7 @@ public class Walking
         if (!curpointistangent)
         {
             cosi = _sens * corde * tgsurf;
-            cosi2 = cosi * cosi / tgsurf.SquareMagnitude() / norme;
+            cosi2 = cosi * cosi / tgsurf.SquareMagnitude / norme;
             if (cosi2 < cosRef3D || cosi < 0.0)
             {
                 return BlendStatus.StepTooLarge;
@@ -1014,11 +1014,11 @@ public class Walking
             }
             if (!prevpointistangent)
             {
-                if (Math.Abs(previousd2d.X()) < tolu && Math.Abs(previousd2d.Y()) < tolv)
+                if (Math.Abs(previousd2d.X) < tolu && Math.Abs(previousd2d.Y) < tolv)
                 {
                     return BlendStatus.SamePoints; // same 2d point
                 }
-                cosi = _sens * (du * previousd2d.X() + dv * previousd2d.Y());
+                cosi = _sens * (du * previousd2d.X + dv * previousd2d.Y);
                 if (cosi < 0)
                 {
                     return BlendStatus.Backward;
@@ -1026,7 +1026,7 @@ public class Walking
             }
             if (!curpointistangent)
             {
-                cosi = _sens * (du * tgonsurf.X() + dv * tgonsurf.Y()) / tgonsurf.Magnitude();
+                cosi = _sens * (du * tgonsurf.X + dv * tgonsurf.Y) / tgonsurf.Magnitude;
                 cosi2 = cosi * cosi / duv;
                 if (cosi2 < cosRef2D || cosi < 0.0)
                 {
@@ -1254,10 +1254,10 @@ public class Walking
                     pnt2 = new Point2D(sol[1], sol[2]);
                 }
 
-                lambda = pnt.Distance(lastpt2d);
+                lambda = pnt.DistanceTo(lastpt2d);
                 if (lambda > 1.0e-12)
                 {
-                    lambda /= pnt.Distance(lastpt2d) + pnt.Distance(pt2d);
+                    lambda /= pnt.DistanceTo(lastpt2d) + pnt.DistanceTo(pt2d);
                 }
                 else
                 {
@@ -1265,8 +1265,8 @@ public class Walking
                 }
                 solrst[1] = pmin;
                 solrst[2] = (1 - lambda) * lastParam + lambda * _param;
-                solrst[3] = (1 - lambda) * pnt1.X() + lambda * pnt2.X();
-                solrst[4] = (1 - lambda) * pnt1.Y() + lambda * pnt2.Y();
+                solrst[3] = (1 - lambda) * pnt1.X + lambda * pnt2.X;
+                solrst[4] = (1 - lambda) * pnt1.Y + lambda * pnt2.Y;
             }
         }
         else
@@ -1323,11 +1323,11 @@ public class Walking
                 if (surf.IsUPeriodic)
                 {
                     uperiod = surf.UPeriod();
-                    if (solrst[3] - lastpt2d.X() > uperiod * 0.6)
+                    if (solrst[3] - lastpt2d.X > uperiod * 0.6)
                     {
                         solrst[3] -= uperiod;
                     }
-                    if (solrst[3] - lastpt2d.X() < -uperiod * 0.6)
+                    if (solrst[3] - lastpt2d.X < -uperiod * 0.6)
                     {
                         solrst[3] += uperiod;
                     }
@@ -1335,11 +1335,11 @@ public class Walking
                 if (surf.IsVPeriodic)
                 {
                     vperiod = surf.VPeriod();
-                    if (solrst[4] - lastpt2d.Y() > vperiod * 0.6)
+                    if (solrst[4] - lastpt2d.Y > vperiod * 0.6)
                     {
                         solrst[4] -= vperiod;
                     }
-                    if (solrst[4] - lastpt2d.Y() < -vperiod * 0.6)
+                    if (solrst[4] - lastpt2d.Y < -vperiod * 0.6)
                     {
                         solrst[4] += vperiod;
                     }
@@ -1349,10 +1349,10 @@ public class Walking
             // For the parameter on the arc, project...
             pt2d = new Point2D(solrst[3], solrst[4]);
             pnt = thecur.Value(ufirst);
-            dist = pt2d.Distance(pnt);
+            dist = pt2d.DistanceTo(pnt);
             solrst[1] = ufirst;
             pnt = thecur.Value(ulast);
-            distaux = pt2d.Distance(pnt);
+            distaux = pt2d.DistanceTo(pnt);
             if (distaux < dist)
             {
                 solrst[1] = ulast;
@@ -1370,7 +1370,7 @@ public class Walking
                 {
                     ok = BlendTool.Project(pt2d, _surf2, thearc, out prm, out distaux);
                 }
-                if (ok && (pt2d.Distance(thecur.Value(prm)) < dist))
+                if (ok && (pt2d.DistanceTo(thecur.Value(prm)) < dist))
                 {
                     solrst[1] = prm;
                 }
@@ -1523,7 +1523,7 @@ public class Walking
         HCurve2dTool.D1(a, param, out p2d, out dp2d);
         if (onFirst)
         {
-            HSurfaceTool.D1(_surf1, p2d.X(), p2d.Y(), out pbid, out d1u, out d1v);
+            HSurfaceTool.D1(_surf1, p2d.X, p2d.Y, out pbid, out d1u, out d1v);
             if (!computetranstionaveclacorde)
             {
                 tgline = _previousP.TangentOnS1();
@@ -1535,7 +1535,7 @@ public class Walking
         }
         else
         {
-            HSurfaceTool.D1(_surf2, p2d.X(), p2d.Y(), out pbid, out d1u, out d1v);
+            HSurfaceTool.D1(_surf2, p2d.X, p2d.Y, out pbid, out d1u, out d1v);
             if (!computetranstionaveclacorde)
             {
                 tgline = _previousP.TangentOnS2();
@@ -1546,7 +1546,7 @@ public class Walking
             }
         }
 
-        tgrst = Vector3D.LinearForm(dp2d.X(), d1u, dp2d.Y(), d1v);
+        tgrst = Vector3D.LinearForm(dp2d.X, d1u, dp2d.Y, d1v);
 
         global::Kerf.Engine.Geometry.CSLib.Normal(d1u, d1v, 1.0e-9, out stat, ref thenormal);
         if (stat == Defined)
@@ -1566,12 +1566,12 @@ public class Walking
             }
             int iu, iv;
             NCollection_Array2<Vector3D> der = new(0, 2, 0, 2);
-            HSurfaceTool.D2(surf, p2d.X(), p2d.Y(), out pbid, out der[1, 0], out der[0, 1], out der[2, 0],
+            HSurfaceTool.D2(surf, p2d.X, p2d.Y, out pbid, out der[1, 0], out der[0, 1], out der[2, 0],
                                       out der[0, 2], out der[1, 1]);
-            der[2, 1] = HSurfaceTool.DN(surf, p2d.X(), p2d.Y(), 2, 1);
-            der[1, 2] = HSurfaceTool.DN(surf, p2d.X(), p2d.Y(), 1, 2);
-            der[2, 2] = HSurfaceTool.DN(surf, p2d.X(), p2d.Y(), 2, 2);
-            global::Kerf.Engine.Geometry.CSLib.Normal(2, der, 1.0e-9, p2d.X(), p2d.Y(), HSurfaceTool.FirstUParameter(surf),
+            der[2, 1] = HSurfaceTool.DN(surf, p2d.X, p2d.Y, 2, 1);
+            der[1, 2] = HSurfaceTool.DN(surf, p2d.X, p2d.Y, 1, 2);
+            der[2, 2] = HSurfaceTool.DN(surf, p2d.X, p2d.Y, 2, 2);
+            global::Kerf.Engine.Geometry.CSLib.Normal(2, der, 1.0e-9, p2d.X, p2d.Y, HSurfaceTool.FirstUParameter(surf),
                          HSurfaceTool.LastUParameter(surf), HSurfaceTool.FirstVParameter(surf),
                          HSurfaceTool.LastVParameter(surf), out stat, ref thenormal, out iu, out iv);
             normale = normale.WithXYZ(thenormal.XYZ());
@@ -1816,7 +1816,7 @@ public class Walking
             }
             else
             {
-                cosi2 = cosi * cosi / prevTgOnGuide.SquareMagnitude() / tgOnGuide.SquareMagnitude();
+                cosi2 = cosi * cosi / prevTgOnGuide.SquareMagnitude / tgOnGuide.SquareMagnitude;
             }
             if (cosi2 < CosRef3D_File) // angle 3d too great
             {
@@ -2003,12 +2003,12 @@ public class Walking
                         _param = (w1 + w2) / 2;
                         Point3D pnt1, pnt2;
                         p2d = HCurve2dTool.Value(_recdomain1.Value(), solrst1[1]);
-                        _sol[1] = p2d.X();
-                        _sol[2] = p2d.Y();
+                        _sol[1] = p2d.X;
+                        _sol[2] = p2d.Y;
                         pnt1 = HSurfaceTool.Value(_surf1, _sol[1], _sol[2]);
                         p2d = HCurve2dTool.Value(_recdomain2.Value(), solrst2[1]);
-                        _sol[3] = p2d.X();
-                        _sol[4] = p2d.Y();
+                        _sol[3] = p2d.X;
+                        _sol[4] = p2d.Y;
                         pnt2 = HSurfaceTool.Value(_surf2, _sol[3], _sol[4]);
                         const double tolProd = 1.0e-5;
                         double[] savedParams = new double[2];
@@ -2027,7 +2027,7 @@ public class Walking
                                 Point3D pnt0;
                                 Vector3D dir0;
                                 _hguide.D1(savedParams[ind], out pnt0, out dir0);
-                                double length = dir0.Magnitude();
+                                double length = dir0.Magnitude;
                                 if (length <= Constants.Resolution())
                                 {
                                     continue;
@@ -2039,9 +2039,9 @@ public class Walking
                                     continue;
                                 }
                                 Plane3D thePlane = planeBuilder.Value();
-                                Direction3D dirPlane = thePlane.Axis().Direction();
+                                Direction3D dirPlane = thePlane.Axis.Direction;
                                 Vector3D theProd = dir0 ^ new Vector3D(dirPlane);
-                                double prodMod = theProd.Magnitude();
+                                double prodMod = theProd.Magnitude;
                                 if (prodMod <= tolProd)
                                 {
                                     sameDirs[ind] = true;
@@ -2095,8 +2095,8 @@ public class Walking
                             _recdomain1.Next();
                         }
                         p2d = HCurve2dTool.Value(_recdomain1.Value(), solrst1[1]);
-                        _sol[1] = p2d.X();
-                        _sol[2] = p2d.Y();
+                        _sol[1] = p2d.X;
+                        _sol[2] = p2d.Y;
                         _sol[3] = solrst1[3];
                         _sol[4] = solrst1[4];
                         Point3D thePntOnRst = HSurfaceTool.Value(_surf1, _sol[1], _sol[2]);
@@ -2127,8 +2127,8 @@ public class Walking
                         p2d = HCurve2dTool.Value(_recdomain2.Value(), solrst2[1]);
                         _sol[1] = solrst2[3];
                         _sol[2] = solrst2[4];
-                        _sol[3] = p2d.X();
-                        _sol[4] = p2d.Y();
+                        _sol[3] = p2d.X;
+                        _sol[4] = p2d.Y;
                         Point3D thePntOnRst = HSurfaceTool.Value(_surf2, _sol[3], _sol[4]);
                         double newU = 0.0, newV = 0.0, newParam = 0.0;
                         Point3D newPnt = new();
@@ -2426,7 +2426,7 @@ public class Walking
         for (int k = 0; k < 2; k++)
         {
             Point2D p2dOnEnd = HCurve2dTool.Value(domainOfRst.Value(), ends[k]);
-            Point3D pntOnEnd = HSurfaceTool.Value(surfOfRst, p2dOnEnd.X(), p2dOnEnd.Y());
+            Point3D pntOnEnd = HSurfaceTool.Value(surfOfRst, p2dOnEnd.X, p2dOnEnd.Y);
             CurvePointExtrema projoncurv = new(pntOnEnd, theElSpine);
             if (!projoncurv.IsDone)
             {
@@ -2467,16 +2467,16 @@ public class Walking
         for (int ind = 1; ind <= theElSpine.VertexCount; ind++)
         {
             Axis3D ax1 = theElSpine.VertexWithTangent(ind);
-            Point3D pnt = ax1.Location();
-            double sqDist = pointOnGuide.SquareDistance(pnt);
+            Point3D pnt = ax1.Location;
+            double sqDist = pointOnGuide.SquareDistanceTo(pnt);
             if (sqDist < globalMinSqDist)
             {
                 globalMinSqDist = sqDist;
                 theAx1 = ax1;
             }
         }
-        Point3D pnt0 = theAx1.Location();
-        Direction3D dir0 = theAx1.Direction();
+        Point3D pnt0 = theAx1.Location;
+        Direction3D dir0 = theAx1.Direction;
         // Check new point: is it real solution?
         Point3D oldPonGuide = _hguide.Value(param);
         Point3D pntOnSurf2 = HSurfaceTool.Value(anotherSurf, u, v); // old point
@@ -2486,8 +2486,8 @@ public class Walking
             return false;
         }
         Plane3D oldPlane = planeBuilder.Value();
-        Direction3D oldDir = oldPlane.Axis().Direction();
-        double angle = oldDir.Angle(dir0);
+        Direction3D oldDir = oldPlane.Axis.Direction;
+        double angle = oldDir.AngleTo(dir0);
         if (angle > M_PI / 2)
         {
             angle = M_PI - angle;
@@ -2509,8 +2509,8 @@ public class Walking
             return false;
         }
         Plane3D newPlane = planeBuilder.Value();
-        Direction3D dirOfNewPlane = newPlane.Axis().Direction();
-        angle = dir0.Angle(dirOfNewPlane);
+        Direction3D dirOfNewPlane = newPlane.Axis.Direction;
+        angle = dir0.AngleTo(dirOfNewPlane);
         if (angle > M_PI / 2)
         {
             angle = M_PI - angle;

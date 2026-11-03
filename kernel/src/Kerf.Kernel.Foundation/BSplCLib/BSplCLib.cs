@@ -40,7 +40,7 @@ namespace Kerf.Engine.Geometry.Splines;
 /// are "flat" knots. OCCT's <c>double&amp;</c> array starts are spans (<see cref="ReadOnlySpan{T}"/> where the
 /// function only reads, <see cref="Span{T}"/> where it writes).
 /// </remarks>
-public static partial class BSplCLib
+internal static partial class BSplCLib
 {
     //=======================================================================
     // class : BSplCLib_LocalMatrix

@@ -121,7 +121,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
 
     // ------------------------------------------------------------ settled inputs (as BRepLibMakersOracleTests)
 
-    private static bool Same(N.gp_Dir theN, in Direction3D theP) => theN.X() == theP.X() && theN.Y() == theP.Y() && theN.Z() == theP.Z();
+    private static bool Same(N.gp_Dir theN, in Direction3D theP) => theN.X() == theP.X && theN.Y() == theP.Y && theN.Z() == theP.Z;
 
     private static Direction3D FromNative(N.gp_Dir theD) => new(theD.X(), theD.Y(), theD.Z());
 
@@ -160,7 +160,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
             using var aD3 = aN3.Direction();
             using var aX3 = aN3.XDirection();
             using var aY3 = aN3.YDirection();
-            if (Same(aD3, anAx.Direction()) && Same(aX3, anAx.XDirection()) && Same(aY3, anAx.YDirection()))
+            if (Same(aD3, anAx.Direction) && Same(aX3, anAx.XDirection) && Same(aY3, anAx.YDirection))
             {
                 return anAx;
             }
@@ -174,7 +174,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
         using var aD = aN.Direction();
         using var aX = aN.XDirection();
         using var aY = aN.YDirection();
-        return Same(aD, theAx.Direction()) && Same(aX, theAx.XDirection()) && Same(aY, theAx.YDirection());
+        return Same(aD, theAx.Direction) && Same(aX, theAx.XDirection) && Same(aY, theAx.YDirection);
     }
 
     // A random simple polygon in the XY plane of the placement: points at increasing angles around its origin.
@@ -236,7 +236,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
             case 2:
             {
                 Point3D aC = global::Kerf.Engine.Geometry.ElSLib.PlaneValue(theO.Real(-0.3, 0.3) * theScale, theO.Real(-0.3, 0.3) * theScale, theAx);
-                var anAx2 = new Frame3D(aC, theAx.Direction(), theAx.XDirection());
+                var anAx2 = new Frame3D(aC, theAx.Direction, theAx.XDirection);
                 if (!SettledAx2(anAx2))
                 {
                     return null;
@@ -278,7 +278,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
             case 7:
             {
                 Point3D aC = global::Kerf.Engine.Geometry.ElSLib.PlaneValue(theO.Real(-0.3, 0.3) * theScale, theO.Real(-0.3, 0.3) * theScale, theAx);
-                var anAx2 = new Frame3D(aC, theAx.Direction(), theAx.XDirection());
+                var anAx2 = new Frame3D(aC, theAx.Direction, theAx.XDirection);
                 if (!SettledAx2(anAx2))
                 {
                     return null;
@@ -315,7 +315,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
                 // a compound of two polygon faces
                 Point3D[] aPts1 = StarPolygon(theO, theAx, theO.Int(3, 5), 0.4 * theScale);
                 Point3D[] aPts2 = StarPolygon(theO, theAx, theO.Int(3, 5), 0.4 * theScale);
-                var aT = new Vector3D(theAx.XDirection()).Multiplied(0.5 * theScale);
+                var aT = new Vector3D(theAx.XDirection).Multiplied(0.5 * theScale);
                 for (int i = 0; i < aPts2.Length; i++)
                 {
                     aPts2[i] = aPts2[i].Translated(aT);
@@ -357,7 +357,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
         theS.IsNull() ? (-1, -1) : (theMap.FindIndex(theS), (int)theS.Orientation());
 
     private static (int, int) Index(IndexedSet<Shape> theMap, in Shape theS) =>
-        theS.IsNull ? (-1, -1) : (theMap.IndexOf(theS) + 1, (int)theS.Orientation());
+        theS.IsNull ? (-1, -1) : (theMap.IndexOf(theS) + 1, (int)theS.Orientation);
 
     private interface ISweepPair
     {
@@ -498,7 +498,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
             {
                 // a vector: random, or along the normal of the profile's plane (a planar prism of a planar face)
                 Vector3D aV = aMode == 1
-                              ? new Vector3D(anAx.Direction()).Multiplied(anO.Real(0.5, 10) * (anO.Bool() ? 1 : -1))
+                              ? new Vector3D(anAx.Direction).Multiplied(anO.Real(0.5, 10) * (anO.Bool() ? 1 : -1))
                               : new Vector3D(anO.Real(-10, 10), anO.Real(-10, 10), anO.Real(-10, 10));
                 using var aNV = Oracle.ToNative(aV);
                 aNM = new N.BRepPrimAPI_MakePrism(aNS, aNV, aCopy, aCanonize);
@@ -539,7 +539,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
             // or (about a tenth of the time each) a random axis through the placement's origin or its Y axis, which may
             // cross the profile
             // (native gp_Dir normalises the Y direction again: one that doesn't come out the same is settled first)
-            Direction3D aYD = anAx.YDirection();
+            Direction3D aYD = anAx.YDirection;
             using (var aNYD = Oracle.ToNative(aYD))
             {
                 if (!Same(aNYD, aYD))
@@ -555,16 +555,16 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
             Axis3D anAxis;
             if (aKind == NbKinds - 1)
             {
-                anAxis = new Axis3D(anAx.Location(), aYD);
+                anAxis = new Axis3D(anAx.Location, aYD);
             }
             else if (anO.Int(0, 9) == 0)
             {
-                anAxis = new Axis3D(anAx.Location(), Dir(anO));
+                anAxis = new Axis3D(anAx.Location, Dir(anO));
                 aWhat += ", random axis";
             }
             else if (anO.Int(0, 9) == 0)
             {
-                anAxis = new Axis3D(anAx.Location(), aYD);
+                anAxis = new Axis3D(anAx.Location, aYD);
                 aWhat += ", axis across";
             }
             else

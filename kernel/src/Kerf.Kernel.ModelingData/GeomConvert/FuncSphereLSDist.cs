@@ -15,7 +15,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// F(x0, y0, z0, R) = Sum[(x(i) - x0)^2 + (y(i) - y0)^2 + (z(i) - z0)^2 - R^2]^2, with its gradient, for
 /// math_BFGS. The variables are the centre (X(1) to X(3)) and the radius X(4).
 /// </summary>
-public sealed class FuncSphereLSDist : MultipleVarFunctionWithGradient
+internal sealed class FuncSphereLSDist : MultipleVarFunctionWithGradient
 {
     private NCollection_HArray1<Xyz>? _points;
 

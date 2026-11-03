@@ -60,14 +60,14 @@ public class TrsfModification : Modification
         }
 
         tol = Tool.Tolerance(f);
-        tol *= Math.Abs(_trsf.ScaleFactor());
+        tol *= Math.Abs(_trsf.ScaleFactor);
         revWires = false;
         revFace = _trsf.IsNegative;
 
-        Transform3D lt = l.Transformation();
+        Transform3D lt = l.Transformation;
         lt = lt.Inverted();
         lt = lt.Multiplied(_trsf);
-        lt = lt.Multiplied(l.Transformation());
+        lt = lt.Multiplied(l.Transformation);
 
         s = (Surface)s.Transformed(lt);
 
@@ -93,12 +93,12 @@ public class TrsfModification : Modification
         Transform3D trsf = _trsf;
         if (!loc.IsIdentity)
         {
-            trsf = loc.Transformation().Inverted() * trsf * loc.Transformation();
+            trsf = loc.Transformation.Inverted() * trsf * loc.Transformation;
         }
 
         triangulation = triangulation.Copy();
         triangulation.SetCachedMinMax(new Box()); // clear bounding box
-        triangulation.Deflection(triangulation.Deflection() * Math.Abs(_trsf.ScaleFactor()));
+        triangulation.Deflection(triangulation.Deflection() * Math.Abs(_trsf.ScaleFactor));
         // apply transformation to 3D nodes
         for (int ind = 1; ind <= triangulation.NodeCount; ++ind)
         {
@@ -113,14 +113,14 @@ public class TrsfModification : Modification
             for (int ind = 1; ind <= triangulation.NodeCount; ++ind)
             {
                 Point2D p2d = triangulation.UVNode(ind);
-                double u = p2d.X(), v = p2d.Y();
+                double u = p2d.X, v = p2d.Y;
                 surf.TransformParameters(ref u, ref v, _trsf);
                 p2d = p2d.WithCoord(u, v);
                 triangulation.SetUVNode(ind, p2d);
             }
         }
         // modify triangles orientation in case of mirror transformation
-        if (_trsf.ScaleFactor() < 0.0)
+        if (_trsf.ScaleFactor < 0.0)
         {
             for (int ind = 1; ind <= triangulation.TriangleCount; ++ind)
             {
@@ -162,11 +162,11 @@ public class TrsfModification : Modification
         Transform3D trsf = _trsf;
         if (!loc.IsIdentity)
         {
-            trsf = loc.Transformation().Inverted() * trsf * loc.Transformation();
+            trsf = loc.Transformation.Inverted() * trsf * loc.Transformation;
         }
 
         p = p.Copy();
-        p.Deflection(p.Deflection() * Math.Abs(_trsf.ScaleFactor()));
+        p.Deflection(p.Deflection() * Math.Abs(_trsf.ScaleFactor));
         NCollection_Array1<Point3D> nodesArray = p.ChangeNodes();
         for (int id = nodesArray.Lower(); id <= nodesArray.Upper(); ++id)
         {
@@ -215,16 +215,16 @@ public class TrsfModification : Modification
             return false;
         }
         p = p.Copy();
-        p.Deflection(p.Deflection() * Math.Abs(_trsf.ScaleFactor()));
+        p.Deflection(p.Deflection() * Math.Abs(_trsf.ScaleFactor));
 
         // transform the parametrization
         Surface? surf = Tool.Surface(f, out loc);
         Curve2D? c2d = Tool.CurveOnSurface(e, f, out _, out _);
         if (surf is not null && c2d is not null
-            && Math.Abs(Math.Abs(_trsf.ScaleFactor()) - 1.0) > Placement.ScalePrec())
+            && Math.Abs(Math.Abs(_trsf.ScaleFactor) - 1.0) > Placement.ScalePrec())
         {
             GeneralTransform2D gTrsf = surf.ParametricTransformation(_trsf);
-            if (gTrsf.Form() != Identity)
+            if (gTrsf.Form != Identity)
             {
                 Curve2D? newC2d = global::Kerf.Engine.Geometry.Library.GeomLib.GTransform(c2d, gTrsf);
                 for (int ind = 1; ind <= p.NodeCount; ++ind)
@@ -249,12 +249,12 @@ public class TrsfModification : Modification
         c = Tool.Curve(e, out l, out _, out _);
 
         tol = Tool.Tolerance(e);
-        tol *= Math.Abs(_trsf.ScaleFactor());
+        tol *= Math.Abs(_trsf.ScaleFactor);
 
-        Transform3D lt = l.Transformation();
+        Transform3D lt = l.Transformation;
         lt = lt.Inverted();
         lt = lt.Multiplied(_trsf);
-        lt = lt.Multiplied(l.Transformation());
+        lt = lt.Multiplied(l.Transformation);
 
         if (c is not null)
         {
@@ -269,7 +269,7 @@ public class TrsfModification : Modification
     {
         p = Tool.Pnt(v);
         tol = Tool.Tolerance(v);
-        tol *= Math.Abs(_trsf.ScaleFactor());
+        tol *= Math.Abs(_trsf.ScaleFactor);
         p = p.Transformed(_trsf);
 
         return true;
@@ -288,7 +288,7 @@ public class TrsfModification : Modification
     {
         c = null;
         tol = Tool.Tolerance(e);
-        double scale = _trsf.ScaleFactor();
+        double scale = _trsf.ScaleFactor;
         tol *= Math.Abs(scale);
         Surface? s = Tool.Surface(F, out _);
 
@@ -314,10 +314,10 @@ public class TrsfModification : Modification
         if (newC.GetType() == typeof(TrimmedCurve2D))
         {
             TrimmedCurve2D tc = (TrimmedCurve2D)newC;
-            newC = tc.BasisCurve();
+            newC = tc.BasisCurve;
         }
 
-        double fc = newC.FirstParameter(), lc = newC.LastParameter();
+        double fc = newC.FirstParameter, lc = newC.LastParameter;
 
         if (!newC.IsPeriodic)
         {
@@ -349,15 +349,15 @@ public class TrsfModification : Modification
             newC = new TrimmedCurve2D(newC, f, l);
             GeneralTransform2D gtrsf = s.ParametricTransformation(_trsf);
 
-            if (gtrsf.Form() != Identity)
+            if (gtrsf.Form != Identity)
             {
                 newC = global::Kerf.Engine.Geometry.Library.GeomLib.GTransform(newC, gtrsf);
                 if (newC is null)
                 {
                     throw new DomainErrorException("TrsfModification:Error in NewCurve2d");
                 }
-                newf = newC.FirstParameter();
-                newl = newC.LastParameter();
+                newf = newC.FirstParameter;
+                newl = newC.LastParameter;
             }
         }
         // sometimes need to readjust the 3D / 2D ranges
@@ -381,7 +381,7 @@ public class TrsfModification : Modification
         }
 
         tol = Tool.Tolerance(v);
-        tol *= Math.Abs(_trsf.ScaleFactor());
+        tol *= Math.Abs(_trsf.ScaleFactor);
         p = Tool.Parameter(v, e);
 
         Curve3D? c = Tool.Curve(e, out _, out _, out _);

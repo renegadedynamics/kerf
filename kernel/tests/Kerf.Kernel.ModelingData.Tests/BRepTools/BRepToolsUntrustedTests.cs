@@ -145,7 +145,7 @@ public class BRepToolsUntrustedTests
     {
         Shape aDeep = new();
         RunWithStack(() => aDeep = Read(NestedCompounds(global::Kerf.Engine.Exchange.Brep.ShapeSet.MaxShapeNesting - 1)), theStackSize: 4 << 20);
-        Assert.Equal(ShapeType.Compound, aDeep.ShapeType());
+        Assert.Equal(ShapeType.Compound, aDeep.Type);
         // and can be written back: on 4 MB always; on 1 MB it depends on the JIT's frame sizes (tier-0 frames are
         // larger), so there the writer may stop with its clean InsufficientExecutionStackException, never a crash
         RunWithStack(() => BrepTools.Write(aDeep, new StringWriter()), theStackSize: 4 << 20);

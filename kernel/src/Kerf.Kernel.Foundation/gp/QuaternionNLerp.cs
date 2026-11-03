@@ -13,7 +13,7 @@ namespace Kerf.Engine.Geometry;
 /// <remarks>
 /// <c>new gp_QuaternionNLerp()</c> holds identities, as in OCCT; <c>default(gp_QuaternionNLerp)</c> is not valid.
 /// </remarks>
-public partial struct QuaternionNLerp : IEquatable<QuaternionNLerp>
+internal partial struct QuaternionNLerp : IEquatable<QuaternionNLerp>
 {
     private Quaternion3 _qStart;
     private Quaternion3 _qEnd;

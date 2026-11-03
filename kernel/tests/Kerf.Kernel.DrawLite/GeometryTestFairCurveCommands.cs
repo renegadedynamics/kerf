@@ -178,7 +178,7 @@ internal static class GeometryTestFairCurveCommands
                 Pnt = aPnt2d;
                 break;
             case Point3D aPnt:
-                Pnt = new Point2D(aPnt.X(), aPnt.Y());
+                Pnt = new Point2D(aPnt.X, aPnt.Y);
                 break;
             default:
                 return 1;

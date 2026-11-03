@@ -47,7 +47,7 @@ public class ShapeFix_SplitCommonVertexTests
 
         aSnap.AssertUnchanged(aFace);
         Assert.True(aResult.TShape()!.IsFrozen);
-        Assert.Equal(ShapeType.Face, aResult.ShapeType());
+        Assert.Equal(ShapeType.Face, aResult.Type);
         var aWires = new List<Shape>();
         for (var anIt = new Iterator(aResult); anIt.More(); anIt.Next())
         {

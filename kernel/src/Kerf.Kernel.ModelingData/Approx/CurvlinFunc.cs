@@ -587,32 +587,32 @@ public sealed class CurvlinFunc : Transient
             case 0:
                 _c3D!.D0(u, out c);
 
-                result[0] = c.X();
-                result[1] = c.Y();
-                result[2] = c.Z();
+                result[0] = c.X;
+                result[1] = c.Y;
+                result[2] = c.Z;
                 break;
 
             case 1:
                 _c3D!.D1(u, out c, out dC_dU);
-                mag = dC_dU.Magnitude();
+                mag = dC_dU.Magnitude;
                 dU_dS = _length / mag;
                 dC_dS = dC_dU * dU_dS;
 
-                result[0] = dC_dS.X();
-                result[1] = dC_dS.Y();
-                result[2] = dC_dS.Z();
+                result[0] = dC_dS.X;
+                result[1] = dC_dS.Y;
+                result[2] = dC_dS.Z;
                 break;
 
             case 2:
                 _c3D!.D2(u, out c, out dC_dU, out d2C_dU2);
-                mag = dC_dU.Magnitude();
+                mag = dC_dU.Magnitude;
                 dU_dS = _length / mag;
                 d2U_dS2 = -_length * dC_dU.Dot(d2C_dU2) * dU_dS / (mag * mag * mag);
                 d2C_dS2 = d2C_dU2 * dU_dS * dU_dS + dC_dU * d2U_dS2;
 
-                result[0] = d2C_dS2.X();
-                result[1] = d2C_dS2.Y();
-                result[2] = d2C_dS2.Z();
+                result[0] = d2C_dS2.X;
+                result[1] = d2C_dS2.Y;
+                result[2] = d2C_dS2.Z;
                 break;
 
             default:
@@ -710,22 +710,22 @@ public sealed class CurvlinFunc : Transient
         {
             case 0:
                 cur2D.D0(u, out c2D);
-                surf.D0(c2D.X(), c2D.Y(), out c);
+                surf.D0(c2D.X, c2D.Y, out c);
 
-                result[0] = c2D.X();
-                result[1] = c2D.Y();
-                result[2] = c.X();
-                result[3] = c.Y();
-                result[4] = c.Z();
+                result[0] = c2D.X;
+                result[1] = c2D.Y;
+                result[2] = c.X;
+                result[3] = c.Y;
+                result[4] = c.Z;
                 break;
 
             case 1:
                 cur2D.D1(u, out c2D, out dC2D_dU);
-                dV_dU = dC2D_dU.X();
-                dW_dU = dC2D_dU.Y();
-                surf.D1(c2D.X(), c2D.Y(), out c, out dS_dV, out dS_dW);
+                dV_dU = dC2D_dU.X;
+                dW_dU = dC2D_dU.Y;
+                surf.D1(c2D.X, c2D.Y, out c, out dS_dV, out dS_dW);
                 dC_dU = dS_dV * dV_dU + dS_dW * dW_dU;
-                mag = dC_dU.Magnitude();
+                mag = dC_dU.Magnitude;
                 dU_dS = length / mag;
 
                 dV_dS = dV_dU * dU_dS;
@@ -734,22 +734,22 @@ public sealed class CurvlinFunc : Transient
 
                 result[0] = dV_dS;
                 result[1] = dW_dS;
-                result[2] = dC_dS.X();
-                result[3] = dC_dS.Y();
-                result[4] = dC_dS.Z();
+                result[2] = dC_dS.X;
+                result[3] = dC_dS.Y;
+                result[4] = dC_dS.Z;
                 break;
 
             case 2:
                 cur2D.D2(u, out c2D, out dC2D_dU, out d2C2D_dU2);
-                dV_dU = dC2D_dU.X();
-                dW_dU = dC2D_dU.Y();
-                d2V_dU2 = d2C2D_dU2.X();
-                d2W_dU2 = d2C2D_dU2.Y();
-                surf.D2(c2D.X(), c2D.Y(), out c, out dS_dV, out dS_dW, out d2S_dV2, out d2S_dW2, out d2S_dVdW);
+                dV_dU = dC2D_dU.X;
+                dW_dU = dC2D_dU.Y;
+                d2V_dU2 = d2C2D_dU2.X;
+                d2W_dU2 = d2C2D_dU2.Y;
+                surf.D2(c2D.X, c2D.Y, out c, out dS_dV, out dS_dW, out d2S_dV2, out d2S_dW2, out d2S_dVdW);
                 dC_dU = dS_dV * dV_dU + dS_dW * dW_dU;
                 d2C_dU2 = (d2S_dV2 * dV_dU + d2S_dVdW * dW_dU) * dV_dU + dS_dV * d2V_dU2
                           + (d2S_dVdW * dV_dU + d2S_dW2 * dW_dU) * dW_dU + dS_dW * d2W_dU2;
-                mag = dC_dU.Magnitude();
+                mag = dC_dU.Magnitude;
                 dU_dS = length / mag;
                 d2U_dS2 = -length * dC_dU.Dot(d2C_dU2) * dU_dS / (mag * mag * mag);
 
@@ -764,9 +764,9 @@ public sealed class CurvlinFunc : Transient
 
                 result[0] = d2V_dS2;
                 result[1] = d2W_dS2;
-                result[2] = d2C_dS2.X();
-                result[3] = d2C_dS2.Y();
-                result[4] = d2C_dS2.Z();
+                result[2] = d2C_dS2.X;
+                result[3] = d2C_dS2.Y;
+                result[4] = d2C_dS2.Z;
                 break;
 
             default:

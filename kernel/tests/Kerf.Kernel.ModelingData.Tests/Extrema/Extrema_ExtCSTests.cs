@@ -26,9 +26,9 @@ public class Extrema_ExtCSTests
         {
             theExt.Points(i, out POnCurv aPC, out POnSurf aPS);
             aPS.Parameter(out double aU, out double aV);
-            Assert.True(theC.Value(aPC.Parameter()).Distance(aPC.Value()) < Tol, $"point on curve {i}");
-            Assert.True(theS.Value(aU, aV).Distance(aPS.Value()) < Tol, $"point on surface {i}");
-            Assert.Equal(aPC.Value().SquareDistance(aPS.Value()), theExt.SquareDistance(i), Tol);
+            Assert.True(theC.Value(aPC.Parameter()).DistanceTo(aPC.Value()) < Tol, $"point on curve {i}");
+            Assert.True(theS.Value(aU, aV).DistanceTo(aPS.Value()) < Tol, $"point on surface {i}");
+            Assert.Equal(aPC.Value().SquareDistanceTo(aPS.Value()), theExt.SquareDistance(i), Tol);
         }
     }
 
@@ -162,7 +162,7 @@ public class Extrema_ExtCSTests
         for (int i = 0; i < 3600; i++)
         {
             Point3D aP = aC.Value(2 * Math.PI * i / 3600);
-            double aD = Math.Sqrt(aP.Y() * aP.Y() + aP.Z() * aP.Z()) - 1;
+            double aD = Math.Sqrt(aP.Y * aP.Y + aP.Z * aP.Z) - 1;
             aSampled = Math.Min(aSampled, aD * aD);
         }
         Assert.Equal(aSampled, MinSquareDistance(anExt), 1e-6);
@@ -209,7 +209,7 @@ public class Extrema_ExtCSTests
         Assert.Equal(25.0, anExt.SquareDistance(1), Tol);
         anExt.Points(1, out POnCurv aPC, out POnSurf aPS);
         Assert.Equal(Math.PI / 2, aPC.Parameter(), Tol);
-        Assert.Equal(0.0, aPS.Value().Z(), Tol);
+        Assert.Equal(0.0, aPS.Value().Z, Tol);
     }
 
     [Fact]

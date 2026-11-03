@@ -98,8 +98,8 @@ public class IntPatchImpPrmIntersectionTests
             {
                 PntOn2S aP = aWL.Point(k);
                 aP.Parameters(out double u1, out double v1, out double u2, out double v2);
-                Assert.True(theS1.Value(u1, v1).Distance(aP.Value()) < theTol, $"line {i} point {k} off S1");
-                Assert.True(theS2.Value(u2, v2).Distance(aP.Value()) < theTol, $"line {i} point {k} off S2");
+                Assert.True(theS1.Value(u1, v1).DistanceTo(aP.Value()) < theTol, $"line {i} point {k} off S1");
+                Assert.True(theS2.Value(u2, v2).DistanceTo(aP.Value()) < theTol, $"line {i} point {k} off S2");
             }
             for (int k = 1; k <= aWL.VertexCount; k++)
             {
@@ -124,7 +124,7 @@ public class IntPatchImpPrmIntersectionTests
                 {
                     aPL.Point(k).Parameters(out double u1, out double v1, out double u2, out double v2);
                     Point3D aP = aPL.Point(k).Value();
-                    foreach (double d in new[] { aP.X(), aP.Y(), aP.Z(), u1, v1, u2, v2 })
+                    foreach (double d in new[] { aP.X, aP.Y, aP.Z, u1, v1, u2, v2 })
                     {
                         aBits.Add(BitConverter.DoubleToInt64Bits(d));
                     }
@@ -195,7 +195,7 @@ public class IntPatchImpPrmIntersectionTests
             for (int k = 1; k <= aWL.NbPnts(); k++)
             {
                 Point3D aP = aWL.Point(k).Value();
-                double r = Math.Sqrt((aP.X() - 0.5) * (aP.X() - 0.5) + (aP.Y() - 0.5) * (aP.Y() - 0.5));
+                double r = Math.Sqrt((aP.X - 0.5) * (aP.X - 0.5) + (aP.Y - 0.5) * (aP.Y - 0.5));
                 Assert.Equal(0.35, r, 6);
             }
         }

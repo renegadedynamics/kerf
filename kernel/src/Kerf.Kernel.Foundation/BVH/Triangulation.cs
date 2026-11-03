@@ -8,7 +8,7 @@ using System.Numerics;
 namespace Kerf.Engine.Geometry.Bvh;
 
 /// <summary>A triangulation as a BVH primitive set: vertices, and triangles as vertex indices.</summary>
-public class Triangulation<T, TVec> : PrimitiveSet<T, TVec>
+internal class Triangulation<T, TVec> : PrimitiveSet<T, TVec>
     where T : unmanaged, INumber<T>, IMinMaxValue<T>
     where TVec : unmanaged, INCollection_Vec<T, TVec>
 {

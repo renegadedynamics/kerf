@@ -8,7 +8,7 @@ namespace Kerf.Engine.Geometry.Properties;
 
 /// <summary>The state of a computed local property (tangent, normal, curvature) in the CLProps and SLProps classes.</summary>
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.LProp_Status;</c>.</remarks>
-public enum Status
+internal enum Status
 {
     Undecided,
     Undefined,

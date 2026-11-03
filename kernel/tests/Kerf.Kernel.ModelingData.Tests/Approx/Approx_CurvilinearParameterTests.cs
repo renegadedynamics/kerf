@@ -22,8 +22,8 @@ public class Approx_CurvilinearParameterTests
 
     private static double OnEllipse(Point3D theP)
     {
-        double x = (theP.X() - 1.0) / 3.0, y = theP.Y() + 2.0;
-        return Math.Abs(Math.Sqrt(x * x + y * y) - 1.0) + Math.Abs(theP.Z());
+        double x = (theP.X - 1.0) / 3.0, y = theP.Y + 2.0;
+        return Math.Abs(Math.Sqrt(x * x + y * y) - 1.0) + Math.Abs(theP.Z);
     }
 
     [Fact]
@@ -56,7 +56,7 @@ public class Approx_CurvilinearParameterTests
             Assert.True(aFunc.EvalCase1(s, 0, aRes));
             Assert.True(OnEllipse(new Point3D(aRes[0], aRes[1], aRes[2])) < 1.0e-12);
             Assert.True(aFunc.EvalCase1(s, 1, aRes));
-            Assert.Equal(aLength, new Vector3D(aRes[0], aRes[1], aRes[2]).Magnitude(), 1.0e-6);
+            Assert.Equal(aLength, new Vector3D(aRes[0], aRes[1], aRes[2]).Magnitude, 1.0e-6);
             Assert.True(aFunc.EvalCase1(s, 2, aRes));
             // Unit-speed curves (scaled by the length) have their second derivative normal to the first.
             Vector3D aD2 = new(aRes[0], aRes[1], aRes[2]);
@@ -85,7 +85,7 @@ public class Approx_CurvilinearParameterTests
             double s = 0.25 + 0.125 * i;
             aWhole.EvalCase1(s, 0, aRes1);
             aTrimmed.EvalCase1(s, 0, aRes2);
-            Assert.True(new Point3D(aRes1[0], aRes1[1], aRes1[2]).Distance(new Point3D(aRes2[0], aRes2[1], aRes2[2])) < 1.0e-7);
+            Assert.True(new Point3D(aRes1[0], aRes1[1], aRes1[2]).DistanceTo(new Point3D(aRes2[0], aRes2[1], aRes2[2])) < 1.0e-7);
         }
         // The caller's adaptor is never trimmed.
         Assert.Equal(0.0, aCurve.FirstParameter());
@@ -104,10 +104,10 @@ public class Approx_CurvilinearParameterTests
         Assert.Null(anApprox.Curve2d1());
         BSplineCurve3D aResult = anApprox.Curve3d()!;
         Assert.Same(aResult, anApprox.Curve3d());
-        Assert.Equal(0.0, aResult.FirstParameter());
-        Assert.Equal(1.0, aResult.LastParameter());
-        Assert.True(aResult.Value(0.0).Distance(aCurve.Value(0.0)) < 1.0e-6);
-        Assert.True(aResult.Value(1.0).Distance(aCurve.Value(aCurve.LastParameter())) < 1.0e-6);
+        Assert.Equal(0.0, aResult.FirstParameter);
+        Assert.Equal(1.0, aResult.LastParameter);
+        Assert.True(aResult.Value(0.0).DistanceTo(aCurve.Value(0.0)) < 1.0e-6);
+        Assert.True(aResult.Value(1.0).DistanceTo(aCurve.Value(aCurve.LastParameter())) < 1.0e-6);
 
         CurveAdaptor aResultAdaptor = new(aResult);
         for (int i = 1; i <= 20; i++)
@@ -116,7 +116,7 @@ public class Approx_CurvilinearParameterTests
             Assert.True(OnEllipse(aResult.Value(s)) < 1.0e-5);
             Assert.Equal(s * aLength, AbscissaPoint.Length(aResultAdaptor, 0.0, s, 1.0e-10), 1.0e-4);
             aResult.D1(s, out _, out Vector3D aD1);
-            Assert.Equal(aLength, aD1.Magnitude(), 1.0e-3 * aLength);
+            Assert.Equal(aLength, aD1.Magnitude, 1.0e-3 * aLength);
         }
         Assert.Contains("myMaxError3d = ", anApprox.ToString());
         Assert.DoesNotContain("myMaxError2d1", anApprox.ToString());
@@ -142,11 +142,11 @@ public class Approx_CurvilinearParameterTests
         {
             double s = i / 20.0;
             Point2D aUV = a2d.Value(s);
-            Assert.True(aCylinder.Value(aUV.X(), aUV.Y()).Distance(a3d.Value(s)) < 1.0e-5);
+            Assert.True(aCylinder.Value(aUV.X, aUV.Y).DistanceTo(a3d.Value(s)) < 1.0e-5);
             // The helix has a constant speed, so the arc length is a linear reparametrisation.
-            Assert.True(aUV.Distance(aLine.Value(6.0 * s)) < 1.0e-5);
+            Assert.True(aUV.DistanceTo(aLine.Value(6.0 * s)) < 1.0e-5);
             a3d.D1(s, out _, out Vector3D aD1);
-            Assert.Equal(aLength, aD1.Magnitude(), 1.0e-3 * aLength);
+            Assert.Equal(aLength, aD1.Magnitude, 1.0e-3 * aLength);
         }
         Assert.Contains("myMaxError2d1 = ", anApprox.ToString());
     }
@@ -173,11 +173,11 @@ public class Approx_CurvilinearParameterTests
         {
             double s = i / 20.0;
             Point2D aUV1 = a2d1.Value(s), aUV2 = a2d2.Value(s);
-            Assert.True(aPlane1.Value(aUV1.X(), aUV1.Y()).Distance(a3d.Value(s)) < 1.0e-5);
-            Assert.True(aPlane2.Value(aUV2.X(), aUV2.Y()).Distance(a3d.Value(s)) < 1.0e-5);
-            Assert.Equal(aUV1.X() - 1.0, aUV2.X(), 1.0e-5);
+            Assert.True(aPlane1.Value(aUV1.X, aUV1.Y).DistanceTo(a3d.Value(s)) < 1.0e-5);
+            Assert.True(aPlane2.Value(aUV2.X, aUV2.Y).DistanceTo(a3d.Value(s)) < 1.0e-5);
+            Assert.Equal(aUV1.X - 1.0, aUV2.X, 1.0e-5);
             a3d.D1(s, out _, out Vector3D aD1);
-            Assert.Equal(aLength, aD1.Magnitude(), 1.0e-3 * aLength);
+            Assert.Equal(aLength, aD1.Magnitude, 1.0e-3 * aLength);
         }
         Assert.Contains("myMaxError2d2 = ", anApprox.ToString());
     }

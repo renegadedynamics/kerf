@@ -59,7 +59,7 @@ internal static class SWDRAWShapeAnalysisCommands
             di.Append("Shape unknown : ").Append(arg1).Append("\n");
             return 1 /* Error */;
         }
-        if (Shape.ShapeType() != ShapeType.Face)
+        if (Shape.Type != ShapeType.Face)
         {
             di.Append("Not a face\n");
             return 1 /* Error */;
@@ -76,7 +76,7 @@ internal static class SWDRAWShapeAnalysisCommands
             Z = theDI.Atof(argv[4]);
             var P3D = new Point3D(X, Y, Z);
             di.Append(" Point 3D X = ").Append(X).Append("  Y = ").Append(Y).Append("  Z = ").Append(Z).Append("\n");
-            thesurf.Bounds(out double uf, out double ul, out double vf, out double vl);
+            thesurf.ParameterBounds(out double uf, out double ul, out double vf, out double vl);
 
             if (global::Kerf.Engine.Foundation.Precision.IsInfinite(uf))
             {
@@ -123,7 +123,7 @@ internal static class SWDRAWShapeAnalysisCommands
 
                 //  reprojection
                 P3D = thesurf.Value(U, V);
-                di.Append("  => reproj  X = ").Append(P3D.X()).Append("  Y = ").Append(P3D.Y()).Append("  Z = ").Append(P3D.Z()).Append("\n");
+                di.Append("  => reproj  X = ").Append(P3D.X).Append("  Y = ").Append(P3D.Y).Append("  Z = ").Append(P3D.Z).Append("\n");
             }
             di.Append(" Found ").Append(anIndSol).Append(" Points\n");
 
@@ -133,7 +133,7 @@ internal static class SWDRAWShapeAnalysisCommands
                 proj.Parameters(anIndMin, out U, out V);
                 di.Append("**  Solution of minimal distance:  U = ").Append(U).Append("  V = ").Append(V).Append("\n");
                 P3D = thesurf.Value(U, V);
-                di.Append("  => reproj  X = ").Append(P3D.X()).Append("  Y = ").Append(P3D.Y()).Append("  Z = ").Append(P3D.Z()).Append("\n");
+                di.Append("  => reproj  X = ").Append(P3D.X).Append("  Y = ").Append(P3D.Y).Append("  Z = ").Append(P3D.Z).Append("\n");
             }
         }
         else // Check 2D point
@@ -147,7 +147,7 @@ internal static class SWDRAWShapeAnalysisCommands
             else
             {
                 Point3D P3D = thesurf.Value(U, V);
-                di.Append(" => proj  X = ").Append(P3D.X()).Append("  Y = ").Append(P3D.Y()).Append("  Z = ").Append(P3D.Z()).Append("\n");
+                di.Append(" => proj  X = ").Append(P3D.X).Append("  Y = ").Append(P3D.Y).Append("  Z = ").Append(P3D.Z).Append("\n");
             }
         }
         return 0;
@@ -170,7 +170,7 @@ internal static class SWDRAWShapeAnalysisCommands
         double cf, cl;
         if (!Shape.IsNull)
         {
-            if (Shape.ShapeType() == ShapeType.Edge)
+            if (Shape.Type == ShapeType.Edge)
             {
                 Edge E = ShapeCasts.Edge(Shape);
                 C = Tool.Curve(E, out cf, out cl);
@@ -190,8 +190,8 @@ internal static class SWDRAWShapeAnalysisCommands
                 di.Append(arg1).Append(" neither EDGE nor CURVE 3D\n");
                 return 1 /* Error */;
             }
-            cf = C.FirstParameter();
-            cl = C.LastParameter();
+            cf = C.FirstParameter;
+            cl = C.LastParameter;
             if (argc >= 7)
             {
                 cf = theDI.Atof(argv[2]);
@@ -270,7 +270,7 @@ internal static class SWDRAWShapeAnalysisCommands
             aDist = aTool.Project(aCOnS, aP3D, aTol, out aPnt, out aParam, false);
         }
 
-        di.Append("Point:").Append("\n").Append(aPnt.X()).Append(" ").Append(aPnt.Y()).Append(" ").Append(aPnt.Z()).Append("\n");
+        di.Append("Point:").Append("\n").Append(aPnt.X).Append(" ").Append(aPnt.Y).Append(" ").Append(aPnt.Z).Append("\n");
         di.Append("Param: ").Append(aParam).Append("\n");
         di.Append("Dist: ").Append(aDist).Append("\n");
         return 0;
@@ -726,7 +726,7 @@ internal static class SWDRAWShapeAnalysisCommands
             di.Append("Shape is not defined\n");
             return 1;
         }
-        if (shape.ShapeType() != ShapeType.Wire)
+        if (shape.Type != ShapeType.Wire)
         {
             di.Append("invalid type of argument\n");
             return 1;
@@ -747,7 +747,7 @@ internal static class SWDRAWShapeAnalysisCommands
 
         // Get wire.
         Shape wire = theDI.GetShape(argv[1]);
-        if (wire.IsNull || wire.ShapeType() != ShapeType.Wire)
+        if (wire.IsNull || wire.Type != ShapeType.Wire)
         {
             di.Append("A null shape or not a wire is used.\n");
             return 2;
@@ -758,7 +758,7 @@ internal static class SWDRAWShapeAnalysisCommands
         if (argc > 2)
         {
             face = theDI.GetShape(argv[2]);
-            if (face.IsNull || face.ShapeType() != ShapeType.Face)
+            if (face.IsNull || face.Type != ShapeType.Face)
             {
                 di.Append("A null shape or not a face is used.\n");
                 return 3;
@@ -805,7 +805,7 @@ internal static class SWDRAWShapeAnalysisCommands
 
         // Get edge.
         Shape edge = theDI.GetShape(argv[1]);
-        if (edge.IsNull || edge.ShapeType() != ShapeType.Edge)
+        if (edge.IsNull || edge.Type != ShapeType.Edge)
         {
             di.Append("A null shape or not an edge is used.\n");
             return 2;
@@ -816,7 +816,7 @@ internal static class SWDRAWShapeAnalysisCommands
         if (argc == 3)
         {
             face = theDI.GetShape(argv[2]);
-            if (face.IsNull || face.ShapeType() != ShapeType.Face)
+            if (face.IsNull || face.Type != ShapeType.Face)
             {
                 di.Append("A null shape or not a face is used.\n");
                 return 3;
@@ -888,7 +888,7 @@ internal static class SWDRAWShapeAnalysisCommands
         {
             return 1;
         }
-        ShapeType aShType = sh.ShapeType();
+        ShapeType aShType = sh.Type;
         if (aShType != ShapeType.Shell && aShType != ShapeType.Face
             && aShType != ShapeType.Edge && aShType != ShapeType.Wire)
         {
@@ -927,7 +927,7 @@ internal static class SWDRAWShapeAnalysisCommands
 
         // get sample target for edge and wire
         var aSampleSurf = new SurfaceAdaptor();
-        if (n > 5 && (sh.ShapeType() == ShapeType.Edge || sh.ShapeType() == ShapeType.Wire))
+        if (n > 5 && (sh.Type == ShapeType.Edge || sh.Type == ShapeType.Wire))
         {
             Surface? aGSurf = DrawTrSurf.GetSurface(theDI, a[5]);
             if (aGSurf is null)
@@ -1029,7 +1029,7 @@ internal static class SWDRAWShapeAnalysisCommands
         {
             return 1;
         }
-        ShapeType aShType = sh.ShapeType();
+        ShapeType aShType = sh.Type;
         if (aShType != ShapeType.Wire && aShType != ShapeType.Edge)
         {
             di.Append("Wrong shape type, shape can be wire or an edge \n");

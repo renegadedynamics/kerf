@@ -35,7 +35,7 @@ internal sealed class FuncCurExt2d : FunctionWithDerivative
         double cross12 = deriv1.Crossed(deriv2);
         double cross13 = deriv1.Crossed(deriv3);
         double dot12 = deriv1.Dot(deriv2);
-        double sqNorm1 = deriv1.SquareMagnitude();
+        double sqNorm1 = deriv1.SquareMagnitude;
         double norm1 = Math.Sqrt(sqNorm1);
         double norm1Cb = sqNorm1 * norm1;     // ||V1||^3
         double norm1Pow5 = norm1Cb * sqNorm1; // ||V1||^5
@@ -61,7 +61,7 @@ internal sealed class FuncCurExt2d : FunctionWithDerivative
         double fNext;
         double deltaU = _epsX / 100.0;
 
-        if (u + deltaU > _curve.LastParameter())
+        if (u + deltaU > _curve.LastParameter)
         {
             deltaU = -deltaU;
         }
@@ -85,7 +85,7 @@ internal sealed class FuncCurExt2d : FunctionWithDerivative
         // Compute curvature at theU.
         _curve.D3(u, out Point2D pnt, out Vector2D deriv1, out Vector2D deriv2, out Vector2D deriv3);
         double cross12 = deriv1.Crossed(deriv2);
-        double sqNorm1 = deriv1.SquareMagnitude();
+        double sqNorm1 = deriv1.SquareMagnitude;
         double norm1 = Math.Sqrt(sqNorm1);
         double norm1Cb = sqNorm1 * norm1;
 
@@ -96,7 +96,7 @@ internal sealed class FuncCurExt2d : FunctionWithDerivative
 
         double curvCurr = cross12 / norm1Cb;
 
-        if (u + deltaU > _curve.LastParameter())
+        if (u + deltaU > _curve.LastParameter)
         {
             deltaU = -deltaU;
         }
@@ -104,7 +104,7 @@ internal sealed class FuncCurExt2d : FunctionWithDerivative
         // Compute curvature at the probe point.
         _curve.D3(u + deltaU, out pnt, out deriv1, out deriv2, out deriv3);
         cross12 = deriv1.Crossed(deriv2);
-        sqNorm1 = deriv1.SquareMagnitude();
+        sqNorm1 = deriv1.SquareMagnitude;
         norm1 = Math.Sqrt(sqNorm1);
         norm1Cb = sqNorm1 * norm1;
 

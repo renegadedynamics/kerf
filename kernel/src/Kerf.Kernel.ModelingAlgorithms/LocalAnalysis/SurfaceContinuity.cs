@@ -63,7 +63,7 @@ public class SurfaceContinuity
 
     private void SurfC0(SLProps surf1, SLProps surf2)
     {
-        _contC0 = (surf1.Value()).Distance(surf2.Value());
+        _contC0 = (surf1.Value()).DistanceTo(surf2.Value());
     }
 
     private void SurfC1(SLProps surf1, SLProps surf2)
@@ -77,10 +77,10 @@ public class SurfaceContinuity
         v1v = surf1.D1V();
         v2v = surf2.D1V();
 
-        norm1u = v1u.Magnitude();
-        norm2u = v2u.Magnitude();
-        norm1v = v1v.Magnitude();
-        norm2v = v2v.Magnitude();
+        norm1u = v1u.Magnitude;
+        norm2u = v2u.Magnitude;
+        norm1v = v1v.Magnitude;
+        norm2v = v2v.Magnitude;
 
         if ((norm1u > _myepsnul) && (norm2u > _myepsnul) && (norm1v > _myepsnul) && (norm2v > _myepsnul))
         {
@@ -100,7 +100,7 @@ public class SurfaceContinuity
             {
                 _lambda1V = norm1v / norm2v;
             }
-            angu = v1u.Angle(v2u);
+            angu = v1u.AngleTo(v2u);
             if (angu > M_PI / 2)
             {
                 _contC1U = M_PI - angu;
@@ -109,7 +109,7 @@ public class SurfaceContinuity
             {
                 _contC1U = angu;
             }
-            angv = v1v.Angle(v2v);
+            angv = v1v.AngleTo(v2v);
             if (angv > M_PI / 2)
             {
                 _contC1V = M_PI - angv;
@@ -135,10 +135,10 @@ public class SurfaceContinuity
         v12u = surf2.D1U();
         v21u = surf1.D2U();
         v22u = surf2.D2U();
-        norm11u = v11u.Magnitude();
-        norm12u = v12u.Magnitude();
-        norm21u = v21u.Magnitude();
-        norm22u = v22u.Magnitude();
+        norm11u = v11u.Magnitude;
+        norm12u = v12u.Magnitude;
+        norm21u = v21u.Magnitude;
+        norm22u = v22u.Magnitude;
 
         if ((norm11u > _myepsnul) && (norm12u > _myepsnul))
         {
@@ -154,7 +154,7 @@ public class SurfaceContinuity
                     _lambda1U = norm11u / norm12u;
                     _lambda2U = norm21u / norm22u;
                 }
-                ang = v21u.Angle(v22u);
+                ang = v21u.AngleTo(v22u);
                 if (ang > M_PI / 2)
                 {
                     _contC2U = M_PI - ang;
@@ -180,10 +180,10 @@ public class SurfaceContinuity
         v12v = surf2.D1V();
         v21v = surf1.D2V();
         v22v = surf2.D2V();
-        norm11v = v11v.Magnitude();
-        norm12v = v12v.Magnitude();
-        norm21v = v21v.Magnitude();
-        norm22v = v22v.Magnitude();
+        norm11v = v11v.Magnitude;
+        norm12v = v12v.Magnitude;
+        norm21v = v21v.Magnitude;
+        norm22v = v22v.Magnitude;
 
         if ((norm11v > _myepsnul) && (norm12v > _myepsnul))
         {
@@ -199,7 +199,7 @@ public class SurfaceContinuity
                     _lambda1V = norm11v / norm12v;
                     _lambda2V = norm21v / norm22v;
                 }
-                ang = v21v.Angle(v22v);
+                ang = v21v.AngleTo(v22v);
                 if (ang > M_PI / 2)
                 {
                     _contC2V = M_PI - ang;
@@ -228,7 +228,7 @@ public class SurfaceContinuity
         {
             Direction3D d1 = surf1.Normal();
             Direction3D d2 = surf2.Normal();
-            double ang = d1.Angle(d2);
+            double ang = d1.AngleTo(d2);
             if (ang > M_PI / 2)
             {
                 _contG1 = M_PI - ang;
@@ -266,7 +266,7 @@ public class SurfaceContinuity
                                   (Math.Abs(y1) + Math.Abs(y2)) / 2,
                                   (Math.Abs(z1) + Math.Abs(z2)) / 2);
 
-            _alpha = mcd1.Angle(mcd2);
+            _alpha = mcd1.AngleTo(mcd2);
             rmin1 = surf1.MinCurvature();
             rmax1 = surf1.MaxCurvature();
             rmin2 = surf2.MinCurvature();
@@ -388,10 +388,10 @@ public class SurfaceContinuity
         _mymaxlen = maxlen;
         _isDone = true;
 
-        pard1 = curv1.FirstParameter();
-        pard2 = curv2.FirstParameter();
-        parf1 = curv1.LastParameter();
-        parf2 = curv2.LastParameter();
+        pard1 = curv1.FirstParameter;
+        pard2 = curv2.FirstParameter;
+        parf1 = curv1.LastParameter;
+        parf2 = curv2.LastParameter;
 
         if ((u > parf1) || (u < pard1) || (u > parf2) || (u < pard2))
         {

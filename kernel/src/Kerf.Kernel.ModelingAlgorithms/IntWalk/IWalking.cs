@@ -501,11 +501,11 @@ public class IWalking<TheIWFunction, TheIWLine>
 
     private static void CutVectorByTolerances(ref Vector2D vector, math_Vector tolerance)
     {
-        if (Math.Abs(vector.X()) < tolerance[1])
+        if (Math.Abs(vector.X) < tolerance[1])
         {
             vector = vector.WithX(0.0);
         }
-        if (Math.Abs(vector.Y()) < tolerance[2])
+        if (Math.Abs(vector.Y) < tolerance[2])
         {
             vector = vector.WithY(0.0);
         }
@@ -520,8 +520,8 @@ public class IWalking<TheIWFunction, TheIWLine>
     {
         // there are always :
         // BorInf(1) <= UVap(1) <= BornSup(1) et BorInf(2) <= UVap(2) <= BornSup(2)
-        double duvx = _previousd2d.X();
-        double duvy = _previousd2d.Y();
+        double duvx = _previousd2d.X;
+        double duvy = _previousd2d.Y;
 
         if (!_reversed)
         {
@@ -1157,7 +1157,7 @@ public class IWalking<TheIWFunction, TheIWLine>
                     pointAlone2 = line2a.Value(1);
                 }
                 p2d2 = pointAlone2.ValueOnSurface(_reversed);
-                double sqDist = p2d1.SquareDistance(p2d2);
+                double sqDist = p2d1.SquareDistanceTo(p2d2);
                 if (sqDist < minSqDist)
                 {
                     minSqDist = sqDist;
@@ -1195,17 +1195,17 @@ public class IWalking<TheIWFunction, TheIWLine>
             Point3D pnt1 = pointAlone1.Value();
             Point3D pnt2 = pointAlone2.Value();
             p2d2 = pointAlone2.ValueOnSurface(_reversed);
-            double minSqDist3d = pnt1.SquareDistance(pnt2);
+            double minSqDist3d = pnt1.SquareDistanceTo(pnt2);
             if (minSqDist3d <= _epsilon
-                || (Math.Abs(p2d1.X() - p2d2.X()) <= _tolerance[1] && Math.Abs(p2d1.Y() - p2d2.Y()) <= _tolerance[2])) // close points
+                || (Math.Abs(p2d1.X - p2d2.X) <= _tolerance[1] && Math.Abs(p2d1.Y - p2d2.Y) <= _tolerance[2])) // close points
             {
                 toRemove = true;
             }
             else // real curve
             {
                 math_Vector uVap = new(1, 2), uv = new(1, 2);
-                uVap[1] = (p2d1.X() + p2d2.X()) / 2;
-                uVap[2] = (p2d1.Y() + p2d2.Y()) / 2;
+                uVap[1] = (p2d1.X + p2d2.X) / 2;
+                uVap[2] = (p2d1.Y + p2d2.Y) / 2;
                 FunctionSetRoot rsnld = new(sp, _tolerance);
                 rsnld.Perform(sp, uVap, bornInf, bornSup);
                 if (rsnld.IsDone && Math.Abs(sp.Root()) <= sp.Tolerance() && !sp.IsTangent())
@@ -1580,8 +1580,8 @@ public class IWalking<TheIWFunction, TheIWLine>
                 movementdirectioninfo[i] = (movementdirectioninfo[i] == 0) ? stepSign : 0;
                 //  Modified by Sergey KHROMOV - Tue Nov 20 10:41:56 2001 End
                 // first step of advancement
-                double d2dx = Math.Abs(_previousd2d.X());
-                double d2dy = Math.Abs(_previousd2d.Y());
+                double d2dx = Math.Abs(_previousd2d.X);
+                double d2dy = Math.Abs(_previousd2d.Y);
                 if (d2dx < _tolerance[1])
                 {
                     pasC = _pas * (_vMax - _vMin) / d2dy;
@@ -1622,8 +1622,8 @@ public class IWalking<TheIWFunction, TheIWLine>
                         if (Math.Abs(func.Root()) > func.Tolerance())
                         {
                             pasC = pasC / 2.0;
-                            pasCu = Math.Abs(pasC * _previousd2d.X());
-                            pasCv = Math.Abs(pasC * _previousd2d.Y());
+                            pasCu = Math.Abs(pasC * _previousd2d.X);
+                            pasCv = Math.Abs(pasC * _previousd2d.Y);
                             ++nbBadRootIter;
                             if ((pasCu <= _tolerance[1] && pasCv <= _tolerance[2]) || nbBadRootIter > MaxDivision)
                             {
@@ -1842,8 +1842,8 @@ public class IWalking<TheIWFunction, TheIWLine>
                     else
                     { // no numerical solution
                         pasC = pasC / 2.0;
-                        pasCu = Math.Abs(pasC * _previousd2d.X());
-                        pasCv = Math.Abs(pasC * _previousd2d.Y());
+                        pasCu = Math.Abs(pasC * _previousd2d.X);
+                        pasCv = Math.Abs(pasC * _previousd2d.Y);
                         if (pasCu <= _tolerance[1] && pasCv <= _tolerance[2])
                         {
                             if (currentLine.PointCount == 1)
@@ -2152,8 +2152,8 @@ public class IWalking<TheIWFunction, TheIWLine>
 
                 // first step of advancement
 
-                double d2dx = Math.Abs(_previousd2d.X());
-                double d2dy = Math.Abs(_previousd2d.Y());
+                double d2dx = Math.Abs(_previousd2d.X);
+                double d2dy = Math.Abs(_previousd2d.Y);
                 if (d2dx < _tolerance[1])
                 {
                     pasC = _pas * (_vMax - _vMin) / d2dy;
@@ -2195,8 +2195,8 @@ public class IWalking<TheIWFunction, TheIWLine>
                         if (Math.Abs(func.Root()) > func.Tolerance())
                         { // no solution for the tolerance
                             pasC = pasC / 2.0;
-                            pasCu = Math.Abs(pasC * _previousd2d.X());
-                            pasCv = Math.Abs(pasC * _previousd2d.Y());
+                            pasCu = Math.Abs(pasC * _previousd2d.X);
+                            pasCv = Math.Abs(pasC * _previousd2d.Y);
                             ++nbBadRootIter;
 
                             if ((pasCu <= _tolerance[1] && pasCv <= _tolerance[2]) || nbBadRootIter > MaxDivision)
@@ -2575,8 +2575,8 @@ public class IWalking<TheIWFunction, TheIWLine>
                     else
                     { // no numerical solution NotDone
                         pasC = pasC / 2.0;
-                        pasCu = Math.Abs(pasC * _previousd2d.X());
-                        pasCv = Math.Abs(pasC * _previousd2d.Y());
+                        pasCu = Math.Abs(pasC * _previousd2d.X);
+                        pasCv = Math.Abs(pasC * _previousd2d.Y);
 
                         if (pasCu <= _tolerance[1] && pasCv <= _tolerance[2])
                         {
@@ -2699,7 +2699,7 @@ public class IWalking<TheIWFunction, TheIWLine>
 
         Vector3D corde = new(_previousPoint.Value(), sp.Point());
 
-        double norme = corde.SquareMagnitude();
+        double norme = corde.SquareMagnitude;
 
         if ((norme <= 4.0 * global::Kerf.Engine.Foundation.Precision.SquareConfusion())
             && ((duv <= global::Kerf.Engine.Foundation.Precision.SquarePConfusion()) || (statusPrecedent != StatusDeflection.OK)))
@@ -2717,7 +2717,7 @@ public class IWalking<TheIWFunction, TheIWLine>
 
             if (cosi * stepSign >= 0.0)
             { // angle 3d <= pi/2 !!!!
-                double div = _previousd3d.SquareMagnitude() * norme;
+                double div = _previousd3d.SquareMagnitude * norme;
                 if (div == 0)
                 {
                     return status;
@@ -2727,7 +2727,7 @@ public class IWalking<TheIWFunction, TheIWLine>
             if (cosi2 < CosRef3D)
             { // angle 3d too great
                 step = step / 2.0;
-                double stepU = Math.Abs(step * _previousd2d.X()), stepV = Math.Abs(step * _previousd2d.Y());
+                double stepU = Math.Abs(step * _previousd2d.X), stepV = Math.Abs(step * _previousd2d.Y);
                 if (stepU < _tolerance[1] && stepV < _tolerance[2])
                 {
                     status = StatusDeflection.ArretSurPointPrecedent;
@@ -2740,7 +2740,7 @@ public class IWalking<TheIWFunction, TheIWLine>
             }
         }
 
-        double minTolU = 0.1 * Math.Abs(step * _previousd2d.X()), minTolV = 0.1 * Math.Abs(step * _previousd2d.Y());
+        double minTolU = 0.1 * Math.Abs(step * _previousd2d.X), minTolV = 0.1 * Math.Abs(step * _previousd2d.Y);
         double tolU = (minTolU > 0.0) ? Math.Min(_tolerance[1], minTolU) : _tolerance[1],
                tolV = (minTolV > 0.0) ? Math.Min(_tolerance[2], minTolV) : _tolerance[2];
 
@@ -2759,7 +2759,7 @@ public class IWalking<TheIWFunction, TheIWLine>
         }
 
         {
-            double cosi = stepSign * (du * _previousd2d.X() + dv * _previousd2d.Y());
+            double cosi = stepSign * (du * _previousd2d.X + dv * _previousd2d.Y);
 
             if (cosi < 0 && status == StatusDeflection.PointConfondu)
             {
@@ -2781,7 +2781,7 @@ public class IWalking<TheIWFunction, TheIWLine>
                 if (cosi2 < CosRef2D || cosi < 0)
                 {
                     step = step / 2.0;
-                    double stepU = Math.Abs(step * _previousd2d.X()), stepV = Math.Abs(step * _previousd2d.Y());
+                    double stepU = Math.Abs(step * _previousd2d.X), stepV = Math.Abs(step * _previousd2d.Y);
 
                     if (stepU < _tolerance[1] && stepV < _tolerance[2])
                     {
@@ -2796,11 +2796,11 @@ public class IWalking<TheIWFunction, TheIWLine>
                 }
 
                 cosi = corde * sp.Direction3d();
-                cosi2 = cosi * cosi / sp.Direction3d().SquareMagnitude() / norme;
+                cosi2 = cosi * cosi / sp.Direction3d().SquareMagnitude / norme;
                 if (cosi2 < CosRef3D)
                 { // angle 3d too great
                     step = step / 2.0;
-                    double stepU = Math.Abs(step * _previousd2d.X()), stepV = Math.Abs(step * _previousd2d.Y());
+                    double stepU = Math.Abs(step * _previousd2d.X), stepV = Math.Abs(step * _previousd2d.Y);
                     if (stepU < _tolerance[1] && stepV < _tolerance[2])
                     {
                         status = StatusDeflection.ArretSurPoint;
@@ -2811,13 +2811,13 @@ public class IWalking<TheIWFunction, TheIWLine>
                     }
                     return status;
                 }
-                cosi = du * sp.Direction2d().X() + dv * sp.Direction2d().Y();
+                cosi = du * sp.Direction2d().X + dv * sp.Direction2d().Y;
                 cosi2 = cosi * cosi / duv;
                 if (cosi2 < CosRef2D || sp.Direction2d() * _previousd2d < 0)
                 {
                     // angle 2d too great or change the side
                     step = step / 2.0;
-                    double stepU = Math.Abs(step * _previousd2d.X()), stepV = Math.Abs(step * _previousd2d.Y());
+                    double stepU = Math.Abs(step * _previousd2d.X), stepV = Math.Abs(step * _previousd2d.Y);
                     if (stepU < _tolerance[1] && stepV < _tolerance[2])
                     {
                         status = StatusDeflection.ArretSurPointPrecedent;
@@ -2838,8 +2838,8 @@ public class IWalking<TheIWFunction, TheIWLine>
                 double stepU = Math.Min(Math.Abs(1.5 * du), _pas * (_uMax - _uMin)),
                        stepV = Math.Min(Math.Abs(1.5 * dv), _pas * (_vMax - _vMin));
 
-                double d2dx = Math.Abs(_previousd2d.X());
-                double d2dy = Math.Abs(_previousd2d.Y());
+                double d2dx = Math.Abs(_previousd2d.X);
+                double d2dy = Math.Abs(_previousd2d.Y);
 
                 if (d2dx < _tolerance[1])
                 {
@@ -2879,8 +2879,8 @@ public class IWalking<TheIWFunction, TheIWLine>
                 //      if (FlecheCourante <= 0.5*fleche) {
                 if (flecheCourante <= 0.25 * _fleche * _fleche)
                 {
-                    double d2dx = Math.Abs(sp.Direction2d().X());
-                    double d2dy = Math.Abs(sp.Direction2d().Y());
+                    double d2dx = Math.Abs(sp.Direction2d().X);
+                    double d2dy = Math.Abs(sp.Direction2d().Y);
 
                     double stepU = Math.Min(Math.Abs(1.5 * du), _pas * (_uMax - _uMin)),
                            stepV = Math.Min(Math.Abs(1.5 * dv), _pas * (_vMax - _vMin));
@@ -2904,7 +2904,7 @@ public class IWalking<TheIWFunction, TheIWLine>
                     if (flecheCourante > _fleche * _fleche)
                     { // step too great
                         step = step / 2.0;
-                        double stepU = Math.Abs(step * _previousd2d.X()), stepV = Math.Abs(step * _previousd2d.Y());
+                        double stepU = Math.Abs(step * _previousd2d.X), stepV = Math.Abs(step * _previousd2d.Y);
 
                         if (stepU < _tolerance[1] && stepV < _tolerance[2])
                         {
@@ -2917,8 +2917,8 @@ public class IWalking<TheIWFunction, TheIWLine>
                     }
                     else
                     {
-                        double d2dx = Math.Abs(sp.Direction2d().X());
-                        double d2dy = Math.Abs(sp.Direction2d().Y());
+                        double d2dx = Math.Abs(sp.Direction2d().X);
+                        double d2dy = Math.Abs(sp.Direction2d().Y);
 
                         double stepU = Math.Min(Math.Abs(1.5 * du), _pas * (_uMax - _uMin)),
                                stepV = Math.Min(Math.Abs(1.5 * dv), _pas * (_vMax - _vMin));
@@ -3070,7 +3070,7 @@ public class IWalking<TheIWFunction, TheIWLine>
         for (int i = 1; i <= line.PointCount; i++)
         {
             Point2D p2d1 = line.Value(i).ValueOnSurface(_reversed);
-            if (Math.Abs(p2d1.X() - p2d.X()) <= _tolerance[1] && Math.Abs(p2d1.Y() - p2d.Y()) <= _tolerance[2])
+            if (Math.Abs(p2d1.X - p2d.X) <= _tolerance[1] && Math.Abs(p2d1.Y - p2d.Y) <= _tolerance[2])
             {
                 return true;
             }
@@ -3178,8 +3178,8 @@ public class IWalking<TheIWFunction, TheIWLine>
             solver.Root(vecPrms);
 
             Point3D pa = func.PSurface().Value(uMin, vMin), pb = func.PSurface().Value(vecPrms[1], vecPrms[2]);
-            double sqD1 = pb.SquareDistance(p3d);
-            double sqD2 = pa.SquareDistance(pb);
+            double sqD1 = pb.SquareDistanceTo(p3d);
+            double sqD2 = pa.SquareDistanceTo(pb);
 
             if (sqD1 < 4.0 * sqD2)
             {

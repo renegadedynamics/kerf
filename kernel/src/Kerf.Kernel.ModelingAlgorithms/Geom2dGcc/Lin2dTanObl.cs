@@ -62,7 +62,7 @@ public sealed class Lin2dTanObl
         if (type1 == Circle)
         {
             CircleCurve2D        ccc1 = (cc1 as CircleCurve2D)!;
-            Circle2D            c1   = ccc1.Circ2d();
+            Circle2D            c1   = ccc1.Circle;
             QualifiedCirc qc1  = new(c1, qualified1.Qualifier());
             AnalyticLin2dTanObl   lin  = new(qc1, theLine, angle);
             _wellDone                  = lin.IsDone;
@@ -136,7 +136,7 @@ public sealed class Lin2dTanObl
         if (type1 == Circle)
         {
             CircleCurve2D        ccc1 = (cc1 as CircleCurve2D)!;
-            Circle2D            c1   = ccc1.Circ2d();
+            Circle2D            c1   = ccc1.Circle;
             QualifiedCirc qc1  = new(c1, qualified1.Qualifier());
             AnalyticLin2dTanObl   lin  = new(qc1, theLine, angle);
             _wellDone                  = lin.IsDone;
@@ -272,7 +272,7 @@ public sealed class Lin2dTanObl
             }
         }
 
-        Direction2D linDir = aLin.Direction();
+        Direction2D linDir = aLin.Direction;
 
         ConstraintCurveTool.D1(c1, par1arg, out _, out Vector2D vTan);
 

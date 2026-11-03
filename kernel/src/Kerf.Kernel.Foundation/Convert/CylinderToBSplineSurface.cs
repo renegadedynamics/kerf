@@ -15,7 +15,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// Converts a bounded cylinder into a rational B-spline surface. The cylinder's parametrisation is
 /// P(U, V) = Loc + V * ZDir + Radius * (XDir * cos(U) + YDir * sin(U)), U in [0, 2 Pi].
 /// </summary>
-public class CylinderToBSplineSurface : ElementarySurfaceToBSplineSurface
+internal class CylinderToBSplineSurface : ElementarySurfaceToBSplineSurface
 {
     private const int TheUDegree = 2;
     private const int TheVDegree = 1;
@@ -87,7 +87,7 @@ public class CylinderToBSplineSurface : ElementarySurfaceToBSplineSurface
         _nbVPoles = 2;
         _nbVKnots = 2;
 
-        double r = cyl.Radius();
+        double r = cyl.Radius;
 
         ComputePoles(r, u1, u2, v1, v2, _poles);
 
@@ -106,7 +106,7 @@ public class CylinderToBSplineSurface : ElementarySurfaceToBSplineSurface
         // Replace bspline in the mark of the sphere.
         // and calculate the weight of the bspline.
         double w1;
-        Transform3D trsf = new Transform3D().WithTransformation(cyl.Position(), new CoordinateSystem(Constants.XOY()));
+        Transform3D trsf = new Transform3D().WithTransformation(cyl.Position, new CoordinateSystem(Constants.XOY()));
 
         for (i = 1; i <= _nbUPoles; i++)
         {
@@ -145,7 +145,7 @@ public class CylinderToBSplineSurface : ElementarySurfaceToBSplineSurface
 
         // construction of the cylinder in the reference mark xOy.
 
-        double r = cyl.Radius();
+        double r = cyl.Radius;
 
         ComputePoles(r, 0.0, 2.0 * M_PI, v1, v2, _poles);
 
@@ -167,7 +167,7 @@ public class CylinderToBSplineSurface : ElementarySurfaceToBSplineSurface
         // Replace the bspline inn the mark of the cone.
         // and calculate the weight of the bspline.
         double w;
-        Transform3D trsf = new Transform3D().WithTransformation(cyl.Position(), new CoordinateSystem(Constants.XOY()));
+        Transform3D trsf = new Transform3D().WithTransformation(cyl.Position, new CoordinateSystem(Constants.XOY()));
 
         for (i = 1; i <= _nbUPoles; i++)
         {

@@ -129,7 +129,7 @@ public sealed class SplitDrafts
             _map[fac] = thelist;
             if (fac.IsSame(aF))
             {
-                oriF = fac.Orientation();
+                oriF = fac.Orientation;
                 finS = true;
             }
         }
@@ -214,10 +214,10 @@ public sealed class SplitDrafts
                         tolf *= tolf;
                         toll *= toll;
 
-                        double dff = pf.SquareDistance(Pf);
-                        double dfl = pf.SquareDistance(Pl);
-                        double dlf = pl.SquareDistance(Pf);
-                        double dll = pl.SquareDistance(Pl);
+                        double dff = pf.SquareDistanceTo(Pf);
+                        double dfl = pf.SquareDistanceTo(Pl);
+                        double dlf = pl.SquareDistanceTo(Pf);
+                        double dll = pl.SquareDistanceTo(Pl);
 
                         if ((dff <= tolf && dll <= toll) || (dlf <= tolf && dfl <= toll))
                         {
@@ -254,8 +254,8 @@ public sealed class SplitDrafts
                         {
                             CurveSurfaceIntersectionPoint Pi = intcs.Point(i);
                             Point3D pi = Pi.Pnt();
-                            double dif = pi.SquareDistance(Pf);
-                            double dil = pi.SquareDistance(Pl);
+                            double dif = pi.SquareDistanceTo(Pf);
+                            double dil = pi.SquareDistanceTo(Pl);
                             if (dif <= tolf)
                             {
                             }
@@ -399,9 +399,9 @@ public sealed class SplitDrafts
                     Curve3D c = Tool.Curve(ShapeCasts.Edge(edg), out Placement loc, out _, out _)!;
                     if (c.GetType() == typeof(TrimmedCurve3D))
                     {
-                        c = ((TrimmedCurve3D)c).BasisCurve();
+                        c = ((TrimmedCurve3D)c).BasisCurve;
                     }
-                    c = (Curve3D)c.Transformed(loc.Transformation());
+                    c = (Curve3D)c.Transformed(loc.Transformation);
 
                     SurfacePipe thePipe = new();
                     thePipe.GenerateParticularCase(true);
@@ -415,7 +415,7 @@ public sealed class SplitDrafts
                     Surface thePS = thePipe.InternalSurface()!;
                     if (thePS.GetType() == typeof(TrimmedSurface))
                     {
-                        thePS = ((TrimmedSurface)thePS).BasisSurface();
+                        thePS = ((TrimmedSurface)thePS).BasisSurface;
                     }
 
                     Face newFace = new();
@@ -549,7 +549,7 @@ public sealed class SplitDrafts
                         if (exp2.More())
                         {
                             newc = Tool.Curve(ShapeCasts.Edge(exp2.Current()), out Placement loc, out _, out _)!;
-                            newc = (Curve3D)newc.Transformed(loc.Transformation());
+                            newc = (Curve3D)newc.Transformed(loc.Transformation);
                             ebind = ShapeCasts.Edge(exp2.Current());
                             knownp = Tool.Parameter(vtx, ebind);
                         }
@@ -562,7 +562,7 @@ public sealed class SplitDrafts
                     case 2:
                     {
                         Line3D theLine = new(normalFg);
-                        theLine = theLine.Translated(normalFg.Location(), Tool.Pnt(vtx));
+                        theLine = theLine.Translated(normalFg.Location, Tool.Pnt(vtx));
                         newc = new LineCurve3D(theLine);
                         knownp = 0.0;
                     }
@@ -762,7 +762,7 @@ public sealed class SplitDrafts
                             Vertex thevtx = ShapeCasts.Vertex(exp2.Current());
                             if (thevtx.IsSame(vtx))
                             {
-                                b.Add(ne, vtx1.Oriented(thevtx.Orientation()));
+                                b.Add(ne, vtx1.Oriented(thevtx.Orientation));
                                 b.UpdateVertex(vtx1, p1, ne, global::Kerf.Engine.Foundation.Precision.Confusion());
                             }
                             else
@@ -847,7 +847,7 @@ public sealed class SplitDrafts
             // (OCCT keeps its former construction here, commented out; nouveau code)
 
             Vertex vfd, vld, vfg, vlg;
-            if (gvf.ShapeType() == ShapeType.Vertex)
+            if (gvf.Type == ShapeType.Vertex)
             {
                 vfg = ShapeCasts.Vertex(gvf);
                 vfd = vfg;
@@ -857,7 +857,7 @@ public sealed class SplitDrafts
                 vfg = ShapeCasts.Vertex(mapSg.GetValue(vf).First());
                 vfd = ShapeCasts.Vertex(mapSd.GetValue(vf).First());
             }
-            if (gvl.ShapeType() == ShapeType.Vertex)
+            if (gvl.Type == ShapeType.Vertex)
             {
                 vlg = ShapeCasts.Vertex(gvl);
                 vld = vlg;
@@ -881,7 +881,7 @@ public sealed class SplitDrafts
             }
 
             bool isedg = false;
-            if (gvf.ShapeType() == ShapeType.Vertex && gvl.ShapeType() == ShapeType.Vertex)
+            if (gvf.Type == ShapeType.Vertex && gvl.Type == ShapeType.Vertex)
             {
                 // edg ou face a 2 cotes
 
@@ -893,7 +893,7 @@ public sealed class SplitDrafts
                 Point3D pg = cg.Value(prmg);
                 Point3D pd = cd.Value(prmd);
                 double tol = Max(Tool.Tolerance(newEdgg), Tool.Tolerance(newEdgg)); // OCCT: NewEdgg twice
-                if (pg.SquareDistance(pd) <= tol * tol)
+                if (pg.SquareDistanceTo(pd) <= tol * tol)
                 {
                     isedg = true;
                     // raffinement pour essayer de partager l`edge de depart...
@@ -905,7 +905,7 @@ public sealed class SplitDrafts
                         prmd = (fd + ld) / 2.0;
                         pd = cd.Value(prmd);
                         tol = Max(Tool.Tolerance(newEdgg), Tool.Tolerance(edg));
-                        if (pg.SquareDistance(pd) <= tol * tol)
+                        if (pg.SquareDistanceTo(pd) <= tol * tol)
                         {
                             modified = false;
                         }
@@ -935,11 +935,11 @@ public sealed class SplitDrafts
                 NCollection_List<Shape> theedges = new();
                 theedges.Append(newEdgg);
                 theedges.Append(newEdgd);
-                if (gvf.ShapeType() == ShapeType.Edge)
+                if (gvf.Type == ShapeType.Edge)
                 {
                     theedges.Append(gvf);
                 }
-                if (gvl.ShapeType() == ShapeType.Edge)
+                if (gvl.Type == ShapeType.Edge)
                 {
                     theedges.Append(gvl);
                 }
@@ -985,7 +985,7 @@ public sealed class SplitDrafts
                     if (mapW.ContainsKey(edg))
                     { // edge du wire d`origine
                         NCollection_List<Shape>.Iterator itld = new();
-                        Orientation ored = edg.Orientation();
+                        Orientation ored = edg.Orientation;
                         if (isLeft)
                         {
                             itld.Initialize(mapSg.GetValue(edg));
@@ -996,7 +996,7 @@ public sealed class SplitDrafts
                         }
                         for (; itld.More(); itld.Next())
                         {
-                            if (itld.Value().Orientation() == Reversed)
+                            if (itld.Value().Orientation == Reversed)
                             {
                                 ored = global::Kerf.Engine.Topology.TopAbs.Reverse(ored);
                             }
@@ -1021,7 +1021,7 @@ public sealed class SplitDrafts
                         Exploration.Vertices(ShapeCasts.Edge(localEdge), out Vertex vf, out Vertex vl);
                         Shape gvf = mapEV.GetValue(vf);
                         Shape gvl = mapEV.GetValue(vl);
-                        if (gvf.ShapeType() == ShapeType.Vertex && gvl.ShapeType() == ShapeType.Vertex)
+                        if (gvf.Type == ShapeType.Vertex && gvl.Type == ShapeType.Vertex)
                         {
                             if (!gvf.IsSame(vf) || !gvl.IsSame(vl))
                             {
@@ -1033,13 +1033,13 @@ public sealed class SplitDrafts
 
                                 mapSonS[edg] = newEdg;
 
-                                if (newEdg.Orientation() == Reversed)
+                                if (newEdg.Orientation == Reversed)
                                 {
-                                    newEdg.Orientation(global::Kerf.Engine.Topology.TopAbs.Reverse(edg.Orientation()));
+                                    newEdg.Orient(global::Kerf.Engine.Topology.TopAbs.Reverse(edg.Orientation));
                                 }
                                 else
                                 {
-                                    newEdg.Orientation(edg.Orientation());
+                                    newEdg.Orient(edg.Orientation);
                                 }
                                 b.Add(newWireOnF, newEdg);
                             }
@@ -1051,7 +1051,7 @@ public sealed class SplitDrafts
                         else
                         {
                             Vertex vff, vll;
-                            if (gvf.ShapeType() == ShapeType.Vertex)
+                            if (gvf.Type == ShapeType.Vertex)
                             {
                                 vff = ShapeCasts.Vertex(gvf);
                             }
@@ -1066,7 +1066,7 @@ public sealed class SplitDrafts
                                     vff = ShapeCasts.Vertex(mapSd.GetValue(vf).First());
                                 }
                             }
-                            if (gvl.ShapeType() == ShapeType.Vertex)
+                            if (gvl.Type == ShapeType.Vertex)
                             {
                                 vll = ShapeCasts.Vertex(gvl);
                             }
@@ -1096,7 +1096,7 @@ public sealed class SplitDrafts
                             {
                                 if (mapW.ContainsKey(vf))
                                 {
-                                    if (gvf.ShapeType() != ShapeType.Edge || mapedgadded.Contains(gvf))
+                                    if (gvf.Type != ShapeType.Edge || mapedgadded.Contains(gvf))
                                     {
                                         mapSonS[edg] = newEdg;
                                     }
@@ -1125,7 +1125,7 @@ public sealed class SplitDrafts
                                 }
                                 else
                                 {
-                                    if (gvl.ShapeType() != ShapeType.Edge || mapedgadded.Contains(gvl))
+                                    if (gvl.Type != ShapeType.Edge || mapedgadded.Contains(gvl))
                                     {
                                         mapSonS[edg] = newEdg;
                                     }
@@ -1153,19 +1153,19 @@ public sealed class SplitDrafts
                                     }
                                 }
                             }
-                            if (newEdg.Orientation() == Reversed)
+                            if (newEdg.Orientation == Reversed)
                             {
-                                newEdg.Orientation(global::Kerf.Engine.Topology.TopAbs.Reverse(edg.Orientation()));
+                                newEdg.Orient(global::Kerf.Engine.Topology.TopAbs.Reverse(edg.Orientation));
                             }
                             else
                             {
-                                newEdg.Orientation(edg.Orientation());
+                                newEdg.Orient(edg.Orientation);
                             }
                             b.Add(newWireOnF, newEdg);
                         }
                     }
                 }
-                b.Add(drftFace, newWireOnF.Oriented(wir.Orientation()));
+                b.Add(drftFace, newWireOnF.Oriented(wir.Orientation));
             }
             thefaces.Append(drftFace);
         }
@@ -1195,7 +1195,7 @@ public sealed class SplitDrafts
         foreach (Shape key in _map.Keys.ToList())
         {
             NCollection_List<Shape> value = _map.GetValue(key);
-            if (key.ShapeType() == ShapeType.Edge)
+            if (key.Type == ShapeType.Edge)
             {
                 NCollection_List<Shape> thedesc = new();
                 theMap.Clear();
@@ -1252,7 +1252,7 @@ public sealed class SplitDrafts
         {
             for (itl.Initialize(itdmsls.Value); itl.More(); itl.Next())
             {
-                if (itl.Value().ShapeType() == ShapeType.Face && theMap.Add(itl.Value()))
+                if (itl.Value().Type == ShapeType.Face && theMap.Add(itl.Value()))
                 {
                     thefaces.Append(itl.Value());
                 }
@@ -1320,19 +1320,19 @@ public sealed class SplitDrafts
         Surface s = Tool.Surface(f)!;
         if (s.GetType() == typeof(TrimmedSurface))
         {
-            s = ((TrimmedSurface)s).BasisSurface();
+            s = ((TrimmedSurface)s).BasisSurface;
         }
         if (s is not PlaneSurface p)
         {
             return false;
         }
 
-        Plane3D plorig = p.Pln();
+        Plane3D plorig = p.Plane;
         if (!modify)
         {
             newpl = plorig;
-            normalF = newpl.Axis();
-            if ((newpl.Direct() && f.Orientation() == Reversed) || (!newpl.Direct() && f.Orientation() == Forward))
+            normalF = newpl.Axis;
+            if ((newpl.IsDirect && f.Orientation == Reversed) || (!newpl.IsDirect && f.Orientation == Forward))
             {
                 normalF = normalF.Reversed();
             }
@@ -1347,16 +1347,16 @@ public sealed class SplitDrafts
         if (i2pl.IsDone && i2pl.TypeInter() == Line)
         {
             Line3D linInters = i2pl.Line(1);
-            Direction3D nx = linInters.Direction();
-            normalF = plorig.Axis();
-            Direction3D ny = normalF.Direction().Crossed(nx);
+            Direction3D nx = linInters.Direction;
+            normalF = plorig.Axis;
+            Direction3D ny = normalF.Direction.Crossed(nx);
             double a = extr.Dot(nx);
             if (Math.Abs(a) <= 1 - global::Kerf.Engine.Foundation.Precision.Angular())
             {
                 double b = extr.Dot(ny);
-                double c = extr.Dot(normalF.Direction());
-                bool direct = plorig.Direct();
-                Orientation oris = f.Orientation();
+                double c = extr.Dot(normalF.Direction);
+                bool direct = plorig.IsDirect;
+                Orientation oris = f.Orientation;
                 if ((direct && oris == Reversed) || (!direct && oris == Forward))
                 {
                     b = -b;
@@ -1374,7 +1374,7 @@ public sealed class SplitDrafts
                     {
                         theta = -theta0 - phi;
                     }
-                    axe = linInters.Position();
+                    axe = linInters.Position;
                     newpl = plorig.Rotated(axe, theta);
                     return true;
                 }
@@ -1421,22 +1421,22 @@ public sealed class SplitDrafts
                             if (vp1.IsSame(v1))
                             {
                                 pt2d = c22d.Value(f2);
-                                pt2d = pt2d.WithY(pt2d.Y() - f);
+                                pt2d = pt2d.WithY(pt2d.Y - f);
                             }
                             else if (vp2.IsSame(v1))
                             {
                                 pt2d = c22d.Value(l2);
-                                pt2d = pt2d.WithY(pt2d.Y() - f);
+                                pt2d = pt2d.WithY(pt2d.Y - f);
                             }
                             else if (vp1.IsSame(v2))
                             {
                                 pt2d = c22d.Value(f2);
-                                pt2d = pt2d.WithY(pt2d.Y() - l);
+                                pt2d = pt2d.WithY(pt2d.Y - l);
                             }
                             else if (vp2.IsSame(v2))
                             {
                                 pt2d = c22d.Value(l2);
-                                pt2d = pt2d.WithY(pt2d.Y() - l);
+                                pt2d = pt2d.WithY(pt2d.Y - l);
                             }
                             c2d = new LineCurve2D(pt2d, Constants.DY2d());
                             b.UpdateEdge(edg, c2d, F, Tool.Tolerance(edg));
@@ -1457,7 +1457,7 @@ public sealed class SplitDrafts
             Shape localShapeCur = ledg.First();
             Edge edg = ShapeCasts.Edge(localShapeCur);
             Vertex vFirst, vLast;
-            if (edg.Orientation() == Forward)
+            if (edg.Orientation == Forward)
             {
                 Exploration.Vertices(edg, out vFirst, out vLast);
             }
@@ -1519,7 +1519,7 @@ public sealed class SplitDrafts
             alldone = ledg.IsEmpty();
         }
 
-        F.Orientation(Forward);
+        F.Orient(Forward);
         for (itl.Initialize(lwires); itl.More(); itl.Next())
         {
             Shape localShape = F.EmptyCopied();
@@ -1654,9 +1654,9 @@ public sealed class SplitDrafts
 
             if (cimg.IsPeriodic)
             {
-                double period = cimg.Period();
-                double imf = cimg.FirstParameter();
-                double iml = cimg.LastParameter();
+                double period = cimg.Period;
+                double imf = cimg.FirstParameter;
+                double iml = cimg.LastParameter;
 
                 Tool.Range(edg, out double f, out double l);
                 double delt = l - f;
@@ -1732,13 +1732,13 @@ public sealed class SplitDrafts
 
             if (s1.IsUPeriodic)
             {
-                double speriod = s1.UPeriod();
+                double speriod = s1.UPeriod;
                 Point2D pf, pl;
                 pf = cimg2d!.Value(prmf);
                 pl = cimg2d.Value(prml);
 
-                double uf = pf.X();
-                double ul = pl.X();
+                double uf = pf.X;
+                double ul = pl.X;
                 double ptra = 0.0;
 
                 double ustart = Min(uf, ul);
@@ -1760,13 +1760,13 @@ public sealed class SplitDrafts
             }
             if (prmf < prml)
             {
-                vf.Orientation(Forward);
-                vl.Orientation(Reversed);
+                vf.Orient(Forward);
+                vl.Orient(Reversed);
             }
             else
             {
-                vf.Orientation(Reversed);
-                vl.Orientation(Forward);
+                vf.Orient(Reversed);
+                vl.Orient(Forward);
                 rev = true;
             }
 
@@ -1783,7 +1783,7 @@ public sealed class SplitDrafts
 
             if (rev)
             {
-                newEdg.Orientation(Reversed);
+                newEdg.Orient(Reversed);
             }
         }
         return newEdg;

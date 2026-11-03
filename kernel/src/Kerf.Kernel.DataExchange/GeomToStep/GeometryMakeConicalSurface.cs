@@ -34,10 +34,10 @@ public sealed class GeometryMakeConicalSurface : GeometryRoot
         StepAxis2Placement3d position;
         double radius, semiAngle;
 
-        Axis2Placement3dMaker mkAxis = new Axis2Placement3dMaker(cs.Position(), localFactors);
+        Axis2Placement3dMaker mkAxis = new Axis2Placement3dMaker(cs.Position, localFactors);
         position = mkAxis.Value();
-        radius = cs.RefRadius();
-        semiAngle = cs.SemiAngle();
+        radius = cs.RefRadius;
+        semiAngle = cs.SemiAngle;
         if (semiAngle < 0.0 || semiAngle > M_PI / 2.0)
         {
             throw new DomainErrorException("Conicalsurface not STEP conformant");

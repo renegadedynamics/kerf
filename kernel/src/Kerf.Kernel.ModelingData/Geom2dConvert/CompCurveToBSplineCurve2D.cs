@@ -14,7 +14,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// Converts bounded 2D curves to B-splines and concatenates them into one B-spline curve, reparametrised for C1
 /// continuity where the tangents allow it. A working object: <c>Add</c> appends curves.
 /// </summary>
-public sealed class CompCurveToBSplineCurve2D
+internal sealed class CompCurveToBSplineCurve2D
 {
     private BSplineCurve2D? _curve;
     private double _tol;
@@ -71,17 +71,17 @@ public sealed class CompCurveToBSplineCurve2D
         double sqTol = tolerance * tolerance;
 
         int lBs = bs.PoleCount, lCb = _curve.PoleCount;
-        double d1 = _curve.Pole(1).SquareDistance(bs.Pole(1));
-        double d2 = _curve.Pole(1).SquareDistance(bs.Pole(lBs));
+        double d1 = _curve.Pole(1).SquareDistanceTo(bs.Pole(1));
+        double d2 = _curve.Pole(1).SquareDistanceTo(bs.Pole(lBs));
 
-        bool isBeforeReversed = (_curve.Pole(1).SquareDistance(bs.Pole(1)) < sqTol) && (d1 < d2);
-        bool isBefore = (_curve.Pole(1).SquareDistance(bs.Pole(lBs)) < sqTol) || isBeforeReversed;
+        bool isBeforeReversed = (_curve.Pole(1).SquareDistanceTo(bs.Pole(1)) < sqTol) && (d1 < d2);
+        bool isBefore = (_curve.Pole(1).SquareDistanceTo(bs.Pole(lBs)) < sqTol) || isBeforeReversed;
 
-        d1 = _curve.Pole(lCb).SquareDistance(bs.Pole(1));
-        d2 = _curve.Pole(lCb).SquareDistance(bs.Pole(lBs));
+        d1 = _curve.Pole(lCb).SquareDistanceTo(bs.Pole(1));
+        d2 = _curve.Pole(lCb).SquareDistanceTo(bs.Pole(lBs));
 
-        bool isAfterReversed = (_curve.Pole(lCb).SquareDistance(bs.Pole(lBs)) < sqTol) && (d2 < d1);
-        bool isAfter = (_curve.Pole(lCb).SquareDistance(bs.Pole(1)) < sqTol) || isAfterReversed;
+        bool isAfterReversed = (_curve.Pole(lCb).SquareDistanceTo(bs.Pole(lBs)) < sqTol) && (d2 < d1);
+        bool isAfter = (_curve.Pole(lCb).SquareDistanceTo(bs.Pole(1)) < sqTol) || isAfterReversed;
 
         // myCurve and NewCurve together form a closed curve
         if (isBefore && isAfter)
@@ -133,13 +133,13 @@ public sealed class CompCurveToBSplineCurve2D
     private void Add(ref BSplineCurve2D firstCurve, ref BSplineCurve2D secondCurve, bool after)
     {
         // Harmonize the degrees.
-        int deg = Max(firstCurve.Degree(), secondCurve.Degree());
-        if (firstCurve.Degree() < deg)
+        int deg = Max(firstCurve.Degree, secondCurve.Degree);
+        if (firstCurve.Degree < deg)
         {
             firstCurve.IncreaseDegree(deg);
         }
 
-        if (secondCurve.Degree() < deg)
+        if (secondCurve.Degree < deg)
         {
             secondCurve.IncreaseDegree(deg);
         }
@@ -156,8 +156,8 @@ public sealed class CompCurveToBSplineCurve2D
         NCollection_Array1<int> mults = new(1, nbK1 + nbK2 - 1);
 
         // Reparameterization ratio (C1 if possible)
-        l1 = firstCurve.DN(firstCurve.LastParameter(), 1).Magnitude();
-        l2 = secondCurve.DN(secondCurve.FirstParameter(), 1).Magnitude();
+        l1 = firstCurve.DN(firstCurve.LastParameter, 1).Magnitude;
+        l2 = secondCurve.DN(secondCurve.FirstParameter, 1).Magnitude;
 
         if ((l1 > global::Kerf.Engine.Foundation.Precision.Confusion()) && (l2 > global::Kerf.Engine.Foundation.Precision.Confusion()))
         {
@@ -176,7 +176,7 @@ public sealed class CompCurveToBSplineCurve2D
             delta1 = 0;
             ratio2 = 1 / ratio;
             delta2 = ratio2 * secondCurve.Knot(1) - firstCurve.Knot(nbK1);
-            U_de_raccord = firstCurve.LastParameter();
+            U_de_raccord = firstCurve.LastParameter;
         }
         else
         {
@@ -185,7 +185,7 @@ public sealed class CompCurveToBSplineCurve2D
             delta1 = ratio1 * firstCurve.Knot(nbK1) - secondCurve.Knot(1);
             ratio2 = 1;
             delta2 = 0;
-            U_de_raccord = secondCurve.FirstParameter();
+            U_de_raccord = secondCurve.FirstParameter;
         }
 
         // The Knots
@@ -197,7 +197,7 @@ public sealed class CompCurveToBSplineCurve2D
         }
 
         noeuds[nbK1] = U_de_raccord;
-        mults[nbK1] = firstCurve.Degree();
+        mults[nbK1] = firstCurve.Degree;
         for (ii = 2, jj = nbK1 + 1; ii <= nbK2; ii++, jj++)
         {
             noeuds[jj] = ratio2 * secondCurve.Knot(ii) - delta2;

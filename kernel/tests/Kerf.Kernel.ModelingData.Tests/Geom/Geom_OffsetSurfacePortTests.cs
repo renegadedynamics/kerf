@@ -40,23 +40,23 @@ public class Geom_OffsetSurfacePortTests
         BSplineSurface aDome = Dome();
         OffsetSurface anOff = new(aDome, 0.5);
         Assert.False(aDome.IsFrozen); // the constructor copies the caller's surface
-        Surface aBasis = anOff.BasisSurface();
+        Surface aBasis = anOff.BasisSurface;
         Assert.True(aBasis.IsFrozen);
-        Assert.Same(aBasis, anOff.BasisSurface());
+        Assert.Same(aBasis, anOff.BasisSurface);
         Assert.Throws<ImmutableObjectException>(() => aBasis.UReverse());
 
         Point3D aBefore = aBasis.Value(0.3, 0.6);
         Point3D anExpected = anOff.Value(0.3, 0.6);
         double aU = anOff.UReversedParameter(0.3);
         anOff.UReverse();
-        Assert.NotSame(aBasis, anOff.BasisSurface());
+        Assert.NotSame(aBasis, anOff.BasisSurface);
         Assert.True(aBasis.Value(0.3, 0.6).IsEqual(aBefore, 0.0));
         Assert.True(anOff.Value(aU, 0.6).IsEqual(anExpected, 1e-12));
-        Assert.Equal(-0.5, anOff.Offset());
+        Assert.Equal(-0.5, anOff.Offset);
 
-        Surface aBasis2 = anOff.BasisSurface();
+        Surface aBasis2 = anOff.BasisSurface;
         anOff.Transform(Transform3D.Translation(new Vector3D(1, 2, 3)));
-        Assert.NotSame(aBasis2, anOff.BasisSurface());
+        Assert.NotSame(aBasis2, anOff.BasisSurface);
         Assert.True(anOff.Value(aU, 0.6).IsEqual(anExpected.Translated(new Vector3D(1, 2, 3)), 1e-12));
     }
 
@@ -73,17 +73,17 @@ public class Geom_OffsetSurfacePortTests
 
         OffsetSurface aCopy = anOff.WithOffsetValue(2.0);
         Assert.False(aCopy.IsFrozen);
-        Assert.Equal(2.0, aCopy.Offset());
-        Assert.Equal(1.0, anOff.Offset());
+        Assert.Equal(2.0, aCopy.Offset);
+        Assert.Equal(1.0, anOff.Offset);
         Assert.True(aCopy.HasEvalRepresentation); // the equivalent cylinder of radius 4
-        Assert.Equal(4.0, ((CylindricalSurface)aCopy.Surface()!).Radius());
+        Assert.Equal(4.0, ((CylindricalSurface)aCopy.Surface()!).Radius);
 
         OffsetSurface aNoRep = anOff.WithoutEvalRepresentation();
         Assert.False(aNoRep.HasEvalRepresentation);
         Assert.True(aNoRep.Value(0.7, 1.5).IsEqual(anOff.Value(0.7, 1.5), 1e-12)); // general evaluation agrees
 
         OffsetSurface aRebased = anOff.WithBasisSurface(Dome());
-        Assert.IsType<BSplineSurface>(aRebased.BasisSurface());
+        Assert.IsType<BSplineSurface>(aRebased.BasisSurface);
         Assert.Null(aRebased.Surface());
     }
 
@@ -92,7 +92,7 @@ public class Geom_OffsetSurfacePortTests
     {
         OffsetSurface anOff = new(Cylinder(), 0.0);
         Surface? anEquiv = anOff.Surface();
-        Assert.Same(anOff.BasisSurface(), anEquiv);
+        Assert.Same(anOff.BasisSurface, anEquiv);
         Assert.True(anEquiv!.IsFrozen);
     }
 
@@ -102,12 +102,12 @@ public class Geom_OffsetSurfacePortTests
         TrimmedSurface aTrim = new(Cylinder(), 0.5, 2.0, -1.0, 3.0);
         OffsetSurface anInner = new(aTrim, 0.5);
         OffsetSurface anOuter = new(anInner, 0.25);
-        Assert.Equal(0.75, anOuter.Offset());
-        TrimmedSurface aBasis = Assert.IsType<TrimmedSurface>(anOuter.BasisSurface());
-        Assert.IsType<CylindricalSurface>(aBasis.BasisSurface());
-        anOuter.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+        Assert.Equal(0.75, anOuter.Offset);
+        TrimmedSurface aBasis = Assert.IsType<TrimmedSurface>(anOuter.BasisSurface);
+        Assert.IsType<CylindricalSurface>(aBasis.BasisSurface);
+        anOuter.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
         Assert.Equal((0.5, 2.0, -1.0, 3.0), (aU1, aU2, aV1, aV2));
-        Assert.Equal(2.75, ((CylindricalSurface)((TrimmedSurface)anOuter.Surface()!).BasisSurface()).Radius());
+        Assert.Equal(2.75, ((CylindricalSurface)((TrimmedSurface)anOuter.Surface()!).BasisSurface).Radius);
     }
 
     [Fact]
@@ -117,14 +117,14 @@ public class Geom_OffsetSurfacePortTests
         // surface, in both constructors.
         OffsetSurface anOff = new(Dome(), 0.3);
         TrimmedSurface aBoth = new(anOff, 0.1, 0.9, 0.2, 0.8);
-        OffsetSurface aB1 = Assert.IsType<OffsetSurface>(aBoth.BasisSurface());
-        Assert.IsType<TrimmedSurface>(aB1.BasisSurface());
-        Assert.Equal(0.3, aB1.Offset());
+        OffsetSurface aB1 = Assert.IsType<OffsetSurface>(aBoth.BasisSurface);
+        Assert.IsType<TrimmedSurface>(aB1.BasisSurface);
+        Assert.Equal(0.3, aB1.Offset);
         Assert.True(aBoth.Value(0.5, 0.5).IsEqual(anOff.Value(0.5, 0.5), 1e-12));
 
         TrimmedSurface aU = new(anOff, 0.1, 0.9, true);
-        OffsetSurface aB2 = Assert.IsType<OffsetSurface>(aU.BasisSurface());
-        aB2.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+        OffsetSurface aB2 = Assert.IsType<OffsetSurface>(aU.BasisSurface);
+        aB2.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
         Assert.Equal((0.1, 0.9, 0.0, 1.0), (aU1, aU2, aV1, aV2));
         Assert.True(aU.Value(0.4, 0.7).IsEqual(anOff.Value(0.4, 0.7), 1e-12));
     }
@@ -151,7 +151,7 @@ public class Geom_OffsetSurfacePortTests
         Assert.False(anApex.IsEqual(new Point3D(0, 0, 2), 0.39));
         anOff.D1(0.5, 0.0, out Point3D aP, out Vector3D aD1U, out Vector3D aD1V);
         Assert.True(aP.IsEqual(anApex, 1e-12));
-        Assert.True(aD1V.Magnitude() > 0.1);
+        Assert.True(aD1V.Magnitude > 0.1);
 
         // A copy shares the (frozen) osculating surfaces
         var aCopy = (OffsetSurface)anOff.Copy();
@@ -203,7 +203,7 @@ public class Geom_OffsetSurfacePortTests
                 double U = 1.5, V = -0.5;
                 Point3D anExpected = aSurface.Value(U, V).Transformed(aScale);
                 aSurface.TransformParameters(ref U, ref V, aScale);
-                Assert.True(anExpected.Distance(aMoved.Value(U, V)) < 1e-12, $"{aBase.GetType().Name}: {U}, {V}");
+                Assert.True(anExpected.DistanceTo(aMoved.Value(U, V)) < 1e-12, $"{aBase.GetType().Name}: {U}, {V}");
                 var aUV = new global::Kerf.Engine.Geometry.Xy(1.5, -0.5);
                 aSurface.ParametricTransformation(aScale).Transforms(ref aUV);
                 Assert.Equal((aUV.X(), aUV.Y()), (U, V));

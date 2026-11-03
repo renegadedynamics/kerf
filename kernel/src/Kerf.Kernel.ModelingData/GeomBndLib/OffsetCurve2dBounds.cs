@@ -15,7 +15,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Computes bounding box for a 2D offset curve (Geom2d_OffsetCurve): exactly for offsets of lines and circles,
 /// otherwise by sampling the offset curve itself (GeomBndLib_OtherCurve2d).
 /// </summary>
-public sealed class OffsetCurve2dBounds : Curve2dBounds.ICurve2dEvaluator
+internal sealed class OffsetCurve2dBounds : Curve2dBounds.ICurve2dEvaluator
 {
     private readonly OffsetCurve2D _geom;
 
@@ -29,10 +29,10 @@ public sealed class OffsetCurve2dBounds : Curve2dBounds.ICurve2dEvaluator
     Curve2D? Curve2dBounds.ICurve2dEvaluator.CurveGeometry() => _geom;
 
     /// <summary>Compute bounding box for full curve.</summary>
-    public Box2d Box(double tol) => Box(_geom.FirstParameter(), _geom.LastParameter(), tol);
+    public Box2d Box(double tol) => Box(_geom.FirstParameter, _geom.LastParameter, tol);
 
     /// <summary>Compute precise bounding box for full curve.</summary>
-    public Box2d BoxOptimal(double tol) => BoxOptimal(_geom.FirstParameter(), _geom.LastParameter(), tol);
+    public Box2d BoxOptimal(double tol) => BoxOptimal(_geom.FirstParameter, _geom.LastParameter, tol);
 
     /// <summary>Try the exact offset-line fast path. Returns a non-void box on success.</summary>
     private static Box2d TryOffsetLine2d(Curve2D basis, OffsetCurve2D off, double u1, double u2, double tol)
@@ -42,17 +42,17 @@ public sealed class OffsetCurve2dBounds : Curve2dBounds.ICurve2dEvaluator
             return new Box2d();
         }
 
-        Line2D basisLin = line.Lin2d();
-        Vector2D normal = new(basisLin.Direction().Y(), -basisLin.Direction().X());
-        if (normal.SquareMagnitude() <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+        Line2D basisLin = line.Line;
+        Vector2D normal = new(basisLin.Direction.Y, -basisLin.Direction.X);
+        if (normal.SquareMagnitude <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             return new Box2d();
         }
 
         normal = normal.Normalized();
-        normal *= off.Offset();
-        Point2D loc = basisLin.Location().Translated(normal);
-        Box2d localBox = Line2dBounds.Box(new Line2D(loc, basisLin.Direction()), u1, u2, 0.0);
+        normal *= off.Offset;
+        Point2D loc = basisLin.Location.Translated(normal);
+        Box2d localBox = Line2dBounds.Box(new Line2D(loc, basisLin.Direction), u1, u2, 0.0);
         localBox.Enlarge(tol);
         return localBox;
     }
@@ -65,23 +65,23 @@ public sealed class OffsetCurve2dBounds : Curve2dBounds.ICurve2dEvaluator
             return new Box2d();
         }
 
-        Circle2D basisCirc = circle.Circ2d();
+        Circle2D basisCirc = circle.Circle;
         double uMid = 0.5 * (u1 + u2);
         global::Kerf.Engine.Geometry.ElCLib.D1(uMid, basisCirc, out Point2D p, out Vector2D v1);
-        if (v1.SquareMagnitude() <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+        if (v1.SquareMagnitude <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             return new Box2d();
         }
 
-        Vector2D normal = new(v1.Y(), -v1.X());
-        if (normal.SquareMagnitude() <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+        Vector2D normal = new(v1.Y, -v1.X);
+        if (normal.SquareMagnitude <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             return new Box2d();
         }
         normal = normal.Normalized();
 
-        Vector2D radial = new(basisCirc.Location(), p);
-        if (radial.SquareMagnitude() <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+        Vector2D radial = new(basisCirc.Location, p);
+        if (radial.SquareMagnitude <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             return new Box2d();
         }
@@ -93,7 +93,7 @@ public sealed class OffsetCurve2dBounds : Curve2dBounds.ICurve2dEvaluator
             return new Box2d();
         }
 
-        double newRadius = basisCirc.Radius() + off.Offset() * sign;
+        double newRadius = basisCirc.Radius + off.Offset * sign;
         Box2d localBox = new();
         if (newRadius > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
@@ -103,7 +103,7 @@ public sealed class OffsetCurve2dBounds : Curve2dBounds.ICurve2dEvaluator
         }
         else if (Math.Abs(newRadius) <= global::Kerf.Engine.Foundation.Precision.Confusion())
         {
-            localBox.Add(basisCirc.Location());
+            localBox.Add(basisCirc.Location);
         }
         else
         {
@@ -117,7 +117,7 @@ public sealed class OffsetCurve2dBounds : Curve2dBounds.ICurve2dEvaluator
     /// <summary>Compute bounding box for arc [theU1, theU2].</summary>
     public Box2d Box(double u1, double u2, double tol)
     {
-        Curve2D basis = _geom.BasisCurve();
+        Curve2D basis = _geom.BasisCurve;
 
         Box2d box = TryOffsetLine2d(basis, _geom, u1, u2, tol);
         if (!box.IsVoid)
@@ -142,7 +142,7 @@ public sealed class OffsetCurve2dBounds : Curve2dBounds.ICurve2dEvaluator
     public Box2d BoxOptimal(double u1, double u2, double tol)
     {
         // Reuse exact fast paths for line and circle.
-        Curve2D basis = _geom.BasisCurve();
+        Curve2D basis = _geom.BasisCurve;
 
         Box2d box = TryOffsetLine2d(basis, _geom, u1, u2, tol);
         if (!box.IsVoid)

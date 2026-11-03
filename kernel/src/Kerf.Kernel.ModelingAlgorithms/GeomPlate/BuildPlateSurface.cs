@@ -407,7 +407,7 @@ public class BuildPlateSurface
         }
 
         double u1, v1, u2, v2;
-        _surfInit.Bounds(out u1, out v1, out u2, out v2);
+        _surfInit.ParameterBounds(out u1, out v1, out u2, out v2);
         SurfaceAdaptor surfInit = new SurfaceAdaptor(_surfInit);
         _tolU = surfInit.UResolution(_tol3d);
         _tolV = surfInit.VResolution(_tol3d);
@@ -442,7 +442,7 @@ public class BuildPlateSurface
             MakeApprox app = new MakeApprox(_geomPlateSurface, _tol3d, 1, 3, 15 * _tol3d, -1, C0, 1.3);
             _surfInit = app.Surface()!;
 
-            _surfInit.Bounds(out u1, out v1, out u2, out v2);
+            _surfInit.ParameterBounds(out u1, out v1, out u2, out v2);
             SurfaceAdaptor surf = new SurfaceAdaptor(_surfInit);
             _tolU = surf.UResolution(_tol3d);
             _tolV = surf.VResolution(_tol3d);
@@ -463,7 +463,7 @@ public class BuildPlateSurface
             {
                 _surfInit = _planarSurfInit!;
 
-                _surfInit.Bounds(out u1, out v1, out u2, out v2);
+                _surfInit.ParameterBounds(out u1, out v1, out u2, out v2);
                 SurfaceAdaptor surfNew = new SurfaceAdaptor(_surfInit);
                 _tolU = surfNew.UResolution(_tol3d);
                 _tolV = surfNew.VResolution(_tol3d);
@@ -656,7 +656,7 @@ public class BuildPlateSurface
                     _geomPlateSurface!.D0(p2d.Coord(1), p2d.Coord(2), out pf);
                     an.Init(0);
                     courb.Init(0);
-                    d.ChangeValue(i) = pf.Distance(pi);
+                    d.ChangeValue(i) = pf.DistanceTo(pi);
                 }
                 break;
             case 1:
@@ -680,10 +680,10 @@ public class BuildPlateSurface
                         }
                     }
                     _geomPlateSurface!.D1(p2d.Coord(1), p2d.Coord(2), out pf, out v1f, out v2f);
-                    d.ChangeValue(i) = pf.Distance(pi);
+                    d.ChangeValue(i) = pf.DistanceTo(pi);
                     v3i = v1i ^ v2i;
                     v3f = v1f ^ v2f;
-                    double angle = v3f.Angle(v3i);
+                    double angle = v3f.AngleTo(v3i);
                     if (angle > (M_PI / 2))
                     {
                         an.ChangeValue(i) = M_PI - angle;
@@ -745,7 +745,7 @@ public class BuildPlateSurface
         double u1, v1, u2, v2;
         int i;
 
-        _surfInit!.Bounds(out u1, out v1, out u2, out v2);
+        _surfInit!.ParameterBounds(out u1, out v1, out u2, out v2);
         SurfaceAdaptor surf = new SurfaceAdaptor(_surfInit);
         _proj.Initialize(surf, u1, v1, u2, v2, _tolU, _tolV);
 
@@ -886,7 +886,7 @@ public class BuildPlateSurface
         seq3d.Clear();
         //  sampling in "cosine" + 3 points on each interval
         double u1, v1, u2, v2;
-        _surfInit!.Bounds(out u1, out v1, out u2, out v2);
+        _surfInit!.ParameterBounds(out u1, out v1, out u2, out v2);
         SurfaceAdaptor surf = new SurfaceAdaptor(_surfInit);
         _proj.Initialize(surf, u1, v1, u2, v2, surf.UResolution(_tol3d), surf.VResolution(_tol3d));
         int ntCurve = _linCont.Length();
@@ -903,18 +903,18 @@ public class BuildPlateSurface
                 if (iordre == 0)
                 {
                     _pntCont.Value(i).D0(out p3d);
-                    pos.SetX(p3d.X());
-                    pos.SetY(p3d.Y());
-                    pos.SetZ(p3d.Z());
+                    pos.SetX(p3d.X);
+                    pos.SetY(p3d.Y);
+                    pos.SetZ(p3d.Z);
                     seq3d.Append(pos);
                 }
                 else
                 {
                     _pntCont.Value(i).D1(out p3d, out v1h, out v2h);
                     v3h = v1h ^ v2h;
-                    pos.SetX(v3h.X());
-                    pos.SetY(v3h.Y());
-                    pos.SetZ(v3h.Z());
+                    pos.SetX(v3h.X);
+                    pos.SetY(v3h.Y);
+                    pos.SetZ(v3h.Z);
                     seq3d.Append(pos);
                 }
             }
@@ -929,18 +929,18 @@ public class BuildPlateSurface
                 if (iordre == 0)
                 {
                     _linCont.Value(i).D0(_parCont.Value(i).Value(1), out p3d);
-                    pos.SetX(p3d.X());
-                    pos.SetY(p3d.Y());
-                    pos.SetZ(p3d.Z());
+                    pos.SetX(p3d.X);
+                    pos.SetY(p3d.Y);
+                    pos.SetZ(p3d.Z);
                     seq3d.Append(pos);
                 }
                 else
                 {
                     _linCont.Value(i).D1(_parCont.Value(i).Value(1), out p3d, out v1h, out v2h);
                     v3h = v1h ^ v2h;
-                    pos.SetX(v3h.X());
-                    pos.SetY(v3h.Y());
-                    pos.SetZ(v3h.Z());
+                    pos.SetX(v3h.X);
+                    pos.SetY(v3h.Y);
+                    pos.SetZ(v3h.Z);
                     seq3d.Append(pos);
                 }
 
@@ -951,27 +951,27 @@ public class BuildPlateSurface
                     {
                         // point 1/4 previous
                         _linCont.Value(i).D0((ujp1 + 3 * uj) / 4, out p3d);
-                        pos.SetX(p3d.X());
-                        pos.SetY(p3d.Y());
-                        pos.SetZ(p3d.Z());
+                        pos.SetX(p3d.X);
+                        pos.SetY(p3d.Y);
+                        pos.SetZ(p3d.Z);
                         seq3d.Append(pos);
                         // point 1/2 previous
                         _linCont.Value(i).D0((ujp1 + uj) / 2, out p3d);
-                        pos.SetX(p3d.X());
-                        pos.SetY(p3d.Y());
-                        pos.SetZ(p3d.Z());
+                        pos.SetX(p3d.X);
+                        pos.SetY(p3d.Y);
+                        pos.SetZ(p3d.Z);
                         seq3d.Append(pos);
                         // point 3/4 previous
                         _linCont.Value(i).D0((3 * ujp1 + uj) / 4, out p3d);
-                        pos.SetX(p3d.X());
-                        pos.SetY(p3d.Y());
-                        pos.SetZ(p3d.Z());
+                        pos.SetX(p3d.X);
+                        pos.SetY(p3d.Y);
+                        pos.SetZ(p3d.Z);
                         seq3d.Append(pos);
                         // current constraint point
                         _linCont.Value(i).D0(ujp1, out p3d);
-                        pos.SetX(p3d.X());
-                        pos.SetY(p3d.Y());
-                        pos.SetZ(p3d.Z());
+                        pos.SetX(p3d.X);
+                        pos.SetY(p3d.Y);
+                        pos.SetZ(p3d.Z);
                         seq3d.Append(pos);
                     }
                     else
@@ -979,30 +979,30 @@ public class BuildPlateSurface
                         // point 1/4 previous
                         _linCont.Value(i).D1((ujp1 + 3 * uj) / 4, out p3d, out v1h, out v2h);
                         v3h = v1h ^ v2h;
-                        pos.SetX(v3h.X());
-                        pos.SetY(v3h.Y());
-                        pos.SetZ(v3h.Z());
+                        pos.SetX(v3h.X);
+                        pos.SetY(v3h.Y);
+                        pos.SetZ(v3h.Z);
                         seq3d.Append(pos);
                         // point 1/2 previous
                         _linCont.Value(i).D1((ujp1 + uj) / 2, out p3d, out v1h, out v2h);
                         v3h = v1h ^ v2h;
-                        pos.SetX(v3h.X());
-                        pos.SetY(v3h.Y());
-                        pos.SetZ(v3h.Z());
+                        pos.SetX(v3h.X);
+                        pos.SetY(v3h.Y);
+                        pos.SetZ(v3h.Z);
                         seq3d.Append(pos);
                         // point 3/4 previous
                         _linCont.Value(i).D1((3 * ujp1 + uj) / 4, out p3d, out v1h, out v2h);
                         v3h = v1h ^ v2h;
-                        pos.SetX(v3h.X());
-                        pos.SetY(v3h.Y());
-                        pos.SetZ(v3h.Z());
+                        pos.SetX(v3h.X);
+                        pos.SetY(v3h.Y);
+                        pos.SetZ(v3h.Z);
                         seq3d.Append(pos);
                         // current constraint point
                         _linCont.Value(i).D1(ujp1, out p3d, out v1h, out v2h);
                         v3h = v1h ^ v2h;
-                        pos.SetX(v3h.X());
-                        pos.SetY(v3h.Y());
-                        pos.SetZ(v3h.Z());
+                        pos.SetX(v3h.X);
+                        pos.SetY(v3h.Y);
+                        pos.SetZ(v3h.Z);
                         seq3d.Append(pos);
                     }
                 }
@@ -1193,7 +1193,7 @@ public class BuildPlateSurface
                     }
                     _linCont.Value(j).D0(ufinal1, out p1);
                     _linCont.Value(i).D0(uinit2, out p2);
-                    if (p1.Distance(p2) < tolerance)
+                    if (p1.DistanceTo(p2) < tolerance)
                     {
                         if (i != j + 1)
                         {
@@ -1212,7 +1212,7 @@ public class BuildPlateSurface
                     {
                         _linCont.Value(i).D0(ufinal2, out p2);
 
-                        if (p1.Distance(p2) < tolerance)
+                        if (p1.DistanceTo(p2) < tolerance)
                         {
                             if (i != j + 1)
                             {
@@ -1239,12 +1239,12 @@ public class BuildPlateSurface
         ufinal2 = _linCont.Value(1).LastParameter();
         _linCont.Value(_nbBounds).D0(ufinal1, out p1);
         _linCont.Value(1).D0(uinit2, out p2);
-        if ((_sense.Value(_nbBounds) == 0) && (p1.Distance(p2) < tolerance))
+        if ((_sense.Value(_nbBounds) == 0) && (p1.DistanceTo(p2) < tolerance))
         {
             return result;
         }
         _linCont.Value(_nbBounds).D0(uinit1, out p1);
-        if ((_sense.Value(_nbBounds) == 1) && (p1.Distance(p2) < tolerance))
+        if ((_sense.Value(_nbBounds) == 1) && (p1.DistanceTo(p2) < tolerance))
         {
             return result;
         }
@@ -1421,7 +1421,7 @@ public class BuildPlateSurface
                         nullExist = false;
                         for (i = 1; i <= vecs.Length(); i++)
                         {
-                            if (vecs.Value(i).SquareMagnitude() == 0.0)
+                            if (vecs.Value(i).SquareMagnitude == 0.0)
                             {
                                 nullExist = true;
                                 vecs.Remove(i);
@@ -1537,7 +1537,7 @@ public class BuildPlateSurface
         // Comparing metrics of curves and projected curves
         if (ntLinCont != 0 && _isLinear)
         {
-            Surface initPlane = ((TrimmedSurface)_surfInit!).BasisSurface();
+            Surface initPlane = ((TrimmedSurface)_surfInit!).BasisSurface;
 
             double ratio = 0.0, r1 = 2.0, r2 = 0.6; //R1 = 3, R2 = 0.5;//R1 = 1.4, R2 = 0.8; //R1 = 5., R2 = 0.2;
             SurfaceAdaptor hsur = new SurfaceAdaptor(initPlane);
@@ -1561,8 +1561,8 @@ public class BuildPlateSurface
                     curve.D1(inter, out p, out derC);
                     aProj.D1(inter, out p, out derCproj);
 
-                    double a1 = derC.Magnitude();
-                    double a2 = derCproj.Magnitude();
+                    double a1 = derC.Magnitude;
+                    double a2 = derCproj.Magnitude;
                     if (a2 <= 1.0e-20)
                     {
                         ratio = 1.0e20;
@@ -1584,7 +1584,7 @@ public class BuildPlateSurface
         {
             _planarSurfInit = _surfInit;
             double u1, v1, u2, v2;
-            _surfInit!.Bounds(out u1, out v1, out u2, out v2);
+            _surfInit!.ParameterBounds(out u1, out v1, out u2, out v2);
             SurfaceAdaptor surf = new SurfaceAdaptor(_surfInit);
             _tolU = surf.UResolution(_tol3d);
             _tolV = surf.VResolution(_tol3d);
@@ -1716,7 +1716,7 @@ public class BuildPlateSurface
                         int2d = intersection.Point(k);
                         _linCont.Value(i).D0(int2d.ParamOnFirst(), out p1);
                         _linCont.Value(j).D0(int2d.ParamOnSecond(), out p2);
-                        if (p1.Distance(p2) < _tol3d)
+                        if (p1.DistanceTo(p2) < _tol3d)
                         { // 2D intersection corresponds to close 3D points.
                           // Note the interval, in which the point needs to be removed
                           // to avoid duplications, which cause
@@ -1726,7 +1726,7 @@ public class BuildPlateSurface
                           // corresponding in 3d to myTol3d
                             double tolint = ci.Resolution(_tol3d);
                             ci.D1(int2d.ParamOnFirst(), out p2d, out v2d);
-                            double aux = v2d.Magnitude();
+                            double aux = v2d.Magnitude;
                             if (aux > 1.0e-7)
                             {
                                 aux = _tol3d / aux;
@@ -1754,7 +1754,7 @@ public class BuildPlateSurface
                                 _linCont.Value(j).D2(int2d.ParamOnSecond(), out p2, out v21, out v22, out v23, out v24, out v25);
                                 v16 = v11 ^ v12;
                                 v26 = v21 ^ v22;
-                                double ant = v16.Angle(v26);
+                                double ant = v16.AngleTo(v26);
                                 if (ant > (M_PI / 2))
                                 {
                                     ant = M_PI - ant;
@@ -1771,7 +1771,7 @@ public class BuildPlateSurface
                                     Vector2D v1, v2;
                                     _linCont.Value(i).Curve2dOnSurf()!.D1(int2d.ParamOnFirst(), out p1temp, out v1);
                                     _linCont.Value(j).Curve2dOnSurf()!.D1(int2d.ParamOnSecond(), out p2temp, out v2);
-                                    a1 = v1.Angle(v2);
+                                    a1 = v1.AngleTo(v2);
                                     if (a1 > (M_PI / 2))
                                     {
                                         a1 = M_PI - a1;
@@ -1812,7 +1812,7 @@ public class BuildPlateSurface
                                     _linCont.Value(i).D1(int2d.ParamOnFirst(), out p1, out vecU, out vecV);
                                 }
                                 n = vecU ^ vecV;
-                                double angle = vec.Angle(n);
+                                double angle = vec.AngleTo(n);
                                 angle = Math.Abs(M_PI / 2 - angle);
                                 if (angle > _tolAng / 10.0) //????????? //if (std::abs( scal ) > myTol3d/100)
                                 {
@@ -1825,7 +1825,7 @@ public class BuildPlateSurface
                                     Vector2D v1, v2;
                                     _linCont.Value(i).Curve2dOnSurf()!.D1(int2d.ParamOnFirst(), out p1temp, out v1);
                                     _linCont.Value(j).Curve2dOnSurf()!.D1(int2d.ParamOnSecond(), out p2temp, out v2);
-                                    a1 = v1.Angle(v2);
+                                    a1 = v1.AngleTo(v2);
                                     if (a1 > M_PI / 2)
                                     {
                                         a1 = M_PI - a1;
@@ -1867,7 +1867,7 @@ public class BuildPlateSurface
                             // The length of interval is 2D length
                             // corresponding to the distance of points in 3D to myTol3d
                             double tolint, dist;
-                            dist = p1.Distance(p2);
+                            dist = p1.DistanceTo(p2);
                             tolint = ci.Resolution(dist);
                             pntInter[i].Append(int2d.ParamOnFirst() - tolint);
                             pntInter[i].Append(int2d.ParamOnFirst() + tolint);
@@ -2170,7 +2170,7 @@ public class BuildPlateSurface
 
                                 normal = v1 ^ v2;
                                 // Normal.Normalize();
-                                double norm = normal.Magnitude();
+                                double norm = normal.Magnitude;
                                 if (norm > 1.0e-12)
                                 {
                                     normal /= norm;
@@ -2422,16 +2422,16 @@ public class BuildPlateSurface
                     p2d = pntCont.Pnt2dOnSurf();
                     pntCont.D0(out pi);
                     _geomPlateSurface!.D0(p2d.Coord(1), p2d.Coord(2), out pf);
-                    dist = pf.Distance(pi);
+                    dist = pf.DistanceTo(pi);
                     break;
                 case 1:
                     pntCont.D1(out pi, out v1i, out v2i);
                     p2d = pntCont.Pnt2dOnSurf();
                     _geomPlateSurface!.D1(p2d.Coord(1), p2d.Coord(2), out pf, out v1f, out v2f);
-                    dist = pf.Distance(pi);
+                    dist = pf.DistanceTo(pi);
                     v3i = v1i ^ v2i;
                     v3f = v1f ^ v2f;
-                    ang = v3f.Angle(v3i);
+                    ang = v3f.AngleTo(v3i);
                     if (ang > (M_PI / 2))
                     {
                         ang = M_PI - ang;

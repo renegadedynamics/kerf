@@ -53,14 +53,14 @@ public partial struct CompSolid : IEquatable<CompSolid>
     }
 
     /// <summary>The shape's local coordinate system.</summary>
-    public readonly Placement Location() => _location;
+    public readonly Placement Placement => _location;
 
     /// <summary>Sets the shape's local coordinate system.</summary>
     /// <param name="loc">The new local coordinate system.</param>
     /// <param name="raiseExc">Throw if the transformation has a scale or is negative.</param>
     internal void Location(in Placement loc, bool raiseExc = false)
     {
-        Transform3D trsf = loc.Transformation();
+        Transform3D trsf = loc.Transformation;
         if (raiseExc)
         {
             ValidateTransformation(trsf);
@@ -80,70 +80,70 @@ public partial struct CompSolid : IEquatable<CompSolid>
     }
 
     /// <summary>The shape's orientation.</summary>
-    public readonly Orientation Orientation() => _orient;
+    public readonly Orientation Orientation => _orient;
 
     /// <summary>Sets the shape's orientation.</summary>
-    internal void Orientation(Orientation orient) => _orient = orient;
+    internal void Orient(Orientation orient) => _orient = orient;
 
     /// <summary>This shape with the given orientation.</summary>
     public readonly Shape Oriented(Orientation orient)
     {
         Shape shape = this;
-        shape.Orientation(orient);
+        shape.Orient(orient);
         return shape;
     }
 
     /// <summary>The underlying shape (null for a null shape).</summary>
-    public readonly TShape? TShape() => _tShape;
+    internal readonly TShape? TShape() => _tShape;
 
     /// <summary>The type of the shape: VERTEX, EDGE, and so on.</summary>
     /// <exception cref="NullObjectException">The shape is null.</exception>
-    public readonly ShapeType ShapeType() => NonNullTShape().ShapeType();
+    public readonly ShapeType Type => NonNullTShape().ShapeType();
 
     /// <summary>The free flag of the underlying shape.</summary>
-    public readonly bool Free() => NonNullTShape().Free();
+    internal readonly bool Free() => NonNullTShape().Free();
 
     /// <summary>Sets the free flag of the underlying shape (shared by every shape referring to it).</summary>
     internal readonly void Free(bool isFree) => NonNullTShape().Free(isFree);
 
     /// <summary>The locked flag of the underlying shape: true for every frozen shape.</summary>
-    public readonly bool Locked() => NonNullTShape().Locked();
+    internal readonly bool Locked() => NonNullTShape().Locked();
 
     /// <summary>Sets the locked flag of the underlying shape.</summary>
     internal readonly void Locked(bool isLocked) => NonNullTShape().Locked(isLocked);
 
     /// <summary>The modification flag of the underlying shape.</summary>
-    public readonly bool Modified() => NonNullTShape().Modified();
+    internal readonly bool Modified() => NonNullTShape().Modified();
 
     /// <summary>Sets the modification flag of the underlying shape.</summary>
     internal readonly void Modified(bool isModified) => NonNullTShape().Modified(isModified);
 
     /// <summary>The checked flag of the underlying shape.</summary>
-    public readonly bool Checked() => NonNullTShape().Checked();
+    internal readonly bool Checked() => NonNullTShape().Checked();
 
     /// <summary>Sets the checked flag of the underlying shape.</summary>
     internal readonly void Checked(bool isChecked) => NonNullTShape().Checked(isChecked);
 
     /// <summary>The orientability flag of the underlying shape.</summary>
-    public readonly bool Orientable() => NonNullTShape().Orientable();
+    public readonly bool IsOrientable => NonNullTShape().Orientable();
 
     /// <summary>Sets the orientability flag of the underlying shape.</summary>
     internal readonly void Orientable(bool isOrientable) => NonNullTShape().Orientable(isOrientable);
 
     /// <summary>The closedness flag of the underlying shape.</summary>
-    public readonly bool Closed() => NonNullTShape().Closed();
+    public readonly bool IsClosed => NonNullTShape().Closed();
 
     /// <summary>Sets the closedness flag of the underlying shape.</summary>
     internal readonly void Closed(bool isClosed) => NonNullTShape().Closed(isClosed);
 
     /// <summary>The infinity flag of the underlying shape.</summary>
-    public readonly bool Infinite() => NonNullTShape().Infinite();
+    public readonly bool IsInfinite => NonNullTShape().Infinite();
 
     /// <summary>Sets the infinity flag of the underlying shape.</summary>
     internal readonly void Infinite(bool isInfinite) => NonNullTShape().Infinite(isInfinite);
 
     /// <summary>The convexness flag of the underlying shape.</summary>
-    public readonly bool Convex() => NonNullTShape().Convex();
+    internal readonly bool IsConvex => NonNullTShape().Convex();
 
     /// <summary>Sets the convexness flag of the underlying shape.</summary>
     internal readonly void Convex(bool isConvex) => NonNullTShape().Convex(isConvex);
@@ -153,7 +153,7 @@ public partial struct CompSolid : IEquatable<CompSolid>
     /// <param name="raiseExc">Throw if the transformation has a scale or is negative.</param>
     internal void Move(in Placement position, bool raiseExc = false)
     {
-        Transform3D trsf = position.Transformation();
+        Transform3D trsf = position.Transformation;
         if (raiseExc)
         {
             ValidateTransformation(trsf);
@@ -213,15 +213,15 @@ public partial struct CompSolid : IEquatable<CompSolid>
 
     /// <summary>True if the two shapes share the same TShape and location. Orientations may differ.</summary>
     public readonly bool IsSame(in Shape other)
-        => ReferenceEquals(_tShape, other.TShape()) && _location == other.Location();
+        => ReferenceEquals(_tShape, other.TShape()) && _location.IsEqual(other.Placement);
 
     /// <summary>True if the two shapes share the same TShape, location and orientation.</summary>
     public readonly bool IsEqual(in Shape other)
-        => ReferenceEquals(_tShape, other.TShape()) && _location == other.Location()
-           && _orient == other.Orientation();
+        => ReferenceEquals(_tShape, other.TShape()) && _location.IsEqual(other.Placement)
+           && _orient == other.Orientation;
 
     /// <summary>The negation of <see cref="IsEqual"/>.</summary>
-    public readonly bool IsNotEqual(in Shape other) => !IsEqual(other);
+    internal readonly bool IsNotEqual(in Shape other) => !IsEqual(other);
 
     /// <summary>
     /// Replaces the TShape by a new one with the same geometry and no sub-shapes, keeping the orientation and location.
@@ -245,7 +245,7 @@ public partial struct CompSolid : IEquatable<CompSolid>
     // Checks if the transformation contains scaling or negative values.
     private static void ValidateTransformation(in Transform3D trsf)
     {
-        if (Math.Abs(Math.Abs(trsf.ScaleFactor()) - 1.0) > Placement.ScalePrec() || trsf.IsNegative)
+        if (Math.Abs(Math.Abs(trsf.ScaleFactor) - 1.0) > Placement.ScalePrec() || trsf.IsNegative)
         {
             // Exception
             throw new DomainErrorException("Transformation with scaling transformation is forbidden");

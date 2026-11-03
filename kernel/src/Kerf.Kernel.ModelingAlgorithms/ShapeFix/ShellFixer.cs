@@ -163,7 +163,7 @@ public class ShellFixer : RootFixer
         for (var shellExp = new Explorer(aNewsh, global::Kerf.Topology.ShapeType.Shell); shellExp.More(); shellExp.Next())
         {
             Shell curShell = ShapeCasts.Shell(shellExp.Current());
-            if (curShell.Closed())
+            if (curShell.IsClosed)
             {
                 sas.LoadShells(curShell);
                 sas.CheckOrientedShells(curShell, true);
@@ -419,16 +419,16 @@ public class ShellFixer : RootFixer
                 {
                     if (!tempProcessedEdges.ContainsKey(edge))
                     {
-                        (bool, bool) edgeOrientationPair = (edge.Orientation() == Forward,
-                                                              edge.Orientation() == Reversed);
+                        (bool, bool) edgeOrientationPair = (edge.Orientation == Forward,
+                                                              edge.Orientation == Reversed);
 
                         tempProcessedEdges[edge] = edgeOrientationPair;
                     }
                     else
                     {
                         ref (bool first, bool second) tempProcessedEdgeIt = ref tempProcessedEdges.GetValueRef(edge);
-                        tempProcessedEdgeIt.first  = tempProcessedEdgeIt.first || (edge.Orientation() == Forward);
-                        tempProcessedEdgeIt.second = tempProcessedEdgeIt.second || (edge.Orientation() == Reversed);
+                        tempProcessedEdgeIt.first  = tempProcessedEdgeIt.first || (edge.Orientation == Forward);
+                        tempProcessedEdgeIt.second = tempProcessedEdgeIt.second || (edge.Orientation == Reversed);
                     }
                     continue;
                 }
@@ -438,13 +438,13 @@ public class ShellFixer : RootFixer
                 bool isDirect   = pair.first;
                 bool isReversed = pair.second;
 
-                if ((edge.Orientation() == Forward && isDirect)
-                    || (edge.Orientation() == Reversed && isReversed))
+                if ((edge.Orientation == Forward && isDirect)
+                    || (edge.Orientation == Reversed && isReversed))
                 {
                     badOrientationCount++;
                 }
-                else if ((edge.Orientation() == Forward && isReversed)
-                         || (edge.Orientation() == Reversed && isDirect))
+                else if ((edge.Orientation == Forward && isReversed)
+                         || (edge.Orientation == Reversed && isDirect))
                 {
                     goodOrientationCount++;
                 }
@@ -729,7 +729,7 @@ public class ShellFixer : RootFixer
                     continue;
                 }
                 Edge edge = ShapeCasts.Edge(key);
-                if (edge.Orientation() == Forward)
+                if (edge.Orientation == Forward)
                 {
                     dire.Add(edge);
                 }
@@ -783,13 +783,13 @@ public class ShellFixer : RootFixer
                     {
                         continue;
                     }
-                    if ((edgeS.Orientation() == Forward && dire.Contains(edgeS))
-                        || (edgeS.Orientation() == Reversed && reve.Contains(edgeS)))
+                    if ((edgeS.Orientation == Forward && dire.Contains(edgeS))
+                        || (edgeS.Orientation == Reversed && reve.Contains(edgeS)))
                     {
                         nbrev++;
                     }
-                    else if ((edgeS.Orientation() == Forward && reve.Contains(edgeS))
-                             || (edgeS.Orientation() == Reversed && dire.Contains(edgeS)))
+                    else if ((edgeS.Orientation == Forward && reve.Contains(edgeS))
+                             || (edgeS.Orientation == Reversed && dire.Contains(edgeS)))
                     {
                         nbdir++;
                     }
@@ -971,11 +971,11 @@ public class ShellFixer : RootFixer
                 {
                     break;
                 }
-                if (edge1.Orientation() == Forward)
+                if (edge1.Orientation == Forward)
                 {
                     dire.Add(edge1);
                 }
-                else if (edge1.Orientation() == Reversed)
+                else if (edge1.Orientation == Reversed)
                 {
                     reve.Add(edge1);
                 }
@@ -1012,8 +1012,8 @@ public class ShellFixer : RootFixer
                         // continue;
                     }
                     isAddShell = (dire.Contains(edge2) || reve.Contains(edge2));
-                    if ((edge2.Orientation() == Forward && dire.Contains(edge2))
-                        || (edge2.Orientation() == Reversed && reve.Contains(edge2)))
+                    if ((edge2.Orientation == Forward && dire.Contains(edge2))
+                        || (edge2.Orientation == Reversed && reve.Contains(edge2)))
                     {
                         isReversed = true;
                     }
@@ -1300,11 +1300,11 @@ public class ShellFixer : RootFixer
                     {
                         continue;
                     }
-                    if (edge1.Orientation() == Forward)
+                    if (edge1.Orientation == Forward)
                     {
                         dire.Add(edge1);
                     }
-                    else if (edge1.Orientation() == Reversed)
+                    else if (edge1.Orientation == Reversed)
                     {
                         reve.Add(edge1);
                     }
@@ -1331,8 +1331,8 @@ public class ShellFixer : RootFixer
                         continue;
                     }
                     isAddShell = true;
-                    if ((edge2.Orientation() == Forward && dire.Contains(edge2))
-                        || (edge2.Orientation() == Reversed && reve.Contains(edge2)))
+                    if ((edge2.Orientation == Forward && dire.Contains(edge2))
+                        || (edge2.Orientation == Reversed && reve.Contains(edge2)))
                     {
                         isReversed = true;
                     }

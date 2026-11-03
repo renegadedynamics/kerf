@@ -16,7 +16,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Computes bounding box for a conical surface (Geom_ConicalSurface) from the boundary circle arcs, opened along the
 /// axis for infinite V.
 /// </summary>
-public sealed class ConeBounds : SurfaceBounds.ISurfaceEvaluator
+internal sealed class ConeBounds : SurfaceBounds.ISurfaceEvaluator
 {
     private readonly ConicalSurface _geom;
 
@@ -42,37 +42,37 @@ public sealed class ConeBounds : SurfaceBounds.ISurfaceEvaluator
                                     double vMax,
                                     ref Box box)
     {
-        CoordinateSystem pos = cone.Position();
-        double r = cone.RefRadius();
-        double sAng = cone.SemiAngle();
+        CoordinateSystem pos = cone.Position;
+        double r = cone.RefRadius;
+        double sAng = cone.SemiAngle;
 
         // Add circle at VMin.
         Circle3D c = global::Kerf.Engine.Geometry.ElSLib.ConeVIso(pos, r, sAng, vMin);
-        if (c.Radius() > global::Kerf.Engine.Foundation.Precision.Confusion())
+        if (c.Radius > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             box.Add(CircleBounds.Box(c, uMin, uMax, 0.0));
         }
         else
         {
-            box.Add(c.Location());
+            box.Add(c.Location);
         }
 
         // Add circle at VMax.
         c = global::Kerf.Engine.Geometry.ElSLib.ConeVIso(pos, r, sAng, vMax);
-        if (c.Radius() > global::Kerf.Engine.Foundation.Precision.Confusion())
+        if (c.Radius > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             box.Add(CircleBounds.Box(c, uMin, uMax, 0.0));
         }
         else
         {
-            box.Add(c.Location());
+            box.Add(c.Location);
         }
     }
 
     /// <summary>Compute bounding box for full cone.</summary>
     public Box Box(double tol)
     {
-        _geom.Bounds(out double u1, out double u2, out double v1, out double v2);
+        _geom.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
         return Box(u1, u2, v1, v2, tol);
     }
 
@@ -80,8 +80,8 @@ public sealed class ConeBounds : SurfaceBounds.ISurfaceEvaluator
     public Box Box(double uMin, double uMax, double vMin, double vMax, double tol)
     {
         Box box = new();
-        Cone cone = _geom.Cone();
-        Direction3D dir = cone.Axis().Direction();
+        Cone cone = _geom.Cone;
+        Direction3D dir = cone.Axis.Direction;
 
         // OCCT opens the box only along the axis for an infinite V: the cone widens away from its apex, so the
         // radial directions of an axis-aligned cone stay closed and the box does not contain the surface
@@ -95,14 +95,14 @@ public sealed class ConeBounds : SurfaceBounds.ISurfaceEvaluator
             else if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(vMax))
             {
                 // Fully infinite V: add the circle at V=0 to give the box finite radial extent.
-                Circle3D c = global::Kerf.Engine.Geometry.ElSLib.ConeVIso(cone.Position(), cone.RefRadius(), cone.SemiAngle(), 0.0);
-                if (c.Radius() > global::Kerf.Engine.Foundation.Precision.Confusion())
+                Circle3D c = global::Kerf.Engine.Geometry.ElSLib.ConeVIso(cone.Position, cone.RefRadius, cone.SemiAngle, 0.0);
+                if (c.Radius > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     box.Add(CircleBounds.Box(c, uMin, uMax, 0.0));
                 }
                 else
                 {
-                    box.Add(c.Location());
+                    box.Add(c.Location);
                 }
                 InfiniteHelpers.OpenMinMax(dir, ref box);
             }
@@ -117,14 +117,14 @@ public sealed class ConeBounds : SurfaceBounds.ISurfaceEvaluator
             if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(vMax))
             {
                 // Reversed infinite V: add the circle at V=0 to give the box finite radial extent.
-                Circle3D c = global::Kerf.Engine.Geometry.ElSLib.ConeVIso(cone.Position(), cone.RefRadius(), cone.SemiAngle(), 0.0);
-                if (c.Radius() > global::Kerf.Engine.Foundation.Precision.Confusion())
+                Circle3D c = global::Kerf.Engine.Geometry.ElSLib.ConeVIso(cone.Position, cone.RefRadius, cone.SemiAngle, 0.0);
+                if (c.Radius > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     box.Add(CircleBounds.Box(c, uMin, uMax, 0.0));
                 }
                 else
                 {
-                    box.Add(c.Location());
+                    box.Add(c.Location);
                 }
                 InfiniteHelpers.OpenMinMax(dir, ref box);
             }

@@ -304,9 +304,9 @@ public class BlendFuncDerivativeTests
         for (int i = 1; i <= aNbPoles; i++)
         {
             Vector3D aFD1 = new Vector3D(aPm[i], aPp[i]) / (2.0 * h);
-            Assert.True((aFD1 - aDPoles2[i]).Magnitude() <= 1.0e-4 * (1.0 + aDPoles2[i].Magnitude()), $"DPoles({i})");
+            Assert.True((aFD1 - aDPoles2[i]).Magnitude <= 1.0e-4 * (1.0 + aDPoles2[i].Magnitude), $"DPoles({i})");
             Vector3D aFD2 = (aDp[i] - aDm[i]) / (2.0 * h);
-            Assert.True((aFD2 - aD2Poles2[i]).Magnitude() <= 1.0e-3 * (1.0 + aD2Poles2[i].Magnitude()), $"D2Poles({i})");
+            Assert.True((aFD2 - aD2Poles2[i]).Magnitude <= 1.0e-3 * (1.0 + aD2Poles2[i].Magnitude), $"D2Poles({i})");
         }
     }
 }

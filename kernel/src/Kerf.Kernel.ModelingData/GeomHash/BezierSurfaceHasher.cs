@@ -19,8 +19,8 @@ internal readonly struct BezierSurfaceHasher(double theCompTolerance, double the
     {
         ReadOnlySpan<ulong> hashes =
         [
-            HashUtils.Hash(surface.UDegree()),
-            HashUtils.Hash(surface.VDegree()),
+            HashUtils.Hash(surface.UDegree),
+            HashUtils.Hash(surface.VDegree),
             HashUtils.Hash(surface.UPoleCount),
             HashUtils.Hash(surface.VPoleCount),
             HashUtils.Hash((surface.IsURational ? 1 : 0) | ((surface.IsVRational ? 1 : 0) << 1))
@@ -32,7 +32,7 @@ internal readonly struct BezierSurfaceHasher(double theCompTolerance, double the
     public bool IsEqual(BezierSurface surface1, BezierSurface surface2)
     {
         // Compare degrees
-        if (surface1.UDegree() != surface2.UDegree() || surface1.VDegree() != surface2.VDegree())
+        if (surface1.UDegree != surface2.UDegree || surface1.VDegree != surface2.VDegree)
         {
             return false;
         }

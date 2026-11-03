@@ -99,13 +99,13 @@ internal sealed class MeshTestCheckTopology(Shape theShape)
                 int iF2 = aMapF.IndexOf(aFace2) + 1;
                 int i1 = aNodes1.Lower();
                 int i2 = aNodes2.Lower();
-                Transform3D aTrsf1 = aFace1.Location().Transformation();
-                Transform3D aTrsf2 = aFace2.Location().Transformation();
+                Transform3D aTrsf1 = aFace1.Placement.Transformation;
+                Transform3D aTrsf2 = aFace2.Placement.Transformation;
                 for (; i1 <= aNodes1.Upper(); i1++, i2++)
                 {
                     Point3D aP1 = aT1.Node(aNodes1[i1]).Transformed(aTrsf1);
                     Point3D aP2 = aT2.Node(aNodes2[i2]).Transformed(aTrsf2);
-                    double aSqDist = aP1.SquareDistance(aP2);
+                    double aSqDist = aP1.SquareDistanceTo(aP2);
                     if (aSqDist > aSqDefle)
                     {
                         // OCCT bug: it records the polygon's indices i1 and i2, which tricheck prints as nodes
@@ -130,7 +130,7 @@ internal sealed class MeshTestCheckTopology(Shape theShape)
                 continue;
             }
 
-            Transform3D aTrsf = aLoc.Transformation();
+            Transform3D aTrsf = aLoc.Transformation;
 
             // remember boundary nodes
             var aMapBndNodes = new HashSet<int>();

@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The public API's tests (unit 10L1), written as a user calls it: this assembly has no InternalsVisibleTo from the
+    kernel, so a test that reaches for the engine doesn't compile. Topology's tests need shapes, which only the
+    construction area (10L2) will make publicly; until then they live in Kerf.Kernel.ModelingAlgorithms.Tests/PublicApi.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Kerf.Kernel.Foundation\Kerf.Kernel.Foundation.csproj" />
+    <ProjectReference Include="..\..\src\Kerf.Kernel.ModelingData\Kerf.Kernel.ModelingData.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Remove="Occt" />
+    <Using Remove="Kerf.Engine.Numerics.VectorBase&lt;double&gt;" />
+    <Using Remove="Kerf.Engine.Numerics.VectorBase&lt;int&gt;" />
+  </ItemGroup>
+
+</Project>

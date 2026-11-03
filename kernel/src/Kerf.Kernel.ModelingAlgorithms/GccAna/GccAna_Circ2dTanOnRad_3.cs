@@ -69,14 +69,14 @@ public sealed partial class AnalyticCirc2dTanOnRad
         }
         else
         {
-            double   r1  = c1.Radius();
-            double   r2  = onCirc.Radius();
-            double   c1x = c1.Location().X();
-            double   c1y = c1.Location().Y();
+            double   r1  = c1.Radius;
+            double   r2  = onCirc.Radius;
+            double   c1x = c1.Location.X;
+            double   c1y = c1.Location.Y;
             Point2D center1 = new(c1x, c1y);
-            double   dist = onCirc.Location().Distance(center1);
-            double   onx  = onCirc.Location().X();
-            double   ony  = onCirc.Location().Y();
+            double   dist = onCirc.Location.DistanceTo(center1);
+            double   onx  = onCirc.Location.X;
+            double   ony  = onCirc.Location.Y;
             if (qualified1.IsEnclosed)
             {
                 //   ============================
@@ -88,7 +88,7 @@ public sealed partial class AnalyticCirc2dTanOnRad
                 {
                     if (Math.Abs(radius - r1) < tol)
                     {
-                        if (onCirc.Distance(center1) < tol)
+                        if (onCirc.DistanceTo(center1) < tol)
                         {
                             _nbrSol         = 1;
                             _cirsol[_nbrSol] = c1;
@@ -127,7 +127,7 @@ public sealed partial class AnalyticCirc2dTanOnRad
                 {
                     if (Math.Abs(radius - r1) < tol)
                     {
-                        if (onCirc.Distance(center1) < tol)
+                        if (onCirc.DistanceTo(center1) < tol)
                         {
                             _nbrSol         = 1;
                             _cirsol[_nbrSol] = c1;
@@ -234,7 +234,7 @@ public sealed partial class AnalyticCirc2dTanOnRad
                             center[_nbrSol] = intp.Point(i).Value();
                             _cirsol[_nbrSol] = new Circle2D(new Axis2D(center[_nbrSol], dirx), radius);
                             //           =============================================================
-                            double distcc1 = center[_nbrSol].Distance(center1);
+                            double distcc1 = center[_nbrSol].DistanceTo(center1);
                             if (!qualified1.IsUnqualified)
                             {
                                 _qualifier1[_nbrSol] = qualified1.Qualifier();
@@ -251,8 +251,8 @@ public sealed partial class AnalyticCirc2dTanOnRad
                             {
                                 _qualifier1[_nbrSol] = Qualifier.Enclosing;
                             }
-                            dir1on[_nbrSol] = new Direction2D(c1x - center[_nbrSol].X(), c1y - center[_nbrSol].Y());
-                            if ((r1 > radius) && (center[_nbrSol].Distance(center1) <= r1))
+                            dir1on[_nbrSol] = new Direction2D(c1x - center[_nbrSol].X, c1y - center[_nbrSol].Y);
+                            if ((r1 > radius) && (center[_nbrSol].DistanceTo(center1) <= r1))
                             {
                                 signe[_nbrSol - 1] = -1;
                             }
@@ -267,10 +267,10 @@ public sealed partial class AnalyticCirc2dTanOnRad
             }
             if (sign != 0)
             {
-                center[1] = new Point2D(onCirc.Location().XY() + sign * r2 * dir1on[1].XY());
+                center[1] = new Point2D(onCirc.Location.XY() + sign * r2 * dir1on[1].XY());
                 _cirsol[1] = new Circle2D(new Axis2D(center[1], dirx), radius);
                 //     =====================================================
-                double distcc1 = center[1].Distance(center1);
+                double distcc1 = center[1].DistanceTo(center1);
                 if (!qualified1.IsUnqualified)
                 {
                     _qualifier1[_nbrSol] = qualified1.Qualifier();
@@ -295,7 +295,7 @@ public sealed partial class AnalyticCirc2dTanOnRad
             while (signe[ii] != 0)
             {
                 _pnttg1sol[ii + 1] = new Point2D(center[ii + 1].XY() + signe[ii] * radius * dir1on[ii + 1].XY());
-                _pntcen3[ii + 1]   = _cirsol[ii + 1].Location();
+                _pntcen3[ii + 1]   = _cirsol[ii + 1].Location;
                 _pararg1[ii + 1]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(c1, _pnttg1sol[ii + 1]);
                 _par1sol[ii + 1]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[ii + 1], _pnttg1sol[ii + 1]);
                 _parcen3[ii + 1]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(onCirc, _pntcen3[ii + 1]);

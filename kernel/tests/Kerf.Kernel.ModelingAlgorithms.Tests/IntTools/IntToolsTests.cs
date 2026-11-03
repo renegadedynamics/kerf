@@ -156,7 +156,7 @@ public class IntToolsTests
         Edge anEllipseEdge = new MakeEdge(anElips, 0.0, Math.PI).Edge();
         Assert.Equal(0, global::Kerf.Engine.Intersection.Tools.IntTools.GetRadius(new EdgeCurveAdaptor(anEllipseEdge), -0.1, 0.1, out aR));
         MakeCirc aCheck = new(global::Kerf.Engine.Geometry.ElCLib.Value(-0.1, anElips), global::Kerf.Engine.Geometry.ElCLib.Value(0.0, anElips), global::Kerf.Engine.Geometry.ElCLib.Value(0.1, anElips));
-        Assert.Equal(aCheck.Value().Radius(), aR);
+        Assert.Equal(aCheck.Value().Radius, aR);
 
         // three coincident points: gce_MakeCirc makes a circle of radius 0
         Assert.Equal(0, global::Kerf.Engine.Intersection.Tools.IntTools.GetRadius(new EdgeCurveAdaptor(anEllipseEdge), 0.5, 0.5, out aR));

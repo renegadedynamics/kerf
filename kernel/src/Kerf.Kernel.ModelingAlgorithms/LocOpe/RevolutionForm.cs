@@ -90,7 +90,7 @@ public sealed class RevolutionForm
         _lastShape = theRevol.LastShape();
 
         Explorer exp = new();
-        if (theBase.ShapeType() == ShapeType.Face)
+        if (theBase.Type == ShapeType.Face)
         {
             for (exp.Init(theBase, ShapeType.Edge); exp.More(); exp.Next())
             {

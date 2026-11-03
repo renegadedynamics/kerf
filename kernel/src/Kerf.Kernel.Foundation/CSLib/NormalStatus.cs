@@ -7,7 +7,7 @@ namespace Kerf.Engine.Geometry;
 
 /// <summary>The result of computing a surface normal at a possibly singular point.</summary>
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.CSLib_NormalStatus;</c>.</remarks>
-public enum NormalStatus
+internal enum NormalStatus
 {
     /// <summary>Surface is singular at the point (normal undefined).</summary>
     Singular,

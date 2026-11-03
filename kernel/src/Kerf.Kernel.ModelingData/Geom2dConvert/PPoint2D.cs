@@ -18,7 +18,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// within Precision::PConfusion(), are <see cref="IsEqual"/>; <c>==</c> and <c>!=</c> compare exactly, as for every
 /// value type of the port.
 /// </remarks>
-public partial struct PPoint2D : IEquatable<PPoint2D>
+internal partial struct PPoint2D : IEquatable<PPoint2D>
 {
     private double _parameter; // Parameter value
     private Point2D _point; // Point location
@@ -48,7 +48,7 @@ public partial struct PPoint2D : IEquatable<PPoint2D>
     }
 
     /// <summary>The distance between the two points.</summary>
-    public readonly double Dist(in PPoint2D oth) => _point.Distance(oth._point);
+    public readonly double Dist(in PPoint2D oth) => _point.DistanceTo(oth._point);
 
     /// <summary>The parameter.</summary>
     public readonly double Parameter() => _parameter;

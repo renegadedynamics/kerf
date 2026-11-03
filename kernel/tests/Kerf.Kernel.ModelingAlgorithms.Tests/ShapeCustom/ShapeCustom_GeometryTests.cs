@@ -132,7 +132,7 @@ public class ShapeCustom_GeometryTests
         Assert.True(aTool.Gap() < 1e-7);
         // the same orientation as the patch
         aBilinear.D1(0.5, 0.5, out _, out Vector3D aDu, out Vector3D aDv);
-        Assert.True(((PlaneSurface)aPlane!).Position().Direction().Dot(new Direction3D(aDu.Crossed(aDv))) > 0);
+        Assert.True(((PlaneSurface)aPlane!).Position.Direction.Dot(new Direction3D(aDu.Crossed(aDv))) > 0);
 
         // half a cylinder of radius 2 as a B-spline (closed in U: the whole cylinder)
         var aCylinder = new TrimmedSurface(new CylindricalSurface(new CoordinateSystem(), 2), 0, 2 * Math.PI, 0, 5);
@@ -140,7 +140,7 @@ public class ShapeCustom_GeometryTests
         var aTool2 = new SurfaceCustom(aBSpline);
         Surface? aRecognised = aTool2.ConvertToAnalytical(1e-6, true);
         Assert.IsType<CylindricalSurface>(aRecognised);
-        Assert.Equal(2.0, ((CylindricalSurface)aRecognised!).Radius(), 6);
+        Assert.Equal(2.0, ((CylindricalSurface)aRecognised!).Radius, 6);
     }
 
     [Fact]

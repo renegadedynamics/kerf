@@ -16,7 +16,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Computes bounding box for a 2D parabola (Geom2d_Parabola): the arc ends and the vertex, opened for infinite
 /// parameters. The static method accepting gp_Parab2d can be used directly.
 /// </summary>
-public sealed class Parabola2dBounds : Curve2dBounds.ICurve2dEvaluator
+internal sealed class Parabola2dBounds : Curve2dBounds.ICurve2dEvaluator
 {
     private readonly ParabolaCurve2D _geom;
 
@@ -30,10 +30,10 @@ public sealed class Parabola2dBounds : Curve2dBounds.ICurve2dEvaluator
     Curve2D? Curve2dBounds.ICurve2dEvaluator.CurveGeometry() => _geom;
 
     /// <summary>Compute bounding box for arc [theU1, theU2].</summary>
-    public Box2d Box(double u1, double u2, double tol) => Box(_geom.Parab2d(), u1, u2, tol);
+    public Box2d Box(double u1, double u2, double tol) => Box(_geom.Parabola, u1, u2, tol);
 
     /// <summary>Compute bounding box for full curve.</summary>
-    public Box2d Box(double tol) => Box(_geom.FirstParameter(), _geom.LastParameter(), tol);
+    public Box2d Box(double tol) => Box(_geom.FirstParameter, _geom.LastParameter, tol);
 
     /// <summary>For analytical curves, BoxOptimal is same as Box.</summary>
     public Box2d BoxOptimal(double u1, double u2, double tol) => Box(u1, u2, tol);
@@ -108,13 +108,13 @@ public sealed class Parabola2dBounds : Curve2dBounds.ICurve2dEvaluator
     /// </summary>
     internal static void AddCoordinateExtrema(in Parabola2D parab, double u1, double u2, ref Box2d box)
     {
-        double focal = parab.Focal();
+        double focal = parab.Focal;
         if (Math.Abs(focal) <= Constants.Resolution())
         {
             return; // a line: its ends bound it
         }
-        Xy xDir = parab.Axis().XDirection().XY();
-        Xy yDir = parab.Axis().YDirection().XY();
+        Xy xDir = parab.Axis.XDirection.XY();
+        Xy yDir = parab.Axis.YDirection.XY();
         for (int k = 1; k <= 2; k++)
         {
             double xk = xDir.Coord(k);

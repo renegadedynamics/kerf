@@ -116,15 +116,15 @@ public class Geom2dAPI_InterCurveCurveTests
         double aParOnC2 = aIntPnt.ParamOnSecond();
 
         // Verify that intersection parameters are within the curve limits
-        Assert.True(aParOnC1 >= aTrim1.FirstParameter());
-        Assert.True(aParOnC1 <= aTrim1.LastParameter());
-        Assert.True(aParOnC2 >= aTrim2.FirstParameter());
-        Assert.True(aParOnC2 <= aTrim2.LastParameter());
+        Assert.True(aParOnC1 >= aTrim1.FirstParameter);
+        Assert.True(aParOnC1 <= aTrim1.LastParameter);
+        Assert.True(aParOnC2 >= aTrim2.FirstParameter);
+        Assert.True(aParOnC2 <= aTrim2.LastParameter);
 
         // Verify that both curves evaluate to the same point at the intersection parameters
         Point2D aP1 = aTrim1.Value(aParOnC1);
         Point2D aP2 = aTrim2.Value(aParOnC2);
-        Assert.True(aP1.SquareDistance(aP2) < 1.0e-14, "Points on both curves at intersection parameters should coincide");
+        Assert.True(aP1.SquareDistanceTo(aP2) < 1.0e-14, "Points on both curves at intersection parameters should coincide");
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -155,8 +155,8 @@ public class Geom2dAPI_InterCurveCurveTests
         for (int i = 1; i <= theInter.NbPoints(); i++)
         {
             IntersectionPoint2D aP = theInter.Intersector().Point(i);
-            Assert.True(theC1.Value(aP.ParamOnFirst()).Distance(aP.Value()) < theTol);
-            Assert.True(theC2.Value(aP.ParamOnSecond()).Distance(aP.Value()) < theTol);
+            Assert.True(theC1.Value(aP.ParamOnFirst()).DistanceTo(aP.Value()) < theTol);
+            Assert.True(theC2.Value(aP.ParamOnSecond()).DistanceTo(aP.Value()) < theTol);
         }
     }
 
@@ -169,11 +169,11 @@ public class Geom2dAPI_InterCurveCurveTests
         Assert.Equal(2, anInter.NbPoints());
         Assert.Equal(0, anInter.NbSegments());
         double aX = Math.Sqrt(1 - 0.25);
-        double[] aXs = [anInter.Point(1).X(), anInter.Point(2).X()];
+        double[] aXs = [anInter.Point(1).X, anInter.Point(2).X];
         Array.Sort(aXs);
         Assert.Equal(-aX, aXs[0], 1e-12);
         Assert.Equal(aX, aXs[1], 1e-12);
-        Assert.Equal(0.5, anInter.Point(1).Y(), 1e-12);
+        Assert.Equal(0.5, anInter.Point(1).Y, 1e-12);
         AssertOnBoth(anInter, aLine, aCircle, 1e-9);
     }
 
@@ -186,8 +186,8 @@ public class Geom2dAPI_InterCurveCurveTests
         Assert.True(anInter.NbPoints() + anInter.NbSegments() >= 1);
         if (anInter.NbPoints() > 0)
         {
-            Assert.Equal(0.0, anInter.Point(1).X(), 1e-3);
-            Assert.Equal(2.0, anInter.Point(1).Y(), 1e-6);
+            Assert.Equal(0.0, anInter.Point(1).X, 1e-3);
+            Assert.Equal(2.0, anInter.Point(1).Y, 1e-6);
         }
     }
 
@@ -200,8 +200,8 @@ public class Geom2dAPI_InterCurveCurveTests
         Assert.Equal(2, anInter.NbPoints());
         for (int i = 1; i <= 2; i++)
         {
-            Assert.Equal(0.5, anInter.Point(i).X(), 1e-12);
-            Assert.Equal(Math.Sqrt(0.75), Math.Abs(anInter.Point(i).Y()), 1e-12);
+            Assert.Equal(0.5, anInter.Point(i).X, 1e-12);
+            Assert.Equal(Math.Sqrt(0.75), Math.Abs(anInter.Point(i).Y), 1e-12);
         }
         AssertOnBoth(anInter, aC1, aC2, 1e-9);
     }
@@ -216,8 +216,8 @@ public class Geom2dAPI_InterCurveCurveTests
         Assert.True(anInter.NbSegments() >= 1);
         anInter.Segment(1, out Curve2D aS1, out Curve2D aS2);
         Assert.IsType<TrimmedCurve2D>(aS1);
-        Assert.True(aS1.Value(aS1.FirstParameter()).Distance(aS2.Value(aS2.FirstParameter())) < 1e-7
-                    || aS1.Value(aS1.FirstParameter()).Distance(aS2.Value(aS2.LastParameter())) < 1e-7);
+        Assert.True(aS1.Value(aS1.FirstParameter).DistanceTo(aS2.Value(aS2.FirstParameter)) < 1e-7
+                    || aS1.Value(aS1.FirstParameter).DistanceTo(aS2.Value(aS2.LastParameter)) < 1e-7);
     }
 
     [Fact]
@@ -227,8 +227,8 @@ public class Geom2dAPI_InterCurveCurveTests
         TrimmedCurve2D aSeg = new(new LineCurve2D(new Point2D(0, -5), new Direction2D(0, 1)), 0.0, 4.0);
         CurveCurveIntersection2D anInter = new(anE, aSeg, 1.0e-7);
         Assert.Equal(1, anInter.NbPoints());
-        Assert.Equal(0.0, anInter.Point(1).X(), 1e-12);
-        Assert.Equal(-2.0, anInter.Point(1).Y(), 1e-12);
+        Assert.Equal(0.0, anInter.Point(1).X, 1e-12);
+        Assert.Equal(-2.0, anInter.Point(1).Y, 1e-12);
     }
 
     [Fact]
@@ -238,7 +238,7 @@ public class Geom2dAPI_InterCurveCurveTests
         BSplineCurve2D aC2 = Polyline((0, 1), (8, 1));
         CurveCurveIntersection2D anInter = new(aC1, aC2, 1.0e-7);
         Assert.Equal(2, anInter.NbPoints());
-        double[] aXs = [anInter.Point(1).X(), anInter.Point(2).X()];
+        double[] aXs = [anInter.Point(1).X, anInter.Point(2).X];
         Array.Sort(aXs);
         Assert.Equal(1.0, aXs[0], 1e-9);
         Assert.Equal(7.0, aXs[1], 1e-9);
@@ -259,7 +259,7 @@ public class Geom2dAPI_InterCurveCurveTests
         Assert.True(anInter.NbPoints() >= 2);
         for (int i = 1; i <= anInter.NbPoints(); i++)
         {
-            Assert.Equal(1.0, anInter.Point(i).Distance(new Point2D(0, 0)), 1e-7);
+            Assert.Equal(1.0, anInter.Point(i).DistanceTo(new Point2D(0, 0)), 1e-7);
         }
         AssertOnBoth(anInter, aBez, aCircle, 1e-7);
     }
@@ -271,8 +271,8 @@ public class Geom2dAPI_InterCurveCurveTests
         BSplineCurve2D aC = Polyline((0, 0), (4, 4), (4, 0), (0, 4));
         CurveCurveIntersection2D anInter = new(aC, 1.0e-7);
         Assert.Equal(1, anInter.NbPoints());
-        Assert.Equal(2.0, anInter.Point(1).X(), 1e-9);
-        Assert.Equal(2.0, anInter.Point(1).Y(), 1e-9);
+        Assert.Equal(2.0, anInter.Point(1).X, 1e-9);
+        Assert.Equal(2.0, anInter.Point(1).Y, 1e-9);
     }
 
     [Fact]
@@ -293,10 +293,10 @@ public class Geom2dAPI_InterCurveCurveTests
         CurveCurveIntersection2D anInter = new(aC1, aC2, 1.0e-7);
         Assert.Equal(1, anInter.NbSegments());
         anInter.Segment(1, out Curve2D aS1, out Curve2D aS2);
-        Assert.Equal(2.0, aS1.Value(aS1.FirstParameter()).X(), 1e-7);
-        Assert.Equal(4.0, aS1.Value(aS1.LastParameter()).X(), 1e-7);
-        Assert.Equal(2.0, aS2.Value(aS2.FirstParameter()).X(), 1e-7);
-        Assert.Equal(4.0, aS2.Value(aS2.LastParameter()).X(), 1e-7);
+        Assert.Equal(2.0, aS1.Value(aS1.FirstParameter).X, 1e-7);
+        Assert.Equal(4.0, aS1.Value(aS1.LastParameter).X, 1e-7);
+        Assert.Equal(2.0, aS2.Value(aS2.FirstParameter).X, 1e-7);
+        Assert.Equal(4.0, aS2.Value(aS2.LastParameter).X, 1e-7);
     }
 
     [Fact]

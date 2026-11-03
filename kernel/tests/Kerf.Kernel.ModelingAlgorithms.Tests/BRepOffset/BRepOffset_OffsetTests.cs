@@ -38,7 +38,7 @@ public class BRepOffset_OffsetTests
     {
         foreach (Shape aF in SubShapes(theShape, ShapeType.Face))
         {
-            if (Tool.Surface(ShapeCasts.Face(aF)) is PlaneSurface aP && thePredicate(aP.Pln()))
+            if (Tool.Surface(ShapeCasts.Face(aF)) is PlaneSurface aP && thePredicate(aP.Plane))
             {
                 return ShapeCasts.Face(aF);
             }
@@ -49,8 +49,8 @@ public class BRepOffset_OffsetTests
     // The top (z = 30) and front (y = 0) faces of the box, and their common edge.
     private static (Face, Face, Edge) TopFrontAndEdge(in Shape theBox)
     {
-        Face aTop = FaceOnPlane(theBox, p => Math.Abs(p.Location().Z() - 30) < 1e-9 && p.Axis().Direction().IsParallel(new Direction3D(0, 0, 1), 1e-9));
-        Face aFront = FaceOnPlane(theBox, p => Math.Abs(p.Location().Y()) < 1e-9 && p.Axis().Direction().IsParallel(new Direction3D(0, 1, 0), 1e-9));
+        Face aTop = FaceOnPlane(theBox, p => Math.Abs(p.Location.Z - 30) < 1e-9 && p.Axis.Direction.IsParallel(new Direction3D(0, 0, 1), 1e-9));
+        Face aFront = FaceOnPlane(theBox, p => Math.Abs(p.Location.Y) < 1e-9 && p.Axis.Direction.IsParallel(new Direction3D(0, 1, 0), 1e-9));
         foreach (Shape anE in SubShapes(aTop, ShapeType.Edge))
         {
             foreach (Shape anE2 in SubShapes(aFront, ShapeType.Edge))
@@ -79,8 +79,8 @@ public class BRepOffset_OffsetTests
         Assert.True(aFace.TShape()!.IsFrozen);
         Assert.True(new Analyzer(aFace).IsValid());
         Assert.Equal(4, SubShapes(aFace, ShapeType.Edge).Count);
-        var aPln = ((PlaneSurface)Tool.Surface(aFace)!).Pln();
-        Assert.Equal(32.0, aPln.Location().Z(), 9);
+        var aPln = ((PlaneSurface)Tool.Surface(aFace)!).Plane;
+        Assert.Equal(32.0, aPln.Location.Z, 9);
 
         Shape aGen = anOffset.Generated(anEdge);
         Assert.False(aGen.IsNull);
@@ -88,8 +88,8 @@ public class BRepOffset_OffsetTests
         Assert.Contains(SubShapes(aFace, ShapeType.Edge), e => e.IsSame(aGen));
         Tool.Range(ShapeCasts.Edge(aGen), out double aF, out double aL);
         Point3D aP = Tool.Curve(ShapeCasts.Edge(aGen), out _, out _)!.Value(0.5 * (aF + aL));
-        Assert.Equal(32.0, aP.Z(), 9);
-        Assert.Equal(0.0, aP.Y(), 9);
+        Assert.Equal(32.0, aP.Z, 9);
+        Assert.Equal(0.0, aP.Y, 9);
     }
 
     [Fact]
@@ -105,7 +105,7 @@ public class BRepOffset_OffsetTests
         aSnap.AssertUnchanged(aCyl);
         Assert.True(new Analyzer(aFace).IsValid());
         var aSurf = (CylindricalSurface)Tool.Surface(aFace)!;
-        Assert.Equal(6.5, aSurf.Radius(), 9);
+        Assert.Equal(6.5, aSurf.Radius, 9);
         foreach (Shape anE in SubShapes(aFace, ShapeType.Edge))
         {
             Assert.NotNull(Tool.Curve(ShapeCasts.Edge(anE), out _, out _));
@@ -137,7 +137,7 @@ public class BRepOffset_OffsetTests
         Assert.Equal(4, SubShapes(aFace, ShapeType.Edge).Count);
         Assert.DoesNotContain(SubShapes(aFace, ShapeType.Edge), e => e.IsSame(anE1) || e.IsSame(anE2));
         Assert.True(new Analyzer(aFace).IsValid());
-        Assert.IsType<CylindricalSurface>(((TrimmedSurface)Tool.Surface(aFace)!).BasisSurface());
+        Assert.IsType<CylindricalSurface>(((TrimmedSurface)Tool.Surface(aFace)!).BasisSurface);
     }
 
     [Fact]

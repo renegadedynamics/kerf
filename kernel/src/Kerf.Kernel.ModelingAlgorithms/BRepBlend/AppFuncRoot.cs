@@ -69,12 +69,12 @@ public abstract class AppFuncRoot : SweepFunction
             for (ii = 1; ii <= _line.NbPoints(); ii++)
             {
                 p = _line.Point(ii);
-                xmax = Max(Max(p.PointOnS1().X(), p.PointOnS2().X()), xmax);
-                xmin = Min(Min(p.PointOnS1().X(), p.PointOnS2().X()), xmin);
-                ymax = Max(Max(p.PointOnS1().Y(), p.PointOnS2().Y()), ymax);
-                ymin = Min(Min(p.PointOnS1().Y(), p.PointOnS2().Y()), ymin);
-                zmax = Max(Max(p.PointOnS1().Z(), p.PointOnS2().Z()), zmax);
-                zmin = Min(Min(p.PointOnS1().Z(), p.PointOnS2().Z()), zmin);
+                xmax = Max(Max(p.PointOnS1().X, p.PointOnS2().X), xmax);
+                xmin = Min(Min(p.PointOnS1().X, p.PointOnS2().X), xmin);
+                ymax = Max(Max(p.PointOnS1().Y, p.PointOnS2().Y), ymax);
+                ymin = Min(Min(p.PointOnS1().Y, p.PointOnS2().Y), ymin);
+                zmax = Max(Max(p.PointOnS1().Z, p.PointOnS2().Z), zmax);
+                zmin = Min(Min(p.PointOnS1().Z, p.PointOnS2().Z), zmin);
 
                 _bary = _bary.WithCoord((xmax + xmin) / 2, (ymax + ymin) / 2, (zmax + zmin) / 2);
             }

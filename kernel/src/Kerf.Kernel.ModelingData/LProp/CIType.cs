@@ -8,7 +8,7 @@ namespace Kerf.Engine.Geometry.Properties;
 
 /// <summary>The type of a particular point on a curve.</summary>
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.LProp_CIType;</c>.</remarks>
-public enum CIType
+internal enum CIType
 {
     /// <summary>A point of inflection.</summary>
     Inflection,

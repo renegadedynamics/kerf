@@ -62,12 +62,12 @@ public class BRepOffset_ToolTests
     {
         Edge E = new MakeEdge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)).Edge();
         OffsetTool.EdgeVertices(E, out Vertex V1, out Vertex V2);
-        Assert.Equal(0.0, Tool.Pnt(V1).X(), 1e-12);
-        Assert.Equal(1.0, Tool.Pnt(V2).X(), 1e-12);
+        Assert.Equal(0.0, Tool.Pnt(V1).X, 1e-12);
+        Assert.Equal(1.0, Tool.Pnt(V2).X, 1e-12);
 
         OffsetTool.EdgeVertices(global::Kerf.Engine.Topology.ShapeCasts.Edge(E.Reversed()), out V1, out V2);
-        Assert.Equal(1.0, Tool.Pnt(V1).X(), 1e-12);
-        Assert.Equal(0.0, Tool.Pnt(V2).X(), 1e-12);
+        Assert.Equal(1.0, Tool.Pnt(V1).X, 1e-12);
+        Assert.Equal(0.0, Tool.Pnt(V2).X, 1e-12);
     }
 
     [Fact]
@@ -96,7 +96,7 @@ public class BRepOffset_ToolTests
         Edge E = global::Kerf.Engine.Topology.ShapeCasts.Edge(aLE.First());
 
         OffsetTool.OrientSection(E, F1, F2, out Orientation O1, out Orientation O2);
-        Assert.Equal(F1.Orientation() != F2.Orientation(), O1 == O2);
+        Assert.Equal(F1.Orientation != F2.Orientation, O1 == O2);
     }
 
     [Fact]
@@ -188,7 +188,7 @@ public class BRepOffset_ToolTests
         Face NF = new();
         bool aChanged = OffsetTool.EnLargeFace(F, ref NF, true);
         Assert.False(aChanged); // a plane is not changed, only bounded
-        Assert.Equal(F.Orientation(), NF.Orientation());
+        Assert.Equal(F.Orientation, NF.Orientation);
         Assert.Same(Tool.Surface(F), Tool.Surface(NF));
         BrepTools.UVBounds(NF, out double U1, out double U2, out double V1, out double V2);
         Assert.Equal(-1.0e7, U1, 1e-3);
@@ -265,8 +265,8 @@ public class BRepOffset_ToolTests
         Assert.True(E.IsSame(L2.First()));
         EdgeCurveAdaptor aC = new(E);
         Point3D aP = aC.Value(0.5 * (aC.FirstParameter() + aC.LastParameter()));
-        Assert.Equal(0.0, aP.X(), 1e-7);
-        Assert.Equal(0.0, aP.Z(), 1e-7);
+        Assert.Equal(0.0, aP.X, 1e-7);
+        Assert.Equal(0.0, aP.Z, 1e-7);
         Assert.NotNull(Tool.CurveOnSurface(E, F1, out _, out _));
         Assert.NotNull(Tool.CurveOnSurface(E, F2, out _, out _));
     }
@@ -287,8 +287,8 @@ public class BRepOffset_ToolTests
             Edge E = global::Kerf.Engine.Topology.ShapeCasts.Edge(it.Value());
             EdgeCurveAdaptor aC = new(E);
             Point3D aP = aC.Value(0.5 * (aC.FirstParameter() + aC.LastParameter()));
-            Assert.Equal(0.0, aP.X(), 1e-7);
-            Assert.Equal(0.0, aP.Z(), 1e-7);
+            Assert.Equal(0.0, aP.X, 1e-7);
+            Assert.Equal(0.0, aP.Z, 1e-7);
             Assert.NotNull(Tool.CurveOnSurface(E, F1, out _, out _));
             Assert.NotNull(Tool.CurveOnSurface(E, F2, out _, out _));
             aLength += AbscissaPoint.Length(aC);
@@ -312,7 +312,7 @@ public class BRepOffset_ToolTests
         NCollection_List<Shape> LV = new();
         OffsetTool.Inter2d(F, E1, E2, LV, global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(1, LV.Extent());
-        Assert.True(Tool.Pnt(global::Kerf.Engine.Topology.ShapeCasts.Vertex(LV.First())).Distance(Tool.Pnt(aV2)) < 1e-7);
+        Assert.True(Tool.Pnt(global::Kerf.Engine.Topology.ShapeCasts.Vertex(LV.First())).DistanceTo(Tool.Pnt(aV2)) < 1e-7);
     }
 
     [Fact]
@@ -347,14 +347,14 @@ public class BRepOffset_ToolTests
         Face anOF = OffsetCylinderFace(out _);
         Surface aBefore = Tool.Surface(anOF)!;
         Assert.IsType<OffsetSurface>(aBefore);
-        aBefore.Bounds(out _, out _, out double v1, out double v2);
+        aBefore.ParameterBounds(out _, out _, out double v1, out double v2);
         string aCheck = new Analyzer(anOF).IsValid().ToString();
         Face aNF = new();
         Assert.True(OffsetTool.EnLargeFace(anOF, ref aNF, true));
         Surface anAfter = Tool.Surface(anOF)!;
         Assert.NotSame(aBefore, anAfter);
         Assert.Same(Tool.Surface(aNF), anAfter);
-        anAfter.Bounds(out _, out _, out double w1, out double w2);
+        anAfter.ParameterBounds(out _, out _, out double w1, out double w2);
         Assert.True(w1 < v1 && w2 > v2);
         // the face's edges keep their pcurves, now on the enlarged surface
         for (global::Kerf.Engine.Topology.Explorer anExp = new(anOF, ShapeType.Edge); anExp.More(); anExp.Next())

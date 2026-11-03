@@ -61,7 +61,7 @@ public class Hatch_HatcherTests
         // Direction (0, 1) at distance -0.5: the points P with OP . (-1, 0) = -0.5, the line x = 0.5
         aHatcher.AddLine(new Direction2D(0, 1), -0.5);
         Assert.Equal(LineForm.Anyline, aHatcher.LineForm(1));
-        Assert.Equal(0.5, aHatcher.Line(1).Location().X(), 1e-15);
+        Assert.Equal(0.5, aHatcher.Line(1).Location.X, 1e-15);
         Assert.Throws<OutOfRangeException>(() => aHatcher.Coordinate(1));
 
         TrimBySquare(aHatcher);

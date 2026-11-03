@@ -69,7 +69,7 @@ public sealed partial class PlanarBuilder
         if (Tool.Surface(f, out _)!.IsKind(typeof(PlaneSurface)))
         {
             _newFace = _refFace = f;
-            _newFace.Orientation(Forward);
+            _newFace.Orient(Forward);
             using (WorkingOverlay? overlay = WorkingOverlay.BeginUnlessWriting(f))
             {
                 BrepLibrary.BuildCurves3d(_newFace);
@@ -77,7 +77,7 @@ public sealed partial class PlanarBuilder
                 {
                     _refFace = ShapeCasts.Face(overlay.Finish(f));
                     _newFace = _refFace;
-                    _newFace.Orientation(Forward);
+                    _newFace.Orient(Forward);
                 }
             }
             _status = ConstructionError.Ready;
@@ -106,7 +106,7 @@ public sealed partial class PlanarBuilder
         if (Tool.Surface(f, out _)!.IsKind(typeof(PlaneSurface)))
         {
             _newFace = _refFace = f;
-            _newFace.Orientation(Forward);
+            _newFace.Orient(Forward);
             _status = ConstructionError.Ready;
         }
         else
@@ -143,7 +143,7 @@ public sealed partial class PlanarBuilder
 
         _refFace = refFace;
         _newFace = modFace;
-        _newFace.Orientation(Forward);
+        _newFace.Orient(Forward);
         _status = ConstructionError.Ready;
 
         // Research in newFace all the edges which not appear in RefFace
@@ -225,7 +225,7 @@ public sealed partial class PlanarBuilder
                     || ((f1 > l2 && f1 < f2) || (l1 > l2 && l1 < f2))))
             {
                 basisEdge = currentEdge;
-                basisEdge.Orientation(e.Orientation());
+                basisEdge.Orient(e.Orientation);
                 return true;
             } //  if (c1 == c2
         } // for (int i ...
@@ -419,8 +419,8 @@ public sealed partial class PlanarBuilder
                 Curve3D? curve = Tool.Curve(e1, out loc, out first, out last);
                 makeEdge.Init(curve!, commonVertex, lastVertex);
                 newEdge1 = makeEdge.InternalEdge();
-                newEdge1.Orientation(e1.Orientation());
-                newEdge1.Location(e1.Location());
+                newEdge1.Orient(e1.Orientation);
+                newEdge1.Location(e1.Placement);
             } // if (firstVertex ...
             else if (lastVertex.IsSame(connectionE1Fillet))
             {
@@ -430,8 +430,8 @@ public sealed partial class PlanarBuilder
                 Curve3D? curve = Tool.Curve(e1, out loc, out first, out last);
                 makeEdge.Init(curve!, firstVertex, commonVertex);
                 newEdge1 = makeEdge.InternalEdge();
-                newEdge1.Orientation(e1.Orientation());
-                newEdge1.Location(e1.Location());
+                newEdge1.Orient(e1.Orientation);
+                newEdge1.Location(e1.Placement);
             } // else if (lastVertex ...
         } // else ...
 
@@ -463,8 +463,8 @@ public sealed partial class PlanarBuilder
                 Curve3D? curve = Tool.Curve(e2, out loc, out first, out last);
                 makeEdge.Init(curve!, commonVertex, lastVertex);
                 newEdge2 = makeEdge.InternalEdge();
-                newEdge2.Orientation(e2.Orientation());
-                newEdge2.Location(e2.Location());
+                newEdge2.Orient(e2.Orientation);
+                newEdge2.Location(e2.Placement);
             } // if (firstVertex ...
             else if (lastVertex.IsSame(connectionE2Fillet))
             {
@@ -474,8 +474,8 @@ public sealed partial class PlanarBuilder
                 Curve3D? curve = Tool.Curve(e2, out loc, out first, out last);
                 makeEdge.Init(curve!, firstVertex, commonVertex);
                 newEdge2 = makeEdge.InternalEdge();
-                newEdge2.Orientation(e2.Orientation());
-                newEdge2.Location(e2.Location());
+                newEdge2.Orient(e2.Orientation);
+                newEdge2.Location(e2.Placement);
             } // else if (lastVertex ...
         } // else ...
 
@@ -539,7 +539,7 @@ public sealed partial class PlanarBuilder
         var exW = new Explorer(_refFace, ShapeType.Wire);
         if (exW.More())
         {
-            closedStatus = ShapeCasts.Wire(exW.Current()).Closed();
+            closedStatus = ShapeCasts.Wire(exW.Current()).IsClosed;
         }
 
         bool filletIsAdded = false;
@@ -652,7 +652,7 @@ public sealed partial class PlanarBuilder
             makeEdge.Init(curve!, firstVertex, newExtr);
         }
         Edge edge = makeEdge.InternalEdge();
-        edge.Orientation(e1.Orientation());
+        edge.Orient(e1.Orientation);
         //  anEdge.Location(E1.Location());
         return edge;
     }
@@ -680,13 +680,13 @@ public sealed partial class PlanarBuilder
         {
             makeEdge.Init(curve!, newExtr, lastVertex);
             Point3D pv = Tool.Pnt(lastVertex);
-            ponctualEdge = (pnew.Distance(pv) < tol);
+            ponctualEdge = (pnew.DistanceTo(pv) < tol);
         }
         else
         {
             makeEdge.Init(curve!, firstVertex, newExtr);
             Point3D pv = Tool.Pnt(firstVertex);
-            ponctualEdge = (pnew.Distance(pv) < tol);
+            ponctualEdge = (pnew.DistanceTo(pv) < tol);
         }
         Edge edge;
         LibraryEdgeError error = makeEdge.Error();
@@ -698,7 +698,7 @@ public sealed partial class PlanarBuilder
         else
         {
             edge = makeEdge.InternalEdge();
-            edge.Orientation(e1.Orientation());
+            edge.Orient(e1.Orientation);
             //    anEdge.Location(E1.Location());
         }
         return edge;
@@ -811,9 +811,9 @@ public sealed partial class PlanarBuilder
 
         Orientation o1;
         Orientation oe1;
-        oe1 = e1.Orientation();
-        e1.Orientation(Forward);
-        e2.Orientation(Forward);
+        oe1 = e1.Orientation;
+        e1.Orient(Forward);
+        e2.Orient(Forward);
         Shape localShape = e1.EmptyCopied();
         Edge ebid1 = ShapeCasts.Edge(localShape);
         localShape = e2.EmptyCopied();
@@ -832,13 +832,13 @@ public sealed partial class PlanarBuilder
         {
             param1 = Tool.Parameter(v1, e1);
             param2 = Tool.Parameter(v2, e1);
-            o1 = v2.Orientation();
+            o1 = v2.Orientation;
         }
         else
         {
             param1 = Tool.Parameter(v2, e1);
             param2 = Tool.Parameter(v1, e1);
-            o1 = v1.Orientation();
+            o1 = v1.Orientation;
         }
         if (v3.IsSame(v))
         {
@@ -873,7 +873,7 @@ public sealed partial class PlanarBuilder
         Curve2D basisC1, basisC2;
         if (c1 is TrimmedCurve2D t1)
         {
-            basisC1 = t1.BasisCurve();
+            basisC1 = t1.BasisCurve;
         }
         else
         {
@@ -881,7 +881,7 @@ public sealed partial class PlanarBuilder
         }
         if (c2 is TrimmedCurve2D t2)
         {
-            basisC2 = t2.BasisCurve();
+            basisC2 = t2.BasisCurve;
         }
         else
         {
@@ -891,25 +891,25 @@ public sealed partial class PlanarBuilder
         if (basisC1.DynamicType() == typeof(CircleCurve2D))
         {
             var cc1 = (CircleCurve2D)basisC1;
-            global::Kerf.Engine.Geometry.ElCLib.D1(param1, cc1.Circ2d(), out p, out ve1);
-            sens1 = (cc1.Circ2d()).IsDirect;
+            global::Kerf.Engine.Geometry.ElCLib.D1(param1, cc1.Circle, out p, out ve1);
+            sens1 = (cc1.Circle).IsDirect;
         } // if (C1->DynamicType() ...
         else
         {
             var cc1 = (basisC1 as LineCurve2D)!; // OCCT dereferences down_cast's result unchecked
-            global::Kerf.Engine.Geometry.ElCLib.D1(param1, cc1.Lin2d(), out p, out ve1);
+            global::Kerf.Engine.Geometry.ElCLib.D1(param1, cc1.Line, out p, out ve1);
             sens1 = true;
         } // else ...
         if (basisC2.DynamicType() == typeof(CircleCurve2D))
         {
             var cc2 = (CircleCurve2D)basisC2;
-            global::Kerf.Engine.Geometry.ElCLib.D1(param3, cc2.Circ2d(), out p, out ve2);
-            sens2 = (cc2.Circ2d()).IsDirect;
+            global::Kerf.Engine.Geometry.ElCLib.D1(param3, cc2.Circle, out p, out ve2);
+            sens2 = (cc2.Circle).IsDirect;
         } // if (C2->DynamicType() ...
         else
         {
             var cc2 = (basisC2 as LineCurve2D)!;
-            global::Kerf.Engine.Geometry.ElCLib.D1(param3, cc2.Lin2d(), out p, out ve2);
+            global::Kerf.Engine.Geometry.ElCLib.D1(param3, cc2.Line, out p, out ve2);
             sens2 = true;
         } // else ...
 
@@ -1062,7 +1062,7 @@ public sealed partial class PlanarBuilder
             while (nsol <= fillet.SolutionCount)
             {
                 fillet.Tangency1(nsol, out pu1, out pu2, out ptg1);
-                dist = ptg1.Distance(p);
+                dist = ptg1.DistanceTo(p);
                 if (basisC1.DynamicType() == typeof(LineCurve2D))
                 {
                     inside = (pu2 < param1 && pu2 > param2) || (pu2 < param2 && pu2 > param1);
@@ -1075,7 +1075,7 @@ public sealed partial class PlanarBuilder
                 else
                 {
                     fillet.Tangency2(nsol, out ppu1, out ppu2, out ptg2);
-                    dist = ptg2.Distance(p);
+                    dist = ptg2.DistanceTo(p);
                     inside = (ppu2 < param3 && ppu2 > param4) || (ppu2 < param4 && ppu2 > param3);
                     //  case of arc of circle passing on the sewing
                     if ((basisC2.DynamicType() == typeof(CircleCurve2D))
@@ -1144,8 +1144,8 @@ public sealed partial class PlanarBuilder
                 return filletEdge;
             }
 
-            Point3D p1 = adaptor3dSurface.Value(ptg1.X(), ptg1.Y());
-            Point3D p2 = adaptor3dSurface.Value(ptg2.X(), ptg2.Y());
+            Point3D p1 = adaptor3dSurface.Value(ptg1.X, ptg1.Y);
+            Point3D p2 = adaptor3dSurface.Value(ptg2.X, ptg2.Y);
             b.MakeVertex(ref vertex1, p1, tol);
             newExtr1 = vertex1;
             if (Math.Abs(u2 - ufirst1) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
@@ -1174,19 +1174,19 @@ public sealed partial class PlanarBuilder
             Point3D pntbid;
             Point2D sommet;
             pntbid = Tool.Pnt(v);
-            sommet = new Point2D(pntbid.X(), pntbid.Y());
+            sommet = new Point2D(pntbid.X, pntbid.Y);
 
             Point3D pntBid;
             Point2D somBid;
             if (v1.IsSame(v))
             {
                 pntBid = Tool.Pnt(v2);
-                somBid = new Point2D(pntBid.X(), pntBid.Y());
+                somBid = new Point2D(pntBid.X, pntBid.Y);
             }
             else
             {
                 pntBid = Tool.Pnt(v1);
-                somBid = new Point2D(pntBid.X(), pntBid.Y());
+                somBid = new Point2D(pntBid.X, pntBid.Y);
             }
 
             Vector2D vec;
@@ -1196,16 +1196,16 @@ public sealed partial class PlanarBuilder
             if (basisC1.DynamicType() == typeof(CircleCurve2D))
             {
                 var cc1 = (CircleCurve2D)basisC1;
-                Circle2D cir2d = cc1.Circ2d();
+                Circle2D cir2d = cc1.Circle;
                 double par = global::Kerf.Engine.Geometry.ElCLib.Parameter(cir2d, ptg1);
                 global::Kerf.Engine.Geometry.ElCLib.D1(par, cir2d, out _, out vec1);
             } // if (C1->DynamicType() ...
             else if (basisC1.DynamicType() == typeof(LineCurve2D))
             {
                 var cc1 = (LineCurve2D)basisC1;
-                Line2D lin2d = cc1.Lin2d();
+                Line2D lin2d = cc1.Line;
                 double par = global::Kerf.Engine.Geometry.ElCLib.Parameter(lin2d, sommet);
-                vec1 = new Vector2D(sommet.X() - somBid.X(), sommet.Y() - somBid.Y()); // OCCT: overwritten at once
+                vec1 = new Vector2D(sommet.X - somBid.X, sommet.Y - somBid.Y); // OCCT: overwritten at once
                 global::Kerf.Engine.Geometry.ElCLib.D1(par, lin2d, out _, out vec1);
             } // else if ...
 
@@ -1229,7 +1229,7 @@ public sealed partial class PlanarBuilder
             } // else ...
             if (!sense)
             {
-                Orientation s1 = filletEdge.Orientation();
+                Orientation s1 = filletEdge.Orientation;
                 if ((o1 == Forward && oe1 == Forward)
                     || (o1 == Reversed && oe1 == Reversed))
                 {
@@ -1241,11 +1241,11 @@ public sealed partial class PlanarBuilder
                 }
                 if (s1 == Forward)
                 {
-                    filletEdge.Orientation(Reversed);
+                    filletEdge.Orient(Reversed);
                 }
                 else
                 {
-                    filletEdge.Orientation(Forward);
+                    filletEdge.Orient(Forward);
                 }
             } // if (!Sense
 
@@ -1302,7 +1302,7 @@ public sealed partial class PlanarBuilder
         Curve2D basisC;
         if (c is TrimmedCurve2D tc)
         {
-            basisC = tc.BasisCurve();
+            basisC = tc.BasisCurve;
         }
         else
         {
@@ -1327,7 +1327,7 @@ public sealed partial class PlanarBuilder
     internal Face InternalResult()
     {
         Face face = _newFace;
-        face.Orientation(_refFace.Orientation());
+        face.Orient(_refFace.Orientation);
         return face;
     }
 

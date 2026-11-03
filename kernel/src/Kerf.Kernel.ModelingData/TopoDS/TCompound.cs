@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Topology;
 
 /// <summary>An all-purpose set of shapes.</summary>
-public class TCompound : TShape
+internal class TCompound : TShape
 {
     /// <summary>An empty TCompound.</summary>
     public TCompound() : base(global::Kerf.Topology.ShapeType.Compound)

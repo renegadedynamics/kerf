@@ -20,7 +20,7 @@ namespace Kerf.Engine.Geometry.Splines;
 /// Mutable: BuildCache changes it. OCCT keeps the coefficients in a 128-element member buffer; the port allocates
 /// a (Degree + 1) x row-length array once, in the constructor. Evaluation allocates nothing.
 /// </remarks>
-public class Cache : Transient
+internal class Cache : Transient
 {
     private readonly bool _isRational;          //!< identifies the rationality of Bezier/B-spline curve
     private readonly CacheParams _params; //!< cache parameters

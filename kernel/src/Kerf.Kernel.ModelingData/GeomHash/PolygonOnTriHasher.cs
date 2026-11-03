@@ -16,7 +16,7 @@ namespace Kerf.Engine.Geometry.Hashing;
 /// OCCT's aggregate struct with public fields; its own equality (as a record struct) compares the polygon by
 /// reference, the hasher compares it by value.
 /// </remarks>
-public readonly record struct PolygonOnTriHashKey(PolygonOnTriangulation? Poly, uint TriRepId);
+internal readonly record struct PolygonOnTriHashKey(PolygonOnTriangulation? Poly, uint TriRepId);
 
 /// <summary>
 /// Hasher of <see cref="PolygonOnTriHashKey"/>, used for mesh deduplication: the hash reads the triangulation
@@ -29,7 +29,7 @@ public readonly record struct PolygonOnTriHashKey(PolygonOnTriangulation? Poly, 
 /// <see cref="GetHashCode(PolygonOnTriHashKey)"/> and <c>aHasher(a, b)</c> is
 /// <see cref="Equals(PolygonOnTriHashKey, PolygonOnTriHashKey)"/>. The hash values are not OCCT's.
 /// </remarks>
-public sealed class PolygonOnTriHasher : IEqualityComparer<global::Kerf.Engine.Geometry.Hashing.PolygonOnTriHashKey>
+internal sealed class PolygonOnTriHasher : IEqualityComparer<global::Kerf.Engine.Geometry.Hashing.PolygonOnTriHashKey>
 {
     /// <summary>The tolerance of the comparison of numeric fields.</summary>
     public readonly double CompTolerance;

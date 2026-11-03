@@ -31,8 +31,8 @@ public sealed class MakeSurfaceOfLinearExtrusion : GeometryRoot
         StepCurve sweptCurve;
         StepVector extrusionAxis;
 
-        MakeCurve mkCurve = new MakeCurve(s.BasisCurve(), localFactors);
-        MakeVector mkVector = new MakeVector(new Vector3D(s.Direction()), localFactors);
+        MakeCurve mkCurve = new MakeCurve(s.BasisCurve, localFactors);
+        MakeVector mkVector = new MakeVector(new Vector3D(s.Direction), localFactors);
 
         sweptCurve = mkCurve.Value();
         extrusionAxis = mkVector.Value();

@@ -225,7 +225,7 @@ public sealed class ProximityValueTool
                                              ref int nbNodes,
                                              ref double step)
     {
-        if (shape.ShapeType() == ShapeType.Face)
+        if (shape.Type == ShapeType.Face)
         {
             shapeType = ShapeType.Face;
             Face f = ShapeCasts.Face(shape);
@@ -241,7 +241,7 @@ public sealed class ProximityValueTool
             int nbTrg = triangulation.TriangleCount;
             step = CalcFaceRefinementStep(f, nbTrg);
         }
-        else if (shape.ShapeType() == ShapeType.Edge)
+        else if (shape.Type == ShapeType.Edge)
         {
             shapeType = ShapeType.Edge;
             Edge e = ShapeCasts.Edge(shape);
@@ -361,7 +361,7 @@ public sealed class ProximityValueTool
             double par = gcPnts.Parameter(vertIdx);
             Point3D p = bac.Value(par);
 
-            addVertices.Append(new BVH_Vec3d(p.X(), p.Y(), p.Z()));
+            addVertices.Append(new BVH_Vec3d(p.X, p.Y, p.Z));
             addStatuses.Add(ProxPnt_Status.ProxPnt_Status_MIDDLE);
         }
 
@@ -389,9 +389,9 @@ public sealed class ProximityValueTool
             return;
         }
 
-        ReadOnlySpan<double> d = [trg[0].Distance(trg[1]),
-                                   trg[1].Distance(trg[2]),
-                                   trg[2].Distance(trg[0])];
+        ReadOnlySpan<double> d = [trg[0].DistanceTo(trg[1]),
+                                   trg[1].DistanceTo(trg[2]),
+                                   trg[2].DistanceTo(trg[0])];
 
         int bisectedEdgeIdx = d[0] > d[1] ? (d[0] > d[2] ? 0 : 2) : (d[1] > d[2] ? 1 : 2);
         var centerOfMaxSide = new Point3D(trg[bisectedEdgeIdx].Coord());
@@ -405,7 +405,7 @@ public sealed class ProximityValueTool
 
         if (_inspector.IsNeedAdd) // is point aCenterOfMaxSide unique
         {
-            var bisectingPnt = new BVH_Vec3d(centerOfMaxSide.X(), centerOfMaxSide.Y(), centerOfMaxSide.Z());
+            var bisectingPnt = new BVH_Vec3d(centerOfMaxSide.X, centerOfMaxSide.Y, centerOfMaxSide.Z);
             addVertices.Append(bisectingPnt);
             addStatuses.Add(edgesStatus[bisectedEdgeIdx]);
             _inspector.Add(centerOfMaxSide.Coord());
@@ -439,7 +439,7 @@ public sealed class ProximityValueTool
     private static double GetModelRange(in Placement location, Triangulation tr)
     {
         var box = new Box();
-        tr.MinMax(ref box, location.Transformation());
+        tr.MinMax(ref box, location.Transformation);
         double aXm = 0.0, aYm = 0.0, aZm = 0.0, xm = 0.0, ym = 0.0, zm = 0.0;
         box.Get(out aXm, out aYm, out aZm, out xm, out ym, out zm);
         double range = xm - aXm;
@@ -454,15 +454,15 @@ public sealed class ProximityValueTool
         tr.Triangle(triIdx).Get(out int vtxIdx1, out int vtxIdx2, out int vtxIdx3);
 
         Point3D vtx1 = tr.Node(vtxIdx1);
-        vtx1 = vtx1.Transformed(location.Transformation());
+        vtx1 = vtx1.Transformed(location.Transformation);
         trg[0] = vtx1;
 
         Point3D vtx2 = tr.Node(vtxIdx2);
-        vtx2 = vtx2.Transformed(location.Transformation());
+        vtx2 = vtx2.Transformed(location.Transformation);
         trg[1] = vtx2;
 
         Point3D vtx3 = tr.Node(vtxIdx3);
-        vtx3 = vtx3.Transformed(location.Transformation());
+        vtx3 = vtx3.Transformed(location.Transformation);
         trg[2] = vtx3;
     }
 

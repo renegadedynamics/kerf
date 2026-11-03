@@ -405,7 +405,7 @@ public class SLProps
     // LProp_SurfaceUtils::GetSurfBounds (Geom_Surface: Bounds in the order U1, U2, V1, V2)
     private void GetSurfBounds(out double u1, out double v1, out double u2, out double v2)
     {
-        _surf!.Bounds(out u1, out u2, out v1, out v2);
+        _surf!.ParameterBounds(out u1, out u2, out v1, out v2);
     }
 
     // LProp_SurfaceUtils::ComputeSurfTangent: when the first significant derivative has order 2, its sign is taken

@@ -166,7 +166,7 @@ public sealed partial class Build123dPhase7OracleTests
     private static (string Type, double[] Values) Measure(in Shape theShape)
     {
         var aProps = new Properties();
-        switch (theShape.ShapeType())
+        switch (theShape.Type)
         {
             case ShapeType.Face:
                 MassPropertiesBuilder.SurfaceProperties(theShape, aProps);
@@ -177,11 +177,11 @@ public sealed partial class Build123dPhase7OracleTests
             case ShapeType.Vertex:
             {
                 Point3D aP = Tool.Pnt(ShapeCasts.Vertex(theShape));
-                return ("V", [aP.X(), aP.Y(), aP.Z()]);
+                return ("V", [aP.X, aP.Y, aP.Z]);
             }
             default:
                 MassPropertiesBuilder.VolumeProperties(theShape, aProps);
-                return (theShape.ShapeType().ToString(), [aProps.Mass()]);
+                return (theShape.Type.ToString(), [aProps.Mass()]);
         }
     }
 

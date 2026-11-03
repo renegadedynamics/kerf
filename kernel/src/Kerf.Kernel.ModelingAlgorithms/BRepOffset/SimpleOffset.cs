@@ -280,7 +280,7 @@ public sealed class SimpleOffset : Modification
 
         // Take into account face orientation.
         double mult = 1.0;
-        if (face.Orientation() == Reversed)
+        if (face.Orientation == Reversed)
         {
             mult = -1.0;
         }
@@ -419,8 +419,8 @@ public sealed class SimpleOffset : Modification
             Point3D pntF = c3d.Value(f);
             Point3D pntL = c3d.Value(l);
 
-            double sqDistF = pntF.SquareDistance(currPnt);
-            double sqDistL = pntL.SquareDistance(currPnt);
+            double sqDistF = pntF.SquareDistanceTo(currPnt);
+            double sqDistL = pntL.SquareDistanceTo(currPnt);
 
             double minParam = f, maxParam = l;
             if (sqDistL < sqDistF)
@@ -462,7 +462,7 @@ public sealed class SimpleOffset : Modification
         double sqMaxDist = 0.0;
         for (int i = 0; i <= (offsetPointVec.Count - 1); ++i)
         {
-            double sqDist = center.SquareDistance(offsetPointVec[i]);
+            double sqDist = center.SquareDistanceTo(offsetPointVec[i]);
             if (sqDist > sqMaxDist)
             {
                 sqMaxDist = sqDist;

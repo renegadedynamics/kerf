@@ -43,13 +43,13 @@ public sealed class CurveAbscissaPoint
     private static double F3d(double x, object? c)
     {
         ((CurveAdaptorBase)c!).D1(x, out _, out Vector3D v);
-        return v.Magnitude();
+        return v.Magnitude;
     }
 
     private static double F2d(double x, object? c)
     {
         ((Curve2DAdaptorBase)c!).D1(x, out _, out Vector2D v);
-        return v.Magnitude();
+        return v.Magnitude;
     }
 
     // The delegates, allocated once (OCCT passes function pointers).
@@ -88,7 +88,7 @@ public sealed class CurveAbscissaPoint
                 return 5;
 
             case BezierCurve:
-                return Min(24, 2 * c.Bezier().Degree());
+                return Min(24, 2 * c.Bezier().Degree);
 
             case BSplineCurve:
                 return Min(24, 2 * c.BSpline().PoleCount - 1);

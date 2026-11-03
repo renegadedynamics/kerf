@@ -114,7 +114,7 @@ public partial class BooleanBuilder
         for (; itA.More(); itA.Next())
         {
             Shape s = itA.Value();
-            if (s.ShapeType() != type)
+            if (s.Type != type)
             {
                 continue;
             }
@@ -264,7 +264,7 @@ public partial class BooleanBuilder
         for (; it.More(); it.Next())
         {
             Shape aSx = it.Value();
-            if (aSx.ShapeType() == ShapeType.Compound)
+            if (aSx.Type == ShapeType.Compound)
             {
                 FillImagesCompound(aSx, mfp);
             }
@@ -285,7 +285,7 @@ public partial class BooleanBuilder
         for (; it.More(); it.Next())
         {
             Shape sx = it.Value();
-            orX = sx.Orientation();
+            orX = sx.Orientation;
             if (_images.ContainsKey(sx))
             {
                 NCollection_List<Shape> lfIm = _images.GetValue(sx);
@@ -293,7 +293,7 @@ public partial class BooleanBuilder
                 for (; itIm.More(); itIm.Next())
                 {
                     Shape sxIm = itIm.Value();
-                    sxIm.Orientation(orX);
+                    sxIm.Orient(orX);
                     bb.Add(cIm, sxIm);
                 }
             }

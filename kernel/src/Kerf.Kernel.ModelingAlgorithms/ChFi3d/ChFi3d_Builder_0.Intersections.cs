@@ -141,7 +141,7 @@ internal static partial class Builder_0
         Point3D p3d1 = hs1.Value(x, y);
         fi2.PCurveOnSurf()!.Value(uInt2).Coord(out x, out y);
         Point3D p3d2 = hs2.Value(x, y);
-        distref2 = p3d1.SquareDistance(p3d2);
+        distref2 = p3d1.SquareDistanceTo(p3d2);
         p = p.WithXYZ(p3d1.XYZ().Added(p3d2.XYZ()).Multiplied(0.5));
         // recalculation of the extremums
         double delt1 = Math.Min(0.1, 0.05 * (fi1.LastParameter() - fi1.FirstParameter()));
@@ -205,7 +205,7 @@ internal static partial class Builder_0
         SurfaceKind styp = s1.GetType();
         if (styp == SurfaceKind.Cylinder)
         {
-            dv = Math.Max(0.5 * dv, 4.0 * s1.Cylinder().Radius());
+            dv = Math.Max(0.5 * dv, 4.0 * s1.Cylinder().Radius);
             du = 0.0;
             s1.Load(dStr.Surface(fd1.Surf()).Surface()!, mu, Mu, mv - dv, Mv + dv);
         }
@@ -476,7 +476,7 @@ internal static partial class Builder_0
         {
             double t = i * 0.2;
             c.D1(((1 - t) * f + t * l), out Point3D d0, out Vector3D d1);
-            double ang = d1.Angle(v);
+            double ang = d1.AngleTo(v);
             double angref = a * t + 0.002;
             if (ang > angref)
             {

@@ -13,7 +13,7 @@ public class gp_CircTest
     {
         Frame3D anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
         Circle3D aCirc = new(anAxis, 5.0);
-        Assert.Equal(5.0, aCirc.Radius(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(5.0, aCirc.Radius, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -21,7 +21,7 @@ public class gp_CircTest
     {
         Frame3D anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
         Circle3D aCirc = new(anAxis, 1.0);
-        Assert.Equal(M_PI, aCirc.Area(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(M_PI, aCirc.Area, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -29,7 +29,7 @@ public class gp_CircTest
     {
         Frame3D anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
         Circle3D aCirc = new(anAxis, 1.0);
-        Assert.Equal(2.0 * M_PI, aCirc.Length(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(2.0 * M_PI, aCirc.Length, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -38,7 +38,7 @@ public class gp_CircTest
         Point3D aCenter = new(1.0, 2.0, 3.0);
         Frame3D anAxis = new(aCenter, new Direction3D(0.0, 0.0, 1.0));
         Circle3D aCirc = new(anAxis, 5.0);
-        Assert.True(aCirc.Location().IsEqual(aCenter, global::Kerf.Engine.Foundation.Precision.Confusion()));
+        Assert.True(aCirc.Location.IsEqual(aCenter, global::Kerf.Engine.Foundation.Precision.Confusion()));
     }
 
     [Fact]
@@ -48,10 +48,10 @@ public class gp_CircTest
         Circle3D aCirc = new(anAxis, 5.0);
         Vector3D aVec = new(10.0, 20.0, 30.0);
         Circle3D aTranslated = aCirc.Translated(aVec);
-        Assert.Equal(10.0, aTranslated.Location().X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(20.0, aTranslated.Location().Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(30.0, aTranslated.Location().Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(5.0, aTranslated.Radius(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(10.0, aTranslated.Location.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(20.0, aTranslated.Location.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(30.0, aTranslated.Location.Z, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(5.0, aTranslated.Radius, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -61,9 +61,9 @@ public class gp_CircTest
         Circle3D aCirc = new(anAxis, 2.0);
         Axis3D aRotAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
         Circle3D aRotated = aCirc.Rotated(aRotAxis, M_PI_2);
-        Assert.Equal(0.0, aRotated.Location().X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(1.0, aRotated.Location().Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(2.0, aRotated.Radius(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aRotated.Location.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aRotated.Location.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(2.0, aRotated.Radius, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -73,9 +73,9 @@ public class gp_CircTest
         Circle3D aCirc = new(anAxis, 5.0);
         Point3D aMirrorPnt = new(0.0, 0.0, 0.0);
         Circle3D aMirrored = aCirc.Mirrored(aMirrorPnt);
-        Assert.Equal(-1.0, aMirrored.Location().X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(-2.0, aMirrored.Location().Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(-3.0, aMirrored.Location().Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(-1.0, aMirrored.Location.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(-2.0, aMirrored.Location.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(-3.0, aMirrored.Location.Z, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -85,6 +85,6 @@ public class gp_CircTest
         Circle3D aCirc = new(anAxis, 3.0);
         Transform3D aTrsf = new Transform3D().WithScale(new Point3D(0.0, 0.0, 0.0), 2.0);
         Circle3D aTransformed = aCirc.Transformed(aTrsf);
-        Assert.Equal(6.0, aTransformed.Radius(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(6.0, aTransformed.Radius, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 }

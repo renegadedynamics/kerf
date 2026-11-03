@@ -44,7 +44,7 @@ public class BRepIntCurveSurfaceOracleTests(ITestOutputHelper output)
             {
                 Point3D aP = aPoints[anOracle.Int(0, aPoints.Count - 1)];
                 Point3D aQ = aPoints[anOracle.Int(0, aPoints.Count - 1)];
-                Xyz aD = aP.Distance(aQ) > 1e-3 && anOracle.Bool() ? aQ.XYZ() - aP.XYZ() : GeomOracleInputs.RawDir(anOracle);
+                Xyz aD = aP.DistanceTo(aQ) > 1e-3 && anOracle.Bool() ? aQ.XYZ() - aP.XYZ() : GeomOracleInputs.RawDir(anOracle);
                 using var aNP = Oracle.ToNative(aP);
                 using var aND = new N.gp_Dir(aD.X(), aD.Y(), aD.Z());
                 using var aNL = new N.gp_Lin(aNP, aND);
@@ -92,7 +92,7 @@ public class BRepIntCurveSurfaceOracleTests(ITestOutputHelper output)
             case 1:
             {
                 // a segment from P beyond Q (or a whole line)
-                Xyz aD = aP.Distance(aQ) > 1e-3 ? aQ.XYZ() - aP.XYZ() : GeomOracleInputs.RawDir(theOracle);
+                Xyz aD = aP.DistanceTo(aQ) > 1e-3 ? aQ.XYZ() - aP.XYZ() : GeomOracleInputs.RawDir(theOracle);
                 using var aND = new N.gp_Dir(aD.X(), aD.Y(), aD.Z());
                 var aNLine = new N.Geom_Line(aNP, aND);
                 var aLine = new LineCurve3D(aP, new Direction3D(aD.X(), aD.Y(), aD.Z()));

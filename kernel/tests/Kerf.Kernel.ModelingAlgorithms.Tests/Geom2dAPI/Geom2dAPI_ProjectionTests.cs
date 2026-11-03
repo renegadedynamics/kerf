@@ -19,8 +19,8 @@ public class Geom2dAPI_ProjectionTests
         Assert.Equal(2, aProj.NbPoints());
         Assert.Equal(1.0, aProj.LowerDistance(), 1e-12);
         Assert.Equal(0.0, aProj.LowerDistanceParameter(), 1e-10);
-        Assert.Equal(3.0, aProj.NearestPoint().X(), 1e-12);
-        Assert.Equal(1.0, aProj.NearestPoint().Y(), 1e-12);
+        Assert.Equal(3.0, aProj.NearestPoint().X, 1e-12);
+        Assert.Equal(1.0, aProj.NearestPoint().Y, 1e-12);
         Assert.Equal(1.0, (double)aProj, 1e-12);
         Assert.Equal(2, (int)aProj);
         double aMax = Math.Max(aProj.Distance(1), aProj.Distance(2));
@@ -81,10 +81,10 @@ public class Geom2dAPI_ProjectionTests
         Assert.True(anExt.NbExtrema() >= 1);
         Assert.Equal(2.0, anExt.LowerDistance(), 1e-12);
         anExt.NearestPoints(out Point2D aP1, out Point2D aP2);
-        Assert.Equal(0.0, aP1.X(), 1e-10);
-        Assert.Equal(1.0, aP1.Y(), 1e-10);
-        Assert.Equal(0.0, aP2.X(), 1e-10);
-        Assert.Equal(3.0, aP2.Y(), 1e-10);
+        Assert.Equal(0.0, aP1.X, 1e-10);
+        Assert.Equal(1.0, aP1.Y, 1e-10);
+        Assert.Equal(0.0, aP2.X, 1e-10);
+        Assert.Equal(3.0, aP2.Y, 1e-10);
         anExt.LowerDistanceParameters(out double aU1, out double aU2);
         Assert.Equal(Math.PI / 2, aU1, 1e-10);
         Assert.Equal(10.0, aU2, 1e-10);

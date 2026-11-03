@@ -32,9 +32,9 @@ public readonly partial struct CoordinateSystem : IEquatable<CoordinateSystem>
 
     public CoordinateSystem(in Frame3D a)
     {
-        _axis = a.Axis();
-        _vydir = a.YDirection();
-        _vxdir = a.XDirection();
+        _axis = a.Axis;
+        _vydir = a.YDirection;
+        _vxdir = a.XDirection;
     }
 
     public CoordinateSystem(in Point3D p, in Direction3D n, in Direction3D vx)
@@ -56,9 +56,9 @@ public readonly partial struct CoordinateSystem : IEquatable<CoordinateSystem>
     public CoordinateSystem(in Point3D p, in Direction3D v)
     {
         _axis = new Axis3D(p, v);
-        double a = v.X();
-        double b = v.Y();
-        double c = v.Z();
+        double a = v.X;
+        double b = v.Y;
+        double c = v.Z;
         double aabs = Math.Abs(a);
         double babs = Math.Abs(b);
         double cabs = Math.Abs(c);
@@ -136,7 +136,7 @@ public readonly partial struct CoordinateSystem : IEquatable<CoordinateSystem>
 
     public readonly CoordinateSystem WithAxis(in Axis3D a1)
     {
-        return new CoordinateSystem(_axis.WithLocation(a1.Location()), _vydir, _vxdir).WithDirection(a1.Direction());
+        return new CoordinateSystem(_axis.WithLocation(a1.Location), _vydir, _vxdir).WithDirection(a1.Direction);
     }
 
     public readonly CoordinateSystem WithDirection(in Direction3D v)
@@ -150,18 +150,18 @@ public readonly partial struct CoordinateSystem : IEquatable<CoordinateSystem>
             if (dot > 0)
             {
                 vxdir = vydir;
-                vydir = axis.Direction();
+                vydir = axis.Direction;
             }
             else
             {
-                vxdir = axis.Direction();
+                vxdir = axis.Direction;
             }
 
             axis = axis.WithDirection(v);
         }
         else
         {
-            bool direct = Direct();
+            bool direct = IsDirect;
             axis = axis.WithDirection(v);
             vxdir = v.CrossCrossed(vxdir, v);
             if (direct)
@@ -188,7 +188,7 @@ public readonly partial struct CoordinateSystem : IEquatable<CoordinateSystem>
         Axis3D axis = _axis;
         Direction3D vydir = _vydir;
         Direction3D vxdir = _vxdir;
-        double dot = vx.Dot(axis.Direction());
+        double dot = vx.Dot(axis.Direction);
         if (1.0 - Math.Abs(dot) <= global::Kerf.Engine.Foundation.Precision.Angular())
         {
             if (dot > 0)
@@ -205,15 +205,15 @@ public readonly partial struct CoordinateSystem : IEquatable<CoordinateSystem>
         }
         else
         {
-            bool direct = Direct();
-            vxdir = axis.Direction().CrossCrossed(vx, axis.Direction());
+            bool direct = IsDirect;
+            vxdir = axis.Direction.CrossCrossed(vx, axis.Direction);
             if (direct)
             {
-                vydir = axis.Direction().Crossed(vxdir);
+                vydir = axis.Direction.Crossed(vxdir);
             }
             else
             {
-                vydir = vxdir.Crossed(axis.Direction());
+                vydir = vxdir.Crossed(axis.Direction);
             }
         }
         return new CoordinateSystem(axis, vydir, vxdir);
@@ -224,7 +224,7 @@ public readonly partial struct CoordinateSystem : IEquatable<CoordinateSystem>
         Axis3D axis = _axis;
         Direction3D vydir = _vydir;
         Direction3D vxdir = _vxdir;
-        double dot = vy.Dot(axis.Direction());
+        double dot = vy.Dot(axis.Direction);
         if (1.0 - Math.Abs(dot) <= global::Kerf.Engine.Foundation.Precision.Angular())
         {
             if (dot > 0)
@@ -241,9 +241,9 @@ public readonly partial struct CoordinateSystem : IEquatable<CoordinateSystem>
         }
         else
         {
-            bool isDirect = Direct();
-            vxdir = vy.Crossed(axis.Direction());
-            vydir = axis.Direction().Crossed(vxdir);
+            bool isDirect = IsDirect;
+            vxdir = vy.Crossed(axis.Direction);
+            vydir = axis.Direction.Crossed(vxdir);
             if (!isDirect)
             {
                 vxdir = vxdir.Reversed();
@@ -254,43 +254,46 @@ public readonly partial struct CoordinateSystem : IEquatable<CoordinateSystem>
 
     // Queries
 
-    public readonly double Angle(in CoordinateSystem other) => _axis.Angle(other._axis);
+    public readonly double AngleTo(in CoordinateSystem other) => _axis.AngleTo(other._axis);
 
-    public readonly Axis3D Axis() => _axis;
+    public readonly Axis3D Axis => _axis;
 
     /// <summary>The right-handed system with the same location, X direction and (for a direct system) main direction.</summary>
-    public readonly Frame3D Ax2()
+    public readonly Frame3D Frame
     {
-        Direction3D zz = _axis.Direction();
-        if (!Direct())
+        get
         {
-            zz = zz.Reversed();
-        }
+            Direction3D zz = _axis.Direction;
+            if (!IsDirect)
+            {
+                zz = zz.Reversed();
+            }
 
-        return new Frame3D(_axis.Location(), zz, _vxdir);
+            return new Frame3D(_axis.Location, zz, _vxdir);
+        }
     }
 
-    public readonly Direction3D Direction() => _axis.Direction();
+    public readonly Direction3D Direction => _axis.Direction;
 
-    public readonly Point3D Location() => _axis.Location();
+    public readonly Point3D Location => _axis.Location;
 
-    public readonly Direction3D XDirection() => _vxdir;
+    public readonly Direction3D XDirection => _vxdir;
 
-    public readonly Direction3D YDirection() => _vydir;
+    public readonly Direction3D YDirection => _vydir;
 
     /// <summary>True for a right-handed system.</summary>
-    public readonly bool Direct() => _vxdir.Crossed(_vydir).Dot(_axis.Direction()) > 0.0;
+    public readonly bool IsDirect => _vxdir.Crossed(_vydir).Dot(_axis.Direction) > 0.0;
 
     public readonly bool IsCoplanar(in CoordinateSystem other, double linearTolerance, double angularTolerance)
     {
-        Vector3D vec = new(_axis.Location(), other._axis.Location());
-        double d1 = new Vector3D(_axis.Direction()).Dot(vec);
+        Vector3D vec = new(_axis.Location, other._axis.Location);
+        double d1 = new Vector3D(_axis.Direction).Dot(vec);
         if (d1 < 0)
         {
             d1 = -d1;
         }
 
-        double d2 = new Vector3D(other._axis.Direction()).Dot(vec);
+        double d2 = new Vector3D(other._axis.Direction).Dot(vec);
         if (d2 < 0)
         {
             d2 = -d2;
@@ -301,14 +304,14 @@ public readonly partial struct CoordinateSystem : IEquatable<CoordinateSystem>
 
     public readonly bool IsCoplanar(in Axis3D a1, double linearTolerance, double angularTolerance)
     {
-        Vector3D vec = new(_axis.Location(), a1.Location());
-        double d1 = new Vector3D(_axis.Direction()).Dot(vec);
+        Vector3D vec = new(_axis.Location, a1.Location);
+        double d1 = new Vector3D(_axis.Direction).Dot(vec);
         if (d1 < 0)
         {
             d1 = -d1;
         }
 
-        double d2 = new Vector3D(a1.Direction()).Crossed(vec).Magnitude();
+        double d2 = new Vector3D(a1.Direction).Crossed(vec).Magnitude;
         if (d2 < 0)
         {
             d2 = -d2;
@@ -405,5 +408,5 @@ public readonly partial struct CoordinateSystem : IEquatable<CoordinateSystem>
 
     public static bool operator !=(in CoordinateSystem left, in CoordinateSystem right) => !left.Equals(right);
 
-    public override readonly string ToString() => $"gp_Ax3({_axis.Location()}, {_axis.Direction()}, {_vxdir}, {_vydir})";
+    public override readonly string ToString() => $"gp_Ax3({_axis.Location}, {_axis.Direction}, {_vxdir}, {_vydir})";
 }

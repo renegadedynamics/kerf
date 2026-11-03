@@ -16,7 +16,7 @@ namespace Kerf.Engine.Geometry.Bvh;
 /// Both are unstable introsorts, but not the same one, so primitives with equal centroids can end up in a different
 /// order than in OCCT (and the trees built from them can differ accordingly).
 /// </remarks>
-public class QuickSorter<T, TVec> : Sorter<T, TVec>
+internal class QuickSorter<T, TVec> : Sorter<T, TVec>
     where T : unmanaged, INumber<T>, IMinMaxValue<T>
     where TVec : unmanaged, INCollection_Vec<T, TVec>
 {

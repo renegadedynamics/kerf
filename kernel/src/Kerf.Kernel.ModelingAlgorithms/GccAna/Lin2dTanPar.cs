@@ -41,7 +41,7 @@ public sealed class Lin2dTanPar
         _par1sol = new NCollection_Array1<double>(1, 1);
         _pararg1 = new NCollection_Array1<double>(1, 1);
 
-        _linsol[1] = new Line2D(thePoint, lin1.Direction());
+        _linsol[1] = new Line2D(thePoint, lin1.Direction);
         // ===============================================
         _qualifier1[1] = Qualifier.Noqualifier;
         _pnttg1sol[1] = thePoint;
@@ -82,8 +82,8 @@ public sealed class Lin2dTanPar
             throw new BadQualifierException();
         }
         Circle2D c1 = qualified1.Qualified();
-        double xdir = (lin1.Direction()).X();
-        double ydir = (lin1.Direction()).Y();
+        double xdir = (lin1.Direction).X;
+        double ydir = (lin1.Direction).Y;
 
         if (qualified1.IsEnclosed)
         {
@@ -111,16 +111,16 @@ public sealed class Lin2dTanPar
             _qualifier1[1] = Qualifier.Outside;
             _qualifier1[2] = Qualifier.Enclosing;
         }
-        Xy xy = new(-c1.Radius() * ydir, c1.Radius() * xdir);
+        Xy xy = new(-c1.Radius * ydir, c1.Radius * xdir);
         for (int j = 1; j <= nbsol; j++)
         {
             signe = -signe;
             _nbrSol++;
-            _linsol[_nbrSol] = new Line2D(new Point2D((c1.Location().XY()).Added(signe * xy)),
+            _linsol[_nbrSol] = new Line2D(new Point2D((c1.Location.XY()).Added(signe * xy)),
                                           //   =========================================================================
-                                          lin1.Direction());
+                                          lin1.Direction);
             //                             =================
-            _pnttg1sol[_nbrSol] = new Point2D((c1.Location().XY()).Added(signe * xy));
+            _pnttg1sol[_nbrSol] = new Point2D((c1.Location.XY()).Added(signe * xy));
             _par1sol[_nbrSol] = 0.0;
             // a circle of radius 0 puts the tangency point at its centre
             _pararg1[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(c1, _pnttg1sol[_nbrSol]);

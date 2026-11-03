@@ -365,12 +365,12 @@ public class RWStlTests
         Shape aMoved = aFace.Moved(new Placement(aTrsf)).Reversed();
         Triangulation? aRead = global::Kerf.Engine.Exchange.Stl.RWStl.ReadFile(new MemoryStream(Write(aMoved, false)));
         Assert.NotNull(aRead);
-        Assert.Equal(5.0, aRead.Node(1).Z());
+        Assert.Equal(5.0, aRead.Node(1).Z);
         // reversed: the triangles turn over (nodes 2 and 3 swapped)
         Triangulation? aStraight = global::Kerf.Engine.Exchange.Stl.RWStl.ReadFile(new MemoryStream(Write(aFace, false)));
         aStraight!.Triangle(1).Get(out _, out int s2, out int s3);
         aRead.Triangle(1).Get(out _, out int r2, out int r3);
-        Assert.Equal(aStraight.Node(s2).X(), aRead.Node(r3).X());
-        Assert.Equal(aStraight.Node(s3).X(), aRead.Node(r2).X());
+        Assert.Equal(aStraight.Node(s2).X, aRead.Node(r3).X);
+        Assert.Equal(aStraight.Node(s3).X, aRead.Node(r2).X);
     }
 }

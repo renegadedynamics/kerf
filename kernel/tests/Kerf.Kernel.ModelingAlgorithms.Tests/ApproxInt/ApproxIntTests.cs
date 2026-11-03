@@ -23,9 +23,9 @@ public class ApproxIntTests
 
     private static void AssertPnt(double x, double y, double z, Point3D P)
     {
-        Assert.Equal(x, P.X());
-        Assert.Equal(y, P.Y());
-        Assert.Equal(z, P.Z());
+        Assert.Equal(x, P.X);
+        Assert.Equal(y, P.Y);
+        Assert.Equal(z, P.Z);
     }
 
     // occt-issues.md, 5F: a second Compute at the same parameters returns the cached flag without its outputs, so
@@ -65,15 +65,15 @@ public class ApproxIntTests
             {
                 Assert.Equal((0.0, -0.5, 0.0, 0.5), (u1, v1, u2, v2));
                 AssertPnt(0, -0.5, 0, P);
-                Assert.Equal((0.0, 1.0, 0.0), (T.X(), T.Y(), T.Z()));
-                Assert.Equal((0.0, 1.0, 0.0, -1.0), (T1.X(), T1.Y(), T2.X(), T2.Y()));
+                Assert.Equal((0.0, 1.0, 0.0), (T.X, T.Y, T.Z));
+                Assert.Equal((0.0, 1.0, 0.0, -1.0), (T1.X, T1.Y, T2.X, T2.Y));
             }
             else
             {
                 Assert.Equal((0.0, -0.5, 0.0001, 0.5), (u1, v1, u2, v2)); // OCCT: not refined
                 AssertPnt(0, 0, 0, P);
-                Assert.Equal((0.0, 0.0, 0.0), (T.X(), T.Y(), T.Z()));
-                Assert.Equal((0.0, 0.0, 0.0, 0.0), (T1.X(), T1.Y(), T2.X(), T2.Y()));
+                Assert.Equal((0.0, 0.0, 0.0), (T.X, T.Y, T.Z));
+                Assert.Equal((0.0, 0.0, 0.0, 0.0), (T1.X, T1.Y, T2.X, T2.Y));
             }
         }
     }
@@ -105,8 +105,8 @@ public class ApproxIntTests
         Assert.Equal(3, mb.Knots().Length());
         NCollection_Array1<Point3D> pp = new(1, np);
         mb.Curve(1, pp);
-        Assert.Equal(theFirstX, pp[1].X()); // OCCT for theMin > 1: native gives 75 and 50
-        Assert.Equal(300.0, pp[np].X());
+        Assert.Equal(theFirstX, pp[1].X); // OCCT for theMin > 1: native gives 75 and 50
+        Assert.Equal(300.0, pp[np].X);
     }
 
     [Fact]
@@ -122,7 +122,7 @@ public class ApproxIntTests
         ml.Value(4, P, P2);
         AssertPnt(5, 2, 3, P[1]);
         // one 2d point, not on the first surface: (u2 + U2o, v2 + V2o)
-        Assert.Equal((34.0, 41.0), (P2[1].X(), P2[1].Y()));
+        Assert.Equal((34.0, 41.0), (P2[1].X, P2[1].Y));
         NCollection_Array1<Vector3D> T = new(1, 1);
         Assert.False(ml.Tangency(4, T));
 
@@ -158,8 +158,8 @@ public class ApproxIntTests
         NCollection_Array1<Vector3D> T = new(1, 1);
         NCollection_Array1<Vector2D> T2 = new(1, 2);
         Assert.True(ml.Tangency(5, T, T2));
-        Assert.Equal((0.0, 1.0, 0.0), (T[1].X(), T[1].Y(), T[1].Z()));
-        Assert.Equal((0.0, 1.0, 0.0, -1.0), (T2[1].X(), T2[1].Y(), T2[2].X(), T2[2].Y()));
+        Assert.Equal((0.0, 1.0, 0.0), (T[1].X, T[1].Y, T[1].Z));
+        Assert.Equal((0.0, 1.0, 0.0, -1.0), (T2[1].X, T2[1].Y, T2[2].X, T2[2].Y));
 
         for (int n = 0; n <= 40; n += 20)
         {

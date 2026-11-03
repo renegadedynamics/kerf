@@ -9,7 +9,7 @@ namespace Kerf.Engine.Geometry.Objects;
 
 /// <summary>Thrown when a value of a Geom object is undefined.</summary>
 /// <remarks>OCCT's <c>Geom_UndefinedValue_Raise_if</c> macro is defined but never used, so it isn't ported.</remarks>
-public class UndefinedValue3DException : DomainErrorException
+internal class UndefinedValue3DException : DomainErrorException
 {
     public UndefinedValue3DException() { }
     public UndefinedValue3DException(string? message) : base(message) { }

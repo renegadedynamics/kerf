@@ -50,50 +50,50 @@ public readonly partial struct Line3D : IEquatable<Line3D>
         return new Line3D(pos);
     }
 
-    public readonly Direction3D Direction() => _pos.Direction();
+    public readonly Direction3D Direction => _pos.Direction;
 
-    public readonly Point3D Location() => _pos.Location();
+    public readonly Point3D Location => _pos.Location;
 
-    public readonly Axis3D Position() => _pos;
+    public readonly Axis3D Position => _pos;
 
     /// <summary>The angle between the directions of the two lines, in [0, PI].</summary>
-    public readonly double Angle(in Line3D other) => _pos.Direction().Angle(other._pos.Direction());
+    public readonly double AngleTo(in Line3D other) => _pos.Direction.AngleTo(other._pos.Direction);
 
-    public readonly bool Contains(in Point3D p, double linearTolerance) => Distance(p) <= linearTolerance;
+    public readonly bool Contains(in Point3D p, double linearTolerance) => DistanceTo(p) <= linearTolerance;
 
-    public readonly double Distance(in Point3D p)
+    public readonly double DistanceTo(in Point3D p)
     {
         Xyz coord = p.XYZ();
-        coord.Subtract((_pos.Location()).XYZ());
-        coord.Cross((_pos.Direction()).XYZ());
+        coord.Subtract((_pos.Location).XYZ());
+        coord.Cross((_pos.Direction).XYZ());
         return coord.Modulus();
     }
 
     /// <summary>The minimum distance between the two lines.</summary>
-    public readonly double Distance(in Line3D other)
+    public readonly double DistanceTo(in Line3D other)
     {
         if (_pos.IsParallel(other._pos, Constants.Resolution()))
         {
-            return other.Distance(_pos.Location());
+            return other.DistanceTo(_pos.Location);
         }
         else
         {
-            Direction3D dir = _pos.Direction().Crossed(other._pos.Direction());
-            return Math.Abs(new Vector3D(_pos.Location(), other._pos.Location()).Dot(new Vector3D(dir)));
+            Direction3D dir = _pos.Direction.Crossed(other._pos.Direction);
+            return Math.Abs(new Vector3D(_pos.Location, other._pos.Location).Dot(new Vector3D(dir)));
         }
     }
 
-    public readonly double SquareDistance(in Point3D p)
+    public readonly double SquareDistanceTo(in Point3D p)
     {
-        Point3D loc = _pos.Location();
-        Vector3D v = new(p.X() - loc.X(), p.Y() - loc.Y(), p.Z() - loc.Z());
-        v = v.Crossed(new Vector3D(_pos.Direction()));
-        return v.SquareMagnitude();
+        Point3D loc = _pos.Location;
+        Vector3D v = new(p.X - loc.X, p.Y - loc.Y, p.Z - loc.Z);
+        v = v.Crossed(new Vector3D(_pos.Direction));
+        return v.SquareMagnitude;
     }
 
-    public readonly double SquareDistance(in Line3D other)
+    public readonly double SquareDistanceTo(in Line3D other)
     {
-        double d = Distance(other);
+        double d = DistanceTo(other);
         return d * d;
     }
 
@@ -101,9 +101,9 @@ public readonly partial struct Line3D : IEquatable<Line3D>
     /// <exception cref="ConstructionErrorException"><paramref name="p"/> is on this line.</exception>
     public readonly Line3D Normal(in Point3D p)
     {
-        Point3D loc = _pos.Location();
-        Direction3D v = new(p.X() - loc.X(), p.Y() - loc.Y(), p.Z() - loc.Z());
-        v = _pos.Direction().CrossCrossed(v, _pos.Direction());
+        Point3D loc = _pos.Location;
+        Direction3D v = new(p.X - loc.X, p.Y - loc.Y, p.Z - loc.Z);
+        v = _pos.Direction.CrossCrossed(v, _pos.Direction);
         return new Line3D(p, v);
     }
 
@@ -173,5 +173,5 @@ public readonly partial struct Line3D : IEquatable<Line3D>
 
     public static bool operator !=(in Line3D left, in Line3D right) => !left.Equals(right);
 
-    public override readonly string ToString() => $"gp_Lin({_pos.Location()}, {_pos.Direction()})";
+    public override readonly string ToString() => $"gp_Lin({_pos.Location}, {_pos.Direction})";
 }

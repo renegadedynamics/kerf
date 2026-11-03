@@ -344,7 +344,7 @@ public class CurveConstraint : Transient
             throw new FailureException("GeomPlate_CurveConstraint.cxx : Curve must be on a Surface");
         }
         Point2D p2d = _frontiere.GetCurve()!.Value(u);
-        _lProp.SetParameters(p2d.X(), p2d.Y());
+        _lProp.SetParameters(p2d.X, p2d.Y);
         return _lProp;
     }
 }

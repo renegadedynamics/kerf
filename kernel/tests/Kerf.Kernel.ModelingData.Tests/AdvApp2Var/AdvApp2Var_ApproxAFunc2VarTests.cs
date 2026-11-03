@@ -133,7 +133,7 @@ public class AdvApp2Var_ApproxAFunc2VarTests
                 double u = theU0 + (theU1 - theU0) * i / theN, v = theV0 + (theV1 - theV0) * j / theN;
                 theF(u, v, 0, 0, r);
                 Point3D p = theS.Value(u, v);
-                aMax = Math.Max(aMax, p.Distance(new Point3D(r[0], r[1], r[2])));
+                aMax = Math.Max(aMax, p.DistanceTo(new Point3D(r[0], r[1], r[2])));
             }
         }
         return aMax;
@@ -207,11 +207,11 @@ public class AdvApp2Var_ApproxAFunc2VarTests
         int anOrdV = theVCont == C0 ? 0 : theVCont == C1 ? 1 : 2;
         for (int i = 2; i < theS.UKnotCount; i++)
         {
-            Assert.True(theS.UDegree() - theS.UMultiplicity(i) >= anOrdU);
+            Assert.True(theS.UDegree - theS.UMultiplicity(i) >= anOrdU);
         }
         for (int i = 2; i < theS.VKnotCount; i++)
         {
-            Assert.True(theS.VDegree() - theS.VMultiplicity(i) >= anOrdV);
+            Assert.True(theS.VDegree - theS.VMultiplicity(i) >= anOrdV);
         }
     }
 
@@ -354,7 +354,7 @@ public class AdvApp2Var_ApproxAFunc2VarTests
         Assert.Equal(anApprox.VFrontError(3, 1), anApprox.VFrontError(3)!.Value(1));
         Assert.Equal(0.0, anApprox.CritError(3, 1));
         Assert.Same(anApprox.Surface(1), anApprox.Surface(1));
-        Assert.Equal(anApprox.UDegree(), anApprox.Surface(1).UDegree());
+        Assert.Equal(anApprox.UDegree(), anApprox.Surface(1).UDegree);
         Assert.ThrowsAny<OutOfRangeException>(() => anApprox.MaxError(4));
         Assert.ThrowsAny<OutOfRangeException>(() => anApprox.VFrontError(0));
         Assert.ThrowsAny<OutOfRangeException>(() => anApprox.MaxError(2, 1));

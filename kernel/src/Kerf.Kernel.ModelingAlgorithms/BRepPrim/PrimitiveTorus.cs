@@ -55,10 +55,10 @@ internal sealed class PrimitiveTorus : Revolution
 
     private void SetMeridian()
     {
-        Direction3D d = Axes().YDirection();
+        Direction3D d = Axes().YDirection;
         d = d.Reversed();
-        Frame3D a = new(Axes().Location(), d, Axes().XDirection());
-        Vector3D v = new(Axes().XDirection());
+        Frame3D a = new(Axes().Location, d, Axes().XDirection);
+        Vector3D v = new(Axes().XDirection);
         v = v.Multiplied(_major);
         a = a.Translated(v);
         CircleCurve3D c = new(a, _minor);

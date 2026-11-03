@@ -188,7 +188,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
                                                   + new Vector3D(theOracle.Real(-6, 6), theOracle.Real(-6, 6), 0));
                     TrimmedCurve3D anArc = new MakeArcOfCircle(aP1, aTangent, aNext).Value();
                     anEdges.Add(new MakeEdge(anArc).Edge());
-                    anArc.D1(anArc.LastParameter(), out _, out aTangent);
+                    anArc.D1(anArc.LastParameter, out _, out aTangent);
                     aTangent = aTangent.Normalized();
                     aP1 = aNext;
                 }
@@ -247,7 +247,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
     }
 
     private static Point3D OnPlane(in Frame3D theAx, double theU, double theV)
-        => theAx.Location().Translated(new Vector3D(theAx.XDirection()) * theU + new Vector3D(theAx.YDirection()) * theV);
+        => theAx.Location.Translated(new Vector3D(theAx.XDirection) * theU + new Vector3D(theAx.YDirection) * theV);
 
     // A random profile in the plane theAx, its kind
     private static (Shape Shape, string Kind) RandomProfile(Oracle theOracle, in Frame3D theAx, double theSize, bool theClosedOnly)
@@ -307,7 +307,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
     private static N.gp_Pnt ToN(in Point3D theP) => Oracle.ToNative(theP);
 
     // A direction as native receives it: gp_Dir(x, y, z) normalises the coordinates again
-    private static Direction3D Renormalised(in Direction3D theD) => new(theD.X(), theD.Y(), theD.Z());
+    private static Direction3D Renormalised(in Direction3D theD) => new(theD.X, theD.Y, theD.Z);
 
     private static N.gp_Dir ToN(in Direction3D theD) => Oracle.ToNative(theD);
 
@@ -337,7 +337,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
                 case Mode.CorrectedFrenet: aN.SetMode(false); break;
                 case Mode.Frenet: aN.SetMode(true); break;
                 case Mode.Discrete: aN.SetDiscreteMode(); break;
-                case Mode.Fixed: aN.SetMode(new N.gp_Ax2(ToN(theCase.Axe.Location()), ToN(theCase.Axe.Direction()), ToN(theCase.Axe.XDirection()))); break;
+                case Mode.Fixed: aN.SetMode(new N.gp_Ax2(ToN(theCase.Axe.Location), ToN(theCase.Axe.Direction), ToN(theCase.Axe.XDirection))); break;
                 case Mode.BiNormal: aN.SetMode(ToN(theCase.BiNormal)); break;
                 case Mode.Auxiliary: aN.SetMode(N.TopoDS.Wire(aNIn[1]), theCase.Curvilinear, (N.BRepFill_TypeOfContact)(int)theCase.Contact); break;
                 case Mode.Darboux: aN.SetMode(aNIn[1]); break;
@@ -378,7 +378,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
                 case Mode.Frenet: aP.SetMode(true); break;
                 case Mode.Discrete: aP.SetDiscreteMode(); break;
                 // built as native builds them from the coordinates (gp_Ax2(P, N, Vx) and gp_Dir(x, y, z) normalise again)
-                case Mode.Fixed: aP.SetMode(new Frame3D(theCase.Axe.Location(), Renormalised(theCase.Axe.Direction()), Renormalised(theCase.Axe.XDirection()))); break;
+                case Mode.Fixed: aP.SetMode(new Frame3D(theCase.Axe.Location, Renormalised(theCase.Axe.Direction), Renormalised(theCase.Axe.XDirection))); break;
                 case Mode.BiNormal: aP.SetMode(Renormalised(theCase.BiNormal)); break;
                 case Mode.Auxiliary: aP.SetMode(global::Kerf.Engine.Topology.ShapeCasts.Wire(aPIn[1]), theCase.Curvilinear, theCase.Contact); break;
                 case Mode.Darboux: aP.SetMode(aPIn[1]); break;
@@ -725,7 +725,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
             (Wire aSpine, string aKind) = RandomSpine(anOracle, anOracle.Int(0, 2) switch { 0 => 0, 1 => 2, _ => 3 });
             Frame3D aFrame = StartFrame(aSpine);
             // the guide: the spine moved sideways (build123d.NET's twisted extrusion uses a twisted copy)
-            Transform3D aT = new Transform3D().WithTranslation(new Vector3D(aFrame.XDirection()) * anOracle.Real(2, 5));
+            Transform3D aT = new Transform3D().WithTranslation(new Vector3D(aFrame.XDirection) * anOracle.Real(2, 5));
             Wire aGuide = global::Kerf.Engine.Topology.ShapeCasts.Wire(new Transform(aSpine, aT, true).Shape());
             foreach (bool aCurvilinear in new[] { true, false })
             {
@@ -798,7 +798,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
             (Shape aProfile, string aProfKind) = RandomProfile(anOracle, aFrame, anOracle.Real(0.3, 1.0), true);
             Run(new Case
             {
-                Name = $"darboux case {aCase++} {Kerf.Engine.Foundation.OcctTypeNames.Of(aSupport.ShapeType())} {aProfKind}",
+                Name = $"darboux case {aCase++} {Kerf.Engine.Foundation.OcctTypeNames.Of(aSupport.Type)} {aProfKind}",
                 Spine = aSpine,
                 Sections = [new Section(aProfile, -1, false, false)],
                 Mode = Mode.Darboux,
@@ -842,7 +842,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
                     aC.D1(t, out Point3D aP, out Vector3D aV);
                     bool isOff = aShape == 3;
                     Frame3D aFrame = new(isOff ? aP.Translated(new Vector3D(anOracle.Real(-0.5, 0.5), anOracle.Real(-0.5, 0.5), anOracle.Real(-0.5, 0.5))) : aP,
-                                        new Direction3D(isOff ? aV + new Vector3D(anOracle.Real(-0.2, 0.2), anOracle.Real(-0.2, 0.2), 0) * aV.Magnitude() : aV));
+                                        new Direction3D(isOff ? aV + new Vector3D(anOracle.Real(-0.2, 0.2), anOracle.Real(-0.2, 0.2), 0) * aV.Magnitude : aV));
                     int aVertex = aShape == 2 && k > 0 ? (k == aNb - 1 ? aVertices.Count - 1 : anOracle.Int(0, aVertices.Count - 1)) : -1;
                     aSections.Add(new Section(RandomProfile(anOracle, aFrame, anOracle.Real(0.5, 1.5), true).Shape, aVertex,
                                               isOff && anOracle.Bool(), isOff && anOracle.Bool()));
@@ -882,13 +882,13 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
                 Spine = aSpine,
                 Sections = [new Section(aProfile, -1, false, aStyle == 1)],
                 Mode = aStyle switch { 0 => anOracle.Bool() ? Mode.Frenet : Mode.CorrectedFrenet, 1 => Mode.Fixed, _ => Mode.Auxiliary },
-                Axe = new Frame3D(aFrame.Location(), new Direction3D(anOracle.Real(-1, 1), anOracle.Real(-1, 1), 3)),
+                Axe = new Frame3D(aFrame.Location, new Direction3D(anOracle.Real(-1, 1), anOracle.Real(-1, 1), 3)),
                 Transition = RandomTransition(anOracle),
                 Solid = true,
             };
             if (c.Mode == Mode.Auxiliary)
             {
-                Transform3D aT = new Transform3D().WithTranslation(new Vector3D(aFrame.XDirection()) * anOracle.Real(2, 5));
+                Transform3D aT = new Transform3D().WithTranslation(new Vector3D(aFrame.XDirection) * anOracle.Real(2, 5));
                 c.Aux = global::Kerf.Engine.Topology.ShapeCasts.Wire(new Transform(aSpine, aT, true).Shape());
                 c.Curvilinear = aStyle == 2;
             }

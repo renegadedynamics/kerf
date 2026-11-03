@@ -41,7 +41,7 @@ public class EvolvedSection : SurfaceSectionLaw
             curve = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(c, QuasiAngular);
             if (curve.IsPeriodic)
             {
-                int m = curve.Degree() / 2 + 1;
+                int m = curve.Degree / 2 + 1;
                 curve.RemoveKnot(1, m, global::Kerf.Engine.Foundation.Precision.Confusion());
             }
         }
@@ -115,7 +115,7 @@ public class EvolvedSection : SurfaceSectionLaw
     {
         nbPoles = _curve.PoleCount;
         nbKnots = _curve.KnotCount;
-        degree = _curve.Degree();
+        degree = _curve.Degree;
     }
 
     public override void Knots(NCollection_Array1<double> tKnots)
@@ -170,12 +170,12 @@ public class EvolvedSection : SurfaceSectionLaw
     public override Point3D BarycentreOfSurf()
     {
         // OCCT: starts at the section's first parameter but steps to the B-spline's last one (as UniformSection).
-        double u = _section.FirstParameter(), delta, b;
+        double u = _section.FirstParameter, delta, b;
         int ii;
         Point3D p;
         Point3D bary = new Point3D();
 
-        delta = (_curve.LastParameter() - u) / 20;
+        delta = (_curve.LastParameter - u) / 20;
         bary = bary.WithCoord(0.0, 0.0, 0.0);
         for (ii = 0; ii <= 20; ii++, u += delta)
         {

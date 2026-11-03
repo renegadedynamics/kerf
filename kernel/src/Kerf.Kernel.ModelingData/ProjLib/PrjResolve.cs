@@ -24,7 +24,7 @@ namespace Kerf.Engine.Geometry.Projection;
 /// A working object (decision 21). It keeps the caller's adaptors, as OCCT keeps its pointers: they must outlive
 /// the solver.
 /// </remarks>
-public class PrjResolve
+internal class PrjResolve
 {
     private readonly CurveAdaptorBase _curve;
     private readonly SurfaceAdaptorBase _surface;
@@ -68,17 +68,17 @@ public class PrjResolve
         _done = false;
         double fixVal = 0.0;
         Point2D extInf = new(0.0, 0.0), extSup = new(0.0, 0.0);
-        double extU = 10 * tol2d.X(), extV = 10 * tol2d.Y();
+        double extU = 10 * tol2d.X, extV = 10 * tol2d.Y;
         math_Vector tol = new(1, 2), start = new(1, 2), bInf = new(1, 2), bSup = new(1, 2);
 
-        extInf = extInf.WithCoord(inf.X() - extU, inf.Y() - extV);
-        extSup = extSup.WithCoord(sup.X() + extU, sup.Y() + extV);
-        bInf[1] = extInf.X();
-        bInf[2] = extInf.Y();
-        bSup[1] = extSup.X();
-        bSup[2] = extSup.Y();
-        tol[1] = tol2d.X();
-        tol[2] = tol2d.Y();
+        extInf = extInf.WithCoord(inf.X - extU, inf.Y - extV);
+        extSup = extSup.WithCoord(sup.X + extU, sup.Y + extV);
+        bInf[1] = extInf.X;
+        bInf[2] = extInf.Y;
+        bSup[1] = extSup.X;
+        bSup[2] = extSup.Y;
+        tol[1] = tol2d.X;
+        tol[2] = tol2d.Y;
 
         switch (_fix)
         {
@@ -128,35 +128,35 @@ public class PrjResolve
 
         double extraU, extraV;
         //  if(!StrictInside) {
-        extraU = 2.0 * tol2d.X();
-        extraV = 2.0 * tol2d.Y();
+        extraU = 2.0 * tol2d.X;
+        extraV = 2.0 * tol2d.Y;
         //  }
-        if (_solution.X() > inf.X() - tol2d.X() && _solution.X() < inf.X())
+        if (_solution.X > inf.X - tol2d.X && _solution.X < inf.X)
         {
-            _solution = _solution.WithX(inf.X());
+            _solution = _solution.WithX(inf.X);
         }
-        if (_solution.X() > sup.X() && _solution.X() < sup.X() + tol2d.X())
+        if (_solution.X > sup.X && _solution.X < sup.X + tol2d.X)
         {
-            _solution = _solution.WithX(sup.X());
+            _solution = _solution.WithX(sup.X);
         }
-        if (_solution.Y() > inf.Y() - tol2d.Y() && _solution.Y() < inf.Y())
+        if (_solution.Y > inf.Y - tol2d.Y && _solution.Y < inf.Y)
         {
-            _solution = _solution.WithY(inf.Y());
+            _solution = _solution.WithY(inf.Y);
         }
-        if (_solution.Y() > sup.Y() && _solution.Y() < sup.Y() + tol2d.Y())
+        if (_solution.Y > sup.Y && _solution.Y < sup.Y + tol2d.Y)
         {
-            _solution = _solution.WithY(sup.Y());
+            _solution = _solution.WithY(sup.Y);
         }
-        if (_solution.X() < inf.X() - extraU || _solution.X() > sup.X() + extraU
-            || _solution.Y() < inf.Y() - extraV || _solution.Y() > sup.Y() + extraV)
+        if (_solution.X < inf.X - extraU || _solution.X > sup.X + extraU
+            || _solution.Y < inf.Y - extraV || _solution.Y > sup.Y + extraV)
         {
             _done = false;
         }
         else if (funcTol > 0)
         {
             math_Vector x = new(1, 2, 0.0), fVal = new(1, 2, 0.0);
-            x[1] = _solution.X();
-            x[2] = _solution.Y();
+            x[1] = _solution.X;
+            x[2] = _solution.Y;
 
             f.Value(x, fVal);
 

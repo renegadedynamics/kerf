@@ -95,14 +95,14 @@ public class BRepMeshDataTests
         for (int i = 0; i < 4; i++)
         {
             Assert.Equal(i, aCurve.GetParameter(i));
-            Assert.Equal(i, aCurve.GetPoint(i).X());
+            Assert.Equal(i, aCurve.GetPoint(i).X);
         }
 
         // references for writing, as OCCT's
         aCurve.GetParameter(1) = 1.5;
         aCurve.GetPoint(1) = aCurve.GetPoint(1).WithY(7);
         Assert.Equal(1.5, aCurve.GetParameter(1));
-        Assert.Equal(7, aCurve.GetPoint(1).Y());
+        Assert.Equal(7, aCurve.GetPoint(1).Y);
 
         aCurve.RemovePoint(1);
         Assert.Equal(3, aCurve.ParametersNb());
@@ -118,7 +118,7 @@ public class BRepMeshDataTests
         Assert.Equal(2, aCurve.ParametersNb());
         Assert.Equal(0.0, aCurve.GetParameter(0));
         Assert.Equal(3.0, aCurve.GetParameter(1));
-        Assert.Equal(3.0, aCurve.GetPoint(1).X());
+        Assert.Equal(3.0, aCurve.GetPoint(1).X);
         aCurve.Clear(false);
         Assert.Equal(0, aCurve.ParametersNb());
 
@@ -133,7 +133,7 @@ public class BRepMeshDataTests
         Assert.Equal(0, aPCurve.GetIndex(1));
         aPCurve.GetIndex(1) = 42;
         Assert.Equal(42, aPCurve.GetIndex(1));
-        Assert.Equal(0.5, aPCurve.GetPoint(1).X());
+        Assert.Equal(0.5, aPCurve.GetPoint(1).X);
         Assert.Throws<OutOfRangeException>(() => aPCurve.GetPoint(3));
         Assert.Throws<OutOfRangeException>(() => aPCurve.GetIndex(-1));
         Assert.Throws<OutOfRangeException>(() => aPCurve.GetParameter(3));
@@ -187,11 +187,11 @@ public class BRepMeshDataTests
             for (var anIt = new Iterator(aWire); anIt.More(); anIt.Next())
             {
                 EdgeModel aDEdge = aModel.GetEdge(anEdgeMap.GetValue(anIt.Value()));
-                int anIndex = aDWire.AddEdge(aDEdge, anIt.Value().Orientation());
+                int anIndex = aDWire.AddEdge(aDEdge, anIt.Value().Orientation);
                 Assert.Same(aDEdge, aDWire.GetEdge(anIndex));
-                Assert.Equal(anIt.Value().Orientation(), aDWire.GetEdgeOrientation(anIndex));
-                PCurveModel aPCurve = aDEdge.AddPCurve(aDFace, anIt.Value().Orientation());
-                Assert.Same(aPCurve, aDEdge.GetPCurve(aDFace, anIt.Value().Orientation()));
+                Assert.Equal(anIt.Value().Orientation, aDWire.GetEdgeOrientation(anIndex));
+                PCurveModel aPCurve = aDEdge.AddPCurve(aDFace, anIt.Value().Orientation);
+                Assert.Same(aPCurve, aDEdge.GetPCurve(aDFace, anIt.Value().Orientation));
             }
             Assert.Equal(4, aDWire.EdgesNb());
         }

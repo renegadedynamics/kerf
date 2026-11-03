@@ -145,8 +145,8 @@ public sealed class ToolCurveTool
         double l = gac.LastParameter();
         double t = (f + l) * .5;
         Point2D pC2D = c2D.Value(t);
-        double u2 = pC2D.X();
-        double v2 = pC2D.Y();
+        double u2 = pC2D.X;
+        double v2 = pC2D.Y;
 
         if (bas.GetType() == SurfaceKind.Sphere)
         {
@@ -178,8 +178,8 @@ public sealed class ToolCurveTool
                 c2D = pct;
                 // recompute the test point
                 pC2D = c2D.Value(t);
-                u2 = pC2D.X();
-                v2 = pC2D.Y();
+                u2 = pC2D.X;
+                v2 = pC2D.Y;
             }
         }
 

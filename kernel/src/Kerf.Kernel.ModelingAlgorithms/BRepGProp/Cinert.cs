@@ -105,7 +105,7 @@ public class Cinert : Properties
             {
                 u = um + ur * gaussP[i];
                 EdgeTool.D1(c, u, out p, out v1);
-                ds = v1.Magnitude();
+                ds = v1.Magnitude;
                 p.Coord(out x, out y, out z);
                 x -= xloc;
                 y -= yloc;

@@ -94,8 +94,8 @@ public class AppParCurvesTests
         Assert.Equal(theExpected.NbPoles(), theActual.NbPoles());
         for (int i = 1; i <= theExpected.NbPoles(); i++)
         {
-            Assert.True(theExpected.Pole(1, i).Distance(theActual.Pole(1, i)) < theTol, $"3d pole {i}");
-            Assert.True(theExpected.Pole2d(2, i).Distance(theActual.Pole2d(2, i)) < theTol, $"2d pole {i}");
+            Assert.True(theExpected.Pole(1, i).DistanceTo(theActual.Pole(1, i)) < theTol, $"3d pole {i}");
+            Assert.True(theExpected.Pole2d(2, i).DistanceTo(theActual.Pole2d(2, i)) < theTol, $"2d pole {i}");
         }
     }
 
@@ -366,10 +366,10 @@ public class AppParCurvesTests
         {
             aRef.Value(1, u, out Point3D aP);
             aResult.Value(1, u, out Point3D aQ);
-            Assert.True(aP.Distance(aQ) < 1e-10);
+            Assert.True(aP.DistanceTo(aQ) < 1e-10);
             aRef.Value(2, u, out Point2D aP2);
             aResult.Value(2, u, out Point2D aQ2);
-            Assert.True(aP2.Distance(aQ2) < 1e-10);
+            Assert.True(aP2.DistanceTo(aQ2) < 1e-10);
         }
         // P2 = P1 + lambda1 * V1, with V1 = 4 (P2 - P1) for the degree-4 form
         Assert.Equal(0.25, aLSQ.FirstLambda(), 1e-10);
@@ -400,8 +400,8 @@ public class AppParCurvesTests
         aRef.D1(2, 0.0, out Point2D _, out Vector2D aV2a);
         aRef.D1(1, 1.0, out Point3D _, out Vector3D aV3b);
         aRef.D1(2, 1.0, out Point2D _, out Vector2D aV2b);
-        math_Vector V1t = Vector([aV3a.X(), aV3a.Y(), aV3a.Z(), aV2a.X(), aV2a.Y()]);
-        math_Vector V2t = Vector([aV3b.X(), aV3b.Y(), aV3b.Z(), aV2b.X(), aV2b.Y()]);
+        math_Vector V1t = Vector([aV3a.X, aV3a.Y, aV3a.Z, aV2a.X, aV2a.Y]);
+        math_Vector V2t = Vector([aV3b.X, aV3b.Y, aV3b.Z, aV2b.X, aV2b.Y]);
         aLSQ.Perform(Vector(aParams), V1t, V2t, 0.25, 0.25);
         Assert.True(aLSQ.IsDone);
         global::Kerf.Engine.Approximation.MultiCurve aResult = aLSQ.BezierValue();
@@ -410,10 +410,10 @@ public class AppParCurvesTests
         {
             aRef.Value(1, u, out Point3D aP);
             aResult.Value(1, u, out Point3D aQ);
-            Assert.True(aP.Distance(aQ) < 1e-10);
+            Assert.True(aP.DistanceTo(aQ) < 1e-10);
             aRef.Value(2, u, out Point2D aP2);
             aResult.Value(2, u, out Point2D aQ2);
-            Assert.True(aP2.Distance(aQ2) < 1e-10);
+            Assert.True(aP2.DistanceTo(aQ2) < 1e-10);
         }
     }
 
@@ -487,7 +487,7 @@ public class AppParCurvesTests
         LeastSquare aLSQ = new(aLine, 1, 15, PassPoint, PassPoint, U, 4);
         global::Kerf.Engine.Approximation.MultiCurve aCurve = aLSQ.BezierValue();
         aCurve.Value(1, aParams[7], out Point3D aBefore);
-        Assert.True(aBefore.Distance(aLine.P3d[7][0]) > 1e-4);
+        Assert.True(aBefore.DistanceTo(aLine.P3d[7][0]) > 1e-4);
 
         var aConstraints = Constraints((1, PassPoint), (8, PassPoint), (15, PassPoint));
         ResolConstraint aResol = new(aLine, aCurve, 1, 15, aConstraints, aLSQ.FunctionMatrix(), aLSQ.DerivativeFunctionMatrix());
@@ -501,7 +501,7 @@ public class AppParCurvesTests
         foreach (int k in new[] { 0, 7, 14 })
         {
             aCurve.Value(1, aParams[k], out Point3D aP);
-            Assert.True(aP.Distance(aLine.P3d[k][0]) < 1e-8, $"3d point {k + 1}");
+            Assert.True(aP.DistanceTo(aLine.P3d[k][0]) < 1e-8, $"3d point {k + 1}");
         }
 
         global::Kerf.Engine.Numerics.Matrix aDK = aResol.ConstraintDerivative(aLine, U, 3, aLSQ.DerivativeFunctionMatrix());
@@ -529,8 +529,8 @@ public class AppParCurvesTests
         ResolConstraint aResol = new(aLine, aCurve, 1, 15, aConstraints, aLSQ.FunctionMatrix(), aLSQ.DerivativeFunctionMatrix());
         Assert.True(aResol.IsDone);
         aCurve.D1(1, aParams[7], out Point3D aP, out Vector3D aV);
-        Assert.True(aP.Distance(aLine.P3d[7][0]) < 1e-8);
-        Assert.True(aV.Crossed(aTangent).Magnitude() < 1e-8 * aV.Magnitude());
+        Assert.True(aP.DistanceTo(aLine.P3d[7][0]) < 1e-8);
+        Assert.True(aV.Crossed(aTangent).Magnitude < 1e-8 * aV.Magnitude);
     }
 
     [Fact]
@@ -615,7 +615,7 @@ public class AppParCurvesTests
 
         // the interior passing point holds at its (possibly moved) parameter
         aCurve.Value(1, U[8], out Point3D aP);
-        Assert.True(aP.Distance(aLine.P3d[7][0]) < 1e-6);
+        Assert.True(aP.DistanceTo(aLine.P3d[7][0]) < 1e-6);
         Assert.Equal(0.0, U[1]);
         Assert.Equal(1.0, U[15]);
     }
@@ -658,7 +658,7 @@ public class AppParCurvesTests
 
         // the curve passes through the end points
         aCurve.Value(1, U[20], out Point3D aEnd);
-        Assert.True(aEnd.Distance(aLine.P3d[19][0]) < 1e-12);
+        Assert.True(aEnd.DistanceTo(aLine.P3d[19][0]) < 1e-12);
     }
 
     [Fact]

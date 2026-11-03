@@ -102,5 +102,5 @@ public partial struct CurveSurfaceIntersectionPoint : IEquatable<CurveSurfaceInt
                                    in CurveSurfaceIntersectionPoint right) => !left.Equals(right);
 
     public override readonly string ToString()
-        => $"{Constants.Format("IntCurveSurface_IntersectionPoint", _p.X(), _p.Y(), _p.Z(), _uSurf, _vSurf, _uCurv)} {_trOnCurv}";
+        => $"{Constants.Format("IntCurveSurface_IntersectionPoint", _p.X, _p.Y, _p.Z, _uSurf, _vSurf, _uCurv)} {_trOnCurv}";
 }

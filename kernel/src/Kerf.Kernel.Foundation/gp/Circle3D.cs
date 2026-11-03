@@ -70,38 +70,38 @@ public readonly partial struct Circle3D : IEquatable<Circle3D>
 
     // Queries
 
-    public readonly double Area() => M_PI * _radius * _radius;
+    public readonly double Area => M_PI * _radius * _radius;
 
     /// <summary>The main axis of the circle: the normal to its plane through its centre.</summary>
-    public readonly Axis3D Axis() => _pos.Axis();
+    public readonly Axis3D Axis => _pos.Axis;
 
     /// <summary>The circumference.</summary>
-    public readonly double Length() => 2.0 * M_PI * _radius;
+    public readonly double Length => 2.0 * M_PI * _radius;
 
     /// <summary>The centre of the circle.</summary>
-    public readonly Point3D Location() => _pos.Location();
+    public readonly Point3D Location => _pos.Location;
 
-    public readonly Frame3D Position() => _pos;
+    public readonly Frame3D Position => _pos;
 
-    public readonly double Radius() => _radius;
+    public readonly double Radius => _radius;
 
-    public readonly Axis3D XAxis() => new(_pos.Location(), _pos.XDirection());
+    public readonly Axis3D XAxis => new(_pos.Location, _pos.XDirection);
 
-    public readonly Axis3D YAxis() => new(_pos.Location(), _pos.YDirection());
+    public readonly Axis3D YAxis => new(_pos.Location, _pos.YDirection);
 
-    public readonly double Distance(in Point3D p) => Math.Sqrt(SquareDistance(p));
+    public readonly double DistanceTo(in Point3D p) => Math.Sqrt(SquareDistanceTo(p));
 
-    public readonly double SquareDistance(in Point3D p)
+    public readonly double SquareDistanceTo(in Point3D p)
     {
-        Vector3D v = new(Location(), p);
-        double x = v.Dot(new Vector3D(_pos.XDirection()));
-        double y = v.Dot(new Vector3D(_pos.YDirection()));
-        double z = v.Dot(new Vector3D(_pos.Direction()));
+        Vector3D v = new(Location, p);
+        double x = v.Dot(new Vector3D(_pos.XDirection));
+        double y = v.Dot(new Vector3D(_pos.YDirection));
+        double z = v.Dot(new Vector3D(_pos.Direction));
         double t = Math.Sqrt(x * x + y * y) - _radius;
         return (t * t + z * z);
     }
 
-    public readonly bool Contains(in Point3D p, double linearTolerance) => Distance(p) <= linearTolerance;
+    public readonly bool Contains(in Point3D p, double linearTolerance) => DistanceTo(p) <= linearTolerance;
 
     public readonly Circle3D Mirrored(in Point3D p)
     {
@@ -149,7 +149,7 @@ public readonly partial struct Circle3D : IEquatable<Circle3D>
     {
         Frame3D pos = _pos;
         double radius = _radius;
-        radius *= t.ScaleFactor();
+        radius *= t.ScaleFactor;
         if (radius < 0)
         {
             radius = -radius;

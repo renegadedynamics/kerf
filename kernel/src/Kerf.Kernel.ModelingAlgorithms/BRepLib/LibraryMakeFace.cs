@@ -160,7 +160,7 @@ public class LibraryMakeFace : LibraryMakeShape
 
             Wire wForw = w;
             bool hasDegenerated = false;
-            wForw.Orientation(Forward);
+            wForw.Orient(Forward);
             var iter = new Iterator(wForw);
             for (; iter.More(); iter.Next())
             {
@@ -178,8 +178,8 @@ public class LibraryMakeFace : LibraryMakeShape
 
             if (hasDegenerated)
             {
-                aW.Orientation(w.Orientation()); // return to original orient
-                aW.Closed(w.Closed());
+                aW.Orient(w.Orientation); // return to original orient
+                aW.Closed(w.IsClosed);
             }
             else
             {
@@ -310,7 +310,7 @@ public class LibraryMakeFace : LibraryMakeShape
         _error = LibraryFaceError.FaceDone;
         if (bound)
         {
-            s.Bounds(out double uMin, out double uMax, out double vMin, out double vMax);
+            s.ParameterBounds(out double uMin, out double uMax, out double vMin, out double vMax);
             Init(s, uMin, uMax, vMin, vMax, tolDegen);
         }
         else
@@ -339,11 +339,11 @@ public class LibraryMakeFace : LibraryMakeShape
         if (type == Circle)
         {
             Circle3D circ = ac.Circle();
-            if (circ.Radius() > maxTol)
+            if (circ.Radius > maxTol)
             {
                 return false;
             }
-            actTol = Max(circ.Radius(), confusion);
+            actTol = Max(circ.Radius, confusion);
             return true;
         }
         else if (type == BSplineCurve)
@@ -356,7 +356,7 @@ public class LibraryMakeFace : LibraryMakeShape
             for (int i = 2; i <= nbPoles; i++)
             {
                 p2 = bs.Pole(i);
-                double poleDist2 = p1.SquareDistance(p2);
+                double poleDist2 = p1.SquareDistanceTo(p2);
                 if (poleDist2 > maxTol2)
                 {
                     return false;
@@ -379,7 +379,7 @@ public class LibraryMakeFace : LibraryMakeShape
             for (int i = 2; i <= nbPoles; i++)
             {
                 p2 = bz.Pole(i);
-                double poleDist2 = p1.SquareDistance(p2);
+                double poleDist2 = p1.SquareDistanceTo(p2);
                 if (poleDist2 > maxTol2)
                 {
                     return false;
@@ -411,7 +411,7 @@ public class LibraryMakeFace : LibraryMakeShape
         Surface s = ss, bs = ss;
         if (s is TrimmedSurface rs)
         {
-            bs = rs.BasisSurface();
+            bs = rs.BasisSurface;
         }
 
         bool offsetSurface = bs.GetType() == typeof(OffsetSurface);
@@ -420,12 +420,12 @@ public class LibraryMakeFace : LibraryMakeShape
         // check if the values are in the natural range
         double epsilon = global::Kerf.Engine.Foundation.Precision.PConfusion();
 
-        bs.Bounds(out double umin, out double umax, out double vmin, out double vmax);
+        bs.ParameterBounds(out double umin, out double umax, out double vmin, out double vmax);
 
         if (offsetSurface)
         {
             var os = (OffsetSurface)bs;
-            Surface Base = os.BasisSurface();
+            Surface Base = os.BasisSurface;
 
             if (Base.GetType() == typeof(ExtrusionSurface))
             {
@@ -627,12 +627,12 @@ public class LibraryMakeFace : LibraryMakeShape
             b.Degenerated(eumin, dumin);
             if (!vmininf)
             {
-                v00.Orientation(Forward);
+                v00.Orient(Forward);
                 b.Add(eumin, v00);
             }
             if (!vmaxinf)
             {
-                v01.Orientation(Reversed);
+                v01.Orient(Reversed);
                 b.Add(eumin, v01);
             }
             b.Range(eumin, vMin, vMax);
@@ -658,12 +658,12 @@ public class LibraryMakeFace : LibraryMakeShape
                 b.Degenerated(eumax, dumax);
                 if (!vmininf)
                 {
-                    v10.Orientation(Forward);
+                    v10.Orient(Forward);
                     b.Add(eumax, v10);
                 }
                 if (!vmaxinf)
                 {
-                    v11.Orientation(Reversed);
+                    v11.Orient(Reversed);
                     b.Add(eumax, v11);
                 }
                 b.Range(eumax, vMin, vMax);
@@ -691,12 +691,12 @@ public class LibraryMakeFace : LibraryMakeShape
             b.Degenerated(evmin, dvmin);
             if (!umininf)
             {
-                v00.Orientation(Forward);
+                v00.Orient(Forward);
                 b.Add(evmin, v00);
             }
             if (!umaxinf)
             {
-                v10.Orientation(Reversed);
+                v10.Orient(Reversed);
                 b.Add(evmin, v10);
             }
             b.Range(evmin, uMin, uMax);
@@ -722,12 +722,12 @@ public class LibraryMakeFace : LibraryMakeShape
                 b.Degenerated(evmax, dvmax);
                 if (!umininf)
                 {
-                    v01.Orientation(Forward);
+                    v01.Orient(Forward);
                     b.Add(evmax, v01);
                 }
                 if (!umaxinf)
                 {
-                    v11.Orientation(Reversed);
+                    v11.Orient(Reversed);
                     b.Add(evmax, v11);
                 }
                 b.Range(evmax, uMin, uMax);
@@ -735,8 +735,8 @@ public class LibraryMakeFace : LibraryMakeShape
         }
 
         // make the wires and add them to the face
-        eumin.Orientation(Reversed);
-        evmax.Orientation(Reversed);
+        eumin.Orient(Reversed);
+        evmax.Orient(Reversed);
 
         Wire w = new();
 

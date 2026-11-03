@@ -33,7 +33,7 @@ namespace Kerf.Engine.Geometry.Splines;
 /// rows of Poles are the U direction, the columns the V direction. Optional arguments are nullable: no weights
 /// (<see cref="NoWeights"/>) is a non-rational surface, no multiplicities means flat knots.
 /// </remarks>
-public static partial class SurfaceBSplSLib
+internal static partial class SurfaceBSplSLib
 {
     // for null derivatives
     private static ReadOnlySpan<double> BSplSLib_zero => [0.0, 0.0, 0.0];
@@ -494,9 +494,9 @@ public static partial class SurfaceBSplSLib
                     {
                         Point3D p = Poles.Value(ip, jp);
                         poles[pole + 3] = w = weights!.Value(ip, jp);
-                        poles[pole + 0] = p.X() * w;
-                        poles[pole + 1] = p.Y() * w;
-                        poles[pole + 2] = p.Z() * w;
+                        poles[pole + 0] = p.X * w;
+                        poles[pole + 1] = p.Y * w;
+                        poles[pole + 2] = p.Z * w;
                         pole += 4;
                         jp++;
 
@@ -528,9 +528,9 @@ public static partial class SurfaceBSplSLib
                     for (j = 0; j <= d2; j++)
                     {
                         Point3D p = Poles.Value(ip, jp);
-                        poles[pole + 0] = p.X();
-                        poles[pole + 1] = p.Y();
-                        poles[pole + 2] = p.Z();
+                        poles[pole + 0] = p.X;
+                        poles[pole + 1] = p.Y;
+                        poles[pole + 2] = p.Z;
                         pole += 3;
                         jp++;
 
@@ -689,9 +689,9 @@ public static partial class SurfaceBSplSLib
                     {
                         Point3D p = Poles.Value(ip, jp);
                         poles[pole + 3] = w = weights!.Value(ip, jp);
-                        poles[pole + 0] = p.X() * w;
-                        poles[pole + 1] = p.Y() * w;
-                        poles[pole + 2] = p.Z() * w;
+                        poles[pole + 0] = p.X * w;
+                        poles[pole + 1] = p.Y * w;
+                        poles[pole + 2] = p.Z * w;
                         pole += 4;
                         ip++;
 
@@ -728,9 +728,9 @@ public static partial class SurfaceBSplSLib
                     for (j = 0; j <= d2; j++)
                     {
                         Point3D p = Poles.Value(ip, jp);
-                        poles[pole + 0] = p.X();
-                        poles[pole + 1] = p.Y();
-                        poles[pole + 2] = p.Z();
+                        poles[pole + 0] = p.X;
+                        poles[pole + 1] = p.Y;
+                        poles[pole + 2] = p.Z;
                         pole += 3;
                         ip++;
 
@@ -796,9 +796,9 @@ public static partial class SurfaceBSplSLib
                       vPer,
                       out double w,
                       out p);
-        p = p.WithX(p.X() / w);
-        p = p.WithY(p.Y() / w);
-        p = p.WithZ(p.Z() / w);
+        p = p.WithX(p.X / w);
+        p = p.WithY(p.Y / w);
+        p = p.WithZ(p.Z / w);
     }
 
     //=================================================================================================
@@ -1681,15 +1681,15 @@ public static partial class SurfaceBSplSLib
                 if (rational)
                 {
                     locpoles[pole + 3] = w = isU ? weights![index, j] : weights![j, index];
-                    locpoles[pole + 0] = p.X() * w;
-                    locpoles[pole + 1] = p.Y() * w;
-                    locpoles[pole + 2] = p.Z() * w;
+                    locpoles[pole + 0] = p.X * w;
+                    locpoles[pole + 1] = p.Y * w;
+                    locpoles[pole + 2] = p.Z * w;
                 }
                 else
                 {
-                    locpoles[pole + 0] = p.X();
-                    locpoles[pole + 1] = p.Y();
-                    locpoles[pole + 2] = p.Z();
+                    locpoles[pole + 0] = p.X;
+                    locpoles[pole + 1] = p.Y;
+                    locpoles[pole + 2] = p.Z;
                 }
                 pole += dim;
             }
@@ -1947,11 +1947,11 @@ public static partial class SurfaceBSplSLib
                 for (j = pLowerCol; j <= pUpperCol; j++)
                 {
                     Point3D p = poles.Value(i, j);
-                    fp[l] = p.X();
+                    fp[l] = p.X;
                     l++;
-                    fp[l] = p.Y();
+                    fp[l] = p.Y;
                     l++;
-                    fp[l] = p.Z();
+                    fp[l] = p.Z;
                     l++;
                 }
             }
@@ -1965,11 +1965,11 @@ public static partial class SurfaceBSplSLib
                 for (i = pLowerRow; i <= pUpperRow; i++)
                 {
                     Point3D p = poles.Value(i, j);
-                    fp[l] = p.X();
+                    fp[l] = p.X;
                     l++;
-                    fp[l] = p.Y();
+                    fp[l] = p.Y;
                     l++;
-                    fp[l] = p.Z();
+                    fp[l] = p.Z;
                     l++;
                 }
             }
@@ -2002,11 +2002,11 @@ public static partial class SurfaceBSplSLib
                 {
                     Point3D p = poles.Value(i, j);
                     double w = weights.Value(i, j);
-                    fp[l] = p.X() * w;
+                    fp[l] = p.X * w;
                     l++;
-                    fp[l] = p.Y() * w;
+                    fp[l] = p.Y * w;
                     l++;
-                    fp[l] = p.Z() * w;
+                    fp[l] = p.Z * w;
                     l++;
                     fp[l] = w;
                     l++;
@@ -2023,11 +2023,11 @@ public static partial class SurfaceBSplSLib
                 {
                     Point3D p = poles.Value(i, j);
                     double w = weights.Value(i, j);
-                    fp[l] = p.X() * w;
+                    fp[l] = p.X * w;
                     l++;
-                    fp[l] = p.Y() * w;
+                    fp[l] = p.Y * w;
                     l++;
-                    fp[l] = p.Z() * w;
+                    fp[l] = p.Z * w;
                     l++;
                     fp[l] = w;
                     l++;
@@ -3771,12 +3771,12 @@ public static partial class SurfaceBSplSLib
                     wij = weights!.Value(ii_index, jj_index);
                     Point3D pmj = poles.Value(ii_minus, jj_index);
                     wmj = weights.Value(ii_minus, jj_index);
-                    xij = pij.X();
-                    yij = pij.Y();
-                    zij = pij.Z();
-                    xmj = pmj.X();
-                    ymj = pmj.Y();
-                    zmj = pmj.Z();
+                    xij = pij.X;
+                    yij = pij.Y;
+                    zij = pij.Z;
+                    xmj = pmj.X;
+                    ymj = pmj.Y;
+                    zmj = pmj.Z;
 
                     for (pp = lower[0]; pp <= upper[0]; pp++)
                     {
@@ -3787,9 +3787,9 @@ public static partial class SurfaceBSplSLib
                             value = 0.0e0;
                             qq_index = (qq - 1) % poles_length[1] + 1;
                             Point3D ppq = poles.Value(pp_index, qq_index);
-                            xpq = ppq.X();
-                            ypq = ppq.Y();
-                            zpq = ppq.Z();
+                            xpq = ppq.X;
+                            ypq = ppq.Y;
+                            zpq = ppq.Z;
                             factor = (xpq - xij) * wij;
                             factor -= (xpq - xmj) * wmj;
                             if (factor < 0)
@@ -3838,19 +3838,19 @@ public static partial class SurfaceBSplSLib
                     value = 0.0e0;
                     Point3D pij = poles.Value(ii_index, jj_index);
                     Point3D pmj = poles.Value(ii_minus, jj_index);
-                    factor = pij.X() - pmj.X();
+                    factor = pij.X - pmj.X;
                     if (factor < 0)
                     {
                         factor = -factor;
                     }
                     value += factor;
-                    factor = pij.Y() - pmj.Y();
+                    factor = pij.Y - pmj.Y;
                     if (factor < 0)
                     {
                         factor = -factor;
                     }
                     value += factor;
-                    factor = pij.Z() - pmj.Z();
+                    factor = pij.Z - pmj.Z;
                     if (factor < 0)
                     {
                         factor = -factor;
@@ -3904,12 +3904,12 @@ public static partial class SurfaceBSplSLib
                     wji = weights!.Value(jj_index, ii_index);
                     Point3D pjm = poles.Value(jj_index, ii_minus);
                     wjm = weights.Value(jj_index, ii_minus);
-                    xji = pji.X();
-                    yji = pji.Y();
-                    zji = pji.Z();
-                    xjm = pjm.X();
-                    yjm = pjm.Y();
-                    zjm = pjm.Z();
+                    xji = pji.X;
+                    yji = pji.Y;
+                    zji = pji.Z;
+                    xjm = pjm.X;
+                    yjm = pjm.Y;
+                    zjm = pjm.Z;
 
                     for (pp = lower[1]; pp <= upper[1]; pp++)
                     {
@@ -3920,9 +3920,9 @@ public static partial class SurfaceBSplSLib
                             value = 0.0e0;
                             qq_index = (qq - 1) % poles_length[0] + 1;
                             Point3D pqp = poles.Value(qq_index, pp_index);
-                            xqp = pqp.X();
-                            yqp = pqp.Y();
-                            zqp = pqp.Z();
+                            xqp = pqp.X;
+                            yqp = pqp.Y;
+                            zqp = pqp.Z;
                             factor = (xqp - xji) * wji;
                             factor -= (xqp - xjm) * wjm;
                             if (factor < 0)
@@ -3971,19 +3971,19 @@ public static partial class SurfaceBSplSLib
                     value = 0.0e0;
                     Point3D pji = poles.Value(jj_index, ii_index);
                     Point3D pjm = poles.Value(jj_index, ii_minus);
-                    factor = pji.X() - pjm.X();
+                    factor = pji.X - pjm.X;
                     if (factor < 0)
                     {
                         factor = -factor;
                     }
                     value += factor;
-                    factor = pji.Y() - pjm.Y();
+                    factor = pji.Y - pjm.Y;
                     if (factor < 0)
                     {
                         factor = -factor;
                     }
                     value += factor;
-                    factor = pji.Z() - pjm.Z();
+                    factor = pji.Z - pjm.Z;
                     if (factor < 0)
                     {
                         factor = -factor;
@@ -4048,9 +4048,9 @@ public static partial class SurfaceBSplSLib
 
             for (jj = 1, ll = 1; jj <= uLength; jj++, ll += 4)
             {
-                points[ii, ll] = poles[jj, ii].X();
-                points[ii, ll + 1] = poles[jj, ii].Y();
-                points[ii, ll + 2] = poles[jj, ii].Z();
+                points[ii, ll] = poles[jj, ii].X;
+                points[ii, ll + 1] = poles[jj, ii].Y;
+                points[ii, ll + 2] = poles[jj, ii].Z;
                 points[ii, ll + 3] = weights[jj, ii];
             }
         }
@@ -4144,9 +4144,9 @@ public static partial class SurfaceBSplSLib
 
             for (jj = 1, ll = 1; jj <= uLength; jj++, ll += 3)
             {
-                points[ii, ll] = poles[jj, ii].X();
-                points[ii, ll + 1] = poles[jj, ii].Y();
-                points[ii, ll + 2] = poles[jj, ii].Z();
+                points[ii, ll] = poles[jj, ii].X;
+                points[ii, ll + 1] = poles[jj, ii].Y;
+                points[ii, ll + 2] = poles[jj, ii].Z;
             }
         }
 
@@ -4282,9 +4282,9 @@ public static partial class SurfaceBSplSLib
                         throw new ConstructionErrorException();
                     }
                     ref Point3D p = ref newNumerator[ii, jj];
-                    p = p.WithX(p.X() * result);
-                    p = p.WithY(p.Y() * result);
-                    p = p.WithZ(p.Z() * result);
+                    p = p.WithX(p.X * result);
+                    p = p.WithY(p.Y * result);
+                    p = p.WithZ(p.Z * result);
                     newDenominator[ii, jj] *= result;
                 }
             }

@@ -42,7 +42,7 @@ public static class Project
     {
         ProjectPointOnSurface ponS = new();
         //
-        s.Bounds(out double uMin, out double uMax, out double vMin, out double vMax);
+        s.ParameterBounds(out double uMin, out double uMax, out double vMin, out double vMax);
         ponS.Init(s, uMin, uMax, vMin, vMax, anExtAlgo);
         ExtPS extPS = ponS.Extrema();
         extPS.SetFlag(anExtFlag);

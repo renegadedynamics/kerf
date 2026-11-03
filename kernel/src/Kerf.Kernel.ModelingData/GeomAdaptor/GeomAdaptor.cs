@@ -14,7 +14,7 @@ namespace Kerf.Engine.Geometry.Adaptors;
 /// <summary>
 /// Conversions from adaptors back to Geom curves and surfaces.
 /// </summary>
-public static class GeomAdaptor
+internal static class GeomAdaptor
 {
     /// <summary>
     /// Builds a Geom curve from a curve adaptor: a new line, conic, or a copy of the Bezier or B-spline curve,
@@ -60,7 +60,7 @@ public static class GeomAdaptor
         }
 
         // trim the curve if necassary.
-        if ((hc.FirstParameter() != c.FirstParameter()) || (hc.LastParameter() != c.LastParameter()))
+        if ((hc.FirstParameter() != c.FirstParameter) || (hc.LastParameter() != c.LastParameter))
         {
             c = new TrimmedCurve3D(c, hc.FirstParameter(), hc.LastParameter());
         }
@@ -131,7 +131,7 @@ public static class GeomAdaptor
         }
 
         // trim the surface if necassary.
-        s.Bounds(out double u1, out double u2, out double v1, out double v2);
+        s.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
         if ((hs.FirstUParameter() != u1) || (hs.LastUParameter() != u2) || (hs.FirstVParameter() != v1)
             || (hs.LastVParameter() != v2))
         {

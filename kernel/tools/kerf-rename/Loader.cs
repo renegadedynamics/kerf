@@ -40,7 +40,11 @@ internal sealed class Loaded
         {
             foreach (string project in paths)
             {
-                await workspace.OpenProjectAsync(project);
+                // A project an earlier one references is loaded already
+                if (!workspace.CurrentSolution.Projects.Any(p => string.Equals(p.FilePath, project, StringComparison.OrdinalIgnoreCase)))
+                {
+                    await workspace.OpenProjectAsync(project);
+                }
             }
 
             solution = workspace.CurrentSolution;

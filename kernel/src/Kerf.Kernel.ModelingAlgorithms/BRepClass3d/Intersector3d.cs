@@ -90,8 +90,8 @@ public class Intersector3d
                 int n1 = 0;
                 int n2 = 0;
 
-                double x = puv.X();
-                double y = puv.Y();
+                double x = puv.X;
+                double y = puv.Y;
 
                 if (isUPer)
                 {
@@ -142,7 +142,7 @@ public class Intersector3d
                         _pnt = hicsPoint.Pnt();
                         _state = currentstate;
                         _face = face;
-                        if (face.Orientation() == Reversed)
+                        if (face.Orientation == Reversed)
                         {
                             if (_transition == TransitionOnCurve.In)
                             {

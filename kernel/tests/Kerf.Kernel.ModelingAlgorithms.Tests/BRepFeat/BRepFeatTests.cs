@@ -84,7 +84,7 @@ public class BRepFeatTests
         {
             var aProps = new Properties();
             MassPropertiesBuilder.SurfaceProperties(anExp.Current(), aProps);
-            if (Math.Abs(aProps.CentreOfMass().Z()) < 1e-9)
+            if (Math.Abs(aProps.CentreOfMass().Z) < 1e-9)
             {
                 aBottom = anExp.Current();
             }
@@ -102,7 +102,7 @@ public class BRepFeatTests
         {
             var aProps = new Properties();
             MassPropertiesBuilder.SurfaceProperties(anExp.Current(), aProps);
-            if (Math.Abs(aProps.CentreOfMass().Z()) < 1e-9)
+            if (Math.Abs(aProps.CentreOfMass().Z) < 1e-9)
             {
                 return anExp.Current();
             }
@@ -166,7 +166,7 @@ public class BRepFeatTests
         {
             var aProps = new Properties();
             MassPropertiesBuilder.SurfaceProperties(anExp.Current(), aProps);
-            if (Math.Abs(aProps.CentreOfMass().Y() - 20) < 1e-9)
+            if (Math.Abs(aProps.CentreOfMass().Y - 20) < 1e-9)
             {
                 aBack = anExp.Current();
             }

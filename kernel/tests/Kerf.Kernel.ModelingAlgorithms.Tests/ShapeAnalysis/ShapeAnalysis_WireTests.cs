@@ -342,7 +342,7 @@ public class ShapeAnalysis_WireTests
         var anErrors = new NCollection_Sequence<double>();
         Assert.True(aSAW.CheckIntersectingEdges(1, 3, aPnts2d, aPnts3d, anErrors));
         Assert.Equal(1, aPnts3d.Length());
-        Assert.True(aPnts3d.Value(1).Distance(new Point3D(1, 1, 0)) < 1e-9);
+        Assert.True(aPnts3d.Value(1).DistanceTo(new Point3D(1, 1, 0)) < 1e-9);
         Assert.True(anErrors.Value(1) < 1e-9);
         // adjacent edges meet at their common vertex only
         Assert.False(aSAW.CheckIntersectingEdges(2));
@@ -375,8 +375,8 @@ public class ShapeAnalysis_WireTests
         Assert.True(aSAW.CheckLacking(2, 0.05, ref aP1, ref aP2));
         Assert.True(aSAW.LastCheckStatus(ExtendStatus.DONE1));
         Assert.False(aSAW.LastCheckStatus(ExtendStatus.DONE2));
-        Assert.True(aP1.Distance(new Point2D(1, 0)) < 1e-12);
-        Assert.True(aP2.Distance(new Point2D(1.2, 0)) < 1e-12);
+        Assert.True(aP1.DistanceTo(new Point2D(1, 0)) < 1e-12);
+        Assert.True(aP2.DistanceTo(new Point2D(1.2, 0)) < 1e-12);
         Assert.Equal(0.2, aSAW.MaxDistance2d(), 1e-12);
         // the vertex tolerance (0.3) covers it
         Assert.False(aSAW.CheckLacking(2));

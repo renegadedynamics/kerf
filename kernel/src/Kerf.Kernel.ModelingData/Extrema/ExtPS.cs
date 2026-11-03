@@ -70,7 +70,7 @@ public class ExtPS
                 for (t = u1; t <= u2; t = t + step)
                 {
                     s.D1(t, param, out _, out Vector3D d1U, out _);
-                    d1NormMax = Max(d1NormMax, d1U.Magnitude());
+                    d1NormMax = Max(d1NormMax, d1U.Magnitude);
                 }
 
                 if (d1NormMax > tolMax || d1NormMax < tolMin)
@@ -92,7 +92,7 @@ public class ExtPS
                 for (t = v1; t <= v2; t = t + step)
                 {
                     s.D1(param, t, out _, out _, out Vector3D d1V);
-                    d1NormMax = Max(d1NormMax, d1V.Magnitude());
+                    d1NormMax = Max(d1NormMax, d1V.Magnitude);
                 }
 
                 if (d1NormMax > tolMax || d1NormMax < tolMin)

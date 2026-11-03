@@ -77,7 +77,7 @@ public readonly partial struct Sphere : IEquatable<Sphere>
 
     // Queries
 
-    public readonly double Area() => 4.0 * M_PI * _radius * _radius;
+    public readonly double Area => 4.0 * M_PI * _radius * _radius;
 
     /// <summary>
     /// The coefficients of the implicit equation in the global system:
@@ -116,20 +116,20 @@ public readonly partial struct Sphere : IEquatable<Sphere>
     }
 
     /// <summary>True when the coordinate system is right-handed.</summary>
-    public readonly bool Direct() => _pos.Direct();
+    public readonly bool IsDirect => _pos.IsDirect;
 
     /// <summary>The centre of the sphere.</summary>
-    public readonly Point3D Location() => _pos.Location();
+    public readonly Point3D Location => _pos.Location;
 
-    public readonly CoordinateSystem Position() => _pos;
+    public readonly CoordinateSystem Position => _pos;
 
-    public readonly double Radius() => _radius;
+    public readonly double Radius => _radius;
 
-    public readonly double Volume() => (4.0 * M_PI * _radius * _radius * _radius) / 3.0;
+    public readonly double Volume => (4.0 * M_PI * _radius * _radius * _radius) / 3.0;
 
-    public readonly Axis3D XAxis() => new(_pos.Location(), _pos.XDirection());
+    public readonly Axis3D XAxis => new(_pos.Location, _pos.XDirection);
 
-    public readonly Axis3D YAxis() => new(_pos.Location(), _pos.YDirection());
+    public readonly Axis3D YAxis => new(_pos.Location, _pos.YDirection);
 
     public readonly Sphere Mirrored(in Point3D p)
     {
@@ -178,7 +178,7 @@ public readonly partial struct Sphere : IEquatable<Sphere>
         CoordinateSystem pos = _pos;
         double radius = _radius;
         pos = pos.Transformed(t);
-        radius *= t.ScaleFactor();
+        radius *= t.ScaleFactor;
         if (radius < 0)
         {
             radius = -radius;

@@ -58,7 +58,7 @@ public class Ruled : BlendFunction
     public override void Set(double param)
     {
         _curv.D2(param, out _ptgui, out _d1gui, out _d2gui);
-        _normtg = _d1gui.Magnitude();
+        _normtg = _d1gui.Magnitude;
         _nplan = _d1gui.Normalized();
         _d = -(_nplan.XYZ().Dot(_ptgui.XYZ()));
         _istangent = true;
@@ -125,7 +125,7 @@ public class Ruled : BlendFunction
             ns = d1u1.Crossed(d1v1);
             ncrossns = _nplan.Crossed(ns);
             ndotns = _nplan.Dot(ns);
-            norm = ncrossns.Magnitude();
+            norm = ncrossns.Magnitude;
 
             // Derivee de nor1 par rapport au parametre sur la ligne guide
             grosterme = ncrossns.Dot(dnplan.Crossed(ns)) / norm / norm;
@@ -137,7 +137,7 @@ public class Ruled : BlendFunction
             ns = d1u2.Crossed(d1v2);
             ncrossns = _nplan.Crossed(ns);
             ndotns = _nplan.Dot(ns);
-            norm = ncrossns.Magnitude();
+            norm = ncrossns.Magnitude;
 
             // Derivee de nor2 par rapport au parametre sur la ligne guide
             grosterme = ncrossns.Dot(dnplan.Crossed(ns)) / norm / norm;
@@ -184,8 +184,8 @@ public class Ruled : BlendFunction
         Vector3D ns1 = d1u1.Crossed(d1v1);
         Vector3D ns2 = d1u2.Crossed(d1v2);
 
-        double norm1 = _nplan.Crossed(ns1).Magnitude();
-        double norm2 = _nplan.Crossed(ns2).Magnitude();
+        double norm1 = _nplan.Crossed(ns1).Magnitude;
+        double norm2 = _nplan.Crossed(ns2).Magnitude;
         ns1 = Vector3D.LinearForm(_nplan.Dot(ns1) / norm1, _nplan, -1.0 / norm1, ns1);
         ns2 = Vector3D.LinearForm(_nplan.Dot(ns2) / norm2, _nplan, -1.0 / norm2, ns2);
 
@@ -222,8 +222,8 @@ public class Ruled : BlendFunction
         ns2 = d1u2.Crossed(d1v2);
         ncrossns1 = _nplan.Crossed(ns1);
         ncrossns2 = _nplan.Crossed(ns2);
-        norm1 = ncrossns1.Magnitude();
-        norm2 = ncrossns2.Magnitude();
+        norm1 = ncrossns1.Magnitude;
+        norm2 = ncrossns2.Magnitude;
 
         ndotns1 = _nplan.Dot(ns1);
         ndotns2 = _nplan.Dot(ns2);
@@ -294,8 +294,8 @@ public class Ruled : BlendFunction
         ns2 = d1u2.Crossed(d1v2);
         ncrossns1 = _nplan.Crossed(ns1);
         ncrossns2 = _nplan.Crossed(ns2);
-        norm1 = ncrossns1.Magnitude();
-        norm2 = ncrossns2.Magnitude();
+        norm1 = ncrossns1.Magnitude;
+        norm2 = ncrossns2.Magnitude;
 
         ndotns1 = _nplan.Dot(ns1);
         ndotns2 = _nplan.Dot(ns2);
@@ -453,7 +453,7 @@ public class Ruled : BlendFunction
         Matrix gradsol = new(1, 4, 1, 4);
 
         _curv.D2(param, out _ptgui, out _d1gui, out _d2gui);
-        _normtg = _d1gui.Magnitude();
+        _normtg = _d1gui.Magnitude;
         _nplan = _d1gui.Normalized();
         _d = -(_nplan.XYZ().Dot(_ptgui.XYZ()));
 
@@ -475,7 +475,7 @@ public class Ruled : BlendFunction
         ns = d1u1.Crossed(d1v1);
         ncrossns = _nplan.Crossed(ns);
         ndotns = _nplan.Dot(ns);
-        norm = ncrossns.Magnitude();
+        norm = ncrossns.Magnitude;
 
         // Derivee de nor1 par rapport au parametre sur la ligne guide
         grosterme = ncrossns.Dot(dnplan.Crossed(ns)) / norm / norm;
@@ -487,7 +487,7 @@ public class Ruled : BlendFunction
         ns = d1u2.Crossed(d1v2);
         ncrossns = _nplan.Crossed(ns);
         ndotns = _nplan.Dot(ns);
-        norm = ncrossns.Magnitude();
+        norm = ncrossns.Magnitude;
 
         // Derivee de nor2 par rapport au parametre sur la ligne guide
         grosterme = ncrossns.Dot(dnplan.Crossed(ns)) / norm / norm;
@@ -643,13 +643,13 @@ public class Ruled : BlendFunction
         Point3D oriax = new Point3D();
 
         _curv.D2(prm, out _ptgui, out _d1gui, out _d2gui);
-        _normtg = _d1gui.Magnitude();
+        _normtg = _d1gui.Magnitude;
         _nplan = _d1gui.Normalized();
         dnplan = Vector3D.LinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
 
         dirax = _nplan.Crossed(dnplan);
         axrot = axrot.WithDirection(new Direction3D(dirax));
-        oriax = oriax.WithXYZ(_ptgui.XYZ() + (_normtg / dnplan.Magnitude()) * dnplan.Normalized().XYZ());
+        oriax = oriax.WithXYZ(_ptgui.XYZ() + (_normtg / dnplan.Magnitude) * dnplan.Normalized().XYZ());
         axrot = axrot.WithLocation(oriax);
         return axrot;
     }

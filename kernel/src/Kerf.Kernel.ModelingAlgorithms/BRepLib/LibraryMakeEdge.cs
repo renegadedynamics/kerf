@@ -46,8 +46,8 @@ public class LibraryMakeEdge : LibraryMakeShape
         Point3D p1, p2;
         p1 = gac.Value(gac.FirstParameter());
         p2 = gac.Value(gac.LastParameter());
-        d1 = p1.SquareDistance(P);
-        d2 = p2.SquareDistance(P);
+        d1 = p1.SquareDistanceTo(P);
+        d2 = p2.SquareDistanceTo(P);
         if ((d1 < d2) && (d1 <= eps2))
         {
             p = gac.FirstParameter();
@@ -105,8 +105,8 @@ public class LibraryMakeEdge : LibraryMakeShape
         Point3D p1, p2;
         p1 = acos.Value(acos.FirstParameter());
         p2 = acos.Value(acos.LastParameter());
-        d1 = p1.SquareDistance(P);
-        d2 = p2.SquareDistance(P);
+        d1 = p1.SquareDistanceTo(P);
+        d2 = p2.SquareDistanceTo(P);
         if ((d1 < d2) && (d1 <= eps2))
         {
             p = acos.FirstParameter();
@@ -138,7 +138,7 @@ public class LibraryMakeEdge : LibraryMakeShape
             if (index != 0)
             {
                 POnCurv poc = extrema.Point(index);
-                if (P.SquareDistance(poc.Value()) <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+                if (P.SquareDistanceTo(poc.Value()) <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                 {
                     p = poc.Parameter();
                     return true;
@@ -157,7 +157,7 @@ public class LibraryMakeEdge : LibraryMakeShape
     {
         Point3D p1 = Tool.Pnt(v1);
         Point3D p2 = Tool.Pnt(v2);
-        double l = p1.Distance(p2);
+        double l = p1.DistanceTo(p2);
         if (l <= Constants.Resolution())
         {
             _error = LibraryEdgeError.LineThroughIdenticPoints;
@@ -170,7 +170,7 @@ public class LibraryMakeEdge : LibraryMakeShape
 
     public LibraryMakeEdge(in Point3D p1, in Point3D p2)
     {
-        double l = p1.Distance(p2);
+        double l = p1.DistanceTo(p2);
         if (l <= Constants.Resolution())
         {
             _error = LibraryEdgeError.LineThroughIdenticPoints;
@@ -250,7 +250,7 @@ public class LibraryMakeEdge : LibraryMakeShape
 
     public void Init(Curve3D c)
     {
-        Init(c, c.FirstParameter(), c.LastParameter());
+        Init(c, c.FirstParameter, c.LastParameter);
     }
 
     public void Init(Curve3D c, double p1, double p2)
@@ -266,7 +266,7 @@ public class LibraryMakeEdge : LibraryMakeShape
         var b = new BrepBuilder();
         Vertex v1 = new(), v2 = new();
         b.MakeVertex(ref v1, p1, tol);
-        if (p1.Distance(p2) < tol)
+        if (p1.DistanceTo(p2) < tol)
         {
             v2 = v1;
         }
@@ -286,7 +286,7 @@ public class LibraryMakeEdge : LibraryMakeShape
 
         if (v1.IsNull)
         {
-            p1 = c.FirstParameter();
+            p1 = c.FirstParameter;
         }
         else if (!Project(c, v1, out p1))
         {
@@ -295,7 +295,7 @@ public class LibraryMakeEdge : LibraryMakeShape
         }
         if (v2.IsNull)
         {
-            p2 = c.LastParameter();
+            p2 = c.LastParameter;
         }
         else if (!Project(c, v2, out p2))
         {
@@ -313,7 +313,7 @@ public class LibraryMakeEdge : LibraryMakeShape
 
         Vertex v1 = new(), v2 = new();
         b.MakeVertex(ref v1, P1, tol);
-        if (P1.Distance(P2) < tol)
+        if (P1.DistanceTo(P2) < tol)
         {
             v2 = v1;
         }
@@ -333,15 +333,15 @@ public class LibraryMakeEdge : LibraryMakeShape
         TrimmedCurve3D? ct = c as TrimmedCurve3D;
         while (ct is not null)
         {
-            c = ct.BasisCurve();
+            c = ct.BasisCurve;
             ct = c as TrimmedCurve3D;
         }
 
         // check parameters
         double p1 = pp1;
         double p2 = pp2;
-        double cf = c.FirstParameter();
-        double cl = c.LastParameter();
+        double cf = c.FirstParameter;
+        double cl = c.LastParameter;
         double epsilon = global::Kerf.Engine.Foundation.Precision.PConfusion();
         bool periodic = c.IsPeriodic;
         var ca = new CurveAdaptor(c);
@@ -407,7 +407,7 @@ public class LibraryMakeEdge : LibraryMakeShape
         bool degenerated = false;
         if (!p1inf && !p2inf)
         {
-            closed = (P1.Distance(P2) <= preci);
+            closed = (P1.DistanceTo(P2) <= preci);
         }
 
         // check if the vertices are on the curve
@@ -433,7 +433,7 @@ public class LibraryMakeEdge : LibraryMakeShape
                     _error = LibraryEdgeError.DifferentPointsOnClosedCurve;
                     return;
                 }
-                else if (P1.Distance(Tool.Pnt(v1)) > Max(preci, Tool.Tolerance(v1)))
+                else if (P1.DistanceTo(Tool.Pnt(v1)) > Max(preci, Tool.Tolerance(v1)))
                 {
                     _error = LibraryEdgeError.DifferentPointsOnClosedCurve;
                     return;
@@ -441,7 +441,7 @@ public class LibraryMakeEdge : LibraryMakeShape
                 else
                 {
                     Point3D pm = ca.Value((p1 + p2) / 2);
-                    if (P1.Distance(pm) < preci)
+                    if (P1.DistanceTo(pm) < preci)
                     {
                         degenerated = true;
                     }
@@ -466,7 +466,7 @@ public class LibraryMakeEdge : LibraryMakeShape
                 {
                     b.MakeVertex(ref v1, P1, preci);
                 }
-                else if (P1.Distance(Tool.Pnt(v1)) > Max(preci, Tool.Tolerance(v1)))
+                else if (P1.DistanceTo(Tool.Pnt(v1)) > Max(preci, Tool.Tolerance(v1)))
                 {
                     _error = LibraryEdgeError.DifferentsPointAndParameter;
                     return;
@@ -487,7 +487,7 @@ public class LibraryMakeEdge : LibraryMakeShape
                 {
                     b.MakeVertex(ref v2, P2, preci);
                 }
-                else if (P2.Distance(Tool.Pnt(v2)) > Max(preci, Tool.Tolerance(v2)))
+                else if (P2.DistanceTo(Tool.Pnt(v2)) > Max(preci, Tool.Tolerance(v2)))
                 {
                     _error = LibraryEdgeError.DifferentsPointAndParameter;
                     return;
@@ -495,8 +495,8 @@ public class LibraryMakeEdge : LibraryMakeShape
             }
         }
 
-        v1.Orientation(Forward);
-        v2.Orientation(Reversed);
+        v1.Orient(Forward);
+        v2.Orient(Reversed);
         _vertex1 = v1;
         _vertex2 = v2;
 
@@ -524,7 +524,7 @@ public class LibraryMakeEdge : LibraryMakeShape
 
     public void Init(Curve2D c, Surface s)
     {
-        Init(c, s, c.FirstParameter(), c.LastParameter());
+        Init(c, s, c.FirstParameter, c.LastParameter);
     }
 
     public void Init(Curve2D c, Surface s, double p1, double p2)
@@ -540,7 +540,7 @@ public class LibraryMakeEdge : LibraryMakeShape
         var b = new BrepBuilder();
         Vertex v1 = new(), v2 = new();
         b.MakeVertex(ref v1, p1, tol);
-        if (p1.Distance(p2) < tol)
+        if (p1.DistanceTo(p2) < tol)
         {
             v2 = v1;
         }
@@ -560,7 +560,7 @@ public class LibraryMakeEdge : LibraryMakeShape
 
         if (v1.IsNull)
         {
-            p1 = c.FirstParameter();
+            p1 = c.FirstParameter;
         }
         else if (!Project(c, s, v1, out p1))
         {
@@ -569,7 +569,7 @@ public class LibraryMakeEdge : LibraryMakeShape
         }
         if (v2.IsNull)
         {
-            p2 = c.LastParameter();
+            p2 = c.LastParameter;
         }
         else if (!Project(c, s, v2, out p2))
         {
@@ -587,7 +587,7 @@ public class LibraryMakeEdge : LibraryMakeShape
 
         Vertex v1 = new(), v2 = new();
         b.MakeVertex(ref v1, P1, tol);
-        if (P1.Distance(P2) < tol)
+        if (P1.DistanceTo(P2) < tol)
         {
             v2 = v1;
         }
@@ -610,15 +610,15 @@ public class LibraryMakeEdge : LibraryMakeShape
         TrimmedCurve2D? ct = c as TrimmedCurve2D;
         while (ct is not null)
         {
-            c = ct.BasisCurve();
+            c = ct.BasisCurve;
             ct = c as TrimmedCurve2D;
         }
 
         // check parameters
         double p1 = pp1;
         double p2 = pp2;
-        double cf = c.FirstParameter();
-        double cl = c.LastParameter();
+        double cf = c.FirstParameter;
+        double cl = c.LastParameter;
         double epsilon = global::Kerf.Engine.Foundation.Precision.PConfusion();
         bool periodic = c.IsPeriodic;
 
@@ -666,12 +666,12 @@ public class LibraryMakeEdge : LibraryMakeShape
         if (!p1inf)
         {
             p2d1 = c.Value(p1);
-            P1 = s.Value(p2d1.X(), p2d1.Y());
+            P1 = s.Value(p2d1.X, p2d1.Y);
         }
         if (!p2inf)
         {
             p2d2 = c.Value(p2);
-            P2 = s.Value(p2d2.X(), p2d2.Y());
+            P2 = s.Value(p2d2.X, p2d2.Y);
         }
 
         double preci = BrepLibrary.Precision();
@@ -681,7 +681,7 @@ public class LibraryMakeEdge : LibraryMakeShape
         bool closed = false;
         if (!p1inf && !p2inf)
         {
-            closed = (P1.Distance(P2) <= preci);
+            closed = (P1.DistanceTo(P2) <= preci);
         }
 
         // check if the vertices are on the curve
@@ -707,7 +707,7 @@ public class LibraryMakeEdge : LibraryMakeShape
                     _error = LibraryEdgeError.DifferentPointsOnClosedCurve;
                     return;
                 }
-                else if (P1.Distance(Tool.Pnt(v1)) > Max(preci, Tool.Tolerance(v1)))
+                else if (P1.DistanceTo(Tool.Pnt(v1)) > Max(preci, Tool.Tolerance(v1)))
                 {
                     _error = LibraryEdgeError.DifferentPointsOnClosedCurve;
                     return;
@@ -732,7 +732,7 @@ public class LibraryMakeEdge : LibraryMakeShape
                 {
                     b.MakeVertex(ref v1, P1, preci);
                 }
-                else if (P1.Distance(Tool.Pnt(v1)) > Max(preci, Tool.Tolerance(v1)))
+                else if (P1.DistanceTo(Tool.Pnt(v1)) > Max(preci, Tool.Tolerance(v1)))
                 {
                     _error = LibraryEdgeError.DifferentsPointAndParameter;
                     return;
@@ -753,7 +753,7 @@ public class LibraryMakeEdge : LibraryMakeShape
                 {
                     b.MakeVertex(ref v2, P2, preci);
                 }
-                else if (P2.Distance(Tool.Pnt(v2)) > Max(preci, Tool.Tolerance(v2)))
+                else if (P2.DistanceTo(Tool.Pnt(v2)) > Max(preci, Tool.Tolerance(v2)))
                 {
                     _error = LibraryEdgeError.DifferentsPointAndParameter;
                     return;
@@ -761,8 +761,8 @@ public class LibraryMakeEdge : LibraryMakeShape
             }
         }
 
-        v1.Orientation(Forward);
-        v2.Orientation(Reversed);
+        v1.Orient(Forward);
+        v2.Orient(Reversed);
         _vertex1 = v1;
         _vertex2 = v2;
 
@@ -783,7 +783,7 @@ public class LibraryMakeEdge : LibraryMakeShape
 
         if (reverse)
         {
-            e.Orientation(Reversed);
+            e.Orient(Reversed);
         }
         _shape = e;
 

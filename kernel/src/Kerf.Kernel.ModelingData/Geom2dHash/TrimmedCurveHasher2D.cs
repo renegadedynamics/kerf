@@ -21,9 +21,9 @@ internal readonly struct TrimmedCurveHasher2D(double theCompTolerance, double th
         var curveHasher = new CurveHasher2D(CompTolerance, HashTolerance);
         ReadOnlySpan<ulong> hashes =
         [
-            curveHasher.Hash(curve.BasisCurve()),
-            HashUtils.Hash((long)HashUtils.Round(curve.FirstParameter() * factor)),
-            HashUtils.Hash((long)HashUtils.Round(curve.LastParameter() * factor))
+            curveHasher.Hash(curve.BasisCurve),
+            HashUtils.Hash((long)HashUtils.Round(curve.FirstParameter * factor)),
+            HashUtils.Hash((long)HashUtils.Round(curve.LastParameter * factor))
         ];
         return HashUtils.HashBytes(hashes);
     }
@@ -32,8 +32,8 @@ internal readonly struct TrimmedCurveHasher2D(double theCompTolerance, double th
     public bool IsEqual(TrimmedCurve2D curve1, TrimmedCurve2D curve2)
     {
         var curveHasher = new CurveHasher2D(CompTolerance, HashTolerance);
-        return curveHasher.Equals(curve1.BasisCurve(), curve2.BasisCurve())
-               && Math.Abs(curve1.FirstParameter() - curve2.FirstParameter()) <= CompTolerance
-               && Math.Abs(curve1.LastParameter() - curve2.LastParameter()) <= CompTolerance;
+        return curveHasher.Equals(curve1.BasisCurve, curve2.BasisCurve)
+               && Math.Abs(curve1.FirstParameter - curve2.FirstParameter) <= CompTolerance
+               && Math.Abs(curve1.LastParameter - curve2.LastParameter) <= CompTolerance;
     }
 }

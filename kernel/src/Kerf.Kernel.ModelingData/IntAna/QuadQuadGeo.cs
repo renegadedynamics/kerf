@@ -85,10 +85,10 @@ public class QuadQuadGeo
             _epsilonDistance = epsDistance;
             _epsilonAxesPara = epsAxesPara;
             //---------------------------------------------------------------------
-            Direction3D v1 = _axe1.Direction();
-            Direction3D v2 = _axe2.Direction();
-            Point3D p1 = _axe1.Location();
-            Point3D p2 = _axe2.Location();
+            Direction3D v1 = _axe1.Direction;
+            Direction3D v2 = _axe2.Direction;
+            Point3D p1 = _axe1.Location;
+            Point3D p2 = _axe2.Location;
             //
             RefineDir(ref v1);
             RefineDir(ref v2);
@@ -98,29 +98,29 @@ public class QuadQuadGeo
             //--- check if the two axis are parallel
             _theparallel = v1.IsParallel(v2, _epsilonAxesPara);
             //--- Distance between the two axis
-            Xyz perp = a1.Direction().XYZ().Crossed(a2.Direction().XYZ());
+            Xyz perp = a1.Direction.XYZ().Crossed(a2.Direction.XYZ());
             if (_theparallel)
             {
                 Line3D l1 = new(a1);
-                _thedistance = l1.Distance(a2.Location());
+                _thedistance = l1.DistanceTo(a2.Location);
             }
             else
             {
-                _thedistance = Math.Abs(new Vector3D(perp.Normalized()).Dot(new Vector3D(_axe1.Location(), _axe2.Location())));
+                _thedistance = Math.Abs(new Vector3D(perp.Normalized()).Dot(new Vector3D(_axe1.Location, _axe2.Location)));
             }
             //--- check if Axis are Coplanar
             double d33;
             if (_thedistance < _epsilonDistance)
             {
-                d33 = Det33(v1.X(),
-                            v1.Y(),
-                            v1.Z(),
-                            v2.X(),
-                            v2.Y(),
-                            v2.Z(),
-                            p1.X() - p2.X(),
-                            p1.Y() - p2.Y(),
-                            p1.Z() - p2.Z());
+                d33 = Det33(v1.X,
+                            v1.Y,
+                            v1.Z,
+                            v2.X,
+                            v2.Y,
+                            v2.Z,
+                            p1.X - p2.X,
+                            p1.Y - p2.Y,
+                            p1.Z - p2.Z);
                 if (Math.Abs(d33) <= _epsilonDistance)
                 {
                     _thecoplanar = true;
@@ -132,28 +132,28 @@ public class QuadQuadGeo
             //--- check if the two axis are concurrent
             if (_thecoplanar && !_theparallel)
             {
-                double smx = p2.X() - p1.X();
-                double smy = p2.Y() - p1.Y();
-                double smz = p2.Z() - p1.Z();
+                double smx = p2.X - p1.X;
+                double smy = p2.Y - p1.Y;
+                double smz = p2.Z - p1.Z;
                 double det1, det2, det3, a;
-                det1 = v1.Y() * v2.X() - v1.X() * v2.Y();
-                det2 = v1.Z() * v2.Y() - v1.Y() * v2.Z();
-                det3 = v1.Z() * v2.X() - v1.X() * v2.Z();
+                det1 = v1.Y * v2.X - v1.X * v2.Y;
+                det2 = v1.Z * v2.Y - v1.Y * v2.Z;
+                det3 = v1.Z * v2.X - v1.X * v2.Z;
 
                 if ((det1 != 0.0) && ((Math.Abs(det1) >= Math.Abs(det2)) && (Math.Abs(det1) >= Math.Abs(det3))))
                 {
-                    a = (smy * v2.X() - smx * v2.Y()) / det1;
+                    a = (smy * v2.X - smx * v2.Y) / det1;
                 }
                 else if ((det2 != 0.0)
                          && ((Math.Abs(det2) >= Math.Abs(det1)) && (Math.Abs(det2) >= Math.Abs(det3))))
                 {
-                    a = (smz * v2.Y() - smy * v2.Z()) / det2;
+                    a = (smz * v2.Y - smy * v2.Z) / det2;
                 }
                 else
                 {
-                    a = (smz * v2.X() - smx * v2.Z()) / det3;
+                    a = (smz * v2.X - smx * v2.Z) / det3;
                 }
-                _ptintersect = _ptintersect.WithCoord(p1.X() + a * v1.X(), p1.Y() + a * v1.Y(), p1.Z() + a * v1.Z());
+                _ptintersect = _ptintersect.WithCoord(p1.X + a * v1.X, p1.Y + a * v1.Y, p1.Z + a * v1.Z);
             }
             else
             {
@@ -167,22 +167,22 @@ public class QuadQuadGeo
             dist = 0.0;
             param1 = 0.0;
             param2 = 0.0;
-            Vector3D o1O2 = new(_axe1.Location(), _axe2.Location());
-            Direction3D u1 = _axe1.Direction(); //-- just to see.
-            Direction3D u2 = _axe2.Direction();
+            Vector3D o1O2 = new(_axe1.Location, _axe2.Location);
+            Direction3D u1 = _axe1.Direction; //-- just to see.
+            Direction3D u2 = _axe2.Direction;
 
             Direction3D n = u1.Crossed(u2);
-            double d = Det33(u1.X(), u2.X(), n.X(), u1.Y(), u2.Y(), n.Y(), u1.Z(), u2.Z(), n.Z());
+            double d = Det33(u1.X, u2.X, n.X, u1.Y, u2.Y, n.Y, u1.Z, u2.Z, n.Z);
             if (d != 0.0)
             {
-                dist = Det33(u1.X(), u2.X(), o1O2.X(), u1.Y(), u2.Y(), o1O2.Y(), u1.Z(), u2.Z(), o1O2.Z()) / d;
+                dist = Det33(u1.X, u2.X, o1O2.X, u1.Y, u2.Y, o1O2.Y, u1.Z, u2.Z, o1O2.Z) / d;
                 param1 =
-                    Det33(o1O2.X(), u2.X(), n.X(), o1O2.Y(), u2.Y(), n.Y(), o1O2.Z(), u2.Z(), n.Z()) / (-d);
+                    Det33(o1O2.X, u2.X, n.X, o1O2.Y, u2.Y, n.Y, o1O2.Z, u2.Z, n.Z) / (-d);
                 //------------------------------------------------------------
                 //-- We solve P1 * Dir1 + P2 * Dir2 + d * N = O1O2
                 //-- i.e.: Perpendicular segment: O1+P1 D1
                 //--                               O2-P2 D2
-                param2 = Det33(u1.X(), o1O2.X(), n.X(), u1.Y(), o1O2.Y(), n.Y(), u1.Z(), o1O2.Z(), n.Z()) / (d);
+                param2 = Det33(u1.X, o1O2.X, n.X, u1.Y, o1O2.Y, n.Y, u1.Z, o1O2.Z, n.Z) / (d);
             }
         }
 
@@ -222,11 +222,11 @@ public class QuadQuadGeo
     //=======================================================================
     private static Frame3D DirToAx2(in Point3D p, in Direction3D d)
     {
-        double x = d.X();
+        double x = d.X;
         double ax = Math.Abs(x);
-        double y = d.Y();
+        double y = d.Y;
         double ay = Math.Abs(y);
-        double z = d.Z();
+        double z = d.Z;
         double az = Math.Abs(z);
         if ((ax == 0.0) || ((ax < ay) && (ax < az)))
         {
@@ -250,9 +250,9 @@ public class QuadQuadGeo
     {
         // It is supposed that axes of cones are coplanar and
         // distance between them > Precision::Confusion()
-        Point3D pa1 = con1.Apex(), pa2 = con2.Apex();
+        Point3D pa1 = con1.Apex, pa2 = con2.Apex;
 
-        Point3D p3 = pa1.Translated(new Vector3D(con1.Position().Direction()));
+        Point3D p3 = pa1.Translated(new Vector3D(con1.Position.Direction));
 
         MakePln mkPln = new(pa1, pa2, p3);
         if (!mkPln.IsDone)
@@ -262,19 +262,19 @@ public class QuadQuadGeo
 
         Plane3D pln = mkPln.Value();
 
-        Line3D ax1 = new(pa1, con1.Position().Direction());
+        Line3D ax1 = new(pa1, con1.Position.Direction);
         Line2D ax12d = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(pln, ax1);
         Span<Line2D> lines1 = [new Line2D(), new Line2D()];
-        double ang1 = con1.SemiAngle();
-        lines1[0] = ax12d.Rotated(ax12d.Location(), ang1);
-        lines1[1] = ax12d.Rotated(ax12d.Location(), -ang1);
+        double ang1 = con1.SemiAngle;
+        lines1[0] = ax12d.Rotated(ax12d.Location, ang1);
+        lines1[1] = ax12d.Rotated(ax12d.Location, -ang1);
         //
-        Line3D ax2 = new(pa2, con2.Position().Direction());
+        Line3D ax2 = new(pa2, con2.Position.Direction);
         Line2D ax22d = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(pln, ax2);
         Span<Line2D> lines2 = [new Line2D(), new Line2D()];
-        double ang2 = con2.SemiAngle();
-        lines2[0] = ax22d.Rotated(ax22d.Location(), ang2);
-        lines2[1] = ax22d.Rotated(ax22d.Location(), -ang2);
+        double ang2 = con2.SemiAngle;
+        lines2[0] = ax22d.Rotated(ax22d.Location, ang2);
+        lines2[1] = ax22d.Rotated(ax22d.Location, -ang2);
 
         Span<double> minDist = [global::Kerf.Engine.Foundation.Precision.Infinite(), global::Kerf.Engine.Foundation.Precision.Infinite()];
         int i, j, k;
@@ -363,13 +363,13 @@ public class QuadQuadGeo
         Vector3D vn2 = new(a2, b2, c2);
         Vector3D vd = vn1.Crossed(vn2);
         //
-        Point3D locP1 = p1.Location();
-        Point3D locP2 = p2.Location();
+        Point3D locP1 = p1.Location;
+        Point3D locP2 = p2.Location;
         //
-        dist1 = a2 * locP1.X() + b2 * locP1.Y() + c2 * locP1.Z() + d2;
-        dist2 = a1 * locP2.X() + b1 * locP2.Y() + c1 * locP2.Z() + d1;
+        dist1 = a2 * locP1.X + b2 * locP1.Y + c2 * locP1.Z + d2;
+        dist2 = a1 * locP2.X + b1 * locP2.Y + c1 * locP2.Z + d1;
         //
-        mvd = vd.Magnitude();
+        mvd = vd.Magnitude;
         if (mvd <= tolAng)
         {
             // normalles are collinear - planes are same or parallel
@@ -393,12 +393,12 @@ public class QuadQuadGeo
             Vector3D inter1 = vn1.Crossed(vd);
             Vector3D inter2 = vn2.Crossed(vd);
 
-            x1 = locP1.X() + par1 * inter1.X();
-            y1 = locP1.Y() + par1 * inter1.Y();
-            z1 = locP1.Z() + par1 * inter1.Z();
-            x2 = locP2.X() + par2 * inter2.X();
-            y2 = locP2.Y() + par2 * inter2.Y();
-            z2 = locP2.Z() + par2 * inter2.Z();
+            x1 = locP1.X + par1 * inter1.X;
+            y1 = locP1.Y + par1 * inter1.Y;
+            z1 = locP1.Z + par1 * inter1.Z;
+            x2 = locP2.X + par2 * inter2.X;
+            y2 = locP2.Y + par2 * inter2.Y;
+            z2 = locP2.Z + par2 * inter2.Z;
 
             _pt1 = new Point3D((x1 + x2) * 0.5, (y1 + y2) * 0.5, (z1 + z2) * 0.5);
             _dir1 = new Direction3D(vd);
@@ -424,8 +424,8 @@ public class QuadQuadGeo
             {
                 double aDist1, aDist2;
                 //
-                aDist1 = a1 * _pt1.X() + b1 * _pt1.Y() + c1 * _pt1.Z() + d1;
-                aDist2 = a2 * _pt1.X() + b2 * _pt1.Y() + c2 * _pt1.Z() + d2;
+                aDist1 = a1 * _pt1.X + b1 * _pt1.Y + c1 * _pt1.Z + d1;
+                aDist2 = a2 * _pt1.X + b2 * _pt1.Y + c2 * _pt1.Z + d2;
                 //
                 if (Math.Abs(aDist1) > treshDist || Math.Abs(aDist2) > treshDist)
                 {
@@ -497,13 +497,13 @@ public class QuadQuadGeo
         Xyz axex, axey, omega = new();
 
         _param2bis = 0.0;
-        radius = cl.Radius();
+        radius = cl.Radius;
 
-        Line3D axec = new(cl.Axis());
-        Xyz normp = p.Axis().Direction().XYZ();
+        Line3D axec = new(cl.Axis);
+        Xyz normp = p.Axis.Direction.XYZ();
 
         p.Coefficients(out a, out b, out c, out d);
-        axec.Location().Coord(out x, out y, out z);
+        axec.Location.Coord(out x, out y, out z);
         // The axis/plane distance is evaluated at the origin of the axis.
         dist = a * x + b * y + c * z + d;
 
@@ -511,12 +511,12 @@ public class QuadQuadGeo
         double toltang = tol;
         bool newparams = false;
 
-        Vector3D ldv = new(axec.Direction());
+        Vector3D ldv = new(axec.Direction);
         Vector3D npv = new(normp);
-        double dA = Math.Abs(ldv.Angle(npv));
+        double dA = Math.Abs(ldv.AngleTo(npv));
         if (dA > (M_PI / 4.0))
         {
-            double dang = Math.Abs(ldv.Angle(npv)) - M_PI / 2.0;
+            double dang = Math.Abs(ldv.AngleTo(npv)) - M_PI / 2.0;
             double dangle = Math.Abs(dang);
             if (dangle > Tolang)
             {
@@ -559,7 +559,7 @@ public class QuadQuadGeo
                 if (newparams)
                 {
                     Xyz omegaXYZ = new(x, y, z);
-                    Xyz omegaXYZtrnsl = omegaXYZ + 100.0 * axec.Direction().XYZ();
+                    Xyz omegaXYZtrnsl = omegaXYZ + 100.0 * axec.Direction.XYZ();
                     double xt, yt, zt, distt;
                     omegaXYZtrnsl.Coord(out xt, out yt, out zt);
                     distt = a * xt + b * yt + c * zt + d;
@@ -573,14 +573,14 @@ public class QuadQuadGeo
                 }
                 else
                 {
-                    _dir1 = axec.Direction();
+                    _dir1 = axec.Direction;
                 }
             }
             else if (Math.Abs(dist) < radius)
             {
                 _nbint = 2;
                 h = Math.Sqrt(radius * radius - dist * dist);
-                axey = axec.Direction().XYZ().Crossed(normp); // axey is normalized
+                axey = axec.Direction.XYZ().Crossed(normp); // axey is normalized
 
                 _pt1 = _pt1.WithXYZ(omega - h * axey);
                 _pt2 = _pt2.WithXYZ(omega + h * axey);
@@ -588,7 +588,7 @@ public class QuadQuadGeo
                 if (newparams)
                 {
                     Xyz omegaXYZ = new(x, y, z);
-                    Xyz omegaXYZtrnsl = omegaXYZ + 100.0 * axec.Direction().XYZ();
+                    Xyz omegaXYZtrnsl = omegaXYZ + 100.0 * axec.Direction.XYZ();
                     double xt, yt, zt, distt, ht;
                     omegaXYZtrnsl.Coord(out xt, out yt, out zt);
                     distt = a * xt + b * yt + c * zt + d;
@@ -610,8 +610,8 @@ public class QuadQuadGeo
                 }
                 else
                 {
-                    _dir1 = axec.Direction();
-                    _dir2 = axec.Direction();
+                    _dir1 = axec.Direction;
+                    _dir2 = axec.Direction;
                 }
             }
             //  else nbint = 0
@@ -629,7 +629,7 @@ public class QuadQuadGeo
           // or of the solution ellipse.
 
             _nbint = 1;
-            axey = normp.Crossed(axec.Direction().XYZ());
+            axey = normp.Crossed(axec.Direction.XYZ());
             sint = axey.Modulus();
 
             _pt1 = inter.Point(1);
@@ -639,15 +639,15 @@ public class QuadQuadGeo
                 // Construct a circle with the X and Y axes of the cylinder
                 _typeres = global::Kerf.Engine.Intersection.ResultType.Circle;
 
-                _dir1 = axec.Direction(); // Z axis
-                _dir2 = cl.Position().XDirection();
+                _dir1 = axec.Direction; // Z axis
+                _dir2 = cl.Position.XDirection;
                 _param1 = radius;
             }
             else
             {
                 // construct an ellipse
                 _typeres = global::Kerf.Engine.Intersection.ResultType.Ellipse;
-                cost = Math.Abs(axec.Direction().XYZ().Dot(normp));
+                cost = Math.Abs(axec.Direction.XYZ().Dot(normp));
                 axex = axey.Crossed(normp);
 
                 _dir1 = _dir1.WithXYZ(normp); // Modified in this block
@@ -684,23 +684,23 @@ public class QuadQuadGeo
         double dh;
         Xyz axex, axey;
 
-        Line3D axec = new(co.Axis());
+        Line3D axec = new(co.Axis);
         p.Coefficients(out a, out b, out c, out d);
-        Point3D apex = co.Apex();
+        Point3D apex = co.Apex;
 
         apex.Coord(out x, out y, out z);
         dist = a * x + b * y + c * z + d; // signed distance from cone apex to plane
 
-        Xyz normp = p.Axis().Direction().XYZ();
-        if (!p.Direct())
+        Xyz normp = p.Axis.Direction.XYZ();
+        if (!p.IsDirect)
         { //-- lbr 14 Jan 97
             normp.Reverse();
         }
 
-        axey = normp.Crossed(co.Axis().Direction().XYZ());
+        axey = normp.Crossed(co.Axis.Direction.XYZ());
         axex = axey.Crossed(normp);
 
-        angl = co.SemiAngle();
+        angl = co.SemiAngle;
 
         cosa = Math.Cos(angl);
         sina = Math.Abs(Math.Sin(angl));
@@ -708,7 +708,7 @@ public class QuadQuadGeo
         // Angle between the plane normal and the cone axis, brought between 0 and PI/2.
 
         sint = axey.Modulus();
-        cost = Math.Abs(co.Axis().Direction().XYZ().Dot(normp));
+        cost = Math.Abs(co.Axis.Direction.XYZ().Dot(normp));
 
         // The calculation of costa determines if the plane contains
         // a generatrix of the cone: we calculate std::sin((PI/2. - t) - angl)
@@ -726,7 +726,7 @@ public class QuadQuadGeo
             { // plane parallel to the generatrix
                 _typeres = global::Kerf.Engine.Intersection.ResultType.Line;
                 _nbint = 1;
-                Xyz ptonaxe = apex.XYZ() + 10.0 * (co.Axis().Direction().XYZ());
+                Xyz ptonaxe = apex.XYZ() + 10.0 * (co.Axis.Direction.XYZ());
                 // point on the axis of the cone on the positive z side
 
                 dist = a * ptonaxe.X() + b * ptonaxe.Y() + c * ptonaxe.Z() + d;
@@ -780,9 +780,9 @@ public class QuadQuadGeo
                 // of the cone, we change the x axis to -x and y to -y. The parameter of the apex
                 // on axec is negative (see definition of the cone)
 
-                distance = apex.Distance(center);
+                distance = apex.DistanceTo(center);
 
-                if (inter.ParamOnConic(1) + co.RefRadius() / Math.Tan(angl) < 0.0)
+                if (inter.ParamOnConic(1) + co.RefRadius / Math.Tan(angl) < 0.0)
                 {
                     axex.Reverse();
                     axey.Reverse();
@@ -804,9 +804,9 @@ public class QuadQuadGeo
                     _typeres = global::Kerf.Engine.Intersection.ResultType.Circle;
                     _nbint = 1;
                     _pt1 = center;
-                    _dir1 = co.Position().Direction();
-                    _dir2 = co.Position().XDirection();
-                    _param1 = apex.Distance(center) * Math.Abs(Math.Tan(angl));
+                    _dir1 = co.Position.Direction;
+                    _dir2 = co.Position.XDirection;
+                    _param1 = apex.DistanceTo(center) * Math.Abs(Math.Tan(angl));
                 }
                 else if (cost < sina)
                 {
@@ -890,8 +890,8 @@ public class QuadQuadGeo
         _typeres = Empty;
 
         p.Coefficients(out a, out b, out c, out d);
-        s.Location().Coord(out x, out y, out z);
-        radius = s.Radius();
+        s.Location.Coord(out x, out y, out z);
+        radius = s.Radius;
 
         dist = a * x + b * y + c * z + d;
 
@@ -909,12 +909,12 @@ public class QuadQuadGeo
             _nbint = 1;
             _typeres = global::Kerf.Engine.Intersection.ResultType.Circle;
             _pt1 = _pt1.WithCoord(x - dist * a, y - dist * b, z - dist * c);
-            _dir1 = p.Axis().Direction();
-            if (!p.Direct())
+            _dir1 = p.Axis.Direction;
+            if (!p.IsDirect)
             {
                 _dir1 = _dir1.Reversed();
             }
-            _dir2 = p.Position().XDirection();
+            _dir2 = p.Position.XDirection;
             _param1 = Math.Sqrt(radius * radius - dist * dist);
         }
         _param2bis = 0.0; //-- to avoid param2bis unused warning
@@ -933,12 +933,12 @@ public class QuadQuadGeo
     {
         _done = true;
         //---------------------------- Parallel axes -------------------------
-        AxeOperator a1A2 = new(cyl1.Axis(),
-                               cyl2.Axis(),
+        AxeOperator a1A2 = new(cyl1.Axis,
+                               cyl2.Axis,
                                _epsilonCylinderDeltaDistance,
                                _epsilonAxesPara);
-        double r1 = cyl1.Radius();
-        double r2 = cyl2.Radius();
+        double r1 = cyl1.Radius;
+        double r2 = cyl2.Radius;
         double rmR, RmR_Relative;
         rmR = (r1 > r2) ? (r1 - r2) : (r2 - r1);
         {
@@ -964,18 +964,18 @@ public class QuadQuadGeo
             }
             else
             { //-- DistA1A2 > Tol
-                Point3D P1 = cyl1.Location();
-                Point3D p2t = cyl2.Location();
+                Point3D P1 = cyl1.Location;
+                Point3D p2t = cyl2.Location;
                 Point3D P2 = new();
                 //-- P2t is projected on the plane (P1,DirCylX,DirCylY)
-                Direction3D dirCyl = cyl1.Position().Direction();
+                Direction3D dirCyl = cyl1.Position.Direction;
                 double projP2OnDirCyl1 = new Vector3D(dirCyl).Dot(new Vector3D(P1, p2t));
 
                 // P2 is a projection the location of the 2nd cylinder on the base
                 // of the 1st cylinder
-                P2 = P2.WithCoord(p2t.X() - projP2OnDirCyl1 * dirCyl.X(),
-                            p2t.Y() - projP2OnDirCyl1 * dirCyl.Y(),
-                            p2t.Z() - projP2OnDirCyl1 * dirCyl.Z());
+                P2 = P2.WithCoord(p2t.X - projP2OnDirCyl1 * dirCyl.X,
+                            p2t.Y - projP2OnDirCyl1 * dirCyl.Y,
+                            p2t.Z - projP2OnDirCyl1 * dirCyl.Z);
                 //--
                 double r1pR2 = r1 + r2;
                 if (distA1A2 > (r1pR2 + tol))
@@ -991,9 +991,9 @@ public class QuadQuadGeo
                     _nbint = 1;
                     _dir1 = dirCyl;
                     double R1_R1pR2 = r1 / r1pR2;
-                    _pt1 = _pt1.WithCoord(P1.X() + R1_R1pR2 * (P2.X() - P1.X()),
-                                 P1.Y() + R1_R1pR2 * (P2.Y() - P1.Y()),
-                                 P1.Z() + R1_R1pR2 * (P2.Z() - P1.Z()));
+                    _pt1 = _pt1.WithCoord(P1.X + R1_R1pR2 * (P2.X - P1.X),
+                                 P1.Y + R1_R1pR2 * (P2.Y - P1.Y),
+                                 P1.Z + R1_R1pR2 * (P2.Z - P1.Z));
                 }
                 else if (distA1A2 > rmR)
                 {
@@ -1059,7 +1059,7 @@ public class QuadQuadGeo
                         // two intersection points).
                         // 2. Intercept the segment from P1 along direction,
                         // determined in the preview paragraph and having R1 length
-                        Direction3D xDir = cyl1.Position().XDirection(), yDir = cyl1.Position().YDirection();
+                        Direction3D xDir = cyl1.Position.XDirection, yDir = cyl1.Position.YDirection;
                         Vector3D r1Xdir = new(r1 * xDir.XYZ()), r1Ydir = new(r1 * yDir.XYZ());
 
                         // Source 2D-coordinates of the P1P2 vector normalized
@@ -1090,9 +1090,9 @@ public class QuadQuadGeo
                         R1_RmR = -R1_RmR;
                     }
 
-                    _pt1 = _pt1.WithCoord(P1.X() + R1_RmR * (P2.X() - P1.X()),
-                                 P1.Y() + R1_RmR * (P2.Y() - P1.Y()),
-                                 P1.Z() + R1_RmR * (P2.Z() - P1.Z()));
+                    _pt1 = _pt1.WithCoord(P1.X + R1_RmR * (P2.X - P1.X),
+                                 P1.Y + R1_RmR * (P2.Y - P1.Y),
+                                 P1.Z + R1_RmR * (P2.Z - P1.Z));
                 }
                 else
                 {
@@ -1109,11 +1109,11 @@ public class QuadQuadGeo
                 //-- and identical radius
                 _typeres = global::Kerf.Engine.Intersection.ResultType.Ellipse;
                 _nbint = 2;
-                Direction3D dirCyl1 = cyl1.Position().Direction();
-                Direction3D dirCyl2 = cyl2.Position().Direction();
+                Direction3D dirCyl1 = cyl1.Position.Direction;
+                Direction3D dirCyl2 = cyl2.Position.Direction;
                 _pt1 = _pt2 = a1A2.PtIntersect();
 
-                double a = dirCyl1.Angle(dirCyl2);
+                double a = dirCyl1.AngleTo(dirCyl2);
                 double b;
                 b = Math.Abs(Math.Sin(0.5 * (M_PI - a)));
                 a = Math.Abs(Math.Sin(0.5 * a));
@@ -1129,9 +1129,9 @@ public class QuadQuadGeo
                 _dir1 = new Direction3D(dircyl1.Added(dircyl2));
                 _dir2 = new Direction3D(dircyl1.Subtracted(dircyl2));
 
-                _param2 = cyl1.Radius() / a;
-                _param1 = cyl1.Radius() / b;
-                _param2bis = _param1bis = cyl1.Radius();
+                _param2 = cyl1.Radius / a;
+                _param1 = cyl1.Radius / b;
+                _param2bis = _param1bis = cyl1.Radius;
                 if (_param1 < _param1bis)
                 {
                     a = _param1;
@@ -1148,26 +1148,26 @@ public class QuadQuadGeo
             }
             else
             {
-                if (Math.Abs(distA1A2 - cyl1.Radius() - cyl2.Radius()) < tol)
+                if (Math.Abs(distA1A2 - cyl1.Radius - cyl2.Radius) < tol)
                 {
                     _typeres = global::Kerf.Engine.Intersection.ResultType.Point;
                     double d, p1, p2;
 
-                    Direction3D d1 = cyl1.Axis().Direction();
-                    Direction3D d2 = cyl2.Axis().Direction();
+                    Direction3D d1 = cyl1.Axis.Direction;
+                    Direction3D d2 = cyl2.Axis.Direction;
                     a1A2.Distance(out d, out p1, out p2);
-                    Point3D p = cyl1.Axis().Location();
-                    Point3D P1 = new(p.X() - p1 * d1.X(), p.Y() - p1 * d1.Y(), p.Z() - p1 * d1.Z());
+                    Point3D p = cyl1.Axis.Location;
+                    Point3D P1 = new(p.X - p1 * d1.X, p.Y - p1 * d1.Y, p.Z - p1 * d1.Z);
 
-                    p = cyl2.Axis().Location();
+                    p = cyl2.Axis.Location;
 
-                    Point3D P2 = new(p.X() - p2 * d2.X(), p.Y() - p2 * d2.Y(), p.Z() - p2 * d2.Z());
+                    Point3D P2 = new(p.X - p2 * d2.X, p.Y - p2 * d2.Y, p.Z - p2 * d2.Z);
 
                     Vector3D p1P2 = new(P1, P2);
                     d1 = new Direction3D(p1P2);
-                    p1 = cyl1.Radius();
+                    p1 = cyl1.Radius;
 
-                    _pt1 = _pt1.WithCoord(P1.X() + p1 * d1.X(), P1.Y() + p1 * d1.Y(), P1.Z() + p1 * d1.Z());
+                    _pt1 = _pt1.WithCoord(P1.X + p1 * d1.X, P1.Y + p1 * d1.Y, P1.Z + p1 * d1.Z);
                     _nbint = 1;
                 }
                 else
@@ -1190,16 +1190,16 @@ public class QuadQuadGeo
     {
         _ = tol;
         _done = true;
-        AxeOperator a1A2 = new(cyl.Axis(), con.Axis());
+        AxeOperator a1A2 = new(cyl.Axis, con.Axis);
         if (a1A2.Same())
         {
-            Point3D pt = con.Apex();
-            double dist = cyl.Radius() / (Math.Tan(con.SemiAngle()));
-            Direction3D dir = cyl.Position().Direction();
-            _pt1 = _pt1.WithCoord(pt.X() + dist * dir.X(), pt.Y() + dist * dir.Y(), pt.Z() + dist * dir.Z());
-            _pt2 = _pt2.WithCoord(pt.X() - dist * dir.X(), pt.Y() - dist * dir.Y(), pt.Z() - dist * dir.Z());
+            Point3D pt = con.Apex;
+            double dist = cyl.Radius / (Math.Tan(con.SemiAngle));
+            Direction3D dir = cyl.Position.Direction;
+            _pt1 = _pt1.WithCoord(pt.X + dist * dir.X, pt.Y + dist * dir.Y, pt.Z + dist * dir.Z);
+            _pt2 = _pt2.WithCoord(pt.X - dist * dir.X, pt.Y - dist * dir.Y, pt.Z - dist * dir.Z);
             _dir1 = _dir2 = dir;
-            _param1 = _param2 = cyl.Radius();
+            _param1 = _param2 = cyl.Radius;
             _nbint = 2;
             _typeres = global::Kerf.Engine.Intersection.ResultType.Circle;
         }
@@ -1221,27 +1221,27 @@ public class QuadQuadGeo
     {
         _ = tol;
         _done = true;
-        Point3D pt = sph.Location();
-        AxeOperator a1A2 = new(cyl.Axis(), sph.Position().Axis());
-        if ((a1A2.Intersect() && pt.Distance(a1A2.PtIntersect()) == 0.0) || (a1A2.Same()))
+        Point3D pt = sph.Location;
+        AxeOperator a1A2 = new(cyl.Axis, sph.Position.Axis);
+        if ((a1A2.Intersect() && pt.DistanceTo(a1A2.PtIntersect()) == 0.0) || (a1A2.Same()))
         {
-            if (sph.Radius() < cyl.Radius())
+            if (sph.Radius < cyl.Radius)
             {
                 _typeres = Empty;
             }
             else
             {
-                double dist = Math.Sqrt(sph.Radius() * sph.Radius() - cyl.Radius() * cyl.Radius());
-                Direction3D dir = cyl.Position().Direction();
+                double dist = Math.Sqrt(sph.Radius * sph.Radius - cyl.Radius * cyl.Radius);
+                Direction3D dir = cyl.Position.Direction;
                 _dir1 = _dir2 = dir;
                 _typeres = global::Kerf.Engine.Intersection.ResultType.Circle;
-                _pt1 = _pt1.WithCoord(pt.X() + dist * dir.X(), pt.Y() + dist * dir.Y(), pt.Z() + dist * dir.Z());
+                _pt1 = _pt1.WithCoord(pt.X + dist * dir.X, pt.Y + dist * dir.Y, pt.Z + dist * dir.Z);
                 _nbint = 1;
-                _param1 = cyl.Radius();
+                _param1 = cyl.Radius;
                 if (dist > RealEpsilon())
                 {
-                    _pt2 = _pt2.WithCoord(pt.X() - dist * dir.X(), pt.Y() - dist * dir.Y(), pt.Z() - dist * dir.Z());
-                    _param2 = cyl.Radius();
+                    _pt2 = _pt2.WithCoord(pt.X - dist * dir.X, pt.Y - dist * dir.Y, pt.Z - dist * dir.Z);
+                    _param2 = cyl.Radius;
                     _nbint = 2;
                 }
             }
@@ -1270,8 +1270,8 @@ public class QuadQuadGeo
         double TOL_APEX_CONF = 1.0e-10;
 
         //
-        tg1 = Math.Tan(con1.SemiAngle());
-        tg2 = Math.Tan(con2.SemiAngle());
+        tg1 = Math.Tan(con1.SemiAngle);
+        tg2 = Math.Tan(con2.SemiAngle);
 
         if ((tg1 * tg2) < 0.0)
         {
@@ -1279,11 +1279,11 @@ public class QuadQuadGeo
         }
         //
         aTol2 = tol * tol;
-        pApex1 = con1.Apex();
-        pApex2 = con2.Apex();
-        da1A2 = pApex1.SquareDistance(pApex2);
+        pApex1 = con1.Apex;
+        pApex2 = con2.Apex;
+        da1A2 = pApex1.SquareDistanceTo(pApex2);
         //
-        AxeOperator a1A2 = new(con1.Axis(), con2.Axis());
+        AxeOperator a1A2 = new(con1.Axis, con2.Axis);
         //
         double tolAng = _epsilonAngleCone;
         if ((Math.Abs(tg1 - tg2) < tol) && (a1A2.Parallel()))
@@ -1309,9 +1309,9 @@ public class QuadQuadGeo
         {
             //-- two circles
             double x;
-            Point3D P = con1.Apex();
-            Direction3D D = con1.Position().Direction();
-            double d = new Vector3D(D).Dot(new Vector3D(P, con2.Apex()));
+            Point3D P = con1.Apex;
+            Direction3D D = con1.Position.Direction;
+            double d = new Vector3D(D).Dot(new Vector3D(P, con2.Apex));
 
             if (Math.Abs(tg1 - tg2) > _epsilonAngleCone)
             {
@@ -1323,11 +1323,11 @@ public class QuadQuadGeo
                     return;
                 }
                 x = (d * tg2) / (tg1 + tg2);
-                _pt1 = _pt1.WithCoord(P.X() + x * D.X(), P.Y() + x * D.Y(), P.Z() + x * D.Z());
+                _pt1 = _pt1.WithCoord(P.X + x * D.X, P.Y + x * D.Y, P.Z + x * D.Z);
                 _param1 = Math.Abs(x * tg1);
 
                 x = (d * tg2) / (tg2 - tg1);
-                _pt2 = _pt2.WithCoord(P.X() + x * D.X(), P.Y() + x * D.Y(), P.Z() + x * D.Z());
+                _pt2 = _pt2.WithCoord(P.X + x * D.X, P.Y + x * D.Y, P.Z + x * D.Z);
                 _param2 = Math.Abs(x * tg1);
                 _dir1 = _dir2 = D;
                 _nbint = 2;
@@ -1344,7 +1344,7 @@ public class QuadQuadGeo
                     _typeres = global::Kerf.Engine.Intersection.ResultType.Circle;
                     _nbint = 1;
                     x = d * 0.5;
-                    _pt1 = _pt1.WithCoord(P.X() + x * D.X(), P.Y() + x * D.Y(), P.Z() + x * D.Z());
+                    _pt1 = _pt1.WithCoord(P.X + x * D.X, P.Y + x * D.Y, P.Z + x * D.Z);
                     _param1 = Math.Abs(x * tg1);
                     _dir1 = D;
                 }
@@ -1354,14 +1354,14 @@ public class QuadQuadGeo
         else if ((Math.Abs(tg1 - tg2) < tolAng) && (a1A2.Parallel()))
         {
             double distA1A2 = a1A2.Distance();
-            Direction3D da1 = con1.Position().Direction();
-            Vector3D o1O2 = new(con1.Apex(), con2.Apex());
+            Direction3D da1 = con1.Position.Direction;
+            Vector3D o1O2 = new(con1.Apex, con2.Apex);
             Direction3D o1O2n = new(o1O2); // normalization of the vector before projection
             double O1O2_DA1 = new Vector3D(da1).Dot(new Vector3D(o1O2n));
 
-            Vector3D O1_Proj_A2 = new(o1O2n.X() - O1O2_DA1 * da1.X(),
-                                    o1O2n.Y() - O1O2_DA1 * da1.Y(),
-                                    o1O2n.Z() - O1O2_DA1 * da1.Z());
+            Vector3D O1_Proj_A2 = new(o1O2n.X - O1O2_DA1 * da1.X,
+                                    o1O2n.Y - O1O2_DA1 * da1.Y,
+                                    o1O2n.Z - O1O2_DA1 * da1.Z);
             Direction3D db1 = new(O1_Proj_A2);
 
             double yO1O2 = o1O2.Dot(new Vector3D(da1));
@@ -1369,13 +1369,13 @@ public class QuadQuadGeo
             double x2 = (distA1A2 / abstg1 - yO1O2) * 0.5;
             double x1 = x2 + yO1O2;
 
-            Point3D P1 = new(con1.Apex().X() + x1 * (da1.X() + abstg1 * db1.X()),
-                            con1.Apex().Y() + x1 * (da1.Y() + abstg1 * db1.Y()),
-                            con1.Apex().Z() + x1 * (da1.Z() + abstg1 * db1.Z()));
+            Point3D P1 = new(con1.Apex.X + x1 * (da1.X + abstg1 * db1.X),
+                            con1.Apex.Y + x1 * (da1.Y + abstg1 * db1.Y),
+                            con1.Apex.Z + x1 * (da1.Z + abstg1 * db1.Z));
 
-            Point3D mo1O2 = new(0.5 * (con1.Apex().X() + con2.Apex().X()),
-                               0.5 * (con1.Apex().Y() + con2.Apex().Y()),
-                               0.5 * (con1.Apex().Z() + con2.Apex().Z()));
+            Point3D mo1O2 = new(0.5 * (con1.Apex.X + con2.Apex.X),
+                               0.5 * (con1.Apex.Y + con2.Apex.Y),
+                               0.5 * (con1.Apex.Z + con2.Apex.Z));
             Vector3D p1MO1O2 = new(P1, mo1O2);
 
             Direction3D DA1_X_DB1 = da1.Crossed(db1);
@@ -1390,11 +1390,11 @@ public class QuadQuadGeo
                     {
                         _typeres = global::Kerf.Engine.Intersection.ResultType.Ellipse;
                         Ellipse3D e = INTER_QUAD_PLN.Ellipse(1);
-                        _pt1 = e.Location();
-                        _dir1 = e.Position().Direction();
-                        _dir2 = e.Position().XDirection();
-                        _param1 = e.MajorRadius();
-                        _param1bis = e.MinorRadius();
+                        _pt1 = e.Location;
+                        _dir1 = e.Position.Direction;
+                        _dir2 = e.Position.XDirection;
+                        _param1 = e.MajorRadius;
+                        _param1bis = e.MinorRadius;
                         _nbint = 1;
                         break;
                     }
@@ -1402,10 +1402,10 @@ public class QuadQuadGeo
                     {
                         _typeres = global::Kerf.Engine.Intersection.ResultType.Circle;
                         Circle3D c = INTER_QUAD_PLN.Circle(1);
-                        _pt1 = c.Location();
-                        _dir1 = c.Position().XDirection();
-                        _dir2 = c.Position().YDirection();
-                        _param1 = c.Radius();
+                        _pt1 = c.Location;
+                        _dir1 = c.Position.XDirection;
+                        _dir2 = c.Position.YDirection;
+                        _param1 = c.Radius;
                         _nbint = 1;
                         break;
                     }
@@ -1413,11 +1413,11 @@ public class QuadQuadGeo
                     {
                         _typeres = global::Kerf.Engine.Intersection.ResultType.Hyperbola;
                         Hyperbola3D h = INTER_QUAD_PLN.Hyperbola(1);
-                        _pt1 = _pt2 = h.Location();
-                        _dir1 = h.Position().Direction();
-                        _dir2 = h.Position().XDirection();
-                        _param1 = _param2 = h.MajorRadius();
-                        _param1bis = _param2bis = h.MinorRadius();
+                        _pt1 = _pt2 = h.Location;
+                        _dir1 = h.Position.Direction;
+                        _dir2 = h.Position.XDirection;
+                        _param1 = _param2 = h.MajorRadius;
+                        _param1bis = _param2bis = h.MinorRadius;
                         _nbint = 2;
                         break;
                     }
@@ -1425,8 +1425,8 @@ public class QuadQuadGeo
                     {
                         _typeres = global::Kerf.Engine.Intersection.ResultType.Line;
                         Line3D h = INTER_QUAD_PLN.Line(1);
-                        _pt1 = _pt2 = h.Location();
-                        _dir1 = _dir2 = h.Position().Direction();
+                        _pt1 = _pt2 = h.Location;
+                        _dir1 = _dir2 = h.Position.Direction;
                         _param1 = _param2 = 0.0;
                         _param1bis = _param2bis = 0.0;
                         _nbint = 2;
@@ -1461,9 +1461,9 @@ public class QuadQuadGeo
             pa1 = pa1.WithCoord(aD1, 0.0);
             p0 = p0.WithCoord(0.0, 0.0);
             //
-            ax1 = con1.Axis();
-            ax2 = con2.Axis();
-            gamma = ax1.Angle(ax2);
+            ax1 = con1.Axis;
+            ax2 = con2.Axis;
+            gamma = ax1.AngleTo(ax2);
             if (gamma > halfPI)
             {
                 gamma = M_PI - gamma;
@@ -1471,11 +1471,11 @@ public class QuadQuadGeo
             cosGamma = Math.Cos(gamma);
             sinGamma = Math.Sin(gamma);
             //
-            beta1 = con1.SemiAngle();
+            beta1 = con1.SemiAngle;
             tgBeta1 = Math.Tan(beta1);
             tgBeta1 = Math.Abs(tgBeta1);
             //
-            beta2 = con2.SemiAngle();
+            beta2 = con2.SemiAngle;
             tgBeta2 = Math.Tan(beta2);
             tgBeta2 = Math.Abs(tgBeta2);
             //
@@ -1493,11 +1493,11 @@ public class QuadQuadGeo
             pa2 = p0.Translated(dx * new Vector2D(dAx2));
             //
             // aR2
-            dx = pa2.Distance(p0);
+            dx = pa2.DistanceTo(p0);
             r2 = dx * tgBeta2;
             //
             // aRD2
-            rd2 = pa2.Distance(p1);
+            rd2 = pa2.DistanceTo(p1);
             //
             if (rd2 > (r2 + tol))
             {
@@ -1519,24 +1519,24 @@ public class QuadQuadGeo
             Line3D lin;
             QuadQuadGeo intr = new();
             //
-            qApex1 = con1.Apex();
-            d3Ax1 = ax1.Direction();
-            qa1 = qa1.WithCoord(qApex1.X() + aD1 * d3Ax1.X(),
-                          qApex1.Y() + aD1 * d3Ax1.Y(),
-                          qApex1.Z() + aD1 * d3Ax1.Z());
+            qApex1 = con1.Apex;
+            d3Ax1 = ax1.Direction;
+            qa1 = qa1.WithCoord(qApex1.X + aD1 * d3Ax1.X,
+                          qApex1.Y + aD1 * d3Ax1.Y,
+                          qApex1.Z + aD1 * d3Ax1.Z);
             //
-            dx = d3Ax1.Dot(ax2.Direction());
+            dx = d3Ax1.Dot(ax2.Direction);
             if (dx < 0.0)
             {
                 ax2 = ax2.Reversed();
             }
-            d3Ax2 = ax2.Direction();
+            d3Ax2 = ax2.Direction;
             //
             aD2 = aD1 * Math.Sqrt((1.0 + tgBeta1 * tgBeta1) / (1.0 + tgBeta2 * tgBeta2));
             //
-            qa2 = qa2.WithCoord(qApex1.X() + aD2 * d3Ax2.X(),
-                          qApex1.Y() + aD2 * d3Ax2.Y(),
-                          qApex1.Z() + aD2 * d3Ax2.Z());
+            qa2 = qa2.WithCoord(qApex1.X + aD2 * d3Ax2.X,
+                          qApex1.Y + aD2 * d3Ax2.Y,
+                          qApex1.Z + aD2 * d3Ax2.Z);
             //
             Plane3D pln1 = new(qa1, d3Ax1);
             Plane3D pln2 = new(qa2, d3Ax2);
@@ -1549,9 +1549,9 @@ public class QuadQuadGeo
             }
             //
             lin = intr.Line(1);
-            Direction3D dLin = lin.Direction();
+            Direction3D dLin = lin.Direction;
             Vector3D vLin = new(dLin);
-            Point3D orig = lin.Location();
+            Point3D orig = lin.Location;
             Vector3D vr = new(qa1, orig);
             dx = vLin.Dot(vr);
             qx = orig.Translated(dx * vLin);
@@ -1577,7 +1577,7 @@ public class QuadQuadGeo
             { // iRet=2
                 // two lines
                 _nbint = 2;
-                da = qa1.Distance(qx);
+                da = qa1.DistanceTo(qx);
                 dx = Math.Sqrt(r1 * r1 - da * da);
                 qx1 = qx.Translated(dx * vLin);
                 qx2 = qx.Translated(-dx * vLin);
@@ -1597,7 +1597,7 @@ public class QuadQuadGeo
             double u, v, tol2 = tol * tol;
             global::Kerf.Engine.Geometry.ElSLib.Parameters(con2, pApex1, out u, out v);
             Point3D p = global::Kerf.Engine.Geometry.ElSLib.Value(u, v, con2);
-            if (pApex1.SquareDistance(p) > tol2)
+            if (pApex1.SquareDistanceTo(p) > tol2)
             {
                 _typeres = NoGeometricSolution;
                 return;
@@ -1605,7 +1605,7 @@ public class QuadQuadGeo
             //
             global::Kerf.Engine.Geometry.ElSLib.Parameters(con1, pApex2, out u, out v);
             p = global::Kerf.Engine.Geometry.ElSLib.Value(u, v, con1);
-            if (pApex2.SquareDistance(p) > tol2)
+            if (pApex2.SquareDistanceTo(p) > tol2)
             {
                 _typeres = NoGeometricSolution;
                 return;
@@ -1625,20 +1625,20 @@ public class QuadQuadGeo
             _pChar = global::Kerf.Engine.Geometry.ElCLib.Value(u, gen);
 
             // Other generatrixes of cones laying in maximal plane
-            Line3D gen1 = gen.Rotated(con1.Axis(), M_PI);
-            Line3D gen2 = gen.Rotated(con2.Axis(), M_PI);
+            Line3D gen1 = gen.Rotated(con1.Axis, M_PI);
+            Line3D gen2 = gen.Rotated(con2.Axis, M_PI);
             //
             // Intersection point of generatrixes
             Direction3D n; // solution plane normal
-            Direction3D aD1 = gen1.Direction();
+            Direction3D aD1 = gen1.Direction;
 
-            Direction3D aD2 = aD1.Crossed(gen.Direction());
+            Direction3D aD2 = aD1.Crossed(gen.Direction);
 
-            if (aD1.IsParallel(gen2.Direction(), global::Kerf.Engine.Foundation.Precision.Angular()))
+            if (aD1.IsParallel(gen2.Direction, global::Kerf.Engine.Foundation.Precision.Angular()))
             {
                 n = aD1.Crossed(aD2);
             }
-            else if (gen1.SquareDistance(gen2) > tol2)
+            else if (gen1.SquareDistanceTo(gen2) > tol2)
             {
                 // Something wrong ???
                 _typeres = NoGeometricSolution;
@@ -1646,10 +1646,10 @@ public class QuadQuadGeo
             }
             else
             {
-                Direction3D d1 = gen1.Position().Direction();
-                Direction3D d2 = gen2.Position().Direction();
-                Point3D o1 = gen1.Location();
-                Point3D o2 = gen2.Location();
+                Direction3D d1 = gen1.Position.Direction;
+                Direction3D d2 = gen2.Position.Direction;
+                Point3D o1 = gen1.Location;
+                Point3D o2 = gen2.Location;
                 double d1DotD2 = d1.Dot(d2);
                 double sin = 1.0 - d1DotD2 * d1DotD2;
                 Vector3D o1O2 = new(o1, o2);
@@ -1673,11 +1673,11 @@ public class QuadQuadGeo
                     {
                         _typeres = global::Kerf.Engine.Intersection.ResultType.Ellipse;
                         Ellipse3D e = INTER_QUAD_PLN.Ellipse(1);
-                        _pt1 = e.Location();
-                        _dir1 = e.Position().Direction();
-                        _dir2 = e.Position().XDirection();
-                        _param1 = e.MajorRadius();
-                        _param1bis = e.MinorRadius();
+                        _pt1 = e.Location;
+                        _dir1 = e.Position.Direction;
+                        _dir2 = e.Position.XDirection;
+                        _param1 = e.MajorRadius;
+                        _param1bis = e.MinorRadius;
                         _nbint = 1;
                         break;
                     }
@@ -1685,10 +1685,10 @@ public class QuadQuadGeo
                     {
                         _typeres = global::Kerf.Engine.Intersection.ResultType.Circle;
                         Circle3D c = INTER_QUAD_PLN.Circle(1);
-                        _pt1 = c.Location();
-                        _dir1 = c.Position().XDirection();
-                        _dir2 = c.Position().YDirection();
-                        _param1 = c.Radius();
+                        _pt1 = c.Location;
+                        _dir1 = c.Position.XDirection;
+                        _dir2 = c.Position.YDirection;
+                        _param1 = c.Radius;
                         _nbint = 1;
                         break;
                     }
@@ -1696,10 +1696,10 @@ public class QuadQuadGeo
                     {
                         _typeres = global::Kerf.Engine.Intersection.ResultType.Parabola;
                         Parabola3D prb = INTER_QUAD_PLN.Parabola(1);
-                        _pt1 = prb.Location();
-                        _dir1 = prb.Position().Direction();
-                        _dir2 = prb.Position().XDirection();
-                        _param1 = prb.Focal();
+                        _pt1 = prb.Location;
+                        _dir1 = prb.Position.Direction;
+                        _dir2 = prb.Position.XDirection;
+                        _param1 = prb.Focal;
                         _nbint = 1;
                         break;
                     }
@@ -1707,11 +1707,11 @@ public class QuadQuadGeo
                     {
                         _typeres = global::Kerf.Engine.Intersection.ResultType.Hyperbola;
                         Hyperbola3D h = INTER_QUAD_PLN.Hyperbola(1);
-                        _pt1 = _pt2 = h.Location();
-                        _dir1 = h.Position().Direction();
-                        _dir2 = h.Position().XDirection();
-                        _param1 = _param2 = h.MajorRadius();
-                        _param1bis = _param2bis = h.MinorRadius();
+                        _pt1 = _pt2 = h.Location;
+                        _dir1 = h.Position.Direction;
+                        _dir2 = h.Position.XDirection;
+                        _param1 = _param2 = h.MajorRadius;
+                        _param1bis = _param2bis = h.MinorRadius;
                         _nbint = 2;
                         break;
                     }
@@ -1741,13 +1741,13 @@ public class QuadQuadGeo
         //
         _done = true;
         //
-        AxeOperator a1A2 = new(con.Axis(), sph.Position().Axis());
-        Point3D pt = sph.Location();
+        AxeOperator a1A2 = new(con.Axis, sph.Position.Axis);
+        Point3D pt = sph.Location;
         //
-        if ((a1A2.Intersect() && (pt.Distance(a1A2.PtIntersect()) == 0.0)) || a1A2.Same())
+        if ((a1A2.Intersect() && (pt.DistanceTo(a1A2.PtIntersect()) == 0.0)) || a1A2.Same())
         {
-            Point3D conApex = con.Apex();
-            double dApexSphCenter = pt.Distance(conApex);
+            Point3D conApex = con.Apex;
+            double dApexSphCenter = pt.DistanceTo(conApex);
             Direction3D conDir;
             if (dApexSphCenter > RealEpsilon())
             {
@@ -1755,11 +1755,11 @@ public class QuadQuadGeo
             }
             else
             {
-                conDir = con.Position().Direction();
+                conDir = con.Position.Direction;
             }
 
-            double rad = sph.Radius();
-            double tga = Math.Tan(con.SemiAngle());
+            double rad = sph.Radius;
+            double tga = Math.Tan(con.SemiAngle);
 
             //-- 2 circles
             //-- x: Roots of    (x**2 + y**2 = Rad**2)
@@ -1783,9 +1783,9 @@ public class QuadQuadGeo
                         double x = eq.Value(1);
                         double dApexSphCenterpx = dApexSphCenter + x;
                         _nbint = 1;
-                        _pt1 = _pt1.WithCoord(conApex.X() + (dApexSphCenterpx) * conDir.X(),
-                                     conApex.Y() + (dApexSphCenterpx) * conDir.Y(),
-                                     conApex.Z() + (dApexSphCenterpx) * conDir.Z());
+                        _pt1 = _pt1.WithCoord(conApex.X + (dApexSphCenterpx) * conDir.X,
+                                     conApex.Y + (dApexSphCenterpx) * conDir.Y,
+                                     conApex.Z + (dApexSphCenterpx) * conDir.Z);
                         _param1 = tga * dApexSphCenterpx;
                         _param1 = Math.Abs(_param1);
                         _dir1 = conDir;
@@ -1800,9 +1800,9 @@ public class QuadQuadGeo
                         double x = eq.Value(2);
                         double dApexSphCenterpx = dApexSphCenter + x;
                         _nbint = 2;
-                        _pt2 = _pt2.WithCoord(conApex.X() + (dApexSphCenterpx) * conDir.X(),
-                                     conApex.Y() + (dApexSphCenterpx) * conDir.Y(),
-                                     conApex.Z() + (dApexSphCenterpx) * conDir.Z());
+                        _pt2 = _pt2.WithCoord(conApex.X + (dApexSphCenterpx) * conDir.X,
+                                     conApex.Y + (dApexSphCenterpx) * conDir.Y,
+                                     conApex.Z + (dApexSphCenterpx) * conDir.Z);
                         _param2 = tga * dApexSphCenterpx;
                         _param2 = Math.Abs(_param2);
                         _dir2 = conDir;
@@ -1836,11 +1836,11 @@ public class QuadQuadGeo
     public void Perform(in Sphere sph1, in Sphere sph2, double tol)
     {
         _done = true;
-        Point3D o1 = sph1.Location();
-        Point3D o2 = sph2.Location();
-        double dO1O2 = o1.Distance(o2);
-        double r1 = sph1.Radius();
-        double r2 = sph2.Radius();
+        Point3D o1 = sph1.Location;
+        Point3D o2 = sph2.Location;
+        double dO1O2 = o1.DistanceTo(o2);
+        double r1 = sph1.Radius;
+        double r2 = sph2.Radius;
         double rmin, rmax;
         _typeres = Empty;
         _param2bis = 0.0; //-- to avoid param2bis unused warning
@@ -1892,7 +1892,7 @@ public class QuadQuadGeo
                     t2 = (-r1 + (dO1O2 - r2)) * 0.5;
                 }
 
-                _pt1 = _pt1.WithCoord(o1.X() + t2 * dir.X(), o1.Y() + t2 * dir.Y(), o1.Z() + t2 * dir.Z());
+                _pt1 = _pt1.WithCoord(o1.X + t2 * dir.X, o1.Y + t2 * dir.Y, o1.Z + t2 * dir.Z);
             }
             else
             {
@@ -1929,7 +1929,7 @@ public class QuadQuadGeo
                         _dir1 = dir;
                         _param1 = beta;
                     }
-                    _pt1 = _pt1.WithCoord(o1.X() + alpha * dir.X(), o1.Y() + alpha * dir.Y(), o1.Z() + alpha * dir.Z());
+                    _pt1 = _pt1.WithCoord(o1.X + alpha * dir.X, o1.Y + alpha * dir.Y, o1.Z + alpha * dir.Z);
 
                     _nbint = 1;
                 }
@@ -1951,16 +1951,16 @@ public class QuadQuadGeo
         //
         double rMin, rMaj;
         //
-        rMin = tor.MinorRadius();
-        rMaj = tor.MajorRadius();
+        rMin = tor.MinorRadius;
+        rMaj = tor.MajorRadius;
         if (rMin >= rMaj)
         {
             _typeres = NoGeometricSolution;
             return;
         }
         //
-        Axis3D plnAx = pln.Axis();
-        Axis3D torAx = tor.Axis();
+        Axis3D plnAx = pln.Axis;
+        Axis3D torAx = tor.Axis;
         //
         bool bParallel, bNormal;
         //
@@ -1974,7 +1974,7 @@ public class QuadQuadGeo
         //
         double dist;
         //
-        Point3D torLoc = torAx.Location();
+        Point3D torLoc = torAx.Location;
         if (bParallel)
         {
             double dt, x, y, z, a, b, c, d, dr, tolNum;
@@ -2002,7 +2002,7 @@ public class QuadQuadGeo
             _pt1 = _pt1.WithCoord(x - dist * a, y - dist * b, z - dist * c);
             dt = Math.Sqrt(Math.Abs(rMin * rMin - dist * dist));
             _param1 = rMaj + dt;
-            _dir1 = torAx.Direction();
+            _dir1 = torAx.Direction;
             _nbint = 1;
             if ((dr < -tolNum) && (dt > tol))
             {
@@ -2015,7 +2015,7 @@ public class QuadQuadGeo
         //
         else
         {
-            dist = pln.Distance(torLoc);
+            dist = pln.DistanceTo(torLoc);
             if (dist > _epsilonDistance)
             {
                 _typeres = NoGeometricSolution;
@@ -2024,10 +2024,10 @@ public class QuadQuadGeo
             //
             _typeres = global::Kerf.Engine.Intersection.ResultType.Circle;
             _param2 = _param1 = rMin;
-            _dir2 = _dir1 = plnAx.Direction();
+            _dir2 = _dir1 = plnAx.Direction;
             _nbint = 2;
             //
-            Direction3D dir = torAx.Direction() ^ _dir1;
+            Direction3D dir = torAx.Direction ^ _dir1;
             _pt1 = _pt1.WithXYZ(torLoc.XYZ() + rMaj * dir.XYZ());
             _pt2 = _pt2.WithXYZ(torLoc.XYZ() - rMaj * dir.XYZ());
         }
@@ -2047,22 +2047,22 @@ public class QuadQuadGeo
         //
         double rMin, rMaj;
         //
-        rMin = tor.MinorRadius();
-        rMaj = tor.MajorRadius();
+        rMin = tor.MinorRadius;
+        rMaj = tor.MajorRadius;
         if (rMin >= rMaj)
         {
             _typeres = NoGeometricSolution;
             return;
         }
         //
-        Axis3D cylAx = cyl.Axis();
-        Axis3D torAx = tor.Axis();
+        Axis3D cylAx = cyl.Axis;
+        Axis3D torAx = tor.Axis;
         //
         Line3D lin = new(torAx);
-        Point3D locCyl = cyl.Location();
+        Point3D locCyl = cyl.Location;
         //
         if (!torAx.IsParallel(cylAx, _epsilonAxesPara)
-            || (lin.Distance(locCyl) > _epsilonDistance))
+            || (lin.DistanceTo(locCyl) > _epsilonDistance))
         {
             _typeres = NoGeometricSolution;
             return;
@@ -2070,7 +2070,7 @@ public class QuadQuadGeo
         //
         double rCyl;
         //
-        rCyl = cyl.Radius();
+        rCyl = cyl.Radius;
         if (((rCyl + tol) < (rMaj - rMin)) || ((rCyl - tol) > (rMaj + rMin)))
         {
             _typeres = Empty;
@@ -2080,9 +2080,9 @@ public class QuadQuadGeo
         _typeres = global::Kerf.Engine.Intersection.ResultType.Circle;
         //
         double dist = Math.Sqrt(Math.Abs(rMin * rMin - (rCyl - rMaj) * (rCyl - rMaj)));
-        Xyz torLoc = torAx.Location().XYZ();
+        Xyz torLoc = torAx.Location.XYZ();
         //
-        _dir1 = torAx.Direction();
+        _dir1 = torAx.Direction;
         _pt1 = _pt1.WithXYZ(torLoc + dist * _dir1.XYZ());
         _param1 = rCyl;
         _nbint = 1;
@@ -2109,22 +2109,22 @@ public class QuadQuadGeo
         //
         double rMin, rMaj;
         //
-        rMin = tor.MinorRadius();
-        rMaj = tor.MajorRadius();
+        rMin = tor.MinorRadius;
+        rMaj = tor.MajorRadius;
         if (rMin >= rMaj)
         {
             _typeres = NoGeometricSolution;
             return;
         }
         //
-        Axis3D conAx = con.Axis();
-        Axis3D torAx = tor.Axis();
+        Axis3D conAx = con.Axis;
+        Axis3D torAx = tor.Axis;
         //
         Line3D lin = new(torAx);
-        Point3D conApex = con.Apex();
+        Point3D conApex = con.Apex;
         //
         if (!torAx.IsParallel(conAx, _epsilonAxesPara)
-            || (lin.Distance(conApex) > _epsilonDistance))
+            || (lin.DistanceTo(conApex) > _epsilonDistance))
         {
             _typeres = NoGeometricSolution;
             return;
@@ -2137,15 +2137,15 @@ public class QuadQuadGeo
         Span<Point3D> pt = stackalloc Point3D[4];
         Span<Direction3D> dir = [new Direction3D(), new Direction3D(), new Direction3D(), new Direction3D()];
         //
-        angle = con.SemiAngle();
-        torLoc = torAx.Location();
+        angle = con.SemiAngle;
+        torLoc = torAx.Location;
         //
-        pn = pn.WithXYZ(torLoc.XYZ() + rMaj * tor.YAxis().Direction().XYZ());
+        pn = pn.WithXYZ(torLoc.XYZ() + rMaj * tor.YAxis.Direction.XYZ());
         Direction3D dn = new(new Vector3D(torLoc, pn));
         Axis3D axCLRot = new(conApex, dn);
         Line3D conL = lin.Rotated(axCLRot, angle);
-        Direction3D dl = conL.Position().Direction();
-        Direction3D xDir = tor.XAxis().Direction();
+        Direction3D dl = conL.Position.Direction;
+        Direction3D xDir = tor.XAxis.Direction;
         //
         _typeres = Empty;
         //
@@ -2157,7 +2157,7 @@ public class QuadQuadGeo
             }
             pct = pct.WithXYZ(torLoc.XYZ() + rMaj * xDir.XYZ());
             //
-            dist = conL.Distance(pct);
+            dist = conL.DistanceTo(pct);
             if (dist > rMin + tol)
             {
                 continue;
@@ -2165,20 +2165,20 @@ public class QuadQuadGeo
             //
             _typeres = global::Kerf.Engine.Intersection.ResultType.Circle;
             //
-            Xyz ph = pct.XYZ() - dist * conL.Normal(pct).Direction().XYZ();
+            Xyz ph = pct.XYZ() - dist * conL.Normal(pct).Direction.XYZ();
             dt = Math.Sqrt(Math.Abs(rMin * rMin - dist * dist));
             //
             Point3D p = new();
             Xyz dVal = dt * dl.XYZ();
             p = p.WithXYZ(ph + dVal);
-            param[_nbint] = lin.Distance(p);
+            param[_nbint] = lin.DistanceTo(p);
             pt[_nbint] = pt[_nbint].WithXYZ(p.XYZ() - param[_nbint] * xDir.XYZ());
-            dir[_nbint] = torAx.Direction();
+            dir[_nbint] = torAx.Direction;
             ++_nbint;
             if ((dist < rMin) && (dt > tol))
             {
                 p = p.WithXYZ(ph - dVal);
-                param[_nbint] = lin.Distance(p);
+                param[_nbint] = lin.DistanceTo(p);
                 pt[_nbint] = pt[_nbint].WithXYZ(p.XYZ() - param[_nbint] * xDir.XYZ());
                 dir[_nbint] = dir[_nbint - 1];
                 ++_nbint;
@@ -2237,19 +2237,19 @@ public class QuadQuadGeo
         //
         double rMin, rMaj;
         //
-        rMin = tor.MinorRadius();
-        rMaj = tor.MajorRadius();
+        rMin = tor.MinorRadius;
+        rMaj = tor.MajorRadius;
         if (rMin >= rMaj)
         {
             _typeres = NoGeometricSolution;
             return;
         }
         //
-        Axis3D torAx = tor.Axis();
+        Axis3D torAx = tor.Axis;
         Line3D lin = new(torAx);
-        Point3D sphLoc = sph.Location();
+        Point3D sphLoc = sph.Location;
         //
-        if (lin.Distance(sphLoc) > _epsilonDistance)
+        if (lin.DistanceTo(sphLoc) > _epsilonDistance)
         {
             _typeres = NoGeometricSolution;
             return;
@@ -2258,12 +2258,12 @@ public class QuadQuadGeo
         double rSph, dist;
         Point3D torLoc = new();
         //
-        Direction3D xDir = tor.XAxis().Direction();
-        torLoc = torLoc.WithXYZ(torAx.Location().XYZ() + rMaj * xDir.XYZ());
-        rSph = sph.Radius();
+        Direction3D xDir = tor.XAxis.Direction;
+        torLoc = torLoc.WithXYZ(torAx.Location.XYZ() + rMaj * xDir.XYZ());
+        rSph = sph.Radius;
         //
         Vector3D vec12 = new(torLoc, sphLoc);
-        dist = vec12.Magnitude();
+        dist = vec12.Magnitude;
         if (((dist - tol) > (rMin + rSph)) || ((dist + tol) < Math.Abs(rMin - rSph)))
         {
             _typeres = Empty;
@@ -2279,19 +2279,19 @@ public class QuadQuadGeo
         //
         Direction3D dir12 = new(vec12);
         Xyz ph = torLoc.XYZ() + alpha * dir12.XYZ();
-        Direction3D dc = tor.YAxis().Direction() ^ dir12;
+        Direction3D dc = tor.YAxis.Direction ^ dir12;
         //
         Point3D p = new();
         Xyz dVal = beta * dc.XYZ();
         p = p.WithXYZ(ph + dVal);
-        _param1 = lin.Distance(p);
+        _param1 = lin.DistanceTo(p);
         _pt1 = _pt1.WithXYZ(p.XYZ() - _param1 * xDir.XYZ());
-        _dir1 = torAx.Direction();
+        _dir1 = torAx.Direction;
         _nbint = 1;
         if ((dist < (rSph + rMin)) && (dist > Math.Abs(rSph - rMin)) && (dVal.Modulus() > tol))
         {
             p = p.WithXYZ(ph - dVal);
-            _param2 = lin.Distance(p);
+            _param2 = lin.DistanceTo(p);
             _pt2 = _pt2.WithXYZ(p.XYZ() - _param2 * xDir.XYZ());
             _dir2 = _dir1;
             _nbint = 2;
@@ -2312,19 +2312,19 @@ public class QuadQuadGeo
         //
         double rMin1, rMin2, rMaj1, rMaj2;
         //
-        rMin1 = tor1.MinorRadius();
-        rMaj1 = tor1.MajorRadius();
-        rMin2 = tor2.MinorRadius();
-        rMaj2 = tor2.MajorRadius();
+        rMin1 = tor1.MinorRadius;
+        rMaj1 = tor1.MajorRadius;
+        rMin2 = tor2.MinorRadius;
+        rMaj2 = tor2.MajorRadius;
         //
-        Axis3D ax1 = tor1.Axis();
-        Axis3D ax2 = tor2.Axis();
+        Axis3D ax1 = tor1.Axis;
+        Axis3D ax2 = tor2.Axis;
         //
-        Point3D loc1 = ax1.Location();
-        Point3D loc2 = ax2.Location();
+        Point3D loc1 = ax1.Location;
+        Point3D loc2 = ax2.Location;
         //
         Line3D l1 = new(ax1);
-        if (!ax1.IsParallel(ax2, _epsilonAxesPara) || (l1.Distance(loc2) > _epsilonDistance))
+        if (!ax1.IsParallel(ax2, _epsilonAxesPara) || (l1.DistanceTo(loc2) > _epsilonDistance))
         {
             _typeres = NoGeometricSolution;
             return;
@@ -2346,12 +2346,12 @@ public class QuadQuadGeo
         double dist;
         Point3D p1 = new(), p2 = new();
         //
-        Direction3D xDir1 = tor1.XAxis().Direction();
+        Direction3D xDir1 = tor1.XAxis.Direction;
         p1 = p1.WithXYZ(loc1.XYZ() + rMaj1 * xDir1.XYZ());
         p2 = p2.WithXYZ(loc2.XYZ() + rMaj2 * xDir1.XYZ());
         //
         Vector3D v12 = new(p1, p2);
-        dist = v12.Magnitude();
+        dist = v12.Magnitude;
         if (((dist - tol) > (rMin1 + rMin2)) || ((dist + tol) < Math.Abs(rMin1 - rMin2)))
         {
             _typeres = Empty;
@@ -2367,19 +2367,19 @@ public class QuadQuadGeo
         //
         Direction3D dir12 = new(v12);
         Xyz ph = p1.XYZ() + alpha * dir12.XYZ();
-        Direction3D dc = tor1.YAxis().Direction() ^ dir12;
+        Direction3D dc = tor1.YAxis.Direction ^ dir12;
         //
         Point3D p = new();
         Xyz dVal = beta * dc.XYZ();
         p = p.WithXYZ(ph + dVal);
-        _param1 = l1.Distance(p);
+        _param1 = l1.DistanceTo(p);
         _pt1 = _pt1.WithXYZ(p.XYZ() - _param1 * xDir1.XYZ());
-        _dir1 = ax1.Direction();
+        _dir1 = ax1.Direction;
         _nbint = 1;
         if ((dist < (rMin1 + rMin2)) && (dist > Math.Abs(rMin1 - rMin2)) && dVal.Modulus() > tol)
         {
             p = p.WithXYZ(ph - dVal);
-            _param2 = l1.Distance(p);
+            _param2 = l1.DistanceTo(p);
             _pt2 = _pt2.WithXYZ(p.XYZ() - _param2 * xDir1.XYZ());
             _dir2 = _dir1;
             _nbint = 2;

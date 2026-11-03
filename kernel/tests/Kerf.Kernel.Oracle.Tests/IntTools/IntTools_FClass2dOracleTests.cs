@@ -71,14 +71,14 @@ public class IntTools_FClass2dOracleTests(ITestOutputHelper output)
             }
             Point2D aP = aC.Value(f + (l - f) * theRandom.NextDouble());
             double aScale = theRandom.Next(4) switch { 0 => 0.0, 1 => 1e-9, 2 => 1e-6, _ => 1e-3 };
-            aList.Add(new Point2D(aP.X() + (theRandom.NextDouble() - 0.5) * aScale * du,
-                                   aP.Y() + (theRandom.NextDouble() - 0.5) * aScale * dv));
+            aList.Add(new Point2D(aP.X + (theRandom.NextDouble() - 0.5) * aScale * du,
+                                   aP.Y + (theRandom.NextDouble() - 0.5) * aScale * dv));
         }
         // Shifted by periods
         int n = aList.Count;
         for (int i = 0; i < n; i += 3)
         {
-            double x = aList[i].X(), y = aList[i].Y();
+            double x = aList[i].X, y = aList[i].Y;
             if (aS.IsUPeriodic)
             {
                 x += aS.UPeriod() * theRandom.Next(-2, 3);
@@ -146,7 +146,7 @@ public class IntTools_FClass2dOracleTests(ITestOutputHelper output)
             foreach (Point2D aPnt in Points(theRandom, aPF))
             {
                 myPoints++;
-                string aAt = $"{aWhat} at ({aPnt.X():R}, {aPnt.Y():R})";
+                string aAt = $"{aWhat} at ({aPnt.X:R}, {aPnt.Y:R})";
                 using N.gp_Pnt2d aNPnt = Oracle.ToNative(aPnt);
                 int aState = (int)aP.Perform(aPnt);
                 myStates[aState]++;

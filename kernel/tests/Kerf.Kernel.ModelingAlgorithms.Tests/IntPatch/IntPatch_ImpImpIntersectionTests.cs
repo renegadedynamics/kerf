@@ -118,7 +118,7 @@ public class IntPatch_ImpImpIntersectionTests
                         {
                             PatchPoint aV = aG.Vertex(k);
                             OnBoth(theR, aV.Value(), 1.0e-6, $"line {i} vertex {k}");
-                            Assert.True(ConicValue(aG, aV.ParameterOnLine()).Distance(aV.Value()) <= 1.0e-6,
+                            Assert.True(ConicValue(aG, aV.ParameterOnLine()).DistanceTo(aV.Value()) <= 1.0e-6,
                                         $"line {i} vertex {k} is not at its parameter");
                             aMin = Math.Min(aMin, aV.ParameterOnLine());
                             aMax = Math.Max(aMax, aV.ParameterOnLine());
@@ -148,8 +148,8 @@ public class IntPatch_ImpImpIntersectionTests
                         PntOn2S aP = aW.Point(k);
                         OnBoth(theR, aP.Value(), 1.0e-7, $"walking line {i} point {k}");
                         aP.Parameters(out double aU1, out double aV1, out double aU2, out double aV2);
-                        Assert.True(theR.S1.Value(aU1, aV1).Distance(aP.Value()) <= 1.0e-7 * Math.Max(1.0, aP.Value().XYZ().Modulus()));
-                        Assert.True(theR.S2.Value(aU2, aV2).Distance(aP.Value()) <= 1.0e-7 * Math.Max(1.0, aP.Value().XYZ().Modulus()));
+                        Assert.True(theR.S1.Value(aU1, aV1).DistanceTo(aP.Value()) <= 1.0e-7 * Math.Max(1.0, aP.Value().XYZ().Modulus()));
+                        Assert.True(theR.S2.Value(aU2, aV2).DistanceTo(aP.Value()) <= 1.0e-7 * Math.Max(1.0, aP.Value().XYZ().Modulus()));
                     }
                     break;
                 case RLine aR:
@@ -210,7 +210,7 @@ public class IntPatch_ImpImpIntersectionTests
         Result aR = Run(Pln(Ax(0, 0, 0, 0, 0, 1)), Pln(Ax(0, 0, 0, 1, 0, 0)));
         Lines(aR, PatchLineType.Lin);
         Transitions(aR.Inter.Line(1), WalkingTypeTrans.In, WalkingTypeTrans.Out);
-        Assert.Equal(new Direction3D(0, 1, 0), G(aR, 1).Line().Direction());
+        Assert.Equal(new Direction3D(0, 1, 0), G(aR, 1).Line().Direction);
         Assert.Equal(0, G(aR, 1).VertexCount); // infinite planes: no boundary
     }
 
@@ -247,10 +247,10 @@ public class IntPatch_ImpImpIntersectionTests
         Lines(aR, PatchLineType.Circle);
         Transitions(aR.Inter.Line(1), WalkingTypeTrans.In, WalkingTypeTrans.Out);
         Circle3D aC = G(aR, 1).Circle();
-        Assert.Equal(new Point3D(0, 0, 2), aC.Location());
-        Assert.Equal(3.0, aC.Radius());
+        Assert.Equal(new Point3D(0, 0, 2), aC.Location);
+        Assert.Equal(3.0, aC.Radius);
         // AdjustToSeam: the circle starts on the cylinder's seam (its X direction)
-        Assert.Equal(new Direction3D(0, 1, 0), aC.XAxis().Direction());
+        Assert.Equal(new Direction3D(0, 1, 0), aC.XAxis.Direction);
         // the two vertices OCCT puts on a closed conic without boundary points: 0 and 2π
         Assert.Equal(2, G(aR, 1).VertexCount);
         Assert.Equal(0.0, G(aR, 1).Vertex(1).ParameterOnLine());
@@ -268,15 +268,15 @@ public class IntPatch_ImpImpIntersectionTests
     {
         Result anEllipse = Run(Pln(Ax(0, 0, 2, 0, 1, 1)), Cyl(Ax(0, 0, 0, 0, 0, 1), 3));
         Lines(anEllipse, PatchLineType.Ellipse);
-        Near(3.0 * Math.Sqrt(2.0), G(anEllipse, 1).Ellipse().MajorRadius());
-        Assert.Equal(3.0, G(anEllipse, 1).Ellipse().MinorRadius());
+        Near(3.0 * Math.Sqrt(2.0), G(anEllipse, 1).Ellipse().MajorRadius);
+        Assert.Equal(3.0, G(anEllipse, 1).Ellipse().MinorRadius);
 
         Result aTwo = Run(Pln(Ax(1, 0, 0, 1, 0, 0)), Cyl(Ax(0, 0, 0, 0, 0, 1), 3));
         Lines(aTwo, PatchLineType.Lin, PatchLineType.Lin);
         Transitions(aTwo.Inter.Line(1), WalkingTypeTrans.Out, WalkingTypeTrans.In);
         Transitions(aTwo.Inter.Line(2), WalkingTypeTrans.In, WalkingTypeTrans.Out);
-        Near(-Math.Sqrt(8.0), G(aTwo, 1).Line().Location().Y(), 1.0e-15);
-        Near(Math.Sqrt(8.0), G(aTwo, 2).Line().Location().Y(), 1.0e-15);
+        Near(-Math.Sqrt(8.0), G(aTwo, 1).Line().Location.Y, 1.0e-15);
+        Near(Math.Sqrt(8.0), G(aTwo, 2).Line().Location.Y, 1.0e-15);
 
         // a tangent plane: one tangent line, the plane "outside" (its normal and the cylinder's agree) and the
         // cylinder "inside" (its axis is behind the plane's normal), as OCCT's IntPCy decides them
@@ -298,11 +298,11 @@ public class IntPatch_ImpImpIntersectionTests
     {
         Result aCircle = Run(Pln(Ax(0, 0, 1, 0, 0, 1)), Sph(Ax(0, 0, 0, 0, 0, 1), 2));
         Lines(aCircle, PatchLineType.Circle);
-        Assert.Equal(Math.Sqrt(3.0), G(aCircle, 1).Circle().Radius());
+        Assert.Equal(Math.Sqrt(3.0), G(aCircle, 1).Circle().Radius);
 
         Result aTilted = Run(Pln(Ax(0, 0, 1, 1, 0, 1)), Sph(Ax(0, 0, 0, 0, 0, 1), 2));
         Lines(aTilted, PatchLineType.Circle);
-        Assert.Equal(new Direction3D(1, 0, 1), G(aTilted, 1).Circle().Axis().Direction());
+        Assert.Equal(new Direction3D(1, 0, 1), G(aTilted, 1).Circle().Axis.Direction);
 
         // touching the north pole: one tangent point, and the pole's degenerated boundary on the plane, a restriction
         Result aPoint = Run(Pln(Ax(0, 0, 2, 0, 0, 1)), Sph(Ax(0, 0, 0, 0, 0, 1), 2));
@@ -322,7 +322,7 @@ public class IntPatch_ImpImpIntersectionTests
         ConicalSurface aCone = Cone(Ax(0, 0, 0, 0, 0, 1), Math.PI / 6, 1);
         Result aCircle = Run(Pln(Ax(0, 0, 2, 0, 0, 1)), aCone);
         Lines(aCircle, PatchLineType.Circle);
-        Near(1.0 + 2.0 * Math.Tan(Math.PI / 6), G(aCircle, 1).Circle().Radius(), 1.0e-15);
+        Near(1.0 + 2.0 * Math.Tan(Math.PI / 6), G(aCircle, 1).Circle().Radius, 1.0e-15);
 
         Lines(Run(Pln(Ax(0, 0, 2, 0, 0.2, 1)), aCone), PatchLineType.Ellipse);
 
@@ -348,9 +348,9 @@ public class IntPatch_ImpImpIntersectionTests
         for (int i = 1; i <= 4; i++)
         {
             GLine aL = G(aLines, i);
-            Assert.True(aL.Line().Location().Distance(anApex) < 1.0e-15);
+            Assert.True(aL.Line().Location.DistanceTo(anApex) < 1.0e-15);
             Assert.Contains(Enumerable.Range(1, aL.VertexCount).Select(aL.Vertex),
-                            v => v.IsMultiple && v.Value().Distance(anApex) < 1.0e-12);
+                            v => v.IsMultiple && v.Value().DistanceTo(anApex) < 1.0e-12);
         }
         Transitions(aLines.Inter.Line(1), WalkingTypeTrans.Out, WalkingTypeTrans.In);
         Transitions(aLines.Inter.Line(3), WalkingTypeTrans.In, WalkingTypeTrans.Out);
@@ -365,7 +365,7 @@ public class IntPatch_ImpImpIntersectionTests
         // only the apex: an isolated point, and the apex's boundary on the plane
         Result aPoint = Run(Pln(Ax(0, 0, -2, 0, 0, 1)), Cone(Ax(0, 0, 0, 0, 0, 1), Math.PI / 4, 2));
         Assert.Equal(1, aPoint.Inter.PntCount);
-        Assert.True(aPoint.Inter.Point(1).Value().Distance(new Point3D(0, 0, -2)) < 1.0e-15);
+        Assert.True(aPoint.Inter.Point(1).Value().DistanceTo(new Point3D(0, 0, -2)) < 1.0e-15);
     }
 
     // lowalgos/intss/bug20766: plane x = 0 and a cone of radius 0 far from the origin: an ellipse.
@@ -378,8 +378,8 @@ public class IntPatch_ImpImpIntersectionTests
                              aSemiAngle, 0));
         Lines(aR, PatchLineType.Ellipse);
         Ellipse3D anE = G(aR, 1).Ellipse();
-        Assert.True(anE.Location().X() < 1.0e-9);
-        Assert.Equal(new Direction3D(1, 0, 0), anE.Axis().Direction());
+        Assert.True(anE.Location.X < 1.0e-9);
+        Assert.Equal(new Direction3D(1, 0, 0), anE.Axis.Direction);
     }
 
     // ---------------------------------------------------------------- plane/torus
@@ -390,8 +390,8 @@ public class IntPatch_ImpImpIntersectionTests
         // the equatorial plane: two circles, outer and inner
         Result aR = Run(Pln(Ax(0, 0, 0, 0, 0, 1)), Tor(Ax(0, 0, 0, 0, 0, 1), 10, 2));
         Lines(aR, PatchLineType.Circle, PatchLineType.Circle);
-        Assert.Equal(12.0, G(aR, 1).Circle().Radius());
-        Assert.Equal(8.0, G(aR, 2).Circle().Radius());
+        Assert.Equal(12.0, G(aR, 1).Circle().Radius);
+        Assert.Equal(8.0, G(aR, 2).Circle().Radius);
         Transitions(aR.Inter.Line(1), WalkingTypeTrans.In, WalkingTypeTrans.Out);
         Transitions(aR.Inter.Line(2), WalkingTypeTrans.Out, WalkingTypeTrans.In);
     }
@@ -402,11 +402,11 @@ public class IntPatch_ImpImpIntersectionTests
     {
         Result aR = Run(Tor(Ax(0, 0, 0, 0, 0, 1), 100, 10), Pln(Ax(0, 0, 0, 0, 1, 0)));
         Lines(aR, PatchLineType.Circle, PatchLineType.Circle);
-        Assert.Equal(new Point3D(-100, 0, 0), G(aR, 1).Circle().Location());
-        Assert.Equal(new Point3D(100, 0, 0), G(aR, 2).Circle().Location());
-        Assert.All(new[] { G(aR, 1), G(aR, 2) }, l => Assert.Equal(10.0, l.Circle().Radius()));
+        Assert.Equal(new Point3D(-100, 0, 0), G(aR, 1).Circle().Location);
+        Assert.Equal(new Point3D(100, 0, 0), G(aR, 2).Circle().Location);
+        Assert.All(new[] { G(aR, 1), G(aR, 2) }, l => Assert.Equal(10.0, l.Circle().Radius));
         // meridians: their axis is the plane's normal (IntPTo adjusts to the seam only planes not through the axis)
-        Assert.Equal(new Direction3D(0, 1, 0), G(aR, 1).Circle().Axis().Direction());
+        Assert.Equal(new Direction3D(0, 1, 0), G(aR, 1).Circle().Axis.Direction);
     }
 
     // ---------------------------------------------------------------- cylinder/cylinder
@@ -418,7 +418,7 @@ public class IntPatch_ImpImpIntersectionTests
 
         Result aParallel = Run(Cyl(Ax(0, 0, 0, 0, 0, 1), 3), Cyl(Ax(4, 0, 0, 0, 0, 1), 3));
         Lines(aParallel, PatchLineType.Lin, PatchLineType.Lin);
-        Near(Math.Sqrt(5.0), Math.Abs(G(aParallel, 1).Line().Location().Y()), 1.0e-15);
+        Near(Math.Sqrt(5.0), Math.Abs(G(aParallel, 1).Line().Location.Y), 1.0e-15);
 
         Result aTangent = Run(Cyl(Ax(0, 0, 0, 0, 0, 1), 3), Cyl(Ax(5, 0, 0, 0, 0, 1), 2));
         Lines(aTangent, PatchLineType.Lin);
@@ -428,7 +428,7 @@ public class IntPatch_ImpImpIntersectionTests
         Result anEllipses = Run(Cyl(Ax(0, 0, 0, 0, 0, 1), 3), Cyl(Ax(0, 0, 0, 1, 0, 0), 3),
                                 [0, 2 * Math.PI, -10, 10], [0, 2 * Math.PI, -10, 10]);
         Lines(anEllipses, PatchLineType.Ellipse, PatchLineType.Ellipse);
-        Near(3.0 * Math.Sqrt(2.0), G(anEllipses, 1).Ellipse().MajorRadius(), 1.0e-14);
+        Near(3.0 * Math.Sqrt(2.0), G(anEllipses, 1).Ellipse().MajorRadius, 1.0e-14);
 
         Empty(Run(Cyl(Ax(0, 0, 0, 0, 0, 1), 1), Cyl(Ax(5, 0, 0, 0, 1, 0), 1)));
     }
@@ -449,8 +449,8 @@ public class IntPatch_ImpImpIntersectionTests
             Assert.Equal(WalkingTypeTrans.Undecided, aW.TransitionOnS1());
             // each line runs between boundary points of the trimmed cylinders or critical points (|x| = 3 or |y| = 2)
             Point3D aF = aW.Point(1).Value(), aL = aW.Point(aW.NbPnts()).Value();
-            Assert.True(Math.Abs(Math.Abs(aF.Y()) - 2) < 1.0e-9 || Math.Abs(Math.Abs(aF.X()) - 3) < 1.0e-9);
-            Assert.True(Math.Abs(Math.Abs(aL.Y()) - 2) < 1.0e-9 || Math.Abs(Math.Abs(aL.X()) - 3) < 1.0e-9);
+            Assert.True(Math.Abs(Math.Abs(aF.Y) - 2) < 1.0e-9 || Math.Abs(Math.Abs(aF.X) - 3) < 1.0e-9);
+            Assert.True(Math.Abs(Math.Abs(aL.Y) - 2) < 1.0e-9 || Math.Abs(Math.Abs(aL.X) - 3) < 1.0e-9);
         }
     }
 
@@ -471,7 +471,7 @@ public class IntPatch_ImpImpIntersectionTests
     {
         Result aR = Run(Cyl(Ax(0, 0, 0, 12, 35, 47), 5), Cyl(Ax(3, 2, 8, 12, 35, 47), 4));
         Lines(aR, PatchLineType.Lin, PatchLineType.Lin);
-        Assert.Equal(new Direction3D(12, 35, 47), G(aR, 1).Line().Direction());
+        Assert.Equal(new Direction3D(12, 35, 47), G(aR, 1).Line().Direction);
     }
 
     // lowalgos/intss/bug23178 and bug28222_2: crossing cylinders of different radii, infinite: eight walking lines,
@@ -513,7 +513,7 @@ public class IntPatch_ImpImpIntersectionTests
     {
         Result aCySp = Run(Cyl(Ax(0, 0, 0, 0, 0, 1), 1), Sph(Ax(0, 0, 0, 0, 0, 1), 2));
         Lines(aCySp, PatchLineType.Circle, PatchLineType.Circle);
-        Assert.Equal(Math.Sqrt(3.0), G(aCySp, 1).Circle().Location().Z());
+        Assert.Equal(Math.Sqrt(3.0), G(aCySp, 1).Circle().Location.Z);
         Transitions(aCySp.Inter.Line(1), WalkingTypeTrans.Out, WalkingTypeTrans.In);
 
         Result aCyCo = Run(Cyl(Ax(0, 0, 0, 0, 0, 1), 1), Cone(Ax(0, 0, 0, 0, 0, 1), Math.PI / 4, 0.5));
@@ -527,7 +527,7 @@ public class IntPatch_ImpImpIntersectionTests
 
         Result aSpSp = Run(Sph(Ax(0, 0, 0, 0, 0, 1), 2), Sph(Ax(2, 0, 0, 0, 0, 1), 2));
         Lines(aSpSp, PatchLineType.Circle);
-        Assert.Equal(new Point3D(1, 0, 0), G(aSpSp, 1).Circle().Location());
+        Assert.Equal(new Point3D(1, 0, 0), G(aSpSp, 1).Circle().Location);
     }
 
     [Fact]
@@ -592,15 +592,15 @@ public class IntPatch_ImpImpIntersectionTests
     {
         Result aCyTo = Run(Cyl(Ax(0, 0, 0, 0, 0, 1), 10), Tor(Ax(0, 0, 0, 0, 0, 1), 10, 2));
         Lines(aCyTo, PatchLineType.Circle, PatchLineType.Circle);
-        Assert.Equal(2.0, G(aCyTo, 1).Circle().Location().Z());
+        Assert.Equal(2.0, G(aCyTo, 1).Circle().Location.Z);
 
         Result aSpTo = Run(Sph(Ax(0, 0, 0, 0, 0, 1), 10), Tor(Ax(0, 0, 0, 0, 0, 1), 10, 2));
         Lines(aSpTo, PatchLineType.Circle, PatchLineType.Circle);
-        Near(9.8, G(aSpTo, 1).Circle().Radius());
+        Near(9.8, G(aSpTo, 1).Circle().Radius);
 
         Result aToTo = Run(Tor(Ax(0, 0, 0, 0, 0, 1), 10, 2), Tor(Ax(0, 0, 1, 0, 0, 1), 10, 2));
         Lines(aToTo, PatchLineType.Circle, PatchLineType.Circle);
-        Assert.Equal(0.5, G(aToTo, 1).Circle().Location().Z());
+        Assert.Equal(0.5, G(aToTo, 1).Circle().Location.Z);
 
         SameSurfaces(Run(Tor(Ax(0, 0, 0, 0, 0, 1), 10, 2), Tor(Ax(0, 0, 0, 0, 0, 1), 10, 2)), theOpposite: false);
     }

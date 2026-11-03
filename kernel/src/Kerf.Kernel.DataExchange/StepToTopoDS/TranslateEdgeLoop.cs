@@ -82,8 +82,8 @@ public sealed class TranslateEdgeLoop : ImportRoot
                 continue;
             }
 
-            cf = thePC.FirstParameter();
-            cl = thePC.LastParameter();
+            cf = thePC.FirstParameter;
+            cl = thePC.LastParameter;
 
             if (w1 == w2)
             {
@@ -109,7 +109,7 @@ public sealed class TranslateEdgeLoop : ImportRoot
 
             if (w1 > w2 && mySurf.IsUPeriodic)
             {
-                mySurf.Bounds(out double u1, out double u2, out double v1, out double v2);
+                mySurf.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
                 global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(u1, u2, Min(Math.Abs(w2 - w1) / 2, Kerf.Engine.Foundation.Precision.PConfusion()), ref w1, ref w2);
                 b.Range(myEdge, aFace, w1, w2);
             }
@@ -194,7 +194,7 @@ public sealed class TranslateEdgeLoop : ImportRoot
         Surface convSurf = geomSurf;
         if (geomSurf is TrimmedSurface theRTS)
         {
-            convSurf = theRTS.BasisSurface();
+            convSurf = theRTS.BasisSurface;
         }
 
         aTool.ComputePCurve(false);
@@ -303,7 +303,7 @@ public sealed class TranslateEdgeLoop : ImportRoot
                 v2 = ShapeCasts.Vertex(myTranVertex2.InternalValue());
                 Point3D p1 = Tool.Pnt(v1);
                 Point3D p2 = Tool.Pnt(v2);
-                if (p1.Distance(p2) <= Kerf.Engine.Foundation.Precision.Confusion())
+                if (p1.DistanceTo(p2) <= Kerf.Engine.Foundation.Precision.Confusion())
                 { //: S4136: preci) {
                     bool Fixed = true;
                     if (!iseV)
@@ -387,7 +387,7 @@ public sealed class TranslateEdgeLoop : ImportRoot
             Point3D p1 = Tool.Pnt(v1);
             Point3D p2 = Tool.Pnt(v2);
             bool locFixed = true;
-            if (p1.Distance(p2) <= preci)
+            if (p1.DistanceTo(p2) <= preci)
             {
                 if (!aTool.IsBound(ec1))
                 {
@@ -465,15 +465,15 @@ public sealed class TranslateEdgeLoop : ImportRoot
 
                 if (orEdge1.Orientation() && ec.SameSense())
                 {
-                    e.Orientation(Forward);
+                    e.Orient(Forward);
                 }
                 else if (!orEdge1.Orientation() && !ec.SameSense())
                 {
-                    e.Orientation(Forward);
+                    e.Orient(Forward);
                 }
                 else
                 {
-                    e.Orientation(Reversed);
+                    e.Orient(Reversed);
                 }
 
                 isSeam = isLikeSeam = false;
@@ -615,7 +615,7 @@ public sealed class TranslateEdgeLoop : ImportRoot
                     if ((c2d1 is not null) && (c2d2 is not null))
                     {
                         Orientation cumulO, edgeO, wireO, faceO;
-                        edgeO = e.Orientation();
+                        edgeO = e.Orientation;
                         if (forwardWire)
                         {
                             wireO = Forward;

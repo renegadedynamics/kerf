@@ -99,8 +99,8 @@ public class GCPntsOracleTests(ITestOutputHelper output)
             (N.Geom_Curve aNC, Curve3D aPC, string aKind) = TestAdaptorOracleTests.RandomCurve(anOracle);
             using (aNC)
             {
-                (double aFirst, double aLast) = TestAdaptorOracleTests.Bounds(anOracle, aPC.FirstParameter(),
-                    aPC.LastParameter(), aPC.IsPeriodic);
+                (double aFirst, double aLast) = TestAdaptorOracleTests.Bounds(anOracle, aPC.FirstParameter,
+                    aPC.LastParameter, aPC.IsPeriodic);
                 using var aN = new N.GeomAdaptor_Curve(aNC, aFirst, aLast);
                 var aP = new TestGeomAdaptor_Curve(aPC, aFirst, aLast);
                 string aW = $"{aKind} #{c}";
@@ -180,8 +180,8 @@ public class GCPntsOracleTests(ITestOutputHelper output)
             (N.Geom2d_Curve aNC, Curve2D aPC, string aKind) = TestAdaptorOracleTests.RandomCurve2d(anOracle);
             using (aNC)
             {
-                (double aFirst, double aLast) = TestAdaptorOracleTests.Bounds(anOracle, aPC.FirstParameter(),
-                    aPC.LastParameter(), aPC.IsPeriodic);
+                (double aFirst, double aLast) = TestAdaptorOracleTests.Bounds(anOracle, aPC.FirstParameter,
+                    aPC.LastParameter, aPC.IsPeriodic);
                 using var aN = new N.Geom2dAdaptor_Curve(aNC, aFirst, aLast);
                 var aP = new TestGeom2dAdaptor_Curve(aPC, aFirst, aLast);
                 string aW = $"{aKind} #{c}";
@@ -247,11 +247,11 @@ public class GCPntsOracleTests(ITestOutputHelper output)
             (N.Geom_Curve aNC, Curve3D aPC, string aKind) = TestAdaptorOracleTests.RandomCurve(anOracle);
             using (aNC)
             {
-                (double aFirst, double aLast) = TestAdaptorOracleTests.Bounds(anOracle, aPC.FirstParameter(),
-                    aPC.LastParameter(), aPC.IsPeriodic);
+                (double aFirst, double aLast) = TestAdaptorOracleTests.Bounds(anOracle, aPC.FirstParameter,
+                    aPC.LastParameter, aPC.IsPeriodic);
                 using var aN = new N.GeomAdaptor_Curve(aNC, aFirst, aLast);
                 var aP = new TestGeomAdaptor_Curve(aPC, aFirst, aLast);
-                double aSize = aP.Value(aFirst).Distance(aP.Value(aLast)) + aP.Value(aFirst).Distance(aP.Value((aFirst + aLast) / 2));
+                double aSize = aP.Value(aFirst).DistanceTo(aP.Value(aLast)) + aP.Value(aFirst).DistanceTo(aP.Value((aFirst + aLast) / 2));
                 double aDefl = Math.Max(aSize, 1e-3) * anOracle.Real(0.002, 0.05);
                 bool aWithControl = anOracle.Bool();
                 Continuity aCont = Continuities[anOracle.Int(0, 2)];
@@ -314,11 +314,11 @@ public class GCPntsOracleTests(ITestOutputHelper output)
             (N.Geom2d_Curve aNC, Curve2D aPC, string aKind) = TestAdaptorOracleTests.RandomCurve2d(anOracle);
             using (aNC)
             {
-                (double aFirst, double aLast) = TestAdaptorOracleTests.Bounds(anOracle, aPC.FirstParameter(),
-                    aPC.LastParameter(), aPC.IsPeriodic);
+                (double aFirst, double aLast) = TestAdaptorOracleTests.Bounds(anOracle, aPC.FirstParameter,
+                    aPC.LastParameter, aPC.IsPeriodic);
                 using var aN = new N.Geom2dAdaptor_Curve(aNC, aFirst, aLast);
                 var aP = new TestGeom2dAdaptor_Curve(aPC, aFirst, aLast);
-                double aSize = aP.Value(aFirst).Distance(aP.Value(aLast)) + aP.Value(aFirst).Distance(aP.Value((aFirst + aLast) / 2));
+                double aSize = aP.Value(aFirst).DistanceTo(aP.Value(aLast)) + aP.Value(aFirst).DistanceTo(aP.Value((aFirst + aLast) / 2));
                 double aDefl = Math.Max(aSize, 1e-3) * anOracle.Real(0.002, 0.05);
                 bool aWithControl = anOracle.Bool();
                 Continuity aCont = Continuities[anOracle.Int(0, 2)];

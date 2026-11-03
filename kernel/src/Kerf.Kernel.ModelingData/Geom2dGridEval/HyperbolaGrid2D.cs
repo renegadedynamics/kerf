@@ -12,7 +12,7 @@ namespace Kerf.Engine.Geometry.Evaluation.Grid;
 /// Efficient batch evaluator for 2D hyperbola grid points:
 /// P(u) = Center + MajorR * cosh(u) * XDir + MinorR * sinh(u) * YDir.
 /// </summary>
-public sealed class HyperbolaGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
+internal sealed class HyperbolaGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
 {
     private readonly HyperbolaCurve2D? _geom;
 
@@ -36,19 +36,19 @@ public sealed class HyperbolaGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
         int nb = theParams.Length();
         NCollection_Array1<Point2D> result = new(1, nb);
 
-        Hyperbola2D hypr = _geom.Hypr2d();
-        Point2D center = hypr.Location();
-        Direction2D xDir = hypr.XAxis().Direction();
-        Direction2D yDir = hypr.YAxis().Direction();
-        double majR = hypr.MajorRadius();
-        double minR = hypr.MinorRadius();
+        Hyperbola2D hypr = _geom.Hyperbola;
+        Point2D center = hypr.Location;
+        Direction2D xDir = hypr.XAxis.Direction;
+        Direction2D yDir = hypr.YAxis.Direction;
+        double majR = hypr.MajorRadius;
+        double minR = hypr.MinorRadius;
 
-        double cx = center.X();
-        double cy = center.Y();
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double yx = yDir.X();
-        double yy = yDir.Y();
+        double cx = center.X;
+        double cy = center.Y;
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double yx = yDir.X;
+        double yy = yDir.Y;
 
         for (int i = theParams.Lower(); i <= theParams.Upper(); ++i)
         {
@@ -74,19 +74,19 @@ public sealed class HyperbolaGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
         int nb = theParams.Length();
         NCollection_Array1<Curve2D.ResD1> result = new(1, nb);
 
-        Hyperbola2D hypr = _geom.Hypr2d();
-        Point2D center = hypr.Location();
-        Direction2D xDir = hypr.XAxis().Direction();
-        Direction2D yDir = hypr.YAxis().Direction();
-        double majR = hypr.MajorRadius();
-        double minR = hypr.MinorRadius();
+        Hyperbola2D hypr = _geom.Hyperbola;
+        Point2D center = hypr.Location;
+        Direction2D xDir = hypr.XAxis.Direction;
+        Direction2D yDir = hypr.YAxis.Direction;
+        double majR = hypr.MajorRadius;
+        double minR = hypr.MinorRadius;
 
-        double cx = center.X();
-        double cy = center.Y();
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double yx = yDir.X();
-        double yy = yDir.Y();
+        double cx = center.X;
+        double cy = center.Y;
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double yx = yDir.X;
+        double yy = yDir.Y;
 
         for (int i = theParams.Lower(); i <= theParams.Upper(); ++i)
         {
@@ -118,19 +118,19 @@ public sealed class HyperbolaGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
         int nb = theParams.Length();
         NCollection_Array1<Curve2D.ResD2> result = new(1, nb);
 
-        Hyperbola2D hypr = _geom.Hypr2d();
-        Point2D center = hypr.Location();
-        Direction2D xDir = hypr.XAxis().Direction();
-        Direction2D yDir = hypr.YAxis().Direction();
-        double majR = hypr.MajorRadius();
-        double minR = hypr.MinorRadius();
+        Hyperbola2D hypr = _geom.Hyperbola;
+        Point2D center = hypr.Location;
+        Direction2D xDir = hypr.XAxis.Direction;
+        Direction2D yDir = hypr.YAxis.Direction;
+        double majR = hypr.MajorRadius;
+        double minR = hypr.MinorRadius;
 
-        double cx = center.X();
-        double cy = center.Y();
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double yx = yDir.X();
-        double yy = yDir.Y();
+        double cx = center.X;
+        double cy = center.Y;
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double yx = yDir.X;
+        double yy = yDir.Y;
 
         for (int i = theParams.Lower(); i <= theParams.Upper(); ++i)
         {
@@ -163,19 +163,19 @@ public sealed class HyperbolaGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
         int nb = theParams.Length();
         NCollection_Array1<Curve2D.ResD3> result = new(1, nb);
 
-        Hyperbola2D hypr = _geom.Hypr2d();
-        Point2D center = hypr.Location();
-        Direction2D xDir = hypr.XAxis().Direction();
-        Direction2D yDir = hypr.YAxis().Direction();
-        double majR = hypr.MajorRadius();
-        double minR = hypr.MinorRadius();
+        Hyperbola2D hypr = _geom.Hyperbola;
+        Point2D center = hypr.Location;
+        Direction2D xDir = hypr.XAxis.Direction;
+        Direction2D yDir = hypr.YAxis.Direction;
+        double majR = hypr.MajorRadius;
+        double minR = hypr.MinorRadius;
 
-        double cx = center.X();
-        double cy = center.Y();
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double yx = yDir.X();
-        double yy = yDir.Y();
+        double cx = center.X;
+        double cy = center.Y;
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double yx = yDir.X;
+        double yy = yDir.Y;
 
         for (int i = theParams.Lower(); i <= theParams.Upper(); ++i)
         {
@@ -210,16 +210,16 @@ public sealed class HyperbolaGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
         int nb = theParams.Length();
         NCollection_Array1<Vector2D> result = new(1, nb);
 
-        Hyperbola2D hypr = _geom.Hypr2d();
-        Direction2D xDir = hypr.XAxis().Direction();
-        Direction2D yDir = hypr.YAxis().Direction();
-        double majR = hypr.MajorRadius();
-        double minR = hypr.MinorRadius();
+        Hyperbola2D hypr = _geom.Hyperbola;
+        Direction2D xDir = hypr.XAxis.Direction;
+        Direction2D yDir = hypr.YAxis.Direction;
+        double majR = hypr.MajorRadius;
+        double minR = hypr.MinorRadius;
 
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double yx = yDir.X();
-        double yy = yDir.Y();
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double yx = yDir.X;
+        double yy = yDir.Y;
 
         // Hyperbola derivatives are cyclic with period 2:
         // D0 = MajR * cosh(u) * X + MinR * sinh(u) * Y  -> coefficients: (cosh, sinh)

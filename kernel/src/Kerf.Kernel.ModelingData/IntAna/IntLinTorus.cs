@@ -43,19 +43,19 @@ public class IntLinTorus
     /// <summary>Intersects a line and a torus.</summary>
     public void Perform(in Line3D l, in Torus T)
     {
-        Point3D pl = l.Location();
-        Direction3D dl = l.Direction();
+        Point3D pl = l.Location;
+        Direction3D dl = l.Direction;
 
         // Reparametrize the line:
         // set its location as nearest to the location of torus
-        Point3D torLoc = T.Location();
+        Point3D torLoc = T.Location;
         double paramOfNewPL = new Vector3D(pl, torLoc).Dot(new Vector3D(dl));
         Point3D newPL = new(pl.XYZ() + paramOfNewPL * dl.XYZ());
 
         //--------------------------------------------------------------
         //-- Coefficients of the line in the torus reference frame
         //--
-        Transform3D trsf = new Transform3D().WithTransformation(T.Position());
+        Transform3D trsf = new Transform3D().WithTransformation(T.Position);
         newPL = newPL.Transformed(trsf);
         dl = dl.Transformed(trsf);
 
@@ -63,15 +63,15 @@ public class IntLinTorus
         double a0, a1, a2, a3, a4;
         double R, r, R2, r2;
 
-        x1 = dl.X();
-        y1 = dl.Y();
-        z1 = dl.Z();
-        x0 = newPL.X();
-        y0 = newPL.Y();
-        z0 = newPL.Z();
-        R = T.MajorRadius();
+        x1 = dl.X;
+        y1 = dl.Y;
+        z1 = dl.Z;
+        x0 = newPL.X;
+        y0 = newPL.Y;
+        z0 = newPL.Z;
+        R = T.MajorRadius;
         R2 = R * R;
-        r = T.MinorRadius();
+        r = T.MinorRadius;
         r2 = r * r;
 
         a = x1 * x1 + y1 * y1 + z1 * z1;
@@ -98,7 +98,7 @@ public class IntLinTorus
                 Point3D pSolL = global::Kerf.Engine.Geometry.ElCLib.Value(t, l);
                 global::Kerf.Engine.Geometry.ElSLib.Parameters(T, pSolL, out u, out v);
                 Point3D pSolT = global::Kerf.Engine.Geometry.ElSLib.Value(u, v, T);
-                a0 = pSolT.SquareDistance(pSolL);
+                a0 = pSolT.SquareDistanceTo(pSolL);
 
                 if (a0 > 0.0000000001)
                 {

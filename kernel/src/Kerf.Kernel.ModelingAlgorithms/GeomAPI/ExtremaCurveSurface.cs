@@ -20,7 +20,7 @@ namespace Kerf.Engine.Geometry.Api;
 /// keeps the surface adaptor (in OCCT a pointer to a destroyed local). OCCT's implicit conversions to <c>int</c>
 /// and <c>double</c> are explicit conversions (decision 28).
 /// </remarks>
-public class ExtremaCurveSurface
+internal class ExtremaCurveSurface
 {
     private bool _isDone;
     private int _index;

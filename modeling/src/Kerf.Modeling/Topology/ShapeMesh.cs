@@ -196,7 +196,7 @@ public sealed class MeshNode
         if (shape.IsEmpty)
             return ShapeMesh.Empty;
         foreach (var (key, mesh) in cache)
-            if (key.IsPartner(shape.TopoShape) && key.Orientation() == shape.TopoShape.Orientation())
+            if (key.IsPartner(shape.TopoShape) && key.Orientation == shape.TopoShape.Orientation)
                 return mesh;
         var identity = new Placement();
         var unplaced = shape.Placed(shape.TopoShape.Located(identity));

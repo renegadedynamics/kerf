@@ -46,7 +46,7 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
     public Transform2D()
     {
         _scale = 1.0;
-        _shape = Identity;
+        _shape = TransformForm.Identity;
         _matrix = new Matrix2x2();
         _loc = new Xy(0.0, 0.0);
         _matrix.SetIdentity();
@@ -55,11 +55,11 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
     /// <summary>The 2D part of a 3D transformation: its translation and the upper-left 2x2 of its matrix.</summary>
     public Transform2D(in Transform3D t)
     {
-        _scale = t.ScaleFactor();
-        _shape = t.Form();
+        _scale = t.ScaleFactor;
+        _shape = t.Form;
         _matrix = new Matrix2x2();
-        _loc = new Xy(t.TranslationPart().X(), t.TranslationPart().Y());
-        Matrix3x3 m = t.HVectorialPart();
+        _loc = new Xy(t.TranslationXyz().X(), t.TranslationXyz().Y());
+        Matrix3x3 m = t.RotationPart;
         _matrix.ChangeValue(1, 1) = m[1, 1];
         _matrix.ChangeValue(1, 2) = m[1, 2];
         _matrix.ChangeValue(2, 1) = m[2, 1];
@@ -114,12 +114,12 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
         Xy loc = _loc;
         shape = Ax1Mirror;
         scale = -1.0;
-        Direction2D v = a.Direction();
-        Point2D p = a.Location();
-        double vx = v.X();
-        double vy = v.Y();
-        double x0 = p.X();
-        double y0 = p.Y();
+        Direction2D v = a.Direction;
+        Point2D p = a.Location;
+        double vx = v.X;
+        double vy = v.Y;
+        double x0 = p.X;
+        double y0 = p.Y;
         matrix.SetCol(1, new Xy(1.0 - 2.0 * vx * vx, -2.0 * vx * vy));
         matrix.SetCol(2, new Xy(-2.0 * vx * vy, 1.0 - 2.0 * vy * vy));
 
@@ -167,19 +167,19 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
         shape = CompoundTrsf;
         scale = 1.0;
         // matrix from XOY to ToA2
-        Xy v1 = toA2.Direction().XY();
+        Xy v1 = toA2.Direction.XY();
         Xy v2 = new(-v1.Y(), v1.X());
         newMatrix.SetCol(1, v1);
         newMatrix.SetCol(2, v2);
-        loc = toA2.Location().XY();
+        loc = toA2.Location.XY();
         newMatrix.Transpose();
         loc.Multiply(newMatrix);
         loc.Reverse();
         // matrix FromA1 to XOY
-        Xy v3 = fromA1.Direction().XY();
+        Xy v3 = fromA1.Direction.XY();
         Xy v4 = new(-v3.Y(), v3.X());
         Matrix2x2 ma1 = new(v3, v4);
-        Xy ma1loc = fromA1.Location().XY();
+        Xy ma1loc = fromA1.Location.XY();
         // matrix * MA1 => FromA1 ToA2
         ma1loc.Multiply(newMatrix);
         loc.Add(ma1loc);
@@ -195,11 +195,11 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
         Xy loc = _loc;
         shape = CompoundTrsf;
         scale = 1.0;
-        Xy v1 = a.Direction().XY();
+        Xy v1 = a.Direction.XY();
         Xy v2 = new(-v1.Y(), v1.X());
         matrix.SetCol(1, v1);
         matrix.SetCol(2, v2);
-        loc = a.Location().XY();
+        loc = a.Location.XY();
         matrix.Transpose();
         loc.Multiply(matrix);
         loc.Reverse();
@@ -239,13 +239,13 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
         loc = v.XY();
         if (Math.Abs(loc.X()) <= Constants.Resolution() && Math.Abs(loc.Y()) <= Constants.Resolution())
         {
-            if (shape == Identity || shape == PntMirror || shape == global::Kerf.Geometry.TransformForm.Scale || shape == global::Kerf.Geometry.TransformForm.Rotation
+            if (shape == TransformForm.Identity || shape == PntMirror || shape == global::Kerf.Geometry.TransformForm.Scale || shape == global::Kerf.Geometry.TransformForm.Rotation
                 || shape == Ax1Mirror)
             {
             }
             else if (shape == global::Kerf.Geometry.TransformForm.Translation)
             {
-                shape = Identity;
+                shape = TransformForm.Identity;
             }
             else
             {
@@ -257,7 +257,7 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
             if (shape == global::Kerf.Geometry.TransformForm.Translation || shape == global::Kerf.Geometry.TransformForm.Scale || shape == PntMirror)
             {
             }
-            else if (shape == Identity)
+            else if (shape == TransformForm.Identity)
             {
                 shape = global::Kerf.Geometry.TransformForm.Translation;
             }
@@ -289,12 +289,12 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
 
             if (x <= Constants.Resolution() && y <= Constants.Resolution())
             {
-                if (shape == Identity || shape == global::Kerf.Geometry.TransformForm.Rotation)
+                if (shape == TransformForm.Identity || shape == global::Kerf.Geometry.TransformForm.Rotation)
                 {
                 }
                 else if (shape == global::Kerf.Geometry.TransformForm.Scale)
                 {
-                    shape = Identity;
+                    shape = TransformForm.Identity;
                 }
                 else if (shape == PntMirror)
                 {
@@ -307,7 +307,7 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
             }
             else
             {
-                if (shape == Identity || shape == global::Kerf.Geometry.TransformForm.Rotation || shape == global::Kerf.Geometry.TransformForm.Scale)
+                if (shape == TransformForm.Identity || shape == global::Kerf.Geometry.TransformForm.Rotation || shape == global::Kerf.Geometry.TransformForm.Scale)
                 {
                 }
                 else if (shape == PntMirror)
@@ -325,7 +325,7 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
             if (shape == PntMirror || shape == Ax1Mirror)
             {
             }
-            else if (shape == Identity || shape == global::Kerf.Geometry.TransformForm.Scale)
+            else if (shape == TransformForm.Identity || shape == global::Kerf.Geometry.TransformForm.Scale)
             {
                 shape = PntMirror;
             }
@@ -339,7 +339,7 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
             if (shape == global::Kerf.Geometry.TransformForm.Scale)
             {
             }
-            else if (shape == Identity || shape == global::Kerf.Geometry.TransformForm.Translation || shape == PntMirror)
+            else if (shape == TransformForm.Identity || shape == global::Kerf.Geometry.TransformForm.Translation || shape == PntMirror)
             {
                 shape = global::Kerf.Geometry.TransformForm.Scale;
             }
@@ -417,41 +417,44 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
     /// <summary>True when the determinant of the matrix is negative (the transformation mirrors).</summary>
     public readonly bool IsNegative => (_matrix.Determinant() < 0.0);
 
-    public readonly TransformForm Form() => _shape;
+    public readonly TransformForm Form => _shape;
 
-    public readonly double ScaleFactor() => _scale;
+    public readonly double ScaleFactor => _scale;
 
-    public readonly Xy TranslationPart() => _loc;
+    internal readonly Xy TranslationXy() => _loc;
 
     /// <summary>The matrix multiplied by the scale factor.</summary>
-    public readonly Matrix2x2 VectorialPart()
+    internal readonly Matrix2x2 VectorialPart
     {
-        if (_scale == 1.0)
+        get
         {
-            return _matrix;
-        }
+            if (_scale == 1.0)
+            {
+                return _matrix;
+            }
 
-        Matrix2x2 m = _matrix;
-        if (_shape == global::Kerf.Geometry.TransformForm.Scale || _shape == PntMirror)
-        {
-            m.SetDiagonal(_matrix.Value(1, 1) * _scale, _matrix.Value(2, 2) * _scale);
-        }
-        else
-        {
-            m.Multiply(_scale);
-        }
+            Matrix2x2 m = _matrix;
+            if (_shape == global::Kerf.Geometry.TransformForm.Scale || _shape == PntMirror)
+            {
+                m.SetDiagonal(_matrix.Value(1, 1) * _scale, _matrix.Value(2, 2) * _scale);
+            }
+            else
+            {
+                m.Multiply(_scale);
+            }
 
-        return m;
+            return m;
+        }
     }
 
     /// <summary>The matrix without the scale factor.</summary>
-    public readonly Matrix2x2 HVectorialPart() => _matrix;
+    internal readonly Matrix2x2 RotationPart => _matrix;
 
     /// <summary>The angle of the rotation part, in ]-PI, PI].</summary>
-    public readonly double RotationPart() => Math.Atan2(_matrix.Value(2, 1), _matrix.Value(1, 1));
+    public readonly double RotationAngle => Math.Atan2(_matrix.Value(2, 1), _matrix.Value(1, 1));
 
     /// <summary>The coefficient at a row (1 to 2) and column (1 to 3) of the 2x3 matrix, scale included.</summary>
-    public readonly double Value(int row, int col)
+    internal readonly double Value(int row, int col)
     {
         Standard_OutOfRange_Raise_if(row < 1 || row > 2 || col < 1 || col > 3, " ");
         if (col < 3)
@@ -471,7 +474,7 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
         Xy loc = _loc;
         //                                    -1
         //  X' = scale * R * X + T  =>  X = (R  / scale)  * ( X' - T)
-        if (_shape == Identity)
+        if (_shape == TransformForm.Identity)
         {
         }
         else if (_shape == global::Kerf.Geometry.TransformForm.Translation || _shape == PntMirror)
@@ -502,10 +505,10 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
         TransformForm shape = _shape;
         Matrix2x2 matrix = _matrix;
         Xy newLoc = _loc;
-        if (t._shape == Identity)
+        if (t._shape == TransformForm.Identity)
         {
         }
-        else if (shape == Identity)
+        else if (shape == TransformForm.Identity)
         {
             shape = t._shape;
             scale = t._scale;
@@ -643,10 +646,10 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
         TransformForm shape = _shape;
         Matrix2x2 matrix = _matrix;
         Xy loc = _loc;
-        if (t._shape == Identity)
+        if (t._shape == TransformForm.Identity)
         {
         }
-        else if (shape == Identity)
+        else if (shape == TransformForm.Identity)
         {
             shape = t._shape;
             scale = t._scale;
@@ -775,7 +778,7 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
         TransformForm shape = _shape;
         Matrix2x2 matrix = _matrix;
         Xy loc = _loc;
-        if (shape == Identity)
+        if (shape == TransformForm.Identity)
         {
         }
         else
@@ -783,7 +786,7 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
             if (n == 0)
             {
                 newScale = 1.0;
-                shape = Identity;
+                shape = TransformForm.Identity;
                 matrix.SetIdentity();
                 loc = new Xy(0.0, 0.0);
             }
@@ -910,7 +913,7 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
                 {
                     if (IsEven(n))
                     {
-                        shape = Identity;
+                        shape = TransformForm.Identity;
                         newScale = 1.0;
                         matrix.SetIdentity();
                         loc.SetCoord(0.0, 0.0);
@@ -955,7 +958,7 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
         return new Transform2D(newScale, shape, matrix, loc);
     }
 
-    public readonly void Transforms(ref double x, ref double y)
+    internal readonly void Transforms(ref double x, ref double y)
     {
         Xy doublet = new(x, y);
         doublet.Multiply(_matrix);
@@ -968,7 +971,7 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
         doublet.Coord(out x, out y);
     }
 
-    public readonly void Transforms(ref Xy coord)
+    internal readonly void Transforms(ref Xy coord)
     {
         coord.Multiply(_matrix);
         if (_scale != 1.0)
@@ -980,7 +983,7 @@ public readonly partial struct Transform2D : IEquatable<Transform2D>
     }
 
     /// <summary>The coordinates transformed: the non-ref form of <see cref="Transforms(ref Xy)"/>.</summary>
-    public readonly Xy Transformed(in Xy coord)
+    internal readonly Xy Transformed(in Xy coord)
     {
         Xy aCoord = coord;
         Transforms(ref aCoord);

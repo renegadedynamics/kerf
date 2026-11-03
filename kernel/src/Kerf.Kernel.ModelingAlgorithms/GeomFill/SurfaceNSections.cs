@@ -45,7 +45,7 @@ public class SurfaceNSections : SurfaceSectionLaw
         {
             gap++;
         }
-        int cdeg = surf.VDegree(), cdim = surf.UPoleCount * gap, nbP = surf.VPoleCount;
+        int cdeg = surf.VDegree, cdim = surf.UPoleCount * gap, nbP = surf.VPoleCount;
 
         //  les noeuds plats
         NCollection_Array1<double> fKnots = surf.InternalVKnotSequence();
@@ -58,9 +58,9 @@ public class SurfaceNSections : SurfaceSectionLaw
         {
             for (ii = 1; ii <= surf.UPoleCount; ii++)
             {
-                sPoles[ipole] = surf.Pole(ii, jj).X();
-                sPoles[ipole + 1] = surf.Pole(ii, jj).Y();
-                sPoles[ipole + 2] = surf.Pole(ii, jj).Z();
+                sPoles[ipole] = surf.Pole(ii, jj).X;
+                sPoles[ipole + 1] = surf.Pole(ii, jj).Y;
+                sPoles[ipole + 2] = surf.Pole(ii, jj).Z;
                 if (rational)
                 {
                     sPoles[ipole + 3] = surf.Weight(ii, jj);
@@ -261,7 +261,7 @@ public class SurfaceNSections : SurfaceSectionLaw
 
         // pb dans BSplCLib::Eval() pour les surfaces rationnelles de degre 1
         // si l'ordre de derivation est egal a 2.
-        if (_surface.VDegree() < 2)
+        if (_surface.VDegree < 2)
         {
             return false;
         }
@@ -456,9 +456,9 @@ public class SurfaceNSections : SurfaceSectionLaw
         }
         _surface = bs;
         // On augmente le degre pour que le positionnement D2 soit correct
-        if (_surface.VDegree() < 2)
+        if (_surface.VDegree < 2)
         {
-            _surface.IncreaseDegree(_surface.UDegree(), 2);
+            _surface.IncreaseDegree(_surface.UDegree, 2);
         }
     }
 
@@ -473,7 +473,7 @@ public class SurfaceNSections : SurfaceSectionLaw
 
         nbPoles = _surface.UPoleCount;
         nbKnots = _surface.UKnotCount;
-        degree = _surface.UDegree();
+        degree = _surface.UDegree;
     }
 
     public override void Knots(NCollection_Array1<double> tKnots)
@@ -592,7 +592,7 @@ public class SurfaceNSections : SurfaceSectionLaw
 
         int ii, jj;
         double u0, u1, v0, v1;
-        _surface.Bounds(out u0, out u1, out v0, out v1);
+        _surface.ParameterBounds(out u0, out u1, out v0, out v1);
         double v = v0, deltaV = (v1 - v0) / 20;
         // OCCT: U is not reset for each V, so only the first row samples the surface's u range.
         double u = u0, deltaU = (u1 - u0) / 20;
@@ -684,13 +684,13 @@ public class SurfaceNSections : SurfaceSectionLaw
                     Circle3D c2 = ac2.Circle();
                     double tol = 1.0e-7;
                     bool samedir, samerad, samepos;
-                    samedir = (c1.Axis().IsParallel(c2.Axis(), 1.0e-4));
-                    samerad = (Math.Abs(c1.Radius() - c2.Radius()) < tol);
-                    samepos = (c1.Location().Distance(c2.Location()) < tol);
+                    samedir = (c1.Axis.IsParallel(c2.Axis, 1.0e-4));
+                    samerad = (Math.Abs(c1.Radius - c2.Radius) < tol);
+                    samepos = (c1.Location.DistanceTo(c2.Location) < tol);
                     if (!samepos)
                     {
-                        Axis3D d = new Axis3D(c1.Location(), new Direction3D(new Vector3D(c1.Location(), c2.Location())));
-                        samepos = (c1.Axis().IsParallel(d, 1.0e-4));
+                        Axis3D d = new Axis3D(c1.Location, new Direction3D(new Vector3D(c1.Location, c2.Location)));
+                        samepos = (c1.Axis.IsParallel(d, 1.0e-4));
                     }
                     isconst = samedir && samerad && samepos;
                 }
@@ -700,13 +700,13 @@ public class SurfaceNSections : SurfaceSectionLaw
                     Line3D l2 = ac2.Line();
                     double tol = 1.0e-7;
                     bool samedir, samelength, samepos;
-                    samedir = (l1.Direction().IsParallel(l2.Direction(), 1.0e-4));
+                    samedir = (l1.Direction.IsParallel(l2.Direction, 1.0e-4));
                     Point3D p11 = ac1.Value(ac1.FirstParameter()), p12 = ac1.Value(ac1.LastParameter()),
                            p21 = ac2.Value(ac2.FirstParameter()), p22 = ac2.Value(ac2.LastParameter());
-                    samelength = (Math.Abs(p11.Distance(p12) - p21.Distance(p22)) < tol);
+                    samelength = (Math.Abs(p11.DistanceTo(p12) - p21.DistanceTo(p22)) < tol);
                     // l'ecart entre les 2 sections ne compte pas
-                    samepos = ((p11.Distance(p21) < tol && p12.Distance(p22) < tol)
-                               || (p12.Distance(p21) < tol && p11.Distance(p22) < tol));
+                    samepos = ((p11.DistanceTo(p21) < tol && p12.DistanceTo(p22) < tol)
+                               || (p12.DistanceTo(p21) < tol && p11.DistanceTo(p22) < tol));
                     // samepos = true;
                     isconst = samedir && samelength && samepos;
                 }
@@ -754,12 +754,12 @@ public class SurfaceNSections : SurfaceSectionLaw
                 }
                 double tol = 1.0e-7;
                 // bool samedir, linearrad, sameaxis;
-                isconic = (c1.Axis().IsParallel(c2.Axis(), 1.0e-4));
+                isconic = (c1.Axis.IsParallel(c2.Axis, 1.0e-4));
                 //  pour 2 sections, la variation du rayon est forcement lineaire
                 if (isconic)
                 {
-                    Line3D line1 = new Line3D(c1.Axis());
-                    isconic = (line1.Distance(c2.Location()) < tol);
+                    Line3D line1 = new Line3D(c1.Axis);
+                    isconic = (line1.DistanceTo(c2.Location) < tol);
                     if (isconic)
                     {
                         //// Modified by jgv, 18.02.2009 for OCC20866 ////
@@ -792,7 +792,7 @@ public class SurfaceNSections : SurfaceSectionLaw
         Circle3D c2 = ac2.Circle();
 
         double p1 = _params[1], p2 = _params[_params.Length()];
-        double radius = (c2.Radius() - c1.Radius()) * (v - p1) / (p2 - p1) + c1.Radius();
+        double radius = (c2.Radius - c1.Radius) * (v - p1) / (p2 - p1) + c1.Radius;
 
         c1 = c1.WithRadius(radius);
         Curve3D c = new CircleCurve3D(c1);

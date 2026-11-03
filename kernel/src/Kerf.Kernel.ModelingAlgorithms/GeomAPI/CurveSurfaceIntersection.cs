@@ -22,7 +22,7 @@ namespace Kerf.Engine.Geometry.Api;
 /// <see cref="Segment"/> builds a new trimmed curve on the stored curve. (IntCurveSurface_HInter makes no segments,
 /// so <see cref="SegmentCount"/> is always 0.)
 /// </remarks>
-public class CurveSurfaceIntersection
+internal class CurveSurfaceIntersection
 {
     private Curve3D? _curve;
     private readonly HInter _intCS = new();

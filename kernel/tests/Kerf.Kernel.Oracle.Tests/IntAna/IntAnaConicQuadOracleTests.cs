@@ -30,14 +30,14 @@ public class IntAnaConicQuadOracleTests(ITestOutputHelper output)
     private static CoordinateSystem SettledAx3(Oracle theOracle, in Point3D theLoc)
     {
         CoordinateSystem anAx = theOracle.Ax3();
-        var aSettled = new CoordinateSystem(theLoc, Oracle.Settled(anAx.Direction()), Oracle.Settled(anAx.XDirection()));
-        return anAx.Direct() ? aSettled : aSettled.YReversed();
+        var aSettled = new CoordinateSystem(theLoc, Oracle.Settled(anAx.Direction), Oracle.Settled(anAx.XDirection));
+        return anAx.IsDirect ? aSettled : aSettled.YReversed();
     }
 
     private static Frame3D SettledAx2(Oracle theOracle, in Point3D theLoc)
     {
         Frame3D anAx = theOracle.Ax2();
-        return new Frame3D(theLoc, Oracle.Settled(anAx.Direction()), Oracle.Settled(anAx.XDirection()));
+        return new Frame3D(theLoc, Oracle.Settled(anAx.Direction), Oracle.Settled(anAx.XDirection));
     }
 
     public enum Surf { Plane, Cylinder, Cone, Sphere }
@@ -135,7 +135,7 @@ public class IntAnaConicQuadOracleTests(ITestOutputHelper output)
             };
 
             // The conic near the surface's location
-            Point3D aLoc = aSAx.Location().Translated(new Vector3D(anOracle.Real(-aR, aR), anOracle.Real(-aR, aR),
+            Point3D aLoc = aSAx.Location.Translated(new Vector3D(anOracle.Real(-aR, aR), anOracle.Real(-aR, aR),
                                                                   anOracle.Real(-aR, aR)));
             Frame3D aCAx = SettledAx2(anOracle, aLoc);
             double aMaj = anOracle.Real(0.5, 2 * aR), aMin = anOracle.Real(0.2, aMaj);
@@ -147,8 +147,8 @@ public class IntAnaConicQuadOracleTests(ITestOutputHelper output)
             {
                 case Conic.Line:
                 {
-                    var aLin = new Line3D(aCAx.Axis());
-                    using var aNAx1 = Oracle.ToNative(aCAx.Axis());
+                    var aLin = new Line3D(aCAx.Axis);
+                    using var aNAx1 = Oracle.ToNative(aCAx.Axis);
                     aNC = new N.Geom_Line(aNAx1);
                     if (theSurf == Surf.Plane)
                     {
@@ -272,11 +272,11 @@ public class IntAnaConicQuadOracleTests(ITestOutputHelper output)
             using var aNSAx = Oracle.ToNative(aSAx);
             using var aNS = new N.Geom_ToroidalSurface(aNSAx, aMajor, aMinor);
 
-            Point3D aLoc = aSAx.Location().Translated(new Vector3D(anOracle.Real(-aMajor, aMajor),
+            Point3D aLoc = aSAx.Location.Translated(new Vector3D(anOracle.Real(-aMajor, aMajor),
                                                                   anOracle.Real(-aMajor, aMajor),
                                                                   anOracle.Real(-aMinor, aMinor)));
             var aLin = new Line3D(aLoc, Oracle.Settled(anOracle.Dir()));
-            using var aNAx1 = Oracle.ToNative(aLin.Position());
+            using var aNAx1 = Oracle.ToNative(aLin.Position);
             using var aNC = new N.Geom_Line(aNAx1);
 
             var anInter = new IntLinTorus(aLin, aTorus);

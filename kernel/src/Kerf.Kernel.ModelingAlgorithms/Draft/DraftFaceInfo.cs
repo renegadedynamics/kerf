@@ -31,7 +31,7 @@ public sealed class DraftFaceInfo
         _newGeom = hasNewGeometry;
         if (s is TrimmedSurface t)
         {
-            _geom = t.BasisSurface();
+            _geom = t.BasisSurface;
         }
         else
         {

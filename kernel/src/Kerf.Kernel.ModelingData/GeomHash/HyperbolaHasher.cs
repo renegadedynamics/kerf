@@ -21,9 +21,9 @@ internal readonly struct HyperbolaHasher(double theCompTolerance, double theHash
         var axisHasher = new AxisPlacement(CompTolerance, HashTolerance);
         ReadOnlySpan<ulong> hashes =
         [
-            axisHasher.Hash(hyperbola.Position()),
-            HashUtils.Hash((long)HashUtils.Round(hyperbola.MajorRadius() * factor)),
-            HashUtils.Hash((long)HashUtils.Round(hyperbola.MinorRadius() * factor))
+            axisHasher.Hash(hyperbola.Position),
+            HashUtils.Hash((long)HashUtils.Round(hyperbola.MajorRadius * factor)),
+            HashUtils.Hash((long)HashUtils.Round(hyperbola.MinorRadius * factor))
         ];
         return HashUtils.HashBytes(hashes);
     }
@@ -32,8 +32,8 @@ internal readonly struct HyperbolaHasher(double theCompTolerance, double theHash
     public bool IsEqual(HyperbolaCurve3D hyperbola1, HyperbolaCurve3D hyperbola2)
     {
         var axisHasher = new AxisPlacement(CompTolerance, HashTolerance);
-        return axisHasher.IsEqual(hyperbola1.Position(), hyperbola2.Position())
-               && Math.Abs(hyperbola1.MajorRadius() - hyperbola2.MajorRadius()) <= CompTolerance
-               && Math.Abs(hyperbola1.MinorRadius() - hyperbola2.MinorRadius()) <= CompTolerance;
+        return axisHasher.IsEqual(hyperbola1.Position, hyperbola2.Position)
+               && Math.Abs(hyperbola1.MajorRadius - hyperbola2.MajorRadius) <= CompTolerance
+               && Math.Abs(hyperbola1.MinorRadius - hyperbola2.MinorRadius) <= CompTolerance;
     }
 }

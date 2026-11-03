@@ -120,7 +120,7 @@ public class ChAsym : BlendFunction
         double normg;
 
         _tcurv.D2(_param, out Point3D ptgui, out Vector3D d1gui, out Vector3D d2gui);
-        normg = d1gui.Magnitude();
+        normg = d1gui.Magnitude;
         np = d1gui.Normalized();
         dnp = (d2gui - np.Dot(d2gui) * np) / normg;
 
@@ -142,9 +142,9 @@ public class ChAsym : BlendFunction
         Vector3D crossVec, s1s2 = new Vector3D(_pt1, _pt2);
         double pScaInv = 1.0 / _tsurf1.Dot(s1s2), f4, temp;
         double maxpiv = 1.0e-9;
-        double nordu1 = d1u1.Magnitude(), nordv1 = d1v1.Magnitude();
+        double nordu1 = d1u1.Magnitude, nordv1 = d1v1.Magnitude;
 
-        temp = 2.0 * (nordu1 + nordv1) * s1s2.Magnitude() + 2.0 * nordu1 * nordv1;
+        temp = 2.0 * (nordu1 + nordv1) * s1s2.Magnitude + 2.0 * nordu1 * nordv1;
 
         Values(sol, valsol, gradsol);
 
@@ -194,7 +194,7 @@ public class ChAsym : BlendFunction
                 _tg22d = _tg22d.WithCoord(secmember[3], secmember[4]);
             }
 
-            _distmin = Min(_distmin, _pt1.Distance(_pt2));
+            _distmin = Min(_distmin, _pt1.DistanceTo(_pt2));
 
             return true;
         }
@@ -254,7 +254,7 @@ public class ChAsym : BlendFunction
 
             _fx[1] = _pt1.XYZ().Dot(np.XYZ()) - dist;
             _fx[2] = _pt2.XYZ().Dot(np.XYZ()) - dist;
-            _fx[3] = _dist1 * _dist1 - nps1.SquareMagnitude();
+            _fx[3] = _dist1 * _dist1 - nps1.SquareMagnitude;
             _fx[4] = _tgang - f4;
         }
 
@@ -578,7 +578,7 @@ public class ChAsym : BlendFunction
         double normg;
 
         _tcurv.D2(_param, out Point3D ptgui, out Vector3D d1gui, out Vector3D d2gui);
-        normg = d1gui.Magnitude();
+        normg = d1gui.Magnitude;
         np = d1gui.Normalized();
         dnp = (d2gui - np.Dot(d2gui) * np) / normg;
 
@@ -600,9 +600,9 @@ public class ChAsym : BlendFunction
         Vector3D crossVec, s1s2 = new Vector3D(_pt1, _pt2);
         double pScaInv = 1.0 / _tsurf1.Dot(s1s2), f4, temp;
         double maxpiv = 1.0e-9;
-        double nordu1 = d1u1.Magnitude(), nordv1 = d1v1.Magnitude();
+        double nordu1 = d1u1.Magnitude, nordv1 = d1v1.Magnitude;
 
-        temp = 2.0 * (nordu1 + nordv1) * s1s2.Magnitude() + 2.0 * nordu1 * nordv1;
+        temp = 2.0 * (nordu1 + nordv1) * s1s2.Magnitude + 2.0 * nordu1 * nordv1;
 
         Values(sol, valsol, gradsol);
 
@@ -648,12 +648,12 @@ public class ChAsym : BlendFunction
             _tg22d = _tg22d.WithCoord(secmember[3], secmember[4]);
         }
 
-        _distmin = Min(_distmin, _pt1.Distance(_pt2));
+        _distmin = Min(_distmin, _pt1.DistanceTo(_pt2));
 
         if (!_istangent)
         {
-            dPoles2d[poles2d.Lower()] = dPoles2d[poles2d.Lower()].WithCoord(Tangent2dOnS1().X(), Tangent2dOnS1().Y());
-            dPoles2d[poles2d.Upper()] = dPoles2d[poles2d.Upper()].WithCoord(Tangent2dOnS2().X(), Tangent2dOnS2().Y());
+            dPoles2d[poles2d.Lower()] = dPoles2d[poles2d.Lower()].WithCoord(Tangent2dOnS1().X, Tangent2dOnS1().Y);
+            dPoles2d[poles2d.Upper()] = dPoles2d[poles2d.Upper()].WithCoord(Tangent2dOnS2().X, Tangent2dOnS2().Y);
             dPoles[low] = TangentOnS1();
             dPoles[upp] = TangentOnS2();
             dWeights[low] = 0.0;

@@ -15,7 +15,7 @@ namespace Kerf.Geometry;
 /// unit direction the positive sense, so the parameter of a point is its distance along the line from the origin.
 /// The parameter range is ]-infinite, +infinite[.
 /// </summary>
-public class LineCurve2D : Curve2D
+public sealed class LineCurve2D : Curve2D
 {
     private Axis2D _pos;
 
@@ -31,7 +31,7 @@ public class LineCurve2D : Curve2D
     public LineCurve2D(in Axis2D a) => _pos = a;
 
     /// <summary>The line equal to L.</summary>
-    public LineCurve2D(in Line2D l) => _pos = l.Position();
+    public LineCurve2D(in Line2D l) => _pos = l.Position;
 
     /// <summary>The line through P with the direction V.</summary>
     public LineCurve2D(in Point2D p, in Direction2D v) => _pos = new Axis2D(p, v);
@@ -43,12 +43,12 @@ public class LineCurve2D : Curve2D
     }
 
     /// <summary>The unit direction of the line.</summary>
-    public Direction2D Direction() => _pos.Direction();
+    public Direction2D Direction => _pos.Direction;
 
     internal void SetLin2d(in Line2D l)
     {
         CheckMutable();
-        _pos = l.Position();
+        _pos = l.Position;
     }
 
     internal void SetLocation(in Point2D p)
@@ -58,7 +58,7 @@ public class LineCurve2D : Curve2D
     }
 
     /// <summary>The origin of the line.</summary>
-    public Point2D Location() => _pos.Location();
+    public Point2D Location => _pos.Location;
 
     internal void SetPosition(in Axis2D a)
     {
@@ -67,10 +67,10 @@ public class LineCurve2D : Curve2D
     }
 
     /// <summary>The axis of the line.</summary>
-    public Axis2D Position() => _pos;
+    public Axis2D Position => _pos;
 
     /// <summary>The line as a gp_Lin2d.</summary>
-    public Line2D Lin2d() => new Line2D(_pos);
+    public Line2D Line => new Line2D(_pos);
 
     /// <summary>Reverses the direction of the line.</summary>
     protected internal sealed override void Reverse()
@@ -83,10 +83,10 @@ public class LineCurve2D : Curve2D
     public sealed override double ReversedParameter(double u) => (-u);
 
     /// <summary>-Precision::Infinite().</summary>
-    public sealed override double FirstParameter() => -global::Kerf.Engine.Foundation.Precision.Infinite();
+    public sealed override double FirstParameter => -global::Kerf.Engine.Foundation.Precision.Infinite();
 
     /// <summary>Precision::Infinite().</summary>
-    public sealed override double LastParameter() => global::Kerf.Engine.Foundation.Precision.Infinite();
+    public sealed override double LastParameter => global::Kerf.Engine.Foundation.Precision.Infinite();
 
     /// <summary>False.</summary>
     public sealed override bool IsClosed => false;
@@ -95,28 +95,28 @@ public class LineCurve2D : Curve2D
     public sealed override bool IsPeriodic => false;
 
     /// <summary>CN.</summary>
-    public sealed override Continuity Continuity() => CN;
+    public sealed override Continuity Continuity => CN;
 
     /// <summary>The distance between P and the line.</summary>
     public double Distance(in Point2D p)
     {
         Line2D l = new Line2D(_pos);
-        return l.Distance(p);
+        return l.DistanceTo(p);
     }
 
     /// <summary>True.</summary>
-    public sealed override bool IsCN(int n) => true;
+    internal sealed override bool IsCN(int n) => true;
 
-    public sealed override Point2D EvalD0(double u) => global::Kerf.Engine.Geometry.ElCLib.LineValue(u, _pos);
+    internal sealed override Point2D EvalD0(double u) => global::Kerf.Engine.Geometry.ElCLib.LineValue(u, _pos);
 
-    public sealed override ResD1 EvalD1(double u)
+    internal sealed override ResD1 EvalD1(double u)
     {
         ResD1 result;
         global::Kerf.Engine.Geometry.ElCLib.LineD1(u, _pos, out result.Point, out result.D1);
         return result;
     }
 
-    public sealed override ResD2 EvalD2(double u)
+    internal sealed override ResD2 EvalD2(double u)
     {
         ResD2 result = new ResD2();
         global::Kerf.Engine.Geometry.ElCLib.LineD1(u, _pos, out result.Point, out result.D1);
@@ -124,7 +124,7 @@ public class LineCurve2D : Curve2D
         return result;
     }
 
-    public sealed override ResD3 EvalD3(double u)
+    internal sealed override ResD3 EvalD3(double u)
     {
         ResD3 result = new ResD3();
         global::Kerf.Engine.Geometry.ElCLib.LineD1(u, _pos, out result.Point, out result.D1);
@@ -135,7 +135,7 @@ public class LineCurve2D : Curve2D
 
     /// <summary>The direction for N = 1, a null vector above.</summary>
     /// <exception cref="UndefinedDerivative2DException">N &lt; 1.</exception>
-    public sealed override Vector2D EvalDN(double u, int n)
+    internal sealed override Vector2D EvalDN(double u, int n)
     {
         if (n < 1)
         {
@@ -143,7 +143,7 @@ public class LineCurve2D : Curve2D
         }
         if (n == 1)
         {
-            return new Vector2D(_pos.Direction());
+            return new Vector2D(_pos.Direction);
         }
         else
         {
@@ -159,17 +159,17 @@ public class LineCurve2D : Curve2D
     }
 
     /// <summary>U * |T.ScaleFactor()|; an infinite U is returned unchanged.</summary>
-    public sealed override double TransformedParameter(double u, in Transform2D t)
+    internal sealed override double TransformedParameter(double u, in Transform2D t)
     {
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(u))
         {
             return u;
         }
-        return u * Math.Abs(t.ScaleFactor());
+        return u * Math.Abs(t.ScaleFactor);
     }
 
     /// <summary>|T.ScaleFactor()|.</summary>
-    public sealed override double ParametricTransformation(in Transform2D t) => Math.Abs(t.ScaleFactor());
+    internal sealed override double ParametricTransformation(in Transform2D t) => Math.Abs(t.ScaleFactor);
 
     // Non-mutating twins of the Set methods (OCCT.NET)
 

@@ -118,18 +118,18 @@ public sealed class BisecPC : BisectorCurve
 
         if (!_isConvex)
         {
-            if (_point.IsEqual(_curve.Value(_curve.FirstParameter()), global::Kerf.Engine.Foundation.Precision.Confusion()))
+            if (_point.IsEqual(_curve.Value(_curve.FirstParameter), global::Kerf.Engine.Foundation.Precision.Confusion()))
             {
                 _extensionStart = true;
-                double uFirst = _startIntervals.First() - p.Distance(_pointStartBis);
+                double uFirst = _startIntervals.First() - p.DistanceTo(_pointStartBis);
                 _startIntervals.InsertBefore(1, uFirst);
                 _endIntervals.InsertBefore(1, _startIntervals.Value(2));
                 _bisInterval = 2;
             }
-            else if (_point.IsEqual(_curve.Value(_curve.LastParameter()), global::Kerf.Engine.Foundation.Precision.Confusion()))
+            else if (_point.IsEqual(_curve.Value(_curve.LastParameter), global::Kerf.Engine.Foundation.Precision.Confusion()))
             {
                 _extensionEnd = true;
-                double uLast = _endIntervals.Last() + p.Distance(_pointEndBis);
+                double uLast = _endIntervals.Last() + p.DistanceTo(_pointEndBis);
                 _startIntervals.Append(_endIntervals.Last());
                 _endIntervals.Append(uLast);
                 _bisInterval = 1;
@@ -152,7 +152,7 @@ public sealed class BisecPC : BisectorCurve
     }
 
     /// <summary>LastParameter() + FirstParameter() - U.</summary>
-    public override double ReversedParameter(double u) => LastParameter() + FirstParameter() - u;
+    public override double ReversedParameter(double u) => LastParameter + FirstParameter - u;
 
     /// <summary>A new, unfrozen bisector with a copy of the curve.</summary>
     public override Geometry2D Copy()
@@ -176,32 +176,35 @@ public sealed class BisecPC : BisectorCurve
     }
 
     /// <summary>True if the curve is C(N+1).</summary>
-    public override bool IsCN(int n) => _curve.IsCN(n + 1);
+    internal override bool IsCN(int n) => _curve.IsCN(n + 1);
 
     /// <summary>The start of the first interval.</summary>
-    public override double FirstParameter() => _startIntervals.First();
+    public override double FirstParameter => _startIntervals.First();
 
     /// <summary>The end of the last interval.</summary>
-    public override double LastParameter() => _endIntervals.Last();
+    public override double LastParameter => _endIntervals.Last();
 
     /// <summary>The curve's continuity less one.</summary>
-    public override Continuity Continuity()
+    public override Continuity Continuity
     {
-        Continuity cont = _curve.Continuity();
-        switch (cont)
+        get
         {
-            case C1:
-                return C0;
-            case C2:
-                return C1;
-            case C3:
-                return C2;
-            case CN:
-                return CN;
-            default:
-                break;
+            Continuity cont = _curve.Continuity;
+            switch (cont)
+            {
+                case C1:
+                    return C0;
+                case C2:
+                    return C1;
+                case C3:
+                    return C2;
+                case CN:
+                    return CN;
+                default:
+                    break;
+            }
+            return C0;
         }
-        return C0;
     }
 
     /// <summary>The number of intervals.</summary>
@@ -216,7 +219,7 @@ public sealed class BisecPC : BisectorCurve
     /// <summary>The continuity in the intervals: the curve's less one.</summary>
     public Continuity IntervalContinuity()
     {
-        Continuity cont = _curve.Continuity();
+        Continuity cont = _curve.Continuity;
         switch (cont)
         {
             case C1:
@@ -244,7 +247,7 @@ public sealed class BisecPC : BisectorCurve
                 // The bisectrice is closed if the curve is closed and the bissectrice
                 // has only one domain of continuity equal to the one of the curve.
                 // -----------------------------------------------------------------------
-                if (_startIntervals.First() == _curve.FirstParameter() && _endIntervals.First() == _curve.LastParameter())
+                if (_startIntervals.First() == _curve.FirstParameter && _endIntervals.First() == _curve.LastParameter)
                 {
                     return true;
                 }
@@ -276,9 +279,9 @@ public sealed class BisecPC : BisectorCurve
             else
             {
                 dU = u - _startIntervals.Value(_bisInterval);
-                Direction2D dirExt = new(_pointStartBis.X() - _point.X(), _pointStartBis.Y() - _point.Y());
-                p = p.WithCoord(_pointStartBis.X() + dU * dirExt.X(), _pointStartBis.Y() + dU * dirExt.Y());
-                v1 = v1.WithCoord(dirExt.X(), dirExt.Y());
+                Direction2D dirExt = new(_pointStartBis.X - _point.X, _pointStartBis.Y - _point.Y);
+                p = p.WithCoord(_pointStartBis.X + dU * dirExt.X, _pointStartBis.Y + dU * dirExt.Y);
+                v1 = v1.WithCoord(dirExt.X, dirExt.Y);
             }
         }
         else if (u > _endIntervals.Value(_bisInterval))
@@ -290,9 +293,9 @@ public sealed class BisecPC : BisectorCurve
             else
             {
                 dU = u - _endIntervals.Value(_bisInterval);
-                Direction2D dirExt = new(_point.X() - _pointEndBis.X(), _point.Y() - _pointEndBis.Y());
-                p = p.WithCoord(_pointEndBis.X() + dU * dirExt.X(), _pointEndBis.Y() + dU * dirExt.Y());
-                v1 = v1.WithCoord(dirExt.X(), dirExt.Y());
+                Direction2D dirExt = new(_point.X - _pointEndBis.X, _point.Y - _pointEndBis.Y);
+                p = p.WithCoord(_pointEndBis.X + dU * dirExt.X, _pointEndBis.Y + dU * dirExt.Y);
+                v1 = v1.WithCoord(dirExt.X, dirExt.Y);
             }
         }
     }
@@ -344,17 +347,17 @@ public sealed class BisecPC : BisectorCurve
             }
         }
 
-        Vector2D ppc = new(pc.X() - _point.X(), pc.Y() - _point.Y());
-        Vector2D nor = new(-tu.Y(), tu.X());
+        Vector2D ppc = new(pc.X - _point.X, pc.Y - _point.Y);
+        Vector2D nor = new(-tu.Y, tu.X);
 
-        double squarePPC = ppc.SquareMagnitude();
+        double squarePPC = ppc.SquareMagnitude;
         double norPPC = nor.Dot(ppc);
         double a1;
 
         if (Math.Abs(norPPC) > Constants.Resolution() && (norPPC * _sign) < 0.0)
         {
             a1 = 0.5 * squarePPC / norPPC;
-            p = p.WithCoord(pc.X() - nor.X() * a1, pc.Y() - nor.Y() * a1);
+            p = p.WithCoord(pc.X - nor.X * a1, pc.Y - nor.Y * a1);
         }
         else
         {
@@ -366,7 +369,7 @@ public sealed class BisecPC : BisectorCurve
             return; // End Calculation Point;
         }
 
-        Vector2D nu = new(-tuu.Y(), tuu.X()); // derivative of the normal by U.
+        Vector2D nu = new(-tuu.Y, tuu.X); // derivative of the normal by U.
         double nuPPC = nu.Dot(ppc);
         double tuPPC = tu.Dot(ppc);
         double norPPCE2 = norPPC * norPPC;
@@ -380,7 +383,7 @@ public sealed class BisecPC : BisectorCurve
             return; // End calculation D1.
         }
 
-        Vector2D nuu = new(-t3u.Y(), t3u.X());
+        Vector2D nuu = new(-t3u.Y, t3u.X);
 
         double norPPCE4 = norPPCE2 * norPPCE2;
         double nuuPPC = nuu.Dot(ppc);
@@ -411,11 +414,11 @@ public sealed class BisecPC : BisectorCurve
 
         _curve.D1(uOnCurve, out Point2D pc, out Vector2D tan);
 
-        Vector2D ppc = new(pc.X() - _point.X(), pc.Y() - _point.Y());
-        Vector2D nor = new(-tan.Y(), tan.X());
+        Vector2D ppc = new(pc.X - _point.X, pc.Y - _point.Y);
+        Vector2D nor = new(-tan.Y, tan.X);
 
-        double norNor = nor.SquareMagnitude();
-        double squareMagPPC = ppc.SquareMagnitude();
+        double norNor = nor.SquareMagnitude;
+        double squareMagPPC = ppc.SquareMagnitude;
         double prosca = nor.Dot(ppc);
 
         if (_point.IsEqual(pc, global::Kerf.Engine.Foundation.Precision.Confusion()))
@@ -449,7 +452,7 @@ public sealed class BisecPC : BisectorCurve
     }
 
     /// <summary>The point of parameter U.</summary>
-    public override Point2D EvalD0(double u)
+    internal override Point2D EvalD0(double u)
     {
         Point2D p = _point;
         Vector2D v1 = new(), v2 = new(), v3 = new();
@@ -458,7 +461,7 @@ public sealed class BisecPC : BisectorCurve
     }
 
     /// <summary>The point and first derivative at U.</summary>
-    public override ResD1 EvalD1(double u)
+    internal override ResD1 EvalD1(double u)
     {
         ResD1 result;
         result.Point = _point;
@@ -469,7 +472,7 @@ public sealed class BisecPC : BisectorCurve
     }
 
     /// <summary>The point and first two derivatives at U.</summary>
-    public override ResD2 EvalD2(double u)
+    internal override ResD2 EvalD2(double u)
     {
         ResD2 result;
         result.Point = _point;
@@ -481,7 +484,7 @@ public sealed class BisecPC : BisectorCurve
     }
 
     /// <summary>The point and first three derivatives at U (OCCT's Values doesn't compute the third: it is 0).</summary>
-    public override ResD3 EvalD3(double u)
+    internal override ResD3 EvalD3(double u)
     {
         ResD3 result;
         result.Point = _point;
@@ -494,7 +497,7 @@ public sealed class BisecPC : BisectorCurve
 
     /// <summary>The derivative of order N (1 to 3) at U.</summary>
     /// <exception cref="UndefinedDerivative2DException">N is not 1, 2 or 3.</exception>
-    public override Vector2D EvalDN(double u, int n)
+    internal override Vector2D EvalDN(double u, int n)
     {
         if (n < 1)
         {
@@ -566,8 +569,8 @@ public sealed class BisecPC : BisectorCurve
         bool yaProj = false;
         double distMax2 = _distMax * _distMax;
 
-        u1 = _curve.FirstParameter();
-        u2 = _curve.LastParameter();
+        u1 = _curve.FirstParameter;
+        u2 = _curve.LastParameter;
         dist1 = Distance(u1);
         dist2 = Distance(u2);
         distProj = global::Kerf.Engine.Foundation.Precision.Infinite();
@@ -629,7 +632,7 @@ public sealed class BisecPC : BisectorCurve
         {
             if (_startIntervals.Length() > 1)
             { // Plusieurs intervals.
-                if (_endIntervals.Last() == _curve.LastParameter() && _startIntervals.First() == _curve.FirstParameter())
+                if (_endIntervals.Last() == _curve.LastParameter && _startIntervals.First() == _curve.FirstParameter)
                 {
                     //---------------------------------------------------------------
                     // the bissectrice is defined at the origin.
@@ -640,7 +643,7 @@ public sealed class BisecPC : BisectorCurve
                     _startIntervals.Remove(1);
                     _endIntervals.Remove(_endIntervals.Length());
 
-                    _shiftParameter = Period() - _startIntervals.First();
+                    _shiftParameter = Period - _startIntervals.First();
                     for (int k = 1; k <= _startIntervals.Length(); k++)
                     {
                         _endIntervals.ChangeValue(k) += _shiftParameter;
@@ -677,7 +680,7 @@ public sealed class BisecPC : BisectorCurve
 
         if (_extensionStart)
         {
-            Axis2D axe = new(_pointStartBis, new Direction2D(_pointStartBis.X() - p.X(), _pointStartBis.Y() - p.Y()));
+            Axis2D axe = new(_pointStartBis, new Direction2D(_pointStartBis.X - p.X, _pointStartBis.Y - p.Y));
             double u = global::Kerf.Engine.Geometry.ElCLib.LineParameter(axe, p);
             Point2D proj = global::Kerf.Engine.Geometry.ElCLib.LineValue(u, axe);
             if (proj.IsEqual(p, tol) && u < 0.0)
@@ -687,7 +690,7 @@ public sealed class BisecPC : BisectorCurve
         }
         if (_extensionEnd)
         {
-            Axis2D axe = new(_pointEndBis, new Direction2D(p.X() - _pointEndBis.X(), p.Y() - _pointEndBis.Y()));
+            Axis2D axe = new(_pointEndBis, new Direction2D(p.X - _pointEndBis.X, p.Y - _pointEndBis.Y));
             double u = global::Kerf.Engine.Geometry.ElCLib.LineParameter(axe, p);
             Point2D proj = global::Kerf.Engine.Geometry.ElCLib.LineValue(u, axe);
             if (proj.IsEqual(p, tol) && u > 0.0)
@@ -696,7 +699,7 @@ public sealed class BisecPC : BisectorCurve
             }
         }
         double uOnCurve = 0.0;
-        ProjectPointOnCurve2D proj2 = new(p, _curve, _curve.FirstParameter(), _curve.LastParameter());
+        ProjectPointOnCurve2D proj2 = new(p, _curve, _curve.FirstParameter, _curve.LastParameter);
         if (proj2.NbPoints() > 0)
         {
             uOnCurve = proj2.LowerDistanceParameter();

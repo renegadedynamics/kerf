@@ -19,7 +19,7 @@ public class IntAna_QuadQuadGeoTest
         while (true)
         {
             var aV = new Vector3D(theRandom.NextDouble() - 0.5, theRandom.NextDouble() - 0.5, theRandom.NextDouble() - 0.5);
-            if (aV.Magnitude() > 0.1)
+            if (aV.Magnitude > 0.1)
             {
                 return new Direction3D(aV);
             }
@@ -45,35 +45,35 @@ public class IntAna_QuadQuadGeoTest
     private static CoordinateSystem Ax3(in Point3D theP, in Direction3D theN) => new(theP, theN);
 
     // Distances of a point to the quadrics. Cones are double: OCCT intersects the full quadric.
-    private static double Dist(in Plane3D thePln, in Point3D theP) => thePln.Distance(theP);
+    private static double Dist(in Plane3D thePln, in Point3D theP) => thePln.DistanceTo(theP);
 
     private static double Dist(in Cylinder theCyl, in Point3D theP)
-        => Math.Abs(new Line3D(theCyl.Axis()).Distance(theP) - theCyl.Radius());
+        => Math.Abs(new Line3D(theCyl.Axis).DistanceTo(theP) - theCyl.Radius);
 
     private static double Dist(in Sphere theSph, in Point3D theP)
-        => Math.Abs(theSph.Location().Distance(theP) - theSph.Radius());
+        => Math.Abs(theSph.Location.DistanceTo(theP) - theSph.Radius);
 
     private static double Dist(in Cone theCone, in Point3D theP)
     {
-        CoordinateSystem aPos = theCone.Position();
-        var aV = new Vector3D(aPos.Location(), theP);
-        double aZ = aV.Dot(new Vector3D(aPos.Direction()));
-        double aX = aV.Dot(new Vector3D(aPos.XDirection()));
-        double aY = aV.Dot(new Vector3D(aPos.YDirection()));
+        CoordinateSystem aPos = theCone.Position;
+        var aV = new Vector3D(aPos.Location, theP);
+        double aZ = aV.Dot(new Vector3D(aPos.Direction));
+        double aX = aV.Dot(new Vector3D(aPos.XDirection));
+        double aY = aV.Dot(new Vector3D(aPos.YDirection));
         double aR = Math.Sqrt(aX * aX + aY * aY);
-        double aRz = Math.Abs(theCone.RefRadius() + aZ * Math.Tan(theCone.SemiAngle()));
-        return Math.Abs(aR - aRz) * Math.Cos(theCone.SemiAngle());
+        double aRz = Math.Abs(theCone.RefRadius + aZ * Math.Tan(theCone.SemiAngle));
+        return Math.Abs(aR - aRz) * Math.Cos(theCone.SemiAngle);
     }
 
     private static double Dist(in Torus theTor, in Point3D theP)
     {
-        CoordinateSystem aPos = theTor.Position();
-        var aV = new Vector3D(aPos.Location(), theP);
-        double aZ = aV.Dot(new Vector3D(aPos.Direction()));
-        double aX = aV.Dot(new Vector3D(aPos.XDirection()));
-        double aY = aV.Dot(new Vector3D(aPos.YDirection()));
-        double aR = Math.Sqrt(aX * aX + aY * aY) - theTor.MajorRadius();
-        return Math.Abs(Math.Sqrt(aR * aR + aZ * aZ) - theTor.MinorRadius());
+        CoordinateSystem aPos = theTor.Position;
+        var aV = new Vector3D(aPos.Location, theP);
+        double aZ = aV.Dot(new Vector3D(aPos.Direction));
+        double aX = aV.Dot(new Vector3D(aPos.XDirection));
+        double aY = aV.Dot(new Vector3D(aPos.YDirection));
+        double aR = Math.Sqrt(aX * aX + aY * aY) - theTor.MajorRadius;
+        return Math.Abs(Math.Sqrt(aR * aR + aZ * aZ) - theTor.MinorRadius);
     }
 
     /// <summary>Points sampled on every solution, whatever its type.</summary>
@@ -167,8 +167,8 @@ public class IntAna_QuadQuadGeoTest
         Assert.True(anInter.IsDone);
         Assert.Equal(Line, anInter.TypeInter());
         Line3D aL = anInter.Line(1);
-        Assert.True(Dist(aP1, aL.Location()) < 1e-9);
-        Assert.True(Dist(aP2, aL.Location()) < 1e-9);
+        Assert.True(Dist(aP1, aL.Location) < 1e-9);
+        Assert.True(Dist(aP2, aL.Location) < 1e-9);
     }
 
     [Fact]
@@ -211,8 +211,8 @@ public class IntAna_QuadQuadGeoTest
         var aPlnN = new Plane3D(new Point3D(0, 0, 7), new Direction3D(0, 0, -1));
         var anInterN = new QuadQuadGeo(aPlnN, aCyl, global::Kerf.Engine.Foundation.Precision.Angular(), Tol);
         Assert.Equal(Circle, anInterN.TypeInter());
-        Assert.Equal(2.0, anInterN.Circle(1).Radius());
-        Assert.True(anInterN.Circle(1).Location().IsEqual(new Point3D(1, 2, 7), 1e-12));
+        Assert.Equal(2.0, anInterN.Circle(1).Radius);
+        Assert.True(anInterN.Circle(1).Location.IsEqual(new Point3D(1, 2, 7), 1e-12));
     }
 
     [Fact]
@@ -225,8 +225,8 @@ public class IntAna_QuadQuadGeoTest
             var aPln = new Plane3D(RandomAx3(aRandom));
             var anInter = new QuadQuadGeo(aPln, aSph);
             Assert.True(anInter.IsDone);
-            double aD = aPln.Distance(aSph.Location());
-            Assert.Equal(aD < aSph.Radius() ? Circle : Empty, anInter.TypeInter());
+            double aD = aPln.DistanceTo(aSph.Location);
+            Assert.Equal(aD < aSph.Radius ? Circle : Empty, anInter.TypeInter());
             AssertOnBoth(anInter, p => Dist(aPln, p), p => Dist(aSph, p));
         }
     }
@@ -237,7 +237,7 @@ public class IntAna_QuadQuadGeoTest
         var aSph = new Sphere(new CoordinateSystem(new Point3D(1, 1, 1), new Direction3D(0, 1, 0)), 3.0);
         var aThrough = new QuadQuadGeo(new Plane3D(new Point3D(1, 1, 1), new Direction3D(1, 1, 0)), aSph);
         Assert.Equal(Circle, aThrough.TypeInter());
-        Assert.Equal(3.0, aThrough.Circle(1).Radius(), 1e-14);
+        Assert.Equal(3.0, aThrough.Circle(1).Radius, 1e-14);
 
         var aTangent = new QuadQuadGeo(new Plane3D(new Point3D(1, 1, 4), new Direction3D(0, 0, 1)), aSph);
         Assert.Equal(Point, aTangent.TypeInter());
@@ -276,7 +276,7 @@ public class IntAna_QuadQuadGeoTest
         var aPlnC = new Plane3D(new Point3D(0, 0, 2), new Direction3D(0, 0, 1));
         var aCirc = new QuadQuadGeo(aPlnC, aCone, global::Kerf.Engine.Foundation.Precision.Angular(), Tol);
         Assert.Equal(Circle, aCirc.TypeInter());
-        Assert.Equal(1.0 + 2 * Math.Tan(aSemiAngle), aCirc.Circle(1).Radius(), 1e-12);
+        Assert.Equal(1.0 + 2 * Math.Tan(aSemiAngle), aCirc.Circle(1).Radius, 1e-12);
 
         // Plane containing the axis direction, away from it: two hyperbola branches
         var aPlnH = new Plane3D(new Point3D(0.5, 0, 0), new Direction3D(1, 0, 0));
@@ -314,11 +314,11 @@ public class IntAna_QuadQuadGeoTest
         {
             CoordinateSystem anAx = RandomAx3(aRandom);
             double aR1 = 0.5 + 3 * aRandom.NextDouble(), aR2 = 0.5 + 3 * aRandom.NextDouble();
-            Vector3D anOffset = new Vector3D(anAx.XDirection()) * (5 * aRandom.NextDouble())
-                              + new Vector3D(anAx.YDirection()) * (5 * aRandom.NextDouble())
-                              + new Vector3D(anAx.Direction()) * (aRandom.NextDouble() - 0.5);
+            Vector3D anOffset = new Vector3D(anAx.XDirection) * (5 * aRandom.NextDouble())
+                              + new Vector3D(anAx.YDirection) * (5 * aRandom.NextDouble())
+                              + new Vector3D(anAx.Direction) * (aRandom.NextDouble() - 0.5);
             var aCyl1 = new Cylinder(anAx, aR1);
-            var aCyl2 = new Cylinder(new CoordinateSystem(anAx.Location().Translated(anOffset), anAx.Direction()), aR2);
+            var aCyl2 = new Cylinder(new CoordinateSystem(anAx.Location.Translated(anOffset), anAx.Direction), aR2);
             var anInter = new QuadQuadGeo(aCyl1, aCyl2, Tol);
             Assert.True(anInter.IsDone);
             ResultType aType = anInter.TypeInter();
@@ -361,7 +361,7 @@ public class IntAna_QuadQuadGeoTest
         {
             CoordinateSystem anAx = RandomAx3(aRandom);
             var aCyl = new Cylinder(anAx, 0.5 + 3 * aRandom.NextDouble());
-            var aCenter = anAx.Location().Translated(new Vector3D(anAx.Direction()) * (10 * aRandom.NextDouble() - 5));
+            var aCenter = anAx.Location.Translated(new Vector3D(anAx.Direction) * (10 * aRandom.NextDouble() - 5));
             var aSph = new Sphere(new CoordinateSystem(aCenter, RandomDir(aRandom)), 0.5 + 5 * aRandom.NextDouble());
             var anInter = new QuadQuadGeo(aCyl, aSph, Tol);
             Assert.True(anInter.IsDone);
@@ -373,7 +373,7 @@ public class IntAna_QuadQuadGeoTest
                 AssertOnBoth(anInter, p => Dist(aCyl, p), p => Dist(aSph, p), 1.0e-6);
             }
 
-            var aCone = new Cone(new CoordinateSystem(aCenter, anAx.Direction()), 0.1 + 1.3 * aRandom.NextDouble(),
+            var aCone = new Cone(new CoordinateSystem(aCenter, anAx.Direction), 0.1 + 1.3 * aRandom.NextDouble(),
                                     2 * aRandom.NextDouble());
             var anInterC = new QuadQuadGeo(aCyl, aCone, Tol);
             Assert.True(anInterC.IsDone);
@@ -390,8 +390,8 @@ public class IntAna_QuadQuadGeoTest
         var aCS = new QuadQuadGeo(aCylZ, aSphZ, Tol);
         Assert.Equal(Circle, aCS.TypeInter());
         Assert.Equal(2, aCS.SolutionCount);
-        Assert.True(aCS.Circle(1).Location().IsEqual(new Point3D(0, 0, 6), 1e-12));
-        Assert.True(aCS.Circle(2).Location().IsEqual(new Point3D(0, 0, -2), 1e-12));
+        Assert.True(aCS.Circle(1).Location.IsEqual(new Point3D(0, 0, 6), 1e-12));
+        Assert.True(aCS.Circle(2).Location.IsEqual(new Point3D(0, 0, -2), 1e-12));
         var aConeZ = new Cone(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), Math.PI / 4, 1);
         var aCC = new QuadQuadGeo(aCylZ, aConeZ, Tol);
         Assert.Equal(Circle, aCC.TypeInter());
@@ -412,8 +412,8 @@ public class IntAna_QuadQuadGeoTest
             var aSph2 = new Sphere(RandomAx3(aRandom), 0.5 + 8 * aRandom.NextDouble());
             var anInter = new QuadQuadGeo(aSph1, aSph2, Tol);
             Assert.True(anInter.IsDone);
-            double aD = aSph1.Location().Distance(aSph2.Location());
-            bool anIntersects = aD < aSph1.Radius() + aSph2.Radius() && aD > Math.Abs(aSph1.Radius() - aSph2.Radius());
+            double aD = aSph1.Location.DistanceTo(aSph2.Location);
+            bool anIntersects = aD < aSph1.Radius + aSph2.Radius && aD > Math.Abs(aSph1.Radius - aSph2.Radius);
             Assert.Equal(anIntersects ? Circle : Empty, anInter.TypeInter());
             AssertOnBoth(anInter, p => Dist(aSph1, p), p => Dist(aSph2, p), 1.0e-6);
         }
@@ -441,12 +441,12 @@ public class IntAna_QuadQuadGeoTest
         }
 
         // Sphere centered at the apex: the two circles at the same distance
-        Point3D anApex = aCone.Apex();
+        Point3D anApex = aCone.Apex;
         var aSphA = new Sphere(new CoordinateSystem(anApex, new Direction3D(0, 0, 1)), 2);
         var anInterA = new QuadQuadGeo(aSphA, aCone, Tol);
         Assert.Equal(Circle, anInterA.TypeInter());
         Assert.Equal(2, anInterA.SolutionCount);
-        Assert.Equal(1.0, anInterA.Circle(1).Radius(), 1e-12);
+        Assert.Equal(1.0, anInterA.Circle(1).Radius, 1e-12);
         AssertOnBoth(anInterA, p => Dist(aSphA, p), p => Dist(aCone, p));
     }
 
@@ -466,7 +466,7 @@ public class IntAna_QuadQuadGeoTest
         Assert.Equal(Same, new QuadQuadGeo(aCone1, aCone1, Tol).TypeInter());
 
         // Common apex, intersecting axes: lines through the apex
-        Point3D anApex = aCone1.Apex();
+        Point3D anApex = aCone1.Apex;
         var aCone3 = new Cone(new CoordinateSystem(anApex, new Direction3D(Math.Sin(0.3), 0, Math.Cos(0.3))), Math.PI / 6, 0);
         var aLines = new QuadQuadGeo(aCone1, aCone3, Tol);
         Assert.Equal(Line, aLines.TypeInter());

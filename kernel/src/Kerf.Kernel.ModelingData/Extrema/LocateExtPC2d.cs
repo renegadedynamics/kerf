@@ -178,7 +178,7 @@ public class LocateExtPC2d
                                     _done = true;
                                     _mypp.SetValues(myintuinf, p1);
                                     _myismin = (s1sup <= 0.0);
-                                    _mydist2 = p.SquareDistance(p1);
+                                    _mydist2 = p.SquareDistanceTo(p1);
                                     break;
                                 }
 
@@ -215,7 +215,7 @@ public class LocateExtPC2d
                                     _done = true;
                                     _mypp.SetValues(myintusup, p1);
                                     _myismin = (s1inf <= 0.0);
-                                    _mydist2 = p.SquareDistance(p1);
+                                    _mydist2 = p.SquareDistanceTo(p1);
                                     break;
                                 }
 

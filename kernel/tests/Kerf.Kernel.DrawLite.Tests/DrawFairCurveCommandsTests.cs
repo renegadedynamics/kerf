@@ -25,10 +25,10 @@ public class DrawFairCurveCommandsTests(ITestOutputHelper output)
 
     private static void SameCurve(BSplineCurve2D theExpected, BSplineCurve2D theActual)
     {
-        Assert.Equal(theExpected.Degree(), theActual.Degree());
-        Assert.Equal(theExpected.Poles().ToArray(), theActual.Poles().ToArray());
-        Assert.Equal(theExpected.Knots().ToArray(), theActual.Knots().ToArray());
-        Assert.Equal(theExpected.Multiplicities().ToArray(), theActual.Multiplicities().ToArray());
+        Assert.Equal(theExpected.Degree, theActual.Degree);
+        Assert.Equal(theExpected.Poles.ToArray(), theActual.Poles.ToArray());
+        Assert.Equal(theExpected.Knots.ToArray(), theActual.Knots.ToArray());
+        Assert.Equal(theExpected.Multiplicities.ToArray(), theActual.Multiplicities.ToArray());
     }
 
     [Fact]
@@ -132,8 +132,8 @@ public class DrawFairCurveCommandsTests(ITestOutputHelper output)
         BSplineCurve2D aCurve = Batten(i, "b").Curve;
         i.Eval("2dtranslate b 1 2");
         var aMoved = Assert.IsType<BSplineCurve2D>(Assert.IsType<DrawGeometry>(i.GetDrawable("b")).Geometry);
-        Assert.Equal(aCurve.Pole(3).X() + 1, aMoved.Pole(3).X(), 1e-12);
-        Assert.Equal(aCurve.Pole(3).Y() + 2, aMoved.Pole(3).Y(), 1e-12);
+        Assert.Equal(aCurve.Pole(3).X + 1, aMoved.Pole(3).X, 1e-12);
+        Assert.Equal(aCurve.Pole(3).Y + 2, aMoved.Pole(3).Y, 1e-12);
     }
 
     [Fact]

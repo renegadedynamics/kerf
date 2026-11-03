@@ -51,7 +51,7 @@ public class SectionGenerator : Profiler, ISectionGenerator<int>
         BSplineCurve3D c = (BSplineCurve3D)_sequence[1];
         nbPoles = c.PoleCount;
         nbKnots = c.KnotCount;
-        degree = c.Degree();
+        degree = c.Degree;
         nbPoles2d = 0;
     }
 

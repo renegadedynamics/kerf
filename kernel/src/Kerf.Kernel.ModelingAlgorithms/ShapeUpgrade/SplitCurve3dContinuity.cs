@@ -70,7 +70,7 @@ public class SplitCurve3dContinuity : SplitCurve3d
         double first = _splitValues!.Value(1);
         double last = _splitValues.Value(_splitValues.Length());
         double precision = Kerf.Engine.Foundation.Precision.PConfusion();
-        if (_curve!.Continuity() < _criterion)
+        if (_curve!.Continuity < _criterion)
         {
             _status = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE2);
         }
@@ -80,7 +80,7 @@ public class SplitCurve3dContinuity : SplitCurve3d
         }
         if (_curve is TrimmedCurve3D tmp)
         {
-            Curve3D basCurve = tmp.BasisCurve();
+            Curve3D basCurve = tmp.BasisCurve;
             var spc = new SplitCurve3dContinuity();
             //    spc.Init(BasCurve,Max(tmp->FirstParameter(),First),Min(tmp->LastParameter(),Last));
             spc.Init(basCurve, first, last);
@@ -110,7 +110,7 @@ public class SplitCurve3dContinuity : SplitCurve3d
                     basCriterion = CN;
                     break;
             }
-            Curve3D basCurve = tmpOffset.BasisCurve();
+            Curve3D basCurve = tmpOffset.BasisCurve;
             // double Offset = tmp->Offset(); // Offset not used (skl)
             // gp_Dir Direct = tmp->Direction(); // Direct not used (skl)
             var spc = new SplitCurve3dContinuity();
@@ -133,7 +133,7 @@ public class SplitCurve3dContinuity : SplitCurve3d
         }
         // it is a BSplineCurve
         _nbCurves = 1;
-        int deg = myBSpline.Degree();
+        int deg = myBSpline.Degree;
         int nbKnots = myBSpline.KnotCount;
         if (nbKnots <= 2)
         {

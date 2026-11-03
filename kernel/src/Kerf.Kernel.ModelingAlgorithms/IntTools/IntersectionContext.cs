@@ -105,7 +105,7 @@ public class IntersectionContext : Transient
             Face ff;
             //
             ff = aF;
-            ff.Orientation(Forward);
+            ff.Orient(Forward);
             tolF = Tool.Tolerance(ff);
             //
             pFClass2d = new FaceClassifier2D(ff, tolF);
@@ -156,8 +156,8 @@ public class IntersectionContext : Transient
         if (!_projPTMap.TryGetValue(aC3D, out ProjectPointOnCurve? pProjPT))
         {
             double f, l;
-            f = aC3D.FirstParameter();
-            l = aC3D.LastParameter();
+            f = aC3D.FirstParameter;
+            l = aC3D.LastParameter;
             //
             pProjPT = new ProjectPointOnCurve();
             pProjPT.Init(aC3D, f, l);
@@ -218,14 +218,14 @@ public class IntersectionContext : Transient
             pHatcher = new Hatcher2D(intr, tolHatch2D, tolHatch3D, true, false);
             //
             ff = aF;
-            ff.Orientation(Forward);
+            ff.Orient(Forward);
             _ = Tool.Surface(ff);
 
             exp.Init(ff, ShapeType.Edge);
             for (; exp.More(); exp.Next())
             {
                 Edge e = ShapeCasts.Edge(exp.Current());
-                orE = e.Orientation();
+                orE = e.Orientation;
                 //
                 c2D = Tool.CurveOnSurface(e, ff, out double u1, out double u2);
                 if (c2D is null)
@@ -361,11 +361,11 @@ public class IntersectionContext : Transient
             for (; itV.More(); itV.Next())
             {
                 Vertex v = ShapeCasts.Vertex(itV.Value());
-                if (v.Orientation() == Forward || v.Orientation() == Reversed)
+                if (v.Orientation == Forward || v.Orientation == Reversed)
                 {
                     Point3D pv = Tool.Pnt(v);
                     tolSum = aTolP1 + Tool.Tolerance(v) + global::Kerf.Engine.Foundation.Precision.Confusion();
-                    double dist1 = aP1.Distance(pv);
+                    double dist1 = aP1.DistanceTo(pv);
                     if (dist1 < aDist && dist1 < tolSum)
                     {
                         aDist = dist1;
@@ -678,8 +678,8 @@ public class IntersectionContext : Transient
             }
         }
         //
-        first = c3D.FirstParameter();
-        last = c3D.LastParameter();
+        first = c3D.FirstParameter;
+        last = c3D.LastParameter;
         //
         // Checking extremities first
         // It is necessary to chose the closest bound to the point
@@ -689,7 +689,7 @@ public class IntersectionContext : Transient
         if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(first))
         {
             Point3D pcFirst = c3D.Value(first);
-            firstDist = pv.Distance(pcFirst);
+            firstDist = pv.DistanceTo(pcFirst);
             if (firstDist < tolSum)
             {
                 bFirstValid = true;
@@ -704,8 +704,8 @@ public class IntersectionContext : Transient
                         POnCurv pOncurve = ext.Point();
                         aT = pOncurve.Parameter();
 
-                        if ((aT > (last + first) * 0.5) || (pv.Distance(pOncurve.Value()) > tolSum)
-                            || (pcFirst.Distance(pOncurve.Value()) < global::Kerf.Engine.Foundation.Precision.Confusion()))
+                        if ((aT > (last + first) * 0.5) || (pv.DistanceTo(pOncurve.Value()) > tolSum)
+                            || (pcFirst.DistanceTo(pOncurve.Value()) < global::Kerf.Engine.Foundation.Precision.Confusion()))
                         {
                             aT = first;
                         }
@@ -732,8 +732,8 @@ public class IntersectionContext : Transient
                             POnCurv pOncurve = ext2.Point(minIdx);
                             aT = pOncurve.Parameter();
 
-                            if ((aT > (last + first) * 0.5) || (pv.Distance(pOncurve.Value()) > tolSum)
-                                || (pcFirst.Distance(pOncurve.Value()) < global::Kerf.Engine.Foundation.Precision.Confusion()))
+                            if ((aT > (last + first) * 0.5) || (pv.DistanceTo(pOncurve.Value()) > tolSum)
+                                || (pcFirst.DistanceTo(pOncurve.Value()) < global::Kerf.Engine.Foundation.Precision.Confusion()))
                             {
                                 aT = first;
                             }
@@ -746,7 +746,7 @@ public class IntersectionContext : Transient
         if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(last))
         {
             Point3D pcLast = c3D.Value(last);
-            dist = pv.Distance(pcLast);
+            dist = pv.DistanceTo(pcLast);
             if (bFirstValid && (firstDist < dist))
             {
                 return true;
@@ -765,8 +765,8 @@ public class IntersectionContext : Transient
                         POnCurv pOncurve = ext.Point();
                         aT = pOncurve.Parameter();
 
-                        if ((aT < (last + first) * 0.5) || (pv.Distance(pOncurve.Value()) > tolSum)
-                            || (pcLast.Distance(pOncurve.Value()) < global::Kerf.Engine.Foundation.Precision.Confusion()))
+                        if ((aT < (last + first) * 0.5) || (pv.DistanceTo(pOncurve.Value()) > tolSum)
+                            || (pcLast.DistanceTo(pOncurve.Value()) < global::Kerf.Engine.Foundation.Precision.Confusion()))
                         {
                             aT = last;
                         }
@@ -793,8 +793,8 @@ public class IntersectionContext : Transient
                             POnCurv pOncurve = ext2.Point(minIdx);
                             aT = pOncurve.Parameter();
 
-                            if ((aT < (last + first) * 0.5) || (pv.Distance(pOncurve.Value()) > tolSum)
-                                || (pcLast.Distance(pOncurve.Value()) < global::Kerf.Engine.Foundation.Precision.Confusion()))
+                            if ((aT < (last + first) * 0.5) || (pv.DistanceTo(pOncurve.Value()) > tolSum)
+                                || (pcLast.DistanceTo(pOncurve.Value()) < global::Kerf.Engine.Foundation.Precision.Confusion()))
                             {
                                 aT = last;
                             }
@@ -818,17 +818,17 @@ public class IntersectionContext : Transient
         {
             if (c3D is BoundedCurve3D bc)
             {
-                Point3D pStart = bc.StartPoint();
-                Point3D pEnd = bc.EndPoint();
+                Point3D pStart = bc.StartPoint;
+                Point3D pEnd = bc.EndPoint;
 
-                dist = pv.Distance(pStart);
+                dist = pv.DistanceTo(pStart);
                 if (dist < tolSum)
                 {
                     aT = first;
                     return true;
                 }
 
-                dist = pv.Distance(pEnd);
+                dist = pv.DistanceTo(pEnd);
                 if (dist < tolSum)
                 {
                     aT = last;

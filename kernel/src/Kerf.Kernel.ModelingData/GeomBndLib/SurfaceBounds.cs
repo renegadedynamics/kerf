@@ -20,7 +20,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// GeomAdaptor_Surface for a rectangular trimmed surface or an unknown type. OCCT's <c>std::variant</c> of
 /// evaluators is an interface field, null for <c>std::monostate</c> (decision 236's pattern).
 /// </remarks>
-public sealed class SurfaceBounds
+internal sealed class SurfaceBounds
 {
     /// <summary>The members of the per-type evaluators that the dispatcher calls through OCCT's <c>std::visit</c>.</summary>
     internal interface ISurfaceEvaluator
@@ -42,7 +42,7 @@ public sealed class SurfaceBounds
     private static Surface? UnwrapSurface(Surface? surf)
     {
         TrimmedSurface? trim = surf as TrimmedSurface;
-        return trim is null ? surf : UnwrapSurface(trim.BasisSurface());
+        return trim is null ? surf : UnwrapSurface(trim.BasisSurface);
     }
 
     /// <summary>Construct from an adaptor surface.</summary>
@@ -106,7 +106,7 @@ public sealed class SurfaceBounds
         if (surf is TrimmedSurface trim)
         {
             _adaptorOwned = new SurfaceAdaptor(surf);
-            if (!InitFromSurface(trim.BasisSurface()))
+            if (!InitFromSurface(trim.BasisSurface))
             {
                 _evaluator = new OtherSurfaceBounds(_adaptorOwned);
             }

@@ -176,7 +176,7 @@ internal sealed class BuildOffsetFaces
         bool bMicro = AlgoTools.IsMicroEdge(edge, ctx);
         if (bMicro && new EdgeCurveAdaptor(edge).GetType() == Line)
         {
-            double len = Tool.Pnt(v1).Distance(Tool.Pnt(v2));
+            double len = Tool.Pnt(v1).DistanceTo(Tool.Pnt(v2));
             new BrepBuilder().UpdateVertex(v1, len / 2.0);
             new BrepBuilder().UpdateVertex(v2, len / 2.0);
         }
@@ -332,7 +332,7 @@ internal sealed class BuildOffsetFaces
                                   ref Shape res)
     {
         bool bFound = false;
-        ShapeType type = sWhat.ShapeType();
+        ShapeType type = sWhat.Type;
         Explorer exp = new(sWhere, type);
         for (; exp.More(); exp.Next())
         {
@@ -408,15 +408,15 @@ internal sealed class BuildOffsetFaces
         for (; exp.More(); exp.Next())
         {
             Edge e = ShapeCasts.Edge(exp.Current());
-            e.Orientation(Forward);
+            e.Orient(Forward);
             le.Append(e);
-            e.Orientation(Reversed);
+            e.Orient(Reversed);
             le.Append(e);
         }
         //
         Face ff = face;
-        Orientation or = face.Orientation();
-        ff.Orientation(Forward);
+        Orientation or = face.Orientation;
+        ff.Orient(Forward);
         //
         // build pcurves for edges on the face
         BrepLibrary.BuildPCurveForEdgesOnPlane(le, ff);
@@ -436,7 +436,7 @@ internal sealed class BuildOffsetFaces
         for (; itLF.More(); itLF.Next())
         {
             ref Shape fSp = ref itLF.ChangeValue();
-            fSp.Orientation(or);
+            fSp.Orient(or);
             lfImages.Append(fSp);
             //
             facesOrigins[fSp] = face;
@@ -467,7 +467,7 @@ internal sealed class BuildOffsetFaces
                 t += dt;
             }
             //
-            if (e.Orientation() == Reversed)
+            if (e.Orientation == Reversed)
             {
                 vSum = vSum.Reversed();
             }
@@ -1569,7 +1569,7 @@ internal sealed class BuildOffsetFaces
             {
                 Edge eIm = ShapeCasts.Edge(exp.Current());
                 //
-                if (eIm.Orientation() == Internal)
+                if (eIm.Orientation == Internal)
                 {
                     meInt.Add(eIm);
                     continue;
@@ -1584,7 +1584,7 @@ internal sealed class BuildOffsetFaces
                 NCollection_List<Shape>.Iterator itLEO = new(pLEOr);
                 for (; itLEO.More(); itLEO.Next())
                 {
-                    if (itLEO.Value().ShapeType() == ShapeType.Vertex)
+                    if (itLEO.Value().Type == ShapeType.Vertex)
                     {
                         ++nbVOr;
                     }
@@ -1606,7 +1606,7 @@ internal sealed class BuildOffsetFaces
                 for (; itLEO.More(); itLEO.Next())
                 {
                     Shape sOr = itLEO.Value();
-                    bool bVertex = (sOr.ShapeType() == ShapeType.Vertex);
+                    bool bVertex = (sOr.Type == ShapeType.Vertex);
                     //
                     Shape eOrF = new();
                     if (bVertex)
@@ -2032,7 +2032,7 @@ internal sealed class BuildOffsetFaces
 
                 Shape eClassified = new();
                 FindShape(e, fClassified, null, ref eClassified);
-                Orientation oriClass = eClassified.Orientation();
+                Orientation oriClass = eClassified.Orientation;
 
                 AlgoTools3D.GetNormalToFaceOnEdge(ShapeCasts.Edge(eClassified), ShapeCasts.Face(fClassified),
                                                            out Direction3D dnClass);
@@ -2067,7 +2067,7 @@ internal sealed class BuildOffsetFaces
                                 Shape eUnclassified = new();
                                 FindShape(e, fSp, null, ref eUnclassified);
 
-                                Orientation oriUnclass = eUnclassified.Orientation();
+                                Orientation oriUnclass = eUnclassified.Orientation;
                                 if (!isSameOri)
                                 {
                                     oriUnclass = global::Kerf.Engine.Topology.TopAbs.Reverse(oriUnclass);
@@ -2431,7 +2431,7 @@ internal sealed class BuildOffsetFaces
         for (; expW.More(); expW.Next())
         {
             Wire holeWire = ShapeCasts.Wire(expW.Current());
-            if (!holeWire.IsSame(outerWire) && holeWire.Orientation() != Internal)
+            if (!holeWire.IsSame(outerWire) && holeWire.Orientation != Internal)
             {
                 lHoleWires.Append(holeWire);
             }
@@ -2696,8 +2696,8 @@ internal sealed class BuildOffsetFaces
                 Point3D pw1 = Tool.Pnt(vw1);
                 Point3D pw2 = Tool.Pnt(vw2);
                 //
-                double dist1 = pi1_.SquareDistance(pw1);
-                double dist2 = pi1_.SquareDistance(pw2);
+                double dist1 = pi1_.SquareDistanceTo(pw1);
+                double dist2 = pi1_.SquareDistanceTo(pw2);
                 //
                 if (dist1 < dist2)
                 {
@@ -2743,7 +2743,7 @@ internal sealed class BuildOffsetFaces
                     for (; aItLOE.More(); aItLOE.Next())
                     {
                         Shape eo = aItLOE.Value();
-                        if (eo.ShapeType() == ShapeType.Edge && mFence.Add(eo))
+                        if (eo.Type == ShapeType.Edge && mFence.Add(eo))
                         {
                             Shape eOin = new();
                             if (FindShape(eo, fOr, null, ref eOin))
@@ -2803,7 +2803,7 @@ internal sealed class BuildOffsetFaces
         Vector3D vi = new(pi1, pi2);
         Vector3D vOv = new(po1, po2);
         //
-        double angle = vi.Angle(vOv);
+        double angle = vi.AngleTo(vOv);
         bool bInverted = Math.Abs(angle - M_PI) < 1.0e-4;
         if (bInverted)
         {
@@ -3709,7 +3709,7 @@ internal sealed class BuildOffsetFaces
             {
                 mfToRem.Add(fIm);
             }
-            else if (fIm.Orientation() != Internal)
+            else if (fIm.Orientation != Internal)
             {
                 Exploration.MapShapes(fIm, ShapeType.Edge, meBoundary);
             }
@@ -3797,7 +3797,7 @@ internal sealed class BuildOffsetFaces
             {
                 Shape fs = expF.Current();
                 //
-                if (fs.Orientation() == Internal)
+                if (fs.Orientation == Internal)
                 {
                     mfToRem.Add(fs);
                     continue;
@@ -4805,7 +4805,7 @@ internal sealed class BuildOffsetFaces
                     NCollection_List<Shape>.Iterator itLEO = new(pLEOr);
                     for (; itLEO.More(); itLEO.Next())
                     {
-                        if (itLEO.Value().ShapeType() != ShapeType.Vertex)
+                        if (itLEO.Value().Type != ShapeType.Vertex)
                         {
                             break;
                         }
@@ -5933,7 +5933,7 @@ internal sealed class BuildOffsetFaces
             }
             //
             // in artificial case we intersect the faces which are close to invalidity
-            bool bAvoid = artCase ? ((s.ShapeType() == ShapeType.Vertex) && !mvInvAll.Contains(s)) : false;
+            bool bAvoid = artCase ? ((s.Type == ShapeType.Vertex) && !mvInvAll.Contains(s)) : false;
             //
             NCollection_List<Shape> lf0 = dmsf.GetValue(s);
             NCollection_List<Shape>.Iterator itLF0 = new(lf0);
@@ -6246,7 +6246,7 @@ internal sealed class BuildOffsetFaces
                         {
                             Shape eOr = itLE.Value();
                             //
-                            if (mFence.Add(eOr) && (eOr.ShapeType() == ShapeType.Edge))
+                            if (mFence.Add(eOr) && (eOr.Type == ShapeType.Edge))
                             {
                                 leOr.Append(eOr);
                             }
@@ -6464,7 +6464,7 @@ internal sealed class BuildOffsetFaces
                     // Add vertices from intersection info to trim section edges of artificial faces
                     for (NCollection_List<Shape>.Iterator itLV = new(pLV); itLV.More(); itLV.Next())
                     {
-                        if (itLV.Value().ShapeType() == ShapeType.Vertex)
+                        if (itLV.Value().Type == ShapeType.Vertex)
                         {
                             lArgs.Append(itLV.Value());
                         }
@@ -8325,7 +8325,7 @@ internal sealed class BuildOffsetFaces
                 for (; expE.More(); expE.Next())
                 {
                     Shape e = expE.Current();
-                    if (e.Orientation() != Forward && e.Orientation() != Reversed)
+                    if (e.Orientation != Forward && e.Orientation != Reversed)
                     {
                         // Skip internals
                         continue;

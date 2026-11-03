@@ -18,7 +18,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Computes bounding box for a 2D hyperbola (Geom2d_Hyperbola): the arc ends and the per-coordinate extrema, opened
 /// for infinite parameters. The static method accepting gp_Hypr2d can be used directly.
 /// </summary>
-public sealed class Hyperbola2dBounds : Curve2dBounds.ICurve2dEvaluator
+internal sealed class Hyperbola2dBounds : Curve2dBounds.ICurve2dEvaluator
 {
     private readonly HyperbolaCurve2D _geom;
 
@@ -32,10 +32,10 @@ public sealed class Hyperbola2dBounds : Curve2dBounds.ICurve2dEvaluator
     Curve2D? Curve2dBounds.ICurve2dEvaluator.CurveGeometry() => _geom;
 
     /// <summary>Compute bounding box for arc [theU1, theU2].</summary>
-    public Box2d Box(double u1, double u2, double tol) => Box(_geom.Hypr2d(), u1, u2, tol);
+    public Box2d Box(double u1, double u2, double tol) => Box(_geom.Hyperbola, u1, u2, tol);
 
     /// <summary>Compute bounding box for full curve.</summary>
-    public Box2d Box(double tol) => Box(_geom.FirstParameter(), _geom.LastParameter(), tol);
+    public Box2d Box(double tol) => Box(_geom.FirstParameter, _geom.LastParameter, tol);
 
     /// <summary>For analytical curves, BoxOptimal is same as Box.</summary>
     public Box2d BoxOptimal(double u1, double u2, double tol) => Box(u1, u2, tol);
@@ -53,11 +53,11 @@ public sealed class Hyperbola2dBounds : Curve2dBounds.ICurve2dEvaluator
             box.Add(global::Kerf.Engine.Geometry.ElCLib.Value(0.0, hypr));
         }
 
-        Frame2D pos = hypr.Axis();
-        Xy xDir = pos.XDirection().XY();
-        Xy yDir = pos.YDirection().XY();
-        double rmaj = hypr.MajorRadius();
-        double rmin = hypr.MinorRadius();
+        Frame2D pos = hypr.Axis;
+        Xy xDir = pos.XDirection.XY();
+        Xy yDir = pos.YDirection.XY();
+        double rmaj = hypr.MajorRadius;
+        double rmin = hypr.MinorRadius;
         double eps = Epsilon(1.0);
 
         for (int i = 1; i <= 2; ++i)

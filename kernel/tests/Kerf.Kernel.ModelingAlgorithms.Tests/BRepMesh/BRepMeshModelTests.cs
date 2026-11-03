@@ -54,7 +54,7 @@ public class BRepMeshModelTests
         for (int i = 0; i < aModel.FacesNb(); i++)
         {
             FaceModel aDFace = aModel.GetFace(i);
-            Assert.Equal(Forward, aDFace.GetFace().Orientation());
+            Assert.Equal(Forward, aDFace.GetFace().Orientation);
             Assert.True(aDFace.IsEqual(StatusModel.NoError));
             Assert.Equal(1, aDFace.WiresNb());
             WireModel aDWire = aDFace.GetWire(0);
@@ -67,7 +67,7 @@ public class BRepMeshModelTests
                 Orientation anOri = aDWire.GetEdgeOrientation(e);
 
                 // The orientation is the edge's in the face; the pcurve on this face has it.
-                Assert.Contains(aFaceEdges, s => s.IsSame(aDEdge.GetEdge()) && s.Orientation() == anOri);
+                Assert.Contains(aFaceEdges, s => s.IsSame(aDEdge.GetEdge()) && s.Orientation == anOri);
                 PCurveModel aPCurve = aDEdge.GetPCurve(aDFace, anOri);
                 Assert.Same(aDFace, aPCurve.GetFace());
                 Assert.Equal(anOri, aPCurve.GetOrientation());
@@ -129,7 +129,7 @@ public class BRepMeshModelTests
         for (int k = 0; k < aP1.ParametersNb(); k++)
         {
             Assert.Equal(aP1.GetParameter(k), aP2.GetParameter(k));
-            Assert.Equal(2 * Math.PI, Math.Abs(aP1.GetPoint(k).X() - aP2.GetPoint(k).X()), 1e-12);
+            Assert.Equal(2 * Math.PI, Math.Abs(aP1.GetPoint(k).X - aP2.GetPoint(k).X), 1e-12);
         }
 
         // Sphere: the poles' degenerated edges.
@@ -253,7 +253,7 @@ public class BRepMeshModelTests
                 {
                     aWireEdges += aDFace.GetWire(w).EdgesNb();
                 }
-                int aFaceEdges = Explore(aDFace.GetFace(), ShapeType.Edge).Count(e => e.Orientation() != External);
+                int aFaceEdges = Explore(aDFace.GetFace(), ShapeType.Edge).Count(e => e.Orientation != External);
                 Assert.Equal(aFaceEdges, aWireEdges);
             }
         }
@@ -313,7 +313,7 @@ public class BRepMeshModelTests
             for (int k = 1; k < aCurve.ParametersNb(); k++)
             {
                 Assert.True(aCurve.GetParameter(k) > aCurve.GetParameter(k - 1));
-                Assert.Equal(R, aCirc.Distance(aCurve.GetPoint(k)) + R, 1e-12); // on the circle
+                Assert.Equal(R, aCirc.DistanceTo(aCurve.GetPoint(k)) + R, 1e-12); // on the circle
                 double aStep = aCurve.GetParameter(k) - aCurve.GetParameter(k - 1);
                 double aSagitta = R * (1.0 - Math.Cos(aStep / 2.0));
                 Assert.True(aSagitta <= 0.5 * aDEdge.GetDeflection() * (1.0 + 1e-9), $"sagitta {aSagitta}");
@@ -369,7 +369,7 @@ public class BRepMeshModelTests
                 Assert.Equal(aBest.NodeCount, aCurve.ParametersNb());
                 for (int k = 2; k < aBest.NodeCount; k++) // the ends are the vertices' points
                 {
-                    Point3D aNode = aBestTri!.Node(aBest.Node(k)).Transformed(aBestLoc.Transformation());
+                    Point3D aNode = aBestTri!.Node(aBest.Node(k)).Transformed(aBestLoc.Transformation);
                     Assert.Equal(aNode, aCurve.GetPoint(k - 1));
                 }
                 if (aDEdge.GetSameParam())
@@ -461,10 +461,10 @@ public class BRepMeshModelTests
         WireModel aDWire = aDFace.GetWire(0);
         PCurveModel aPCurve = aDWire.GetEdge(0).GetPCurve(aDFace, aDWire.GetEdgeOrientation(0));
         Point2D anOriginal = aPCurve.GetPoint(0);
-        aPCurve.GetPoint(0) = new Point2D(anOriginal.X() + 1e-3, anOriginal.Y() - 1e-3);
+        aPCurve.GetPoint(0) = new Point2D(anOriginal.X + 1e-3, anOriginal.Y - 1e-3);
 
         Assert.True(new ModelHealer().Perform(aModel, Params(0.1), new global::Kerf.Engine.Foundation.ProgressRange()));
-        Assert.True(aPCurve.GetPoint(0).Distance(anOriginal) < 1e-12);
+        Assert.True(aPCurve.GetPoint(0).DistanceTo(anOriginal) < 1e-12);
         Assert.True(aDFace.IsEqual(StatusModel.NoError));
         Assert.Equal(0.1, aDWire.GetDeflection());
         Assert.Equal(0.1, aDFace.GetDeflection());
@@ -478,7 +478,7 @@ public class BRepMeshModelTests
         if (!double.IsNaN(theAngle))
         {
             var aDir = new Direction3D(Math.Cos(theAngle), Math.Sin(theAngle), 0);
-            var aCenter = new Point3D(8.99 * aDir.X(), 8.99 * aDir.Y(), 0);
+            var aCenter = new Point3D(8.99 * aDir.X, 8.99 * aDir.Y, 0);
             var aHole = new MakeWire(new MakeEdge(new Circle3D(new Frame3D(aCenter, new Direction3D(0, 0, 1), aDir), 1)).Edge()).Wire();
             aMaker.Add(ShapeCasts.Wire(aHole.Reversed()));
         }
@@ -686,7 +686,7 @@ public class BRepMeshModelTests
                 for (int k = 1; k <= aPoly.NodeCount; k++)
                 {
                     Assert.Equal(aCurve.GetParameter(k - 1), aPoly.Parameters()![k]);
-                    Assert.True(aTri!.Node(aPoly.Node(k)).Transformed(aLoc.Transformation()).Distance(aCurve.GetPoint(k - 1)) < 1e-12);
+                    Assert.True(aTri!.Node(aPoly.Node(k)).Transformed(aLoc.Transformation).DistanceTo(aCurve.GetPoint(k - 1)) < 1e-12);
                 }
             }
             if (Tool.Degenerated(anEdge))
@@ -755,8 +755,8 @@ public class BRepMeshModelTests
             aSeams++;
             PCurveModel aFirst = aDEdge.GetPCurve(0), aLast = aDEdge.GetPCurve(1);
             Assert.Equal(Reversed, aFirst.GetOrientation());
-            Assert.Equal(0.0, aFirst.GetPoint(0).X(), 1e-12);
-            Assert.Equal(2 * Math.PI, aLast.GetPoint(0).X(), 1e-12);
+            Assert.Equal(0.0, aFirst.GetPoint(0).X, 1e-12);
+            Assert.Equal(2 * Math.PI, aLast.GetPoint(0).X, 1e-12);
 
             // the model holds the input's faces and edges; the meshes are on what stands for them in the result
             Face aFace = ShapeCasts.Face(InResult(aMesh, aFirst.GetFace().GetFace()));
@@ -770,7 +770,7 @@ public class BRepMeshModelTests
             {
                 Assert.Equal(aFirst.GetIndex(k - 1), aForward.Node(k));
                 Assert.Equal(aLast.GetIndex(k - 1), aReversed.Node(k));
-                Assert.Equal(0.0, aTri.UVNode(aForward.Node(k)).X(), 1e-12); // the reversed pcurve's side
+                Assert.Equal(0.0, aTri.UVNode(aForward.Node(k)).X, 1e-12); // the reversed pcurve's side
             }
         }
         Assert.Equal(1, aSeams);

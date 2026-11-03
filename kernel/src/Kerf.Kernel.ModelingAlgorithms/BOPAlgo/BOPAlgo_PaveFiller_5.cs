@@ -450,7 +450,7 @@ public partial class PaveFiller
                                 {
                                     Vertex v = ShapeCasts.Vertex(_ds.Shape(nV[j]));
                                     Point3D p = Tool.Pnt(v);
-                                    double distPP = p.Distance(pnew0);
+                                    double distPP = p.DistanceTo(pnew0);
                                     double tol = Tool.Tolerance(v);
                                     double maxDist = 1.0e4 * tol;
                                     if (tol < .01)
@@ -944,7 +944,7 @@ public partial class PaveFiller
                 // Middle point
                 // Tangent vector in the middle point
                 bac.D1(AlgoTools2D.IntermediatePoint(ts[0], ts[1]), out Point3D pOnE, out Vector3D veTgt);
-                if (veTgt.SquareMagnitude() < Constants.Resolution())
+                if (veTgt.SquareMagnitude < Constants.Resolution())
                 {
                     continue;
                 }
@@ -981,7 +981,7 @@ public partial class PaveFiller
                 {
                     Point3D pOnS = projPS.NearestPoint();
                     Vector3D vfNorm = new(pOnS, pOnE);
-                    if (vfNorm.SquareMagnitude() > Constants.Resolution())
+                    if (vfNorm.SquareMagnitude > Constants.Resolution())
                     {
                         // Angle between vectors should be close to 90 degrees.
                         // We allow deviation of 25 degrees.

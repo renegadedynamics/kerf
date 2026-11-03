@@ -23,85 +23,85 @@ namespace Kerf.Engine.Geometry;
 /// sphere <c>P(U, V) = O + Radius * cos(V) * (cos(U) * XDir + sin(U) * YDir) + Radius * sin(V) * ZDir</c>;
 /// torus <c>P(U, V) = O + (MajorRadius + MinorRadius * cos(V)) * (cos(U) * XDir + sin(U) * YDir) + MinorRadius * sin(V) * ZDir</c>.
 /// </remarks>
-public static class ElSLib
+internal static class ElSLib
 {
     // ElSLib.lxx: the gp surface overloads
 
     /// <summary>The point of parameters (U, V) on an elementary surface.</summary>
-    public static Point3D Value(double u, double v, in Plane3D pl) => PlaneValue(u, v, pl.Position());
+    public static Point3D Value(double u, double v, in Plane3D pl) => PlaneValue(u, v, pl.Position);
 
     public static Point3D Value(double u, double v, in Cone c)
-        => ConeValue(u, v, c.Position(), c.RefRadius(), c.SemiAngle());
+        => ConeValue(u, v, c.Position, c.RefRadius, c.SemiAngle);
 
-    public static Point3D Value(double u, double v, in Cylinder c) => CylinderValue(u, v, c.Position(), c.Radius());
+    public static Point3D Value(double u, double v, in Cylinder c) => CylinderValue(u, v, c.Position, c.Radius);
 
-    public static Point3D Value(double u, double v, in Sphere s) => SphereValue(u, v, s.Position(), s.Radius());
+    public static Point3D Value(double u, double v, in Sphere s) => SphereValue(u, v, s.Position, s.Radius);
 
     public static Point3D Value(double u, double v, in Torus t)
-        => TorusValue(u, v, t.Position(), t.MajorRadius(), t.MinorRadius());
+        => TorusValue(u, v, t.Position, t.MajorRadius, t.MinorRadius);
 
     /// <summary>The derivative of order Nu in U and Nv in V at the point of parameters (U, V).</summary>
-    public static Vector3D DN(double u, double v, in Plane3D pl, int nu, int nv) => PlaneDN(u, v, pl.Position(), nu, nv);
+    public static Vector3D DN(double u, double v, in Plane3D pl, int nu, int nv) => PlaneDN(u, v, pl.Position, nu, nv);
 
     public static Vector3D DN(double u, double v, in Cone c, int nu, int nv)
-        => ConeDN(u, v, c.Position(), c.RefRadius(), c.SemiAngle(), nu, nv);
+        => ConeDN(u, v, c.Position, c.RefRadius, c.SemiAngle, nu, nv);
 
     public static Vector3D DN(double u, double v, in Cylinder c, int nu, int nv)
-        => CylinderDN(u, v, c.Position(), c.Radius(), nu, nv);
+        => CylinderDN(u, v, c.Position, c.Radius, nu, nv);
 
     public static Vector3D DN(double u, double v, in Sphere s, int nu, int nv)
-        => SphereDN(u, v, s.Position(), s.Radius(), nu, nv);
+        => SphereDN(u, v, s.Position, s.Radius, nu, nv);
 
     public static Vector3D DN(double u, double v, in Torus t, int nu, int nv)
-        => TorusDN(u, v, t.Position(), t.MajorRadius(), t.MinorRadius(), nu, nv);
+        => TorusDN(u, v, t.Position, t.MajorRadius, t.MinorRadius, nu, nv);
 
     /// <summary>The point P of parameters (U, V).</summary>
-    public static void D0(double u, double v, in Plane3D pl, out Point3D p) => PlaneD0(u, v, pl.Position(), out p);
+    public static void D0(double u, double v, in Plane3D pl, out Point3D p) => PlaneD0(u, v, pl.Position, out p);
 
     public static void D0(double u, double v, in Cone c, out Point3D p)
-        => ConeD0(u, v, c.Position(), c.RefRadius(), c.SemiAngle(), out p);
+        => ConeD0(u, v, c.Position, c.RefRadius, c.SemiAngle, out p);
 
     public static void D0(double u, double v, in Cylinder c, out Point3D p)
-        => CylinderD0(u, v, c.Position(), c.Radius(), out p);
+        => CylinderD0(u, v, c.Position, c.Radius, out p);
 
     public static void D0(double u, double v, in Sphere s, out Point3D p)
-        => SphereD0(u, v, s.Position(), s.Radius(), out p);
+        => SphereD0(u, v, s.Position, s.Radius, out p);
 
     public static void D0(double u, double v, in Torus t, out Point3D p)
-        => TorusD0(u, v, t.Position(), t.MajorRadius(), t.MinorRadius(), out p);
+        => TorusD0(u, v, t.Position, t.MajorRadius, t.MinorRadius, out p);
 
     /// <summary>The point P of parameters (U, V) and the first derivatives Vu and Vv.</summary>
     public static void D1(double u, double v, in Plane3D pl, out Point3D p, out Vector3D vu, out Vector3D vv)
-        => PlaneD1(u, v, pl.Position(), out p, out vu, out vv);
+        => PlaneD1(u, v, pl.Position, out p, out vu, out vv);
 
     public static void D1(double u, double v, in Cone c, out Point3D p, out Vector3D vu, out Vector3D vv)
-        => ConeD1(u, v, c.Position(), c.RefRadius(), c.SemiAngle(), out p, out vu, out vv);
+        => ConeD1(u, v, c.Position, c.RefRadius, c.SemiAngle, out p, out vu, out vv);
 
     public static void D1(double u, double v, in Cylinder c, out Point3D p, out Vector3D vu, out Vector3D vv)
-        => CylinderD1(u, v, c.Position(), c.Radius(), out p, out vu, out vv);
+        => CylinderD1(u, v, c.Position, c.Radius, out p, out vu, out vv);
 
     public static void D1(double u, double v, in Sphere s, out Point3D p, out Vector3D vu, out Vector3D vv)
-        => SphereD1(u, v, s.Position(), s.Radius(), out p, out vu, out vv);
+        => SphereD1(u, v, s.Position, s.Radius, out p, out vu, out vv);
 
     public static void D1(double u, double v, in Torus t, out Point3D p, out Vector3D vu, out Vector3D vv)
-        => TorusD1(u, v, t.Position(), t.MajorRadius(), t.MinorRadius(), out p, out vu, out vv);
+        => TorusD1(u, v, t.Position, t.MajorRadius, t.MinorRadius, out p, out vu, out vv);
 
     /// <summary>The point, the first derivatives and the second derivatives Vuu, Vvv and Vuv.</summary>
     public static void D2(double u, double v, in Cone c, out Point3D p, out Vector3D vu, out Vector3D vv,
                           out Vector3D vuu, out Vector3D vvv, out Vector3D vuv)
-        => ConeD2(u, v, c.Position(), c.RefRadius(), c.SemiAngle(), out p, out vu, out vv, out vuu, out vvv, out vuv);
+        => ConeD2(u, v, c.Position, c.RefRadius, c.SemiAngle, out p, out vu, out vv, out vuu, out vvv, out vuv);
 
     public static void D2(double u, double v, in Cylinder c, out Point3D p, out Vector3D vu, out Vector3D vv,
                           out Vector3D vuu, out Vector3D vvv, out Vector3D vuv)
-        => CylinderD2(u, v, c.Position(), c.Radius(), out p, out vu, out vv, out vuu, out vvv, out vuv);
+        => CylinderD2(u, v, c.Position, c.Radius, out p, out vu, out vv, out vuu, out vvv, out vuv);
 
     public static void D2(double u, double v, in Sphere s, out Point3D p, out Vector3D vu, out Vector3D vv,
                           out Vector3D vuu, out Vector3D vvv, out Vector3D vuv)
-        => SphereD2(u, v, s.Position(), s.Radius(), out p, out vu, out vv, out vuu, out vvv, out vuv);
+        => SphereD2(u, v, s.Position, s.Radius, out p, out vu, out vv, out vuu, out vvv, out vuv);
 
     public static void D2(double u, double v, in Torus t, out Point3D p, out Vector3D vu, out Vector3D vv,
                           out Vector3D vuu, out Vector3D vvv, out Vector3D vuv)
-        => TorusD2(u, v, t.Position(), t.MajorRadius(), t.MinorRadius(), out p, out vu, out vv, out vuu, out vvv, out vuv);
+        => TorusD2(u, v, t.Position, t.MajorRadius, t.MinorRadius, out p, out vu, out vv, out vuu, out vvv, out vuv);
 
     /// <summary>
     /// The point, the first and second derivatives, and the third derivatives Vuuu, Vvvv, Vuuv and Vuvv.
@@ -109,42 +109,42 @@ public static class ElSLib
     public static void D3(double u, double v, in Cone c, out Point3D p, out Vector3D vu, out Vector3D vv,
                           out Vector3D vuu, out Vector3D vvv, out Vector3D vuv,
                           out Vector3D vuuu, out Vector3D vvvv, out Vector3D vuuv, out Vector3D vuvv)
-        => ConeD3(u, v, c.Position(), c.RefRadius(), c.SemiAngle(), out p, out vu, out vv, out vuu, out vvv, out vuv,
+        => ConeD3(u, v, c.Position, c.RefRadius, c.SemiAngle, out p, out vu, out vv, out vuu, out vvv, out vuv,
                   out vuuu, out vvvv, out vuuv, out vuvv);
 
     public static void D3(double u, double v, in Cylinder c, out Point3D p, out Vector3D vu, out Vector3D vv,
                           out Vector3D vuu, out Vector3D vvv, out Vector3D vuv,
                           out Vector3D vuuu, out Vector3D vvvv, out Vector3D vuuv, out Vector3D vuvv)
-        => CylinderD3(u, v, c.Position(), c.Radius(), out p, out vu, out vv, out vuu, out vvv, out vuv,
+        => CylinderD3(u, v, c.Position, c.Radius, out p, out vu, out vv, out vuu, out vvv, out vuv,
                       out vuuu, out vvvv, out vuuv, out vuvv);
 
     public static void D3(double u, double v, in Sphere s, out Point3D p, out Vector3D vu, out Vector3D vv,
                           out Vector3D vuu, out Vector3D vvv, out Vector3D vuv,
                           out Vector3D vuuu, out Vector3D vvvv, out Vector3D vuuv, out Vector3D vuvv)
-        => SphereD3(u, v, s.Position(), s.Radius(), out p, out vu, out vv, out vuu, out vvv, out vuv,
+        => SphereD3(u, v, s.Position, s.Radius, out p, out vu, out vv, out vuu, out vvv, out vuv,
                     out vuuu, out vvvv, out vuuv, out vuvv);
 
     public static void D3(double u, double v, in Torus t, out Point3D p, out Vector3D vu, out Vector3D vv,
                           out Vector3D vuu, out Vector3D vvv, out Vector3D vuv,
                           out Vector3D vuuu, out Vector3D vvvv, out Vector3D vuuv, out Vector3D vuvv)
-        => TorusD3(u, v, t.Position(), t.MajorRadius(), t.MinorRadius(), out p, out vu, out vv, out vuu, out vvv, out vuv,
+        => TorusD3(u, v, t.Position, t.MajorRadius, t.MinorRadius, out p, out vu, out vv, out vuu, out vvv, out vuv,
                    out vuuu, out vvvv, out vuuv, out vuvv);
 
     /// <summary>The parameters (U, V) of a point on an elementary surface.</summary>
     public static void Parameters(in Plane3D pl, in Point3D p, out double u, out double v)
-        => PlaneParameters(pl.Position(), p, out u, out v);
+        => PlaneParameters(pl.Position, p, out u, out v);
 
     public static void Parameters(in Cylinder c, in Point3D p, out double u, out double v)
-        => CylinderParameters(c.Position(), c.Radius(), p, out u, out v);
+        => CylinderParameters(c.Position, c.Radius, p, out u, out v);
 
     public static void Parameters(in Cone c, in Point3D p, out double u, out double v)
-        => ConeParameters(c.Position(), c.RefRadius(), c.SemiAngle(), p, out u, out v);
+        => ConeParameters(c.Position, c.RefRadius, c.SemiAngle, p, out u, out v);
 
     public static void Parameters(in Sphere s, in Point3D p, out double u, out double v)
-        => SphereParameters(s.Position(), s.Radius(), p, out u, out v);
+        => SphereParameters(s.Position, s.Radius, p, out u, out v);
 
     public static void Parameters(in Torus t, in Point3D p, out double u, out double v)
-        => TorusParameters(t.Position(), t.MajorRadius(), t.MinorRadius(), p, out u, out v);
+        => TorusParameters(t.Position, t.MajorRadius, t.MinorRadius, p, out u, out v);
 
     // ElSLib.cxx
 
@@ -178,9 +178,9 @@ public static class ElSLib
 
     public static Point3D PlaneValue(double u, double v, in CoordinateSystem pos)
     {
-        Xyz xDir = pos.XDirection().XYZ();
-        Xyz yDir = pos.YDirection().XYZ();
-        Xyz pLoc = pos.Location().XYZ();
+        Xyz xDir = pos.XDirection.XYZ();
+        Xyz yDir = pos.YDirection.XYZ();
+        Xyz pLoc = pos.Location.XYZ();
         return new Point3D(u * xDir.X() + v * yDir.X() + pLoc.X(),
                           u * xDir.Y() + v * yDir.Y() + pLoc.Y(),
                           u * xDir.Z() + v * yDir.Z() + pLoc.Z());
@@ -188,10 +188,10 @@ public static class ElSLib
 
     public static Point3D ConeValue(double u, double v, in CoordinateSystem pos, double radius, double sAngle)
     {
-        Xyz xDir = pos.XDirection().XYZ();
-        Xyz yDir = pos.YDirection().XYZ();
-        Xyz zDir = pos.Direction().XYZ();
-        Xyz pLoc = pos.Location().XYZ();
+        Xyz xDir = pos.XDirection.XYZ();
+        Xyz yDir = pos.YDirection.XYZ();
+        Xyz zDir = pos.Direction.XYZ();
+        Xyz pLoc = pos.Location.XYZ();
         double r = radius + v * Math.Sin(sAngle);
         double a3 = v * Math.Cos(sAngle);
         double a1 = r * Math.Cos(u);
@@ -206,10 +206,10 @@ public static class ElSLib
         // M(u,v) = C + Radius * ( Xdir * cos(u) + Ydir * sin(u)) + V * Zdir
         // where C is the location point of the Axis2placement
         // Xdir, Ydir ,Zdir are the directions of the local coordinates system
-        Xyz xDir = pos.XDirection().XYZ();
-        Xyz yDir = pos.YDirection().XYZ();
-        Xyz zDir = pos.Direction().XYZ();
-        Xyz pLoc = pos.Location().XYZ();
+        Xyz xDir = pos.XDirection.XYZ();
+        Xyz yDir = pos.YDirection.XYZ();
+        Xyz zDir = pos.Direction.XYZ();
+        Xyz pLoc = pos.Location.XYZ();
         double a1 = radius * Math.Cos(u);
         double a2 = radius * Math.Sin(u);
         return new Point3D(a1 * xDir.X() + a2 * yDir.X() + v * zDir.X() + pLoc.X(),
@@ -222,10 +222,10 @@ public static class ElSLib
         // M(U,V) = Location +
         //          R * CosV (CosU * XDirection + SinU * YDirection) +
         //          R * SinV * Direction
-        Xyz xDir = pos.XDirection().XYZ();
-        Xyz yDir = pos.YDirection().XYZ();
-        Xyz zDir = pos.Direction().XYZ();
-        Xyz pLoc = pos.Location().XYZ();
+        Xyz xDir = pos.XDirection.XYZ();
+        Xyz yDir = pos.YDirection.XYZ();
+        Xyz zDir = pos.Direction.XYZ();
+        Xyz pLoc = pos.Location.XYZ();
         double r = radius * Math.Cos(v);
         double a3 = radius * Math.Sin(v);
         double a1 = r * Math.Cos(u);
@@ -241,10 +241,10 @@ public static class ElSLib
         //   Location +
         //   (MajRadius+MinRadius*cos(V)) * (cos(U)*XDirection + sin(U)*YDirection) +
         //   MinorRadius * sin(V) * Direction
-        Xyz xDir = pos.XDirection().XYZ();
-        Xyz yDir = pos.YDirection().XYZ();
-        Xyz zDir = pos.Direction().XYZ();
-        Xyz pLoc = pos.Location().XYZ();
+        Xyz xDir = pos.XDirection.XYZ();
+        Xyz yDir = pos.YDirection.XYZ();
+        Xyz zDir = pos.Direction.XYZ();
+        Xyz pLoc = pos.Location.XYZ();
         double r = majorRadius + minorRadius * Math.Cos(v);
         double a3 = minorRadius * Math.Sin(v);
         double a1 = r * Math.Cos(u);
@@ -275,11 +275,11 @@ public static class ElSLib
     {
         if (nu == 0 && nv == 1)
         {
-            return new Vector3D(pos.YDirection());
+            return new Vector3D(pos.YDirection);
         }
         else if (nu == 1 && nv == 0)
         {
-            return new Vector3D(pos.XDirection());
+            return new Vector3D(pos.XDirection);
         }
 
         return new Vector3D(0.0, 0.0, 0.0);
@@ -287,8 +287,8 @@ public static class ElSLib
 
     public static Vector3D ConeDN(double u, double v, in CoordinateSystem pos, double radius, double sAngle, int nu, int nv)
     {
-        Xyz xdir = pos.XDirection().XYZ();
-        Xyz ydir = pos.YDirection().XYZ();
+        Xyz xdir = pos.XDirection.XYZ();
+        Xyz ydir = pos.YDirection.XYZ();
         double um = u + nu * M_PI_2; // M_PI * 0.5
         xdir.Multiply(Math.Cos(um));
         ydir.Multiply(Math.Sin(um));
@@ -298,7 +298,7 @@ public static class ElSLib
             xdir.Multiply(radius + v * Math.Sin(sAngle));
             if (nu == 0)
             {
-                xdir.Add(pos.Location().XYZ());
+                xdir.Add(pos.Location.XYZ());
             }
 
             return new Vector3D(xdir);
@@ -308,7 +308,7 @@ public static class ElSLib
             xdir.Multiply(Math.Sin(sAngle));
             if (nu == 0)
             {
-                xdir.Add(pos.Direction().XYZ() * Math.Cos(sAngle));
+                xdir.Add(pos.Direction.XYZ() * Math.Cos(sAngle));
             }
 
             return new Vector3D(xdir);
@@ -328,8 +328,8 @@ public static class ElSLib
         {
             double rCosU = radius * Math.Cos(u);
             double rSinU = radius * Math.Sin(u);
-            Xyz xdir = pos.XDirection().XYZ();
-            Xyz ydir = pos.YDirection().XYZ();
+            Xyz xdir = pos.XDirection.XYZ();
+            Xyz ydir = pos.YDirection.XYZ();
             if ((nu + 6) % 4 == 0)
             {
                 xdir.Multiply(-rCosU);
@@ -356,7 +356,7 @@ public static class ElSLib
         }
         else if (nv == 1 && nu == 0)
         {
-            return new Vector3D(pos.Direction());
+            return new Vector3D(pos.Direction);
         }
         else
         {
@@ -374,9 +374,9 @@ public static class ElSLib
         double cosU = Math.Cos(u);
         double sinU = Math.Sin(u);
         double rCosV = radius * Math.Cos(v);
-        Xyz xDir = pos.XDirection().XYZ();
-        Xyz yDir = pos.YDirection().XYZ();
-        Xyz zDir = pos.Direction().XYZ();
+        Xyz xDir = pos.XDirection.XYZ();
+        Xyz yDir = pos.YDirection.XYZ();
+        Xyz zDir = pos.Direction.XYZ();
         double a1, a2, a3, x, y, z;
         if (nu == 0)
         {
@@ -475,9 +475,9 @@ public static class ElSLib
 
         double cosU = Math.Cos(u);
         double sinU = Math.Sin(u);
-        Xyz xDir = pos.XDirection().XYZ();
-        Xyz yDir = pos.YDirection().XYZ();
-        Xyz zDir = pos.Direction().XYZ();
+        Xyz xDir = pos.XDirection.XYZ();
+        Xyz yDir = pos.YDirection.XYZ();
+        Xyz zDir = pos.Direction.XYZ();
         double a1, a2, a3, x = 0, y = 0, z = 0;
         // OCC620: components below the rounding noise are zeroed
         double eps = 10.0 * (minorRadius + majorRadius) * RealEpsilon();
@@ -671,9 +671,9 @@ public static class ElSLib
 
     public static void PlaneD0(double u, double v, in CoordinateSystem pos, out Point3D p)
     {
-        Xyz xDir = pos.XDirection().XYZ();
-        Xyz yDir = pos.YDirection().XYZ();
-        Xyz pLoc = pos.Location().XYZ();
+        Xyz xDir = pos.XDirection.XYZ();
+        Xyz yDir = pos.YDirection.XYZ();
+        Xyz pLoc = pos.Location.XYZ();
         p = new Point3D(u * xDir.X() + v * yDir.X() + pLoc.X(),
                        u * xDir.Y() + v * yDir.Y() + pLoc.Y(),
                        u * xDir.Z() + v * yDir.Z() + pLoc.Z());
@@ -681,10 +681,10 @@ public static class ElSLib
 
     public static void ConeD0(double u, double v, in CoordinateSystem pos, double radius, double sAngle, out Point3D p)
     {
-        Xyz xDir = pos.XDirection().XYZ();
-        Xyz yDir = pos.YDirection().XYZ();
-        Xyz zDir = pos.Direction().XYZ();
-        Xyz pLoc = pos.Location().XYZ();
+        Xyz xDir = pos.XDirection.XYZ();
+        Xyz yDir = pos.YDirection.XYZ();
+        Xyz zDir = pos.Direction.XYZ();
+        Xyz pLoc = pos.Location.XYZ();
         double r = radius + v * Math.Sin(sAngle);
         double a3 = v * Math.Cos(sAngle);
         double a1 = r * Math.Cos(u);
@@ -696,10 +696,10 @@ public static class ElSLib
 
     public static void CylinderD0(double u, double v, in CoordinateSystem pos, double radius, out Point3D p)
     {
-        Xyz xDir = pos.XDirection().XYZ();
-        Xyz yDir = pos.YDirection().XYZ();
-        Xyz zDir = pos.Direction().XYZ();
-        Xyz pLoc = pos.Location().XYZ();
+        Xyz xDir = pos.XDirection.XYZ();
+        Xyz yDir = pos.YDirection.XYZ();
+        Xyz zDir = pos.Direction.XYZ();
+        Xyz pLoc = pos.Location.XYZ();
         double a1 = radius * Math.Cos(u);
         double a2 = radius * Math.Sin(u);
         p = new Point3D(a1 * xDir.X() + a2 * yDir.X() + v * zDir.X() + pLoc.X(),
@@ -709,10 +709,10 @@ public static class ElSLib
 
     public static void SphereD0(double u, double v, in CoordinateSystem pos, double radius, out Point3D p)
     {
-        Xyz xDir = pos.XDirection().XYZ();
-        Xyz yDir = pos.YDirection().XYZ();
-        Xyz zDir = pos.Direction().XYZ();
-        Xyz pLoc = pos.Location().XYZ();
+        Xyz xDir = pos.XDirection.XYZ();
+        Xyz yDir = pos.YDirection.XYZ();
+        Xyz zDir = pos.Direction.XYZ();
+        Xyz pLoc = pos.Location.XYZ();
         double r = radius * Math.Cos(v);
         double a3 = radius * Math.Sin(v);
         double a1 = r * Math.Cos(u);
@@ -724,10 +724,10 @@ public static class ElSLib
 
     public static void TorusD0(double u, double v, in CoordinateSystem pos, double majorRadius, double minorRadius, out Point3D p)
     {
-        Xyz xDir = pos.XDirection().XYZ();
-        Xyz yDir = pos.YDirection().XYZ();
-        Xyz zDir = pos.Direction().XYZ();
-        Xyz pLoc = pos.Location().XYZ();
+        Xyz xDir = pos.XDirection.XYZ();
+        Xyz yDir = pos.YDirection.XYZ();
+        Xyz zDir = pos.Direction.XYZ();
+        Xyz pLoc = pos.Location.XYZ();
         double r = majorRadius + minorRadius * Math.Cos(v);
         double a3 = minorRadius * Math.Sin(v);
         double a1 = r * Math.Cos(u);
@@ -756,9 +756,9 @@ public static class ElSLib
 
     public static void PlaneD1(double u, double v, in CoordinateSystem pos, out Point3D p, out Vector3D vu, out Vector3D vv)
     {
-        Xyz xDir = pos.XDirection().XYZ();
-        Xyz yDir = pos.YDirection().XYZ();
-        Xyz pLoc = pos.Location().XYZ();
+        Xyz xDir = pos.XDirection.XYZ();
+        Xyz yDir = pos.YDirection.XYZ();
+        Xyz pLoc = pos.Location.XYZ();
         p = new Point3D(u * xDir.X() + v * yDir.X() + pLoc.X(),
                        u * xDir.Y() + v * yDir.Y() + pLoc.Y(),
                        u * xDir.Z() + v * yDir.Z() + pLoc.Z());
@@ -776,10 +776,10 @@ public static class ElSLib
         // (Radius + V*Sin(SAng)) * (-sin(U) * XDirection() + cos(U) * YDirection())
         // D1V =
         // Direction() *cos(SAngle) + sin(SAng) * (cos(U) * XDirection() + sin(U) * YDirection())
-        Xyz xDir = pos.XDirection().XYZ();
-        Xyz yDir = pos.YDirection().XYZ();
-        Xyz zDir = pos.Direction().XYZ();
-        Xyz pLoc = pos.Location().XYZ();
+        Xyz xDir = pos.XDirection.XYZ();
+        Xyz yDir = pos.YDirection.XYZ();
+        Xyz zDir = pos.Direction.XYZ();
+        Xyz pLoc = pos.Location.XYZ();
         double cosU = Math.Cos(u);
         double sinU = Math.Sin(u);
         double cosA = Math.Cos(sAngle);
@@ -804,10 +804,10 @@ public static class ElSLib
     public static void CylinderD1(double u, double v, in CoordinateSystem pos, double radius,
                                   out Point3D p, out Vector3D vu, out Vector3D vv)
     {
-        Xyz xDir = pos.XDirection().XYZ();
-        Xyz yDir = pos.YDirection().XYZ();
-        Xyz zDir = pos.Direction().XYZ();
-        Xyz pLoc = pos.Location().XYZ();
+        Xyz xDir = pos.XDirection.XYZ();
+        Xyz yDir = pos.YDirection.XYZ();
+        Xyz zDir = pos.Direction.XYZ();
+        Xyz pLoc = pos.Location.XYZ();
         double a1 = radius * Math.Cos(u);
         double a2 = radius * Math.Sin(u);
         p = new Point3D(a1 * xDir.X() + a2 * yDir.X() + v * zDir.X() + pLoc.X(),
@@ -827,10 +827,10 @@ public static class ElSLib
         // P(U,V) = Location +  R * CosV * Vxy  +   R * SinV * Direction
         // Vu = R * CosV * DVxy
         // Vv = -R * SinV * Vxy + R * CosV * Direction
-        Xyz xDir = pos.XDirection().XYZ();
-        Xyz yDir = pos.YDirection().XYZ();
-        Xyz zDir = pos.Direction().XYZ();
-        Xyz pLoc = pos.Location().XYZ();
+        Xyz xDir = pos.XDirection.XYZ();
+        Xyz yDir = pos.YDirection.XYZ();
+        Xyz zDir = pos.Direction.XYZ();
+        Xyz pLoc = pos.Location.XYZ();
         double cosU = Math.Cos(u);
         double sinU = Math.Sin(u);
         double r1 = radius * Math.Cos(v);
@@ -860,10 +860,10 @@ public static class ElSLib
         // Vv = -MinorRadius * sin(V) * (cos(U)*XDirection + sin(U)*YDirection) +
         //       MinorRadius * cos(V) * Direction
         // Vu = (MajorRadius+MinorRadius*cos(V)) * (-sin(U)*XDirection + cos(U)*YDirection)
-        Xyz xDir = pos.XDirection().XYZ();
-        Xyz yDir = pos.YDirection().XYZ();
-        Xyz zDir = pos.Direction().XYZ();
-        Xyz pLoc = pos.Location().XYZ();
+        Xyz xDir = pos.XDirection.XYZ();
+        Xyz yDir = pos.YDirection.XYZ();
+        Xyz zDir = pos.Direction.XYZ();
+        Xyz pLoc = pos.Location.XYZ();
         double cosU = Math.Cos(u);
         double sinU = Math.Sin(u);
         double r1 = minorRadius * Math.Cos(v);
@@ -913,10 +913,10 @@ public static class ElSLib
         // D2U = (Radius + V*Sin(SAng)) * (-cos(U) * XDirection() - sin(U) * YDirection())
         // D2V = 0.0
         // DUV = sin(SAng) * (-sin(U) * XDirection() + cos(U) * YDirection())
-        Xyz xDir = pos.XDirection().XYZ();
-        Xyz yDir = pos.YDirection().XYZ();
-        Xyz zDir = pos.Direction().XYZ();
-        Xyz pLoc = pos.Location().XYZ();
+        Xyz xDir = pos.XDirection.XYZ();
+        Xyz yDir = pos.YDirection.XYZ();
+        Xyz zDir = pos.Direction.XYZ();
+        Xyz pLoc = pos.Location.XYZ();
         double cosU = Math.Cos(u);
         double sinU = Math.Sin(u);
         double cosA = Math.Cos(sAngle);
@@ -950,10 +950,10 @@ public static class ElSLib
                                   out Point3D p, out Vector3D vu, out Vector3D vv,
                                   out Vector3D vuu, out Vector3D vvv, out Vector3D vuv)
     {
-        Xyz xDir = pos.XDirection().XYZ();
-        Xyz yDir = pos.YDirection().XYZ();
-        Xyz zDir = pos.Direction().XYZ();
-        Xyz pLoc = pos.Location().XYZ();
+        Xyz xDir = pos.XDirection.XYZ();
+        Xyz yDir = pos.YDirection.XYZ();
+        Xyz zDir = pos.Direction.XYZ();
+        Xyz pLoc = pos.Location.XYZ();
         double a1 = radius * Math.Cos(u);
         double a2 = radius * Math.Sin(u);
         double som1X = a1 * xDir.X() + a2 * yDir.X();
@@ -983,10 +983,10 @@ public static class ElSLib
         // Vv = -R * SinV * Vxy + R * CosV * Direction
         // Vvv = -R * CosV * Vxy - R * SinV * Direction
         // Vuv = - R * SinV * DVxy
-        Xyz xDir = pos.XDirection().XYZ();
-        Xyz yDir = pos.YDirection().XYZ();
-        Xyz zDir = pos.Direction().XYZ();
-        Xyz pLoc = pos.Location().XYZ();
+        Xyz xDir = pos.XDirection.XYZ();
+        Xyz yDir = pos.YDirection.XYZ();
+        Xyz zDir = pos.Direction.XYZ();
+        Xyz pLoc = pos.Location.XYZ();
         double cosU = Math.Cos(u);
         double sinU = Math.Sin(u);
         double r1 = radius * Math.Cos(v);
@@ -1025,10 +1025,10 @@ public static class ElSLib
         //       -MinorRadius * sin(V) * Direction
         // Vuu = -(MajorRadius+MinorRadius*cos(V)) * (cos(U)*XDirection + sin(U)*YDirection)
         // Vuv = MinorRadius * sin(V) * (sin(U)*XDirection - cos(U)*YDirection)
-        Xyz xDir = pos.XDirection().XYZ();
-        Xyz yDir = pos.YDirection().XYZ();
-        Xyz zDir = pos.Direction().XYZ();
-        Xyz pLoc = pos.Location().XYZ();
+        Xyz xDir = pos.XDirection.XYZ();
+        Xyz yDir = pos.YDirection.XYZ();
+        Xyz zDir = pos.Direction.XYZ();
+        Xyz pLoc = pos.Location.XYZ();
         double cosU = Math.Cos(u);
         double sinU = Math.Sin(u);
         double r1 = minorRadius * Math.Cos(v);
@@ -1105,10 +1105,10 @@ public static class ElSLib
         // DUVV = 0.0
         // D3V = 0.0
         // DUUV = sin(SAng) * (-cos(U)*XDirection()-sin(U) * YDirection())
-        Xyz xDir = pos.XDirection().XYZ();
-        Xyz yDir = pos.YDirection().XYZ();
-        Xyz zDir = pos.Direction().XYZ();
-        Xyz pLoc = pos.Location().XYZ();
+        Xyz xDir = pos.XDirection.XYZ();
+        Xyz yDir = pos.YDirection.XYZ();
+        Xyz zDir = pos.Direction.XYZ();
+        Xyz pLoc = pos.Location.XYZ();
         double cosU = Math.Cos(u);
         double sinU = Math.Sin(u);
         double cosA = Math.Cos(sAngle);
@@ -1151,10 +1151,10 @@ public static class ElSLib
                                   out Vector3D vuu, out Vector3D vvv, out Vector3D vuv,
                                   out Vector3D vuuu, out Vector3D vvvv, out Vector3D vuuv, out Vector3D vuvv)
     {
-        Xyz xDir = pos.XDirection().XYZ();
-        Xyz yDir = pos.YDirection().XYZ();
-        Xyz zDir = pos.Direction().XYZ();
-        Xyz pLoc = pos.Location().XYZ();
+        Xyz xDir = pos.XDirection.XYZ();
+        Xyz yDir = pos.YDirection.XYZ();
+        Xyz zDir = pos.Direction.XYZ();
+        Xyz pLoc = pos.Location.XYZ();
         double a1 = radius * Math.Cos(u);
         double a2 = radius * Math.Sin(u);
         double som1X = a1 * xDir.X() + a2 * yDir.X();
@@ -1194,10 +1194,10 @@ public static class ElSLib
         // Vuv = - R * SinV * DVxy
         // Vuuv = R * SinV * Vxy
         // Vuvv = - R * CosV * DVxy = Vuuu = -Vu
-        Xyz xDir = pos.XDirection().XYZ();
-        Xyz yDir = pos.YDirection().XYZ();
-        Xyz zDir = pos.Direction().XYZ();
-        Xyz pLoc = pos.Location().XYZ();
+        Xyz xDir = pos.XDirection.XYZ();
+        Xyz yDir = pos.YDirection.XYZ();
+        Xyz zDir = pos.Direction.XYZ();
+        Xyz pLoc = pos.Location.XYZ();
         double cosU = Math.Cos(u);
         double sinU = Math.Sin(u);
         double r1 = radius * Math.Cos(v);
@@ -1246,10 +1246,10 @@ public static class ElSLib
         // Vuuu = -Vu
         // Vuvv = MinorRadius * cos(V) * (sin(U)*XDirection - cos(U)*YDirection)
         // Vuuv = MinorRadius * sin(V) * (cos(U)*XDirection + sin(U)*YDirection)
-        Xyz xDir = pos.XDirection().XYZ();
-        Xyz yDir = pos.YDirection().XYZ();
-        Xyz zDir = pos.Direction().XYZ();
-        Xyz pLoc = pos.Location().XYZ();
+        Xyz xDir = pos.XDirection.XYZ();
+        Xyz yDir = pos.YDirection.XYZ();
+        Xyz zDir = pos.Direction.XYZ();
+        Xyz pLoc = pos.Location.XYZ();
         double cosU = Math.Cos(u);
         double sinU = Math.Sin(u);
         double r1 = minorRadius * Math.Cos(v);
@@ -1333,8 +1333,8 @@ public static class ElSLib
     {
         Transform3D t = new Transform3D().WithTransformation(pos);
         Point3D ploc = p.Transformed(t);
-        u = ploc.X();
-        v = ploc.Y();
+        u = ploc.X;
+        v = ploc.Y;
     }
 
     /// <summary>The parameters (U, V) of a point on the cylinder, U in [0, 2*PI].</summary>
@@ -1342,9 +1342,9 @@ public static class ElSLib
     {
         Transform3D t = new Transform3D().WithTransformation(pos);
         Point3D ploc = p.Transformed(t);
-        u = Math.Atan2(ploc.Y(), ploc.X());
+        u = Math.Atan2(ploc.Y, ploc.X);
         NormalizeAngle(ref u);
-        v = ploc.Z();
+        v = ploc.Z;
     }
 
     /// <summary>
@@ -1358,18 +1358,18 @@ public static class ElSLib
         Point3D ploc = p.Transformed(t);
 
         // Check if point is at the apex
-        if (Math.Abs(ploc.X()) < Constants.Resolution() && Math.Abs(ploc.Y()) < Constants.Resolution())
+        if (Math.Abs(ploc.X) < Constants.Resolution() && Math.Abs(ploc.Y) < Constants.Resolution())
         {
             u = 0.0;
         }
-        else if (-radius > ploc.Z() * Math.Tan(sAngle))
+        else if (-radius > ploc.Z * Math.Tan(sAngle))
         {
             // the point is at the wrong side of the apex
-            u = Math.Atan2(-ploc.Y(), -ploc.X());
+            u = Math.Atan2(-ploc.Y, -ploc.X);
         }
         else
         {
-            u = Math.Atan2(ploc.Y(), ploc.X());
+            u = Math.Atan2(ploc.Y, ploc.X);
         }
 
         NormalizeAngle(ref u);
@@ -1382,7 +1382,7 @@ public static class ElSLib
         // V = sin(Sang) * ( x cosU + y SinU - R) + z * cos(Sang)
         // Method that permits to find V of the projected point if the point
         // is not actually on the cone.
-        v = Math.Sin(sAngle) * (ploc.X() * Math.Cos(u) + ploc.Y() * Math.Sin(u) - radius) + Math.Cos(sAngle) * ploc.Z();
+        v = Math.Sin(sAngle) * (ploc.X * Math.Cos(u) + ploc.Y * Math.Sin(u) - radius) + Math.Cos(sAngle) * ploc.Z;
     }
 
     /// <summary>The parameters (U, V) of a point on the sphere, U in [0, 2*PI] and V in [-PI/2, PI/2].</summary>
@@ -1468,8 +1468,8 @@ public static class ElSLib
     /// <summary>The U isoparametric line of the plane.</summary>
     public static Line3D PlaneUIso(in CoordinateSystem pos, double u)
     {
-        Line3D l = new Line3D(pos.Location(), pos.YDirection());
-        Vector3D ve = new Vector3D(pos.XDirection());
+        Line3D l = new Line3D(pos.Location, pos.YDirection);
+        Vector3D ve = new Vector3D(pos.XDirection);
         ve *= u;
         l = l.Translated(ve);
         return l;
@@ -1494,11 +1494,11 @@ public static class ElSLib
     /// <summary>The U isoparametric circle of the sphere (a whole meridian circle, not trimmed).</summary>
     public static Circle3D SphereUIso(in CoordinateSystem pos, double radius, double u)
     {
-        Vector3D dx = new Vector3D(pos.XDirection());
-        Vector3D dy = new Vector3D(pos.YDirection());
-        Direction3D dz = pos.Direction();
+        Vector3D dx = new Vector3D(pos.XDirection);
+        Vector3D dy = new Vector3D(pos.YDirection);
+        Direction3D dz = pos.Direction;
         Direction3D cx = new Direction3D(Math.Cos(u) * dx + Math.Sin(u) * dy);
-        Frame3D axes = new Frame3D(pos.Location(), cx.Crossed(dz), cx);
+        Frame3D axes = new Frame3D(pos.Location, cx.Crossed(dz), cx);
         Circle3D circ = new Circle3D(axes, radius);
         return circ;
     }
@@ -1506,11 +1506,11 @@ public static class ElSLib
     /// <summary>The U isoparametric circle of the torus.</summary>
     public static Circle3D TorusUIso(in CoordinateSystem pos, double majorRadius, double minorRadius, double u)
     {
-        Vector3D dx = new Vector3D(pos.XDirection());
-        Vector3D dy = new Vector3D(pos.YDirection());
-        Direction3D dz = pos.Direction();
+        Vector3D dx = new Vector3D(pos.XDirection);
+        Vector3D dy = new Vector3D(pos.YDirection);
+        Direction3D dz = pos.Direction;
         Direction3D cx = new Direction3D(Math.Cos(u) * dx + Math.Sin(u) * dy);
-        Frame3D axes = new Frame3D(pos.Location(), cx.Crossed(dz), cx);
+        Frame3D axes = new Frame3D(pos.Location, cx.Crossed(dz), cx);
         Vector3D ve = new Vector3D(cx);
         ve *= majorRadius;
         axes = axes.Translated(ve);
@@ -1521,8 +1521,8 @@ public static class ElSLib
     /// <summary>The V isoparametric line of the plane.</summary>
     public static Line3D PlaneVIso(in CoordinateSystem pos, double v)
     {
-        Line3D l = new Line3D(pos.Location(), pos.XDirection());
-        Vector3D ve = new Vector3D(pos.YDirection());
+        Line3D l = new Line3D(pos.Location, pos.XDirection);
+        Vector3D ve = new Vector3D(pos.YDirection);
         ve *= v;
         l = l.Translated(ve);
         return l;
@@ -1531,8 +1531,8 @@ public static class ElSLib
     /// <summary>The V isoparametric circle of the cylinder.</summary>
     public static Circle3D CylinderVIso(in CoordinateSystem pos, double radius, double v)
     {
-        Frame3D axes = pos.Ax2();
-        Vector3D ve = new Vector3D(pos.Direction());
+        Frame3D axes = pos.Frame;
+        Vector3D ve = new Vector3D(pos.Direction);
         ve = ve.Multiplied(v);
         axes = axes.Translated(ve);
         Circle3D c = new Circle3D(axes, radius);
@@ -1543,7 +1543,7 @@ public static class ElSLib
     public static Circle3D ConeVIso(in CoordinateSystem pos, double radius, double sAngle, double v)
     {
         CoordinateSystem axes = pos;
-        Vector3D ve = new Vector3D(pos.Direction());
+        Vector3D ve = new Vector3D(pos.Direction);
         ve = ve.Multiplied(v * Math.Cos(sAngle));
         axes = axes.Translated(ve);
         double r = radius + v * Math.Sin(sAngle);
@@ -1554,15 +1554,15 @@ public static class ElSLib
             r = -r;
         }
 
-        Circle3D c = new Circle3D(axes.Ax2(), r);
+        Circle3D c = new Circle3D(axes.Frame, r);
         return c;
     }
 
     /// <summary>The V isoparametric circle (a parallel) of the sphere.</summary>
     public static Circle3D SphereVIso(in CoordinateSystem pos, double Radius, double v)
     {
-        Frame3D axes = pos.Ax2();
-        Vector3D ve = new Vector3D(pos.Direction());
+        Frame3D axes = pos.Frame;
+        Vector3D ve = new Vector3D(pos.Direction);
         ve = ve.Multiplied(Radius * Math.Sin(v));
         axes = axes.Translated(ve);
         double radius = Radius * Math.Cos(v);
@@ -1571,7 +1571,7 @@ public static class ElSLib
         // Lets try to create correct isoline even on analytical continuation for |V| > PI/2...
         if (radius < 0.0)
         {
-            axes = axes.WithDirection(-axes.Direction());
+            axes = axes.WithDirection(-axes.Direction);
             radius = -radius;
         }
 
@@ -1582,8 +1582,8 @@ public static class ElSLib
     /// <summary>The V isoparametric circle of the torus.</summary>
     public static Circle3D TorusVIso(in CoordinateSystem pos, double majorRadius, double minorRadius, double v)
     {
-        CoordinateSystem axes = new CoordinateSystem(pos.Ax2());
-        Vector3D ve = new Vector3D(pos.Direction());
+        CoordinateSystem axes = new CoordinateSystem(pos.Frame);
+        Vector3D ve = new Vector3D(pos.Direction);
         ve = ve.Multiplied(minorRadius * Math.Sin(v));
         axes = axes.Translated(ve);
         double r = majorRadius + minorRadius * Math.Cos(v);
@@ -1594,7 +1594,7 @@ public static class ElSLib
             r = -r;
         }
 
-        Circle3D circ = new Circle3D(axes.Ax2(), r);
+        Circle3D circ = new Circle3D(axes.Frame, r);
         return circ;
     }
 }

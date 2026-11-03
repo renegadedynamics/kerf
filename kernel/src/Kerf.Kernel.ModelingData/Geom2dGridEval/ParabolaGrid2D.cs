@@ -16,7 +16,7 @@ namespace Kerf.Engine.Geometry.Evaluation.Grid;
 /// parabola with an indirect (clockwise) coordinate system the grid is the mirror image of the curve
 /// (occt-issues.md).
 /// </remarks>
-public sealed class ParabolaGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
+internal sealed class ParabolaGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
 {
     private readonly ParabolaCurve2D? _geom;
 
@@ -40,18 +40,18 @@ public sealed class ParabolaGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
         int nb = theParams.Length();
         NCollection_Array1<Point2D> result = new(1, nb);
 
-        Parabola2D parab = _geom.Parab2d();
-        Point2D center = parab.Location();
-        Direction2D xDir = parab.MirrorAxis().Direction();
-        Direction2D yDir = parab.Axis().YDirection(); // the frame's, with its sense (OCCT turned X by +90 degrees; Kerf decision 1495)
-        double focal = parab.Focal(); // OCCT: no case for a zero focal length (ElCLib: a line)
+        Parabola2D parab = _geom.Parabola;
+        Point2D center = parab.Location;
+        Direction2D xDir = parab.MirrorAxis.Direction;
+        Direction2D yDir = parab.Axis.YDirection; // the frame's, with its sense (OCCT turned X by +90 degrees; Kerf decision 1495)
+        double focal = parab.Focal; // OCCT: no case for a zero focal length (ElCLib: a line)
 
-        double cx = center.X();
-        double cy = center.Y();
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double yx = yDir.X();
-        double yy = yDir.Y();
+        double cx = center.X;
+        double cy = center.Y;
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double yx = yDir.X;
+        double yy = yDir.Y;
 
         double coeff = 1.0 / (4.0 * focal);
 
@@ -77,18 +77,18 @@ public sealed class ParabolaGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
         int nb = theParams.Length();
         NCollection_Array1<Curve2D.ResD1> result = new(1, nb);
 
-        Parabola2D parab = _geom.Parab2d();
-        Point2D center = parab.Location();
-        Direction2D xDir = parab.MirrorAxis().Direction();
-        Direction2D yDir = parab.Axis().YDirection(); // the frame's, with its sense (OCCT turned X by +90 degrees; Kerf decision 1495)
-        double focal = parab.Focal(); // OCCT: no case for a zero focal length (ElCLib: a line)
+        Parabola2D parab = _geom.Parabola;
+        Point2D center = parab.Location;
+        Direction2D xDir = parab.MirrorAxis.Direction;
+        Direction2D yDir = parab.Axis.YDirection; // the frame's, with its sense (OCCT turned X by +90 degrees; Kerf decision 1495)
+        double focal = parab.Focal; // OCCT: no case for a zero focal length (ElCLib: a line)
 
-        double cx = center.X();
-        double cy = center.Y();
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double yx = yDir.X();
-        double yy = yDir.Y();
+        double cx = center.X;
+        double cy = center.Y;
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double yx = yDir.X;
+        double yy = yDir.Y;
 
         double coeff = 1.0 / (4.0 * focal);
         double coeff2 = 1.0 / (2.0 * focal);
@@ -120,18 +120,18 @@ public sealed class ParabolaGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
         int nb = theParams.Length();
         NCollection_Array1<Curve2D.ResD2> result = new(1, nb);
 
-        Parabola2D parab = _geom.Parab2d();
-        Point2D center = parab.Location();
-        Direction2D xDir = parab.MirrorAxis().Direction();
-        Direction2D yDir = parab.Axis().YDirection(); // the frame's, with its sense (OCCT turned X by +90 degrees; Kerf decision 1495)
-        double focal = parab.Focal(); // OCCT: no case for a zero focal length (ElCLib: a line)
+        Parabola2D parab = _geom.Parabola;
+        Point2D center = parab.Location;
+        Direction2D xDir = parab.MirrorAxis.Direction;
+        Direction2D yDir = parab.Axis.YDirection; // the frame's, with its sense (OCCT turned X by +90 degrees; Kerf decision 1495)
+        double focal = parab.Focal; // OCCT: no case for a zero focal length (ElCLib: a line)
 
-        double cx = center.X();
-        double cy = center.Y();
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double yx = yDir.X();
-        double yy = yDir.Y();
+        double cx = center.X;
+        double cy = center.Y;
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double yx = yDir.X;
+        double yy = yDir.Y;
 
         double coeff = 1.0 / (4.0 * focal);
         double coeff2 = 1.0 / (2.0 * focal);
@@ -165,18 +165,18 @@ public sealed class ParabolaGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
         int nb = theParams.Length();
         NCollection_Array1<Curve2D.ResD3> result = new(1, nb);
 
-        Parabola2D parab = _geom.Parab2d();
-        Point2D center = parab.Location();
-        Direction2D xDir = parab.MirrorAxis().Direction();
-        Direction2D yDir = parab.Axis().YDirection(); // the frame's, with its sense (OCCT turned X by +90 degrees; Kerf decision 1495)
-        double focal = parab.Focal(); // OCCT: no case for a zero focal length (ElCLib: a line)
+        Parabola2D parab = _geom.Parabola;
+        Point2D center = parab.Location;
+        Direction2D xDir = parab.MirrorAxis.Direction;
+        Direction2D yDir = parab.Axis.YDirection; // the frame's, with its sense (OCCT turned X by +90 degrees; Kerf decision 1495)
+        double focal = parab.Focal; // OCCT: no case for a zero focal length (ElCLib: a line)
 
-        double cx = center.X();
-        double cy = center.Y();
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double yx = yDir.X();
-        double yy = yDir.Y();
+        double cx = center.X;
+        double cy = center.Y;
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double yx = yDir.X;
+        double yy = yDir.Y;
 
         double coeff = 1.0 / (4.0 * focal);
         double coeff2 = 1.0 / (2.0 * focal);
@@ -211,15 +211,15 @@ public sealed class ParabolaGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
         int nb = theParams.Length();
         NCollection_Array1<Vector2D> result = new(1, nb);
 
-        Parabola2D parab = _geom.Parab2d();
-        Direction2D xDir = parab.MirrorAxis().Direction();
-        Direction2D yDir = parab.Axis().YDirection(); // the frame's, with its sense (OCCT turned X by +90 degrees; Kerf decision 1495)
-        double focal = parab.Focal(); // OCCT: no case for a zero focal length (ElCLib: a line)
+        Parabola2D parab = _geom.Parabola;
+        Direction2D xDir = parab.MirrorAxis.Direction;
+        Direction2D yDir = parab.Axis.YDirection; // the frame's, with its sense (OCCT turned X by +90 degrees; Kerf decision 1495)
+        double focal = parab.Focal; // OCCT: no case for a zero focal length (ElCLib: a line)
 
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double yx = yDir.X();
-        double yy = yDir.Y();
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double yx = yDir.X;
+        double yy = yDir.Y;
 
         double coeff2 = 1.0 / (2.0 * focal);
 

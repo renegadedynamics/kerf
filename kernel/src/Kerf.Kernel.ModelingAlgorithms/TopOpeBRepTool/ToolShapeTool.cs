@@ -36,7 +36,7 @@ public static class ToolShapeTool
             return 0.0;
         }
         double tol = 0;
-        switch (s.ShapeType())
+        switch (s.Type)
         {
             case ShapeType.Face:
                 tol = Tool.Tolerance(ShapeCasts.Face(s));
@@ -57,7 +57,7 @@ public static class ToolShapeTool
     /// <exception cref="ProgramErrorException">The shape is not a vertex.</exception>
     public static Point3D Pnt(in Shape s)
     {
-        if (s.ShapeType() != ShapeType.Vertex)
+        if (s.Type != ShapeType.Vertex)
         {
             throw new ProgramErrorException("TopOpeBRepTool_ShapeTool::Pnt");
         }
@@ -70,11 +70,11 @@ public static class ToolShapeTool
         Type t = c.DynamicType();
         if (t == typeof(OffsetCurve3D))
         {
-            return BASISCURVE(((OffsetCurve3D)c).BasisCurve());
+            return BASISCURVE(((OffsetCurve3D)c).BasisCurve);
         }
         else if (t == typeof(TrimmedCurve3D))
         {
-            return BASISCURVE(((TrimmedCurve3D)c).BasisCurve());
+            return BASISCURVE(((TrimmedCurve3D)c).BasisCurve);
         }
         else
         {
@@ -99,11 +99,11 @@ public static class ToolShapeTool
         Type t = s.DynamicType();
         if (t == typeof(global::Kerf.Geometry.OffsetSurface))
         {
-            return BASISSURFACE(((global::Kerf.Geometry.OffsetSurface)s).BasisSurface());
+            return BASISSURFACE(((global::Kerf.Geometry.OffsetSurface)s).BasisSurface);
         }
         else if (t == typeof(TrimmedSurface))
         {
-            return BASISSURFACE(((TrimmedSurface)s).BasisSurface());
+            return BASISSURFACE(((TrimmedSurface)s).BasisSurface);
         }
         else
         {
@@ -137,24 +137,24 @@ public static class ToolShapeTool
         if (t == typeof(RevolutionSurface))
         {
             RevolutionSurface sr = (RevolutionSurface)bs;
-            Curve3D c = BASISCURVE(sr.BasisCurve());
+            Curve3D c = BASISCURVE(sr.BasisCurve);
             if (c.IsPeriodic)
             {
                 uPeriodic = false;
                 vPeriodic = true;
-                vmin = c.FirstParameter();
-                vmax = c.LastParameter();
+                vmin = c.FirstParameter;
+                vmax = c.LastParameter;
             }
         }
         else if (t == typeof(ExtrusionSurface))
         {
             ExtrusionSurface se = (ExtrusionSurface)bs;
-            Curve3D c = BASISCURVE(se.BasisCurve());
+            Curve3D c = BASISCURVE(se.BasisCurve);
             if (c.IsPeriodic)
             {
                 uPeriodic = true;
-                umin = c.FirstParameter();
-                umax = c.LastParameter();
+                umin = c.FirstParameter;
+                umax = c.LastParameter;
                 vPeriodic = false;
             }
         }
@@ -162,7 +162,7 @@ public static class ToolShapeTool
         {
             uPeriodic = bs.IsUPeriodic;
             vPeriodic = bs.IsVPeriodic;
-            bs.Bounds(out umin, out umax, out vmin, out vmax);
+            bs.ParameterBounds(out umin, out umax, out vmin, out vmax);
         }
     }
 
@@ -203,7 +203,7 @@ public static class ToolShapeTool
 
         if (isUperio)
         {
-            double uperiod = surf.UPeriod();
+            double uperiod = surf.UPeriod;
 
             //    double ubid = UFfirst;
 
@@ -215,7 +215,7 @@ public static class ToolShapeTool
         }
         if (isVperio)
         {
-            double vperiod = surf.VPeriod();
+            double vperiod = surf.VPeriod;
 
             //    double vbid = VFfirst;
 
@@ -305,7 +305,7 @@ public static class ToolShapeTool
             return periopar;
         }
 
-        surf.Bounds(out double ufirst, out double ulast, out double vfirst, out double vlast);
+        surf.ParameterBounds(out double ufirst, out double ulast, out double vfirst, out double vlast);
 
         Curve2D? pc = Legacy2D.FC2D_CurveOnSurface(e, f, out double _, out double _, out double _);
         if (pc is null)
@@ -317,7 +317,7 @@ public static class ToolShapeTool
         if (theType == typeof(LineCurve2D))
         {
             LineCurve2D hl = (LineCurve2D)pc;
-            Direction2D d = hl.Direction();
+            Direction2D d = hl.Direction;
             double tol = global::Kerf.Engine.Foundation.Precision.Angular();
             bool isoU = false, isoV = false;
             if (d.IsParallel(new Direction2D(Direction2D.D.Y), tol))
@@ -356,8 +356,8 @@ public static class ToolShapeTool
         bool sam = s1.IsSame(s2);
         if (sam)
         {
-            Orientation o1 = s1.Orientation();
-            Orientation o2 = s2.Orientation();
+            Orientation o1 = s1.Orientation;
+            Orientation o2 = s2.Orientation;
             if ((o1 == Forward || o1 == Reversed)
                 && (o2 == Forward || o2 == Reversed))
             {
@@ -366,7 +366,7 @@ public static class ToolShapeTool
             }
         }
 
-        ShapeType t1 = s1.ShapeType(), t2 = s2.ShapeType();
+        ShapeType t1 = s1.Type, t2 = s2.Type;
         if ((t1 == ShapeType.Solid) && (t2 == ShapeType.Solid))
         {
             so = true;
@@ -381,8 +381,8 @@ public static class ToolShapeTool
         }
         else if ((t1 == ShapeType.Vertex) && (t2 == ShapeType.Vertex))
         {
-            Orientation o1 = s1.Orientation();
-            Orientation o2 = s2.Orientation();
+            Orientation o1 = s1.Orientation;
+            Orientation o2 = s2.Orientation;
             if (o1 == External || o1 == Internal || o2 == External
                 || o2 == Internal)
             {
@@ -444,8 +444,8 @@ public static class ToolShapeTool
                 return so; // NYI : raise
             }
 
-            double u2 = p22d.X();
-            double v2 = p22d.Y();
+            double u2 = p22d.X;
+            double v2 = p22d.Y;
             s2.D1(u2, v2, out Point3D p2, out Vector3D d2u, out Vector3D d2v);
             _ = p2;
             Vector3D n2 = d2u.Crossed(d2v);
@@ -469,8 +469,8 @@ public static class ToolShapeTool
         Shape s2 = sref;
         Face f1 = ShapeCasts.Face(s1);
         Face f2 = ShapeCasts.Face(s2);
-        Orientation o1 = f1.Orientation();
-        Orientation o2 = f2.Orientation();
+        Orientation o1 = f1.Orientation;
+        Orientation o2 = f2.Orientation;
         if (o1 == External || o1 == Internal || o2 == External || o2 == Internal)
         {
             return true;
@@ -525,8 +525,8 @@ public static class ToolShapeTool
         Shape s2 = sref;
         Edge e1 = ShapeCasts.Edge(s1);
         Edge e2 = ShapeCasts.Edge(s2);
-        Orientation o1 = e1.Orientation();
-        Orientation o2 = e2.Orientation();
+        Orientation o1 = e1.Orientation;
+        Orientation o2 = e2.Orientation;
         if (o1 == External || o1 == Internal || o2 == External || o2 == Internal)
         {
             return true;

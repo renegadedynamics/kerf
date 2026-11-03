@@ -38,8 +38,8 @@ public class Geom2dEval_CircleInvoluteCurveTest
 
         // C(0) = R*(cos(0)+0, sin(0)-0) = (R, 0)
         Point2D aP0 = aCurve.EvalD0(0.0);
-        Assert.Equal(aR, aP0.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aP0.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aR, aP0.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aP0.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -50,7 +50,7 @@ public class Geom2dEval_CircleInvoluteCurveTest
 
         // D1(0) = R*0*(cos(0), sin(0)) = (0, 0)
         Curve2D.ResD1 aD1 = aCurve.EvalD1(0.0);
-        Assert.Equal(0.0, aD1.D1.Magnitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aD1.D1.Magnitude, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -65,7 +65,7 @@ public class Geom2dEval_CircleInvoluteCurveTest
         foreach (double aT in aParams)
         {
             Curve2D.ResD1 aD1 = aCurve.EvalD1(aT);
-            Assert.Equal(aR * aT, aD1.D1.Magnitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
+            Assert.Equal(aR * aT, aD1.D1.Magnitude, global::Kerf.Engine.Foundation.Precision.Confusion());
         }
     }
 
@@ -81,8 +81,8 @@ public class Geom2dEval_CircleInvoluteCurveTest
         Point2D aP2 = aCurve.EvalD0(aT - global::Kerf.Engine.Foundation.Precision.Confusion());
         Vector2D aFD = new((aP1.XY() - aP2.XY()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
 
-        Assert.Equal(aFD.X(), aD1.D1.X(), THE_FD_TOL);
-        Assert.Equal(aFD.Y(), aD1.D1.Y(), THE_FD_TOL);
+        Assert.Equal(aFD.X, aD1.D1.X, THE_FD_TOL);
+        Assert.Equal(aFD.Y, aD1.D1.Y, THE_FD_TOL);
     }
 
     [Fact]
@@ -97,8 +97,8 @@ public class Geom2dEval_CircleInvoluteCurveTest
         Curve2D.ResD1 aD1m = aCurve.EvalD1(aT - global::Kerf.Engine.Foundation.Precision.Confusion());
         Vector2D aFD = new((aD1p.D1.XY() - aD1m.D1.XY()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
 
-        Assert.Equal(aFD.X(), aD2.D2.X(), THE_FD_TOL);
-        Assert.Equal(aFD.Y(), aD2.D2.Y(), THE_FD_TOL);
+        Assert.Equal(aFD.X, aD2.D2.X, THE_FD_TOL);
+        Assert.Equal(aFD.Y, aD2.D2.Y, THE_FD_TOL);
     }
 
     [Fact]
@@ -113,8 +113,8 @@ public class Geom2dEval_CircleInvoluteCurveTest
         Curve2D.ResD2 aD2m = aCurve.EvalD2(aT - global::Kerf.Engine.Foundation.Precision.Confusion());
         Vector2D aFD = new((aD2p.D2.XY() - aD2m.D2.XY()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
 
-        Assert.Equal(aFD.X(), aD3.D3.X(), THE_FD_TOL);
-        Assert.Equal(aFD.Y(), aD3.D3.Y(), THE_FD_TOL);
+        Assert.Equal(aFD.X, aD3.D3.X, THE_FD_TOL);
+        Assert.Equal(aFD.Y, aD3.D3.Y, THE_FD_TOL);
     }
 
     [Fact]
@@ -130,8 +130,8 @@ public class Geom2dEval_CircleInvoluteCurveTest
         Vector2D aDNm1M = aCurve.EvalDN(aT - global::Kerf.Engine.Foundation.Precision.Confusion(), aN - 1);
         Vector2D aFD = new((aDNm1P.XY() - aDNm1M.XY()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
 
-        Assert.Equal(aFD.X(), aDN.X(), THE_FD_TOL_DN);
-        Assert.Equal(aFD.Y(), aDN.Y(), THE_FD_TOL_DN);
+        Assert.Equal(aFD.X, aDN.X, THE_FD_TOL_DN);
+        Assert.Equal(aFD.Y, aDN.Y, THE_FD_TOL_DN);
     }
 
     [Fact]
@@ -141,9 +141,9 @@ public class Geom2dEval_CircleInvoluteCurveTest
         CircleInvoluteCurve2D aCurve = new(anAx2d, 1.0);
         Assert.False(aCurve.IsClosed);
         Assert.False(aCurve.IsPeriodic);
-        Assert.Equal(Continuity.CN, aCurve.Continuity());
-        Assert.Equal(0.0, aCurve.FirstParameter(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.True(global::Kerf.Engine.Foundation.Precision.IsInfinite(aCurve.LastParameter()));
+        Assert.Equal(Continuity.CN, aCurve.Continuity);
+        Assert.Equal(0.0, aCurve.FirstParameter, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(global::Kerf.Engine.Foundation.Precision.IsInfinite(aCurve.LastParameter));
     }
 
     [Fact]

@@ -84,8 +84,8 @@ public class DrawCheckCommandsTests
                      + "WIRE\t:  1 Items -> compound named r_w\n"
                      + "FACE\t:  1 Items -> compound named r_f\n",
                      i.Eval("checkshape s r"));
-        Assert.Equal(ShapeType.Compound, i.GetShape("r_w").ShapeType());
-        Assert.Equal(ShapeType.Face, new Iterator(i.GetShape("r_f")).Value().ShapeType());
+        Assert.Equal(ShapeType.Compound, i.GetShape("r_w").Type);
+        Assert.Equal(ShapeType.Face, new Iterator(i.GetShape("r_f")).Value().Type);
         Assert.Equal("0", i.Eval("isdraw faulty_1"));
     }
 

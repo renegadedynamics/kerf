@@ -39,9 +39,9 @@ public class ImpImpIntersectionOracleTests(ITestOutputHelper output)
 
     private static N.Geom_Surface Native(Kind theKind, in CoordinateSystem theAx, double theR, double theAng)
     {
-        using var aP = Oracle.ToNative(theAx.Location());
-        using var aN = Oracle.ToNative(theAx.Direction());
-        using var aX = Oracle.ToNative(theAx.XDirection());
+        using var aP = Oracle.ToNative(theAx.Location);
+        using var aN = Oracle.ToNative(theAx.Direction);
+        using var aX = Oracle.ToNative(theAx.XDirection);
         using var anAx = new N.gp_Ax3(aP, aN, aX);
         return theKind switch
         {
@@ -63,10 +63,10 @@ public class ImpImpIntersectionOracleTests(ITestOutputHelper output)
         using var aX = aPos.XDirection();
         using var aY = aPos.YDirection();
         // The same construction as the native one, from the same values.
-        CoordinateSystem anAx = new(theAx.Location(), theAx.Direction(), theAx.XDirection());
+        CoordinateSystem anAx = new(theAx.Location, theAx.Direction, theAx.XDirection);
         double[] aNative = [aLoc.X(), aLoc.Y(), aLoc.Z(), aZ.X(), aZ.Y(), aZ.Z(), aX.X(), aX.Y(), aX.Z(), aY.X(), aY.Y(), aY.Z()];
-        double[] aPort = [.. Components(anAx.Location()), .. Components(anAx.Direction()), .. Components(anAx.XDirection()),
-                          .. Components(anAx.YDirection())];
+        double[] aPort = [.. Components(anAx.Location), .. Components(anAx.Direction), .. Components(anAx.XDirection),
+                          .. Components(anAx.YDirection)];
         if (!aNative.SequenceEqual(aPort))
         {
             return null;
@@ -81,12 +81,12 @@ public class ImpImpIntersectionOracleTests(ITestOutputHelper output)
         };
     }
 
-    private static double[] Components(in Direction3D theD) => [theD.X(), theD.Y(), theD.Z()];
+    private static double[] Components(in Direction3D theD) => [theD.X, theD.Y, theD.Z];
 
-    private static double[] Components(in Point3D theP) => [theP.X(), theP.Y(), theP.Z()];
+    private static double[] Components(in Point3D theP) => [theP.X, theP.Y, theP.Z];
 
     private static double[] Components(in Frame3D theA) =>
-        [.. Components(theA.Location()), .. Components(theA.Direction()), .. Components(theA.XDirection())];
+        [.. Components(theA.Location), .. Components(theA.Direction), .. Components(theA.XDirection)];
 
     private static double[] NativeAx2(N.gp_Ax2 theA)
     {
@@ -151,13 +151,13 @@ public class ImpImpIntersectionOracleTests(ITestOutputHelper output)
         }
         return aG.ArcType() switch
         {
-            PatchLineType.Lin => ("Line", [.. Components(aG.Line().Location()), .. Components(aG.Line().Direction())]),
-            PatchLineType.Circle => ("Circle", [.. Components(aG.Circle().Position()), aG.Circle().Radius()]),
-            PatchLineType.Ellipse => ("Ellipse", [.. Components(aG.Ellipse().Position()), aG.Ellipse().MajorRadius(),
-                                             aG.Ellipse().MinorRadius()]),
-            PatchLineType.Parabola => ("Parabola", [.. Components(aG.Parabola().Position()), aG.Parabola().Focal()]),
-            _ => ("Hyperbola", [.. Components(aG.Hyperbola().Position()), aG.Hyperbola().MajorRadius(),
-                                aG.Hyperbola().MinorRadius()]),
+            PatchLineType.Lin => ("Line", [.. Components(aG.Line().Location), .. Components(aG.Line().Direction)]),
+            PatchLineType.Circle => ("Circle", [.. Components(aG.Circle().Position), aG.Circle().Radius]),
+            PatchLineType.Ellipse => ("Ellipse", [.. Components(aG.Ellipse().Position), aG.Ellipse().MajorRadius,
+                                             aG.Ellipse().MinorRadius]),
+            PatchLineType.Parabola => ("Parabola", [.. Components(aG.Parabola().Position), aG.Parabola().Focal]),
+            _ => ("Hyperbola", [.. Components(aG.Hyperbola().Position), aG.Hyperbola().MajorRadius,
+                                aG.Hyperbola().MinorRadius]),
         };
     }
 
@@ -190,22 +190,22 @@ public class ImpImpIntersectionOracleTests(ITestOutputHelper output)
             switch (aSpecial)
             {
                 case 1: // coaxial
-                    anAx2 = new CoordinateSystem(anAx1.Location().Translated(new Vector3D(anAx1.Direction()) * anO.Real(-2, 2)),
-                                       anAx1.Direction(), anAx1.XDirection());
+                    anAx2 = new CoordinateSystem(anAx1.Location.Translated(new Vector3D(anAx1.Direction) * anO.Real(-2, 2)),
+                                       anAx1.Direction, anAx1.XDirection);
                     break;
                 case 2: // parallel axes
-                    anAx2 = new CoordinateSystem(anAx1.Location().Translated(new Vector3D(anAx1.XDirection()) * anO.Real(-2, 2)),
-                                       anAx1.Direction(), anAx1.XDirection());
+                    anAx2 = new CoordinateSystem(anAx1.Location.Translated(new Vector3D(anAx1.XDirection) * anO.Real(-2, 2)),
+                                       anAx1.Direction, anAx1.XDirection);
                     break;
                 case 3: // the same location (the apex of a cone with radius 0, the centre of a sphere)
-                    anAx2 = new CoordinateSystem(anAx1.Location(), anAx2.Direction(), anAx2.XDirection());
+                    anAx2 = new CoordinateSystem(anAx1.Location, anAx2.Direction, anAx2.XDirection);
                     aR1 = aK1 == Kind.Cone ? 0.0 : aR1;
                     aR2 = aK2 == Kind.Cone ? 0.0 : aR2;
-                    anAx2 = aK1 == Kind.Torus || aK2 == Kind.Torus ? new CoordinateSystem(anAx1.Location(), anAx1.Direction(), anAx1.XDirection()) : anAx2;
+                    anAx2 = aK1 == Kind.Torus || aK2 == Kind.Torus ? new CoordinateSystem(anAx1.Location, anAx1.Direction, anAx1.XDirection) : anAx2;
                     break;
                 case 4: // tangent: a cylinder's or sphere's radius reaches the other's location or axis
-                    anAx2 = new CoordinateSystem(anAx1.Location().Translated(new Vector3D(anAx1.XDirection()) * (aR1 + aR2)),
-                                       anAx1.Direction(), anAx1.XDirection());
+                    anAx2 = new CoordinateSystem(anAx1.Location.Translated(new Vector3D(anAx1.XDirection) * (aR1 + aR2)),
+                                       anAx1.Direction, anAx1.XDirection);
                     break;
             }
 

@@ -18,9 +18,9 @@ public class Geom_SurfaceEvalTests
         Point3D aResult = aSurf.EvalD0(1.0, 2.0);
 
         // For a standard XY plane, the point should be at (U, V, 0)
-        Assert.Equal(1.0, aResult.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(2.0, aResult.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aResult.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aResult.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(2.0, aResult.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aResult.Z, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -31,8 +31,8 @@ public class Geom_SurfaceEvalTests
         Surface.ResD1 aD1 = aSurf.EvalD1(1.0, 2.0);
 
         // Partial derivatives of a plane are constant
-        Assert.Equal(1.0, aD1.D1U.Magnitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(1.0, aD1.D1V.Magnitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aD1.D1U.Magnitude, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aD1.D1V.Magnitude, global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(0.0, aD1.D1U.Dot(aD1.D1V), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
@@ -49,12 +49,12 @@ public class Geom_SurfaceEvalTests
         Surface.ResD1 aD1 = aSurf.EvalD1(aU, aV);
 
         // Point should lie on sphere of given radius
-        double aDist = aD1.Point.Distance(new Point3D(0.0, 0.0, 0.0));
+        double aDist = aD1.Point.DistanceTo(new Point3D(0.0, 0.0, 0.0));
         Assert.Equal(aRadius, aDist, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // D1U and D1V should be non-zero and perpendicular on a sphere (at non-pole points)
-        Assert.True(aD1.D1U.Magnitude() > global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.True(aD1.D1V.Magnitude() > global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(aD1.D1U.Magnitude > global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(aD1.D1V.Magnitude > global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -92,12 +92,12 @@ public class Geom_SurfaceEvalTests
 
         aSurf.D2(aU, aV, out Point3D aOldP, out Vector3D aOldD1U, out Vector3D aOldD1V, out Vector3D aOldD2U, out Vector3D aOldD2V, out Vector3D aOldD2UV);
 
-        Assert.Equal(0.0, aEvalResult.Point.Distance(aOldP), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, (aEvalResult.D1U - aOldD1U).Magnitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, (aEvalResult.D1V - aOldD1V).Magnitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, (aEvalResult.D2U - aOldD2U).Magnitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, (aEvalResult.D2V - aOldD2V).Magnitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, (aEvalResult.D2UV - aOldD2UV).Magnitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aEvalResult.Point.DistanceTo(aOldP), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, (aEvalResult.D1U - aOldD1U).Magnitude, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, (aEvalResult.D1V - aOldD1V).Magnitude, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, (aEvalResult.D2U - aOldD2U).Magnitude, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, (aEvalResult.D2V - aOldD2V).Magnitude, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, (aEvalResult.D2UV - aOldD2UV).Magnitude, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -112,16 +112,16 @@ public class Geom_SurfaceEvalTests
         Surface.ResD1 aD1 = aSurf.EvalD1(aU, aV);
 
         // Point should lie on cylinder of given radius at height V
-        double aDistXY = Math.Sqrt(aD1.Point.X() * aD1.Point.X() + aD1.Point.Y() * aD1.Point.Y());
+        double aDistXY = Math.Sqrt(aD1.Point.X * aD1.Point.X + aD1.Point.Y * aD1.Point.Y);
         Assert.Equal(aRadius, aDistXY, global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(aV, aD1.Point.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aV, aD1.Point.Z, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // D1U should be tangent to the circle (perpendicular to radial direction in XY)
-        Assert.True(aD1.D1U.Magnitude() > global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(aD1.D1U.Magnitude > global::Kerf.Engine.Foundation.Precision.Confusion());
         // D1V should be along the axis (Z direction)
-        Assert.Equal(0.0, aD1.D1V.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aD1.D1V.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(1.0, aD1.D1V.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aD1.D1V.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aD1.D1V.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aD1.D1V.Z, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -148,12 +148,12 @@ public class Geom_SurfaceEvalTests
 
         aSurf.D2(aU, aV, out Point3D aOldP, out Vector3D aOldD1U, out Vector3D aOldD1V, out Vector3D aOldD2U, out Vector3D aOldD2V, out Vector3D aOldD2UV);
 
-        Assert.Equal(0.0, aEvalResult.Point.Distance(aOldP), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, (aEvalResult.D1U - aOldD1U).Magnitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, (aEvalResult.D1V - aOldD1V).Magnitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, (aEvalResult.D2U - aOldD2U).Magnitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, (aEvalResult.D2V - aOldD2V).Magnitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, (aEvalResult.D2UV - aOldD2UV).Magnitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aEvalResult.Point.DistanceTo(aOldP), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, (aEvalResult.D1U - aOldD1U).Magnitude, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, (aEvalResult.D1V - aOldD1V).Magnitude, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, (aEvalResult.D2U - aOldD2U).Magnitude, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, (aEvalResult.D2V - aOldD2V).Magnitude, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, (aEvalResult.D2UV - aOldD2UV).Magnitude, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -171,9 +171,9 @@ public class Geom_SurfaceEvalTests
         Point3D aResult = aSurf.EvalD0(aU, aV);
 
         // Point should lie on circle of radius 3 at height V
-        double aDistXY = Math.Sqrt(aResult.X() * aResult.X() + aResult.Y() * aResult.Y());
+        double aDistXY = Math.Sqrt(aResult.X * aResult.X + aResult.Y * aResult.Y);
         Assert.Equal(3.0, aDistXY, global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(aV, aResult.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aV, aResult.Z, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -191,16 +191,16 @@ public class Geom_SurfaceEvalTests
         Surface.ResD1 aD1 = aSurf.EvalD1(aU, aV);
 
         // Point should lie on a circle of radius 1 at height V
-        double aDistXY = Math.Sqrt(aD1.Point.X() * aD1.Point.X() + aD1.Point.Y() * aD1.Point.Y());
+        double aDistXY = Math.Sqrt(aD1.Point.X * aD1.Point.X + aD1.Point.Y * aD1.Point.Y);
         Assert.Equal(1.0, aDistXY, global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(aV, aD1.Point.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aV, aD1.Point.Z, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // D1U should be tangential (circumferential direction)
-        Assert.True(aD1.D1U.Magnitude() > global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(aD1.D1U.Magnitude > global::Kerf.Engine.Foundation.Precision.Confusion());
         // D1V should be along the axis (Z direction) since generatrix is vertical
-        Assert.Equal(0.0, aD1.D1V.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aD1.D1V.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(1.0, aD1.D1V.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aD1.D1V.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aD1.D1V.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aD1.D1V.Z, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -214,8 +214,8 @@ public class Geom_SurfaceEvalTests
         Point3D aResult = anOffset.EvalD0(1.0, 2.0);
 
         // Offset plane at distance 3 in Z direction
-        Assert.Equal(1.0, aResult.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(2.0, aResult.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(3.0, aResult.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aResult.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(2.0, aResult.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(3.0, aResult.Z, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 }

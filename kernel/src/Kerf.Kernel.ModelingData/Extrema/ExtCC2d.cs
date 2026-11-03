@@ -587,10 +587,10 @@ public class ExtCC2d
                 }
             }
 
-            _mydist11 = _p1f.SquareDistance(_p2f);
-            _mydist12 = _p1f.SquareDistance(_p2l);
-            _mydist21 = _p1l.SquareDistance(_p2f);
-            _mydist22 = _p1l.SquareDistance(_p2l);
+            _mydist11 = _p1f.SquareDistanceTo(_p2f);
+            _mydist12 = _p1f.SquareDistanceTo(_p2l);
+            _mydist21 = _p1l.SquareDistanceTo(_p2f);
+            _mydist22 = _p1l.SquareDistanceTo(_p2l);
         }
     }
 
@@ -634,10 +634,10 @@ public class ExtCC2d
                 }
             }
 
-            _mydist11 = _p1f.SquareDistance(_p2f);
-            _mydist12 = _p1f.SquareDistance(_p2l);
-            _mydist21 = _p1l.SquareDistance(_p2f);
-            _mydist22 = _p1l.SquareDistance(_p2l);
+            _mydist11 = _p1f.SquareDistanceTo(_p2f);
+            _mydist12 = _p1f.SquareDistanceTo(_p2l);
+            _mydist21 = _p1l.SquareDistanceTo(_p2f);
+            _mydist22 = _p1l.SquareDistanceTo(_p2l);
         }
     }
 

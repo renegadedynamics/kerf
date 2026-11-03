@@ -19,7 +19,7 @@ namespace Kerf.Geometry;
 /// P(U, V) = O + (R1 + R2 * cos(V)) * (cos(U) * XDir + sin(U) * YDir) + R2 * sin(V) * ZDir;
 /// U and V in [0, 2*PI].
 /// </summary>
-public class ToroidalSurface : ElementarySurface
+public sealed class ToroidalSurface : ElementarySurface
 {
     private double _majorRadius;
     private double _minorRadius;
@@ -43,9 +43,9 @@ public class ToroidalSurface : ElementarySurface
     /// <summary>A torus from a gp torus.</summary>
     public ToroidalSurface(in Torus t)
     {
-        _majorRadius = t.MajorRadius();
-        _minorRadius = t.MinorRadius();
-        _pos = t.Position();
+        _majorRadius = t.MajorRadius;
+        _minorRadius = t.MinorRadius;
+        _pos = t.Position;
     }
 
     public sealed override Geometry3D Copy()
@@ -56,10 +56,10 @@ public class ToroidalSurface : ElementarySurface
     }
 
     /// <summary>The major radius.</summary>
-    public double MajorRadius() => _majorRadius;
+    public double MajorRadius => _majorRadius;
 
     /// <summary>The minor radius.</summary>
-    public double MinorRadius() => _minorRadius;
+    public double MinorRadius => _minorRadius;
 
     /// <summary>2*PI - U.</summary>
     public sealed override double UReversedParameter(double u) => (2.0 * M_PI - u);
@@ -110,9 +110,9 @@ public class ToroidalSurface : ElementarySurface
     internal void SetTorus(in Torus t)
     {
         CheckMutable();
-        _minorRadius = t.MinorRadius();
-        _majorRadius = t.MajorRadius();
-        _pos = t.Position();
+        _minorRadius = t.MinorRadius;
+        _majorRadius = t.MajorRadius;
+        _pos = t.Position;
     }
 
     /// <summary>A copy of major radius MajorRadius.</summary>
@@ -142,10 +142,10 @@ public class ToroidalSurface : ElementarySurface
     }
 
     /// <summary>The area, 4 * PI**2 * R1 * R2.</summary>
-    public double Area() => 4.0 * M_PI * M_PI * _minorRadius * _majorRadius;
+    public double Area => 4.0 * M_PI * M_PI * _minorRadius * _majorRadius;
 
     /// <summary>U and V in [0, 2*PI].</summary>
-    public sealed override void Bounds(out double u1, out double u2, out double v1, out double v2)
+    internal sealed override void ParameterBounds(out double u1, out double u2, out double v1, out double v2)
     {
         u1 = 0.0;
         v1 = 0.0;
@@ -157,27 +157,27 @@ public class ToroidalSurface : ElementarySurface
     /// The 35 coefficients of the implicit quartic equation, in Coef from its lower bound (see gp_Torus).
     /// </summary>
     /// <exception cref="DimensionErrorException">Coef has fewer than 35 elements.</exception>
-    public void Coefficients(NCollection_Array1<double> coef)
+    internal void Coefficients(NCollection_Array1<double> coef)
     {
         Torus tor = new Torus(_pos, _majorRadius, _minorRadius);
         tor.Coefficients(coef.AsSpan());
     }
 
-    public sealed override Point3D EvalD0(double u, double v)
+    internal sealed override Point3D EvalD0(double u, double v)
     {
         Point3D p;
         global::Kerf.Engine.Geometry.ElSLib.TorusD0(u, v, _pos, _majorRadius, _minorRadius, out p);
         return p;
     }
 
-    public sealed override ResD1 EvalD1(double u, double v)
+    internal sealed override ResD1 EvalD1(double u, double v)
     {
         ResD1 result;
         global::Kerf.Engine.Geometry.ElSLib.TorusD1(u, v, _pos, _majorRadius, _minorRadius, out result.Point, out result.D1U, out result.D1V);
         return result;
     }
 
-    public sealed override ResD2 EvalD2(double u, double v)
+    internal sealed override ResD2 EvalD2(double u, double v)
     {
         ResD2 result;
         global::Kerf.Engine.Geometry.ElSLib.TorusD2(u,
@@ -194,7 +194,7 @@ public class ToroidalSurface : ElementarySurface
         return result;
     }
 
-    public sealed override ResD3 EvalD3(double u, double v)
+    internal sealed override ResD3 EvalD3(double u, double v)
     {
         ResD3 result;
         global::Kerf.Engine.Geometry.ElSLib.TorusD3(u,
@@ -216,7 +216,7 @@ public class ToroidalSurface : ElementarySurface
     }
 
     /// <exception cref="UndefinedDerivative3DException">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
-    public sealed override Vector3D EvalDN(double u, double v, int nu, int nv)
+    internal sealed override Vector3D EvalDN(double u, double v, int nu, int nv)
     {
         if (nu + nv < 1 || nu < 0 || nv < 0)
         {
@@ -226,7 +226,7 @@ public class ToroidalSurface : ElementarySurface
     }
 
     /// <summary>The non-persistent gp torus with the same geometry.</summary>
-    public Torus Torus() => new Torus(_pos, _majorRadius, _minorRadius);
+    public Torus Torus => new Torus(_pos, _majorRadius, _minorRadius);
 
     /// <summary>The U iso-parametric circle (a Geom_Circle).</summary>
     public sealed override Curve3D UIso(double u)
@@ -243,13 +243,13 @@ public class ToroidalSurface : ElementarySurface
     }
 
     /// <summary>The volume, PI * R2**2 * 2 * PI * R1.</summary>
-    public double Volume() => (M_PI * _minorRadius * _minorRadius) * (2.0 * M_PI * _majorRadius);
+    public double Volume => (M_PI * _minorRadius * _minorRadius) * (2.0 * M_PI * _majorRadius);
 
     protected internal sealed override void Transform(in Transform3D t)
     {
         CheckMutable();
-        _majorRadius = _majorRadius * Math.Abs(t.ScaleFactor());
-        _minorRadius = _minorRadius * Math.Abs(t.ScaleFactor());
+        _majorRadius = _majorRadius * Math.Abs(t.ScaleFactor);
+        _minorRadius = _minorRadius * Math.Abs(t.ScaleFactor);
         _pos = _pos.Transformed(t);
     }
 }

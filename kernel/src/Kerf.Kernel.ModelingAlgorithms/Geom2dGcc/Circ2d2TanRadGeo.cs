@@ -78,10 +78,10 @@ public sealed class Circ2d2TanRadGeo
             throw new BadQualifierException();
         }
         Line2D            l1      = qualified1.Qualified();
-        double              x1dir   = (l1.Direction()).X();
-        double              y1dir   = (l1.Direction()).Y();
-        double              lxloc   = (l1.Location()).X();
-        double              lyloc   = (l1.Location()).Y();
+        double              x1dir   = (l1.Direction).X;
+        double              y1dir   = (l1.Direction).Y;
+        double              lxloc   = (l1.Location).X;
+        double              lyloc   = (l1.Location).Y;
         Point2D            origin1 = new(lxloc, lyloc);
         Direction2D            normL1  = new(-y1dir, x1dir);
         CurveAdaptor2D cu2     = qualified2.Qualified();
@@ -172,8 +172,8 @@ public sealed class Circ2d2TanRadGeo
             Direction2D dir = new(-y1dir, x1dir);
             for (int jcote1 = 1; jcote1 <= nbrcote1; jcote1++)
             {
-                Point2D        point = new(l1.Location().XY() + cote1[jcote1] * dir.XY());
-                Line2D        line  = new(point, l1.Direction()); // ligne avec deport.
+                Point2D        point = new(l1.Location.XY() + cote1[jcote1] * dir.XY());
+                Line2D        line  = new(point, l1.Direction); // ligne avec deport.
                 TwoDDomain d1    = new();
                 for (int jcote2 = 1; jcote2 <= nbrcote2 && _nbrSol < ANbSolMAX; jcote2++)
                 {
@@ -268,7 +268,7 @@ public sealed class Circ2d2TanRadGeo
             throw new BadQualifierException();
         }
         Circle2D           c1      = qualified1.Qualified();
-        Point2D            center1 = c1.Location();
+        Point2D            center1 = c1.Location;
         CurveAdaptor2D cu2     = qualified2.Qualified();
         if (radius < 0.0)
         {
@@ -354,11 +354,11 @@ public sealed class Circ2d2TanRadGeo
                 cote2[1] = radius;
                 cote2[2] = -radius;
             }
-            double                             r1   = c1.Radius();
+            double                             r1   = c1.Radius;
             TheIntConicCurveOfGInter intp = new();
             for (int jcote1 = 1; jcote1 <= nbrcote1 && _nbrSol < ANbSolMAX; jcote1++)
             {
-                Circle2D       circ = new(c1.XAxis(), r1 + cote1[jcote1]);
+                Circle2D       circ = new(c1.XAxis, r1 + cote1[jcote1]);
                 TwoDDomain d1   = new(global::Kerf.Engine.Geometry.ElCLib.Value(0.0, circ), 0.0, tol, global::Kerf.Engine.Geometry.ElCLib.Value(2.0 * M_PI, circ), 2.0 * M_PI, tol);
                 d1.SetEquivalentParameters(0.0, 2.0 * M_PI);
                 for (int jcote2 = 1; jcote2 <= nbrcote2; jcote2++)
@@ -380,7 +380,7 @@ public sealed class Circ2d2TanRadGeo
                                 Point2D center = intp.Point(i).Value();
                                 _cirsol[_nbrSol]  = new Circle2D(new Axis2D(center, dirx), radius);
                                 //             =======================================================
-                                double distcc1 = center.Distance(center1);
+                                double distcc1 = center.DistanceTo(center1);
                                 if (!qualified1.IsUnqualified)
                                 {
                                     _qualifier1[_nbrSol] = qualified1.Qualifier();
@@ -557,7 +557,7 @@ public sealed class Circ2d2TanRadGeo
         c2.D2(v, out Point2D pv, out Vector2D d1v, out Vector2D d2v);
 
         double crProd = Math.Abs(d1u.Crossed(d1v));
-        if (crProd * crProd > 1.0e-6 * d1u.SquareMagnitude() * d1v.SquareMagnitude())
+        if (crProd * crProd > 1.0e-6 * d1u.SquareMagnitude * d1v.SquareMagnitude)
         {
             // Curves are not tangent. Therefore, we consider that
             // 2D-intersection algorithm have found good point which
@@ -571,7 +571,7 @@ public sealed class Circ2d2TanRadGeo
 
             Vector2D vuv = new(pv, pu);
 
-            double sqDist = vuv.SquareMagnitude();
+            double sqDist = vuv.SquareMagnitude;
             if (IsEqual(sqDist, 0.0))
             {
                 break;
@@ -584,8 +584,8 @@ public sealed class Circ2d2TanRadGeo
                 vfinal   = v;
             }
 
-            double g1 = d1u.Magnitude();
-            double g2 = d1v.Magnitude();
+            double g1 = d1u.Magnitude;
+            double g2 = d1v.Magnitude;
 
             if (IsEqual(g1, 0.0) || IsEqual(g2, 0.0))
             { // Here we do not processing singular cases.
@@ -808,11 +808,11 @@ public sealed class Circ2d2TanRadGeo
                                 Point2D p21 = c1.Value(u2);
                                 Point2D p22 = c2.Value(v2);
 
-                                double dist1112 = p11.SquareDistance(p12);
-                                double dist1122 = p11.SquareDistance(p22);
+                                double dist1112 = p11.SquareDistanceTo(p12);
+                                double dist1122 = p11.SquareDistanceTo(p22);
 
-                                double dist1221 = p12.SquareDistance(p21);
-                                double dist2122 = p21.SquareDistance(p22);
+                                double dist1221 = p12.SquareDistanceTo(p21);
+                                double dist2122 = p21.SquareDistanceTo(p22);
 
                                 if ((Min(dist1112, dist1122) <= sqApproxTol)
                                     && (Min(dist1221, dist2122) <= sqApproxTol))

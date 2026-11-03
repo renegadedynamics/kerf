@@ -15,7 +15,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// of B-spline curves and surfaces", CAD 13(6), 1981). The constructor prepares a copy of the curve; Arc(i) builds
 /// each arc.
 /// </summary>
-public sealed class BSplineCurveToBezierCurve
+internal sealed class BSplineCurveToBezierCurve
 {
     private readonly BSplineCurve3D _curve;
 
@@ -24,10 +24,10 @@ public sealed class BSplineCurveToBezierCurve
     {
         _curve = (BSplineCurve3D)basisCurve.Copy();
 
-        double uf = _curve.FirstParameter();
-        double ul = _curve.LastParameter();
+        double uf = _curve.FirstParameter;
+        double ul = _curve.LastParameter;
         _curve.Segment(uf, ul);
-        _curve.IncreaseMultiplicity(_curve.FirstUKnotIndex(), _curve.LastUKnotIndex(), _curve.Degree());
+        _curve.IncreaseMultiplicity(_curve.FirstUKnotIndex(), _curve.LastUKnotIndex(), _curve.Degree);
     }
 
     /// <summary>
@@ -68,7 +68,7 @@ public sealed class BSplineCurveToBezierCurve
         }
 
         _curve.Segment(uf, ul);
-        _curve.IncreaseMultiplicity(_curve.FirstUKnotIndex(), _curve.LastUKnotIndex(), _curve.Degree());
+        _curve.IncreaseMultiplicity(_curve.FirstUKnotIndex(), _curve.LastUKnotIndex(), _curve.Degree);
     }
 
     /// <summary>A new Bezier curve for arc Index (1 to NbArcs()), oriented as the B-spline.</summary>
@@ -80,7 +80,7 @@ public sealed class BSplineCurveToBezierCurve
             throw new OutOfRangeException("GeomConvert_BSplineCurveToBezierCurve");
         }
 
-        int deg = _curve.Degree();
+        int deg = _curve.Degree;
 
         NCollection_Array1<Point3D> poles = new(1, deg + 1);
 

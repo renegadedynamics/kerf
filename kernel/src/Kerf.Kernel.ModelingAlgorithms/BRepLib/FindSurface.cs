@@ -72,16 +72,16 @@ public class FindSurface
 
         // get 2D points
         curve = Tool.CurveOnSurface(edge1, surface, location, out f, out l);
-        p1 = curve!.Value(edge1.Orientation() == Forward ? l : f);
+        p1 = curve!.Value(edge1.Orientation == Forward ? l : f);
         curve = Tool.CurveOnSurface(edge2, surface, location, out f, out l);
-        p2 = curve!.Value(edge2.Orientation() == Forward ? f : l);
+        p2 = curve!.Value(edge2.Orientation == Forward ? f : l);
 
         // compare 2D points
         var aSurface = new SurfaceAdaptor(surface);
         Vertex v = Exploration.FirstVertex(edge2, true);
         double tol3D = Tool.Tolerance(v);
         double tol2D = aSurface.UResolution(tol3D) + aSurface.VResolution(tol3D);
-        double dist2 = p1.SquareDistance(p2);
+        double dist2 = p1.SquareDistanceTo(p2);
         return dist2 < tol2D * tol2D;
     }
 
@@ -205,7 +205,7 @@ public class FindSurface
             {
                 double param = theParams[iP];
                 pNext = curve.Value(param);
-                distNext = pPrev.Distance(pNext);
+                distNext = pPrev.DistanceTo(pNext);
             }
             else
             {
@@ -301,7 +301,7 @@ public class FindSurface
             {
                 if (_surface is TrimmedSurface rts)
                 {
-                    _surface = rts.BasisSurface();
+                    _surface = rts.BasisSurface;
                 }
                 _surface = _surface as PlaneSurface;
             }
@@ -356,16 +356,16 @@ public class FindSurface
                 {
                     BezierCurve3D gc = c.Bezier();
                     var knots = new NCollection_Array1<double>(1, 2);
-                    knots.SetValue(1, gc.FirstParameter());
-                    knots.SetValue(2, gc.LastParameter());
+                    knots.SetValue(1, gc.FirstParameter);
+                    knots.SetValue(2, gc.LastParameter);
 
-                    FillParams(knots, gc.Degree(), dfUf, dfUl, aParams);
+                    FillParams(knots, gc.Degree, dfUf, dfUl, aParams);
                     break;
                 }
                 case BSplineCurve:
                 {
                     BSplineCurve3D gc = c.BSpline();
-                    FillParams(gc.InternalKnots(), gc.Degree(), dfUf, dfUl, aParams);
+                    FillParams(gc.InternalKnots(), gc.Degree, dfUf, dfUl, aParams);
                     break;
                 }
                 case Line:
@@ -512,9 +512,9 @@ public class FindSurface
                     var v1 = new Vector3D(vec1[1], vec1[2], vec1[3]);
                     var v2 = new Vector3D(vec2[1], vec2[2], vec2[3]);
                     Vector3D n0 = v1 ^ v2;
-                    vec[1] = n0.X();
-                    vec[2] = n0.Y();
-                    vec[3] = n0.Z();
+                    vec[1] = n0.X;
+                    vec[2] = n0.Y;
+                    vec[3] = n0.Z;
                 }
                 if (vec.Norm2() < Constants.Resolution())
                 {
@@ -545,7 +545,7 @@ public class FindSurface
         {
             _surface = plane;
             // If S is wire, try to orient surface according to orientation of wire.
-            if (s.ShapeType() == ShapeType.Wire && s.Closed())
+            if (s.Type == ShapeType.Wire && s.IsClosed)
             {
                 Wire aW = ShapeCasts.Wire(s);
                 Face tmpFace = new LibraryMakeFace(_surface, global::Kerf.Engine.Foundation.Precision.Confusion()).InternalFace();
@@ -554,9 +554,9 @@ public class FindSurface
                 var fClass = new FClass2d(tmpFace, 0.0);
                 if (fClass.PerformInfinitePoint() == In)
                 {
-                    Direction3D norm = plane.Position().Direction();
+                    Direction3D norm = plane.Position.Direction;
                     norm = norm.Reversed();
-                    _surface = new PlaneSurface(plane.Position().Location(), norm);
+                    _surface = new PlaneSurface(plane.Position.Location, norm);
                 }
             }
         }

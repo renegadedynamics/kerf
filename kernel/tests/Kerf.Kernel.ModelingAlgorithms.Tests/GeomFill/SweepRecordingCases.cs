@@ -100,11 +100,11 @@ internal static class SweepRecordingCases
 
     private static string Hex(double theValue) => BitConverter.DoubleToInt64Bits(theValue).ToString("x16");
 
-    private static string Hex(Point3D theP) => Hex(theP.X()) + "," + Hex(theP.Y()) + "," + Hex(theP.Z());
+    private static string Hex(Point3D theP) => Hex(theP.X) + "," + Hex(theP.Y) + "," + Hex(theP.Z);
 
-    private static string Hex(Vector3D theV) => Hex(theV.X()) + "," + Hex(theV.Y()) + "," + Hex(theV.Z());
+    private static string Hex(Vector3D theV) => Hex(theV.X) + "," + Hex(theV.Y) + "," + Hex(theV.Z);
 
-    private static string Hex(Point2D theP) => Hex(theP.X()) + "," + Hex(theP.Y());
+    private static string Hex(Point2D theP) => Hex(theP.X) + "," + Hex(theP.Y);
 
     private static string Int(int theValue) => theValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
@@ -194,17 +194,17 @@ internal static class SweepRecordingCases
                 }
             case 2:
                 {
-                    Vector3D aX = new(anAx.XDirection());
+                    Vector3D aX = new(anAx.XDirection);
                     Point3D aP1 = P.Translated(aX * (-theScale * r.R(0.5, 1.5)));
                     Vector3D aD = aX * theScale * r.R(1.0, 2.5);
-                    return new TrimmedCurve3D(new LineCurve3D(aP1, new Direction3D(aD)), 0.0, aD.Magnitude());
+                    return new TrimmedCurve3D(new LineCurve3D(aP1, new Direction3D(aD)), 0.0, aD.Magnitude);
                 }
             default:
                 {
                     bool aPer = theKind == 4;
                     int aNb = r.I(5, 8);
                     NCollection_Array1<Point3D> aPoles = new(1, aNb);
-                    Vector3D aX = new(anAx.XDirection()), aY = new(anAx.YDirection());
+                    Vector3D aX = new(anAx.XDirection), aY = new(anAx.YDirection);
                     for (int i = 1; i <= aNb; i++)
                     {
                         double anA = 2.0 * M_PI * (i - 1) / (aPer ? aNb : aNb - 1) * (aPer ? 1.0 : 0.6);
@@ -251,17 +251,17 @@ internal static class SweepRecordingCases
             Line("SURF null");
             return;
         }
-        theS.Bounds(out double u1, out double u2, out double v1, out double v2);
+        theS.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
         Line("SURF " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(theS.GetType()) + " " + Hex(u1) + " " + Hex(u2) + " " + Hex(v1) + " " + Hex(v2));
         Surface aBasis = theS;
         if (theS is TrimmedSurface aTrim)
         {
-            aBasis = aTrim.BasisSurface();
+            aBasis = aTrim.BasisSurface;
             Line("BASIS " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(aBasis.GetType()));
         }
         if (aBasis is BSplineSurface aBS)
         {
-            Line("BS " + Int(aBS.UDegree()) + " " + Int(aBS.VDegree()) + " " + Int(aBS.UPoleCount) + " "
+            Line("BS " + Int(aBS.UDegree) + " " + Int(aBS.VDegree) + " " + Int(aBS.UPoleCount) + " "
                  + Int(aBS.VPoleCount) + " " + Int(aBS.UKnotCount) + " " + Int(aBS.VKnotCount) + " "
                  + Int(aBS.IsUPeriodic) + " " + Int(aBS.IsVPeriodic) + " " + Int(aBS.IsURational) + " "
                  + Int(aBS.IsVRational));
@@ -308,9 +308,9 @@ internal static class SweepRecordingCases
             Line(theTag + " null");
             return;
         }
-        double f = Clamp(theC.FirstParameter()), l = Clamp(theC.LastParameter());
-        string aLine = theTag + " " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(theC.GetType()) + " " + Hex(theC.FirstParameter()) + " "
-                       + Hex(theC.LastParameter());
+        double f = Clamp(theC.FirstParameter), l = Clamp(theC.LastParameter);
+        string aLine = theTag + " " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(theC.GetType()) + " " + Hex(theC.FirstParameter) + " "
+                       + Hex(theC.LastParameter);
         for (int i = 0; i <= 4; i++)
         {
             aLine += " " + Hex(theC.Value(f + (l - f) * i / 4.0));
@@ -383,14 +383,14 @@ internal static class SweepRecordingCases
         double aWig = r.R(0.5, 5.0);
         BSplineCurve3D aPath = MakePath(r, aRat, aWig);
         int aKind = r.I(0, 4);
-        aPath.D1(aPath.FirstParameter(), out Point3D aP, out Vector3D aT);
+        aPath.D1(aPath.FirstParameter, out Point3D aP, out Vector3D aT);
         double sx = r.R(-0.5, 0.5);
         double sy = r.R(-0.5, 0.5);
         double sz = r.R(-0.5, 0.5);
         Vector3D aShift = new(sx, sy, sz);
         Curve3D aSect = MakeSection(r, aKind, aP.Translated(aShift), aT, 1.0);
         int aDeg = r.I(0, 2) == 0 ? 8 : 11;
-        Line("IN " + Hex(aPath.Pole(1)) + " " + Int(aKind) + " " + Hex(aSect.Value(aSect.FirstParameter())));
+        Line("IN " + Hex(aPath.Pole(1)) + " " + Int(aKind) + " " + Hex(aSect.Value(aSect.FirstParameter)));
         Guard(() =>
         {
             global::Kerf.Engine.Construction.Surfaces.SurfacePipe aPipe = new();
@@ -405,7 +405,7 @@ internal static class SweepRecordingCases
     {
         BSplineCurve3D aPath = MakePath(r, false, r.R(0.5, 3.0));
         int aKind = r.I(0, 4);
-        aPath.D1(aPath.FirstParameter(), out Point3D aP, out Vector3D aT);
+        aPath.D1(aPath.FirstParameter, out Point3D aP, out Vector3D aT);
         Curve3D aSect = MakeSection(r, aKind, aP, aT, 1.0);
         double dx = r.R(-0.3, 0.3);
         double dy = r.R(0.5, 1.0);
@@ -469,9 +469,9 @@ internal static class SweepRecordingCases
         BSplineCurve2D aPath = new(aP2, aK, aM, 3);
         CurveAdaptor2D aC2 = new(aPath);
         Point2D aQ = aC2.Value(0.0);
-        aSup.D1(aQ.X(), aQ.Y(), out Point3D aP, out Vector3D aDU, out Vector3D aDV);
+        aSup.D1(aQ.X, aQ.Y, out Point3D aP, out Vector3D aDU, out Vector3D aDV);
         Vector2D aT2 = aC2.DN(0.0, 1);
-        Vector3D aT = aDU * aT2.X() + aDV * aT2.Y();
+        Vector3D aT = aDU * aT2.X + aDV * aT2.Y;
         int aKind = r.I(0, 3);
         Curve3D aSect = MakeSection(r, aKind, aP, aT, 0.5);
         Line("IN " + Int(aSupKind) + " " + Hex(aP) + " " + Int(aKind));
@@ -495,7 +495,7 @@ internal static class SweepRecordingCases
             double anA = 0.3 * (i - 1);
             aPoles[i] = new Point3D(20.0 * Math.Sin(anA), 20.0 - 20.0 * Math.Cos(anA), 0.0);
         }
-        return new BSplineCurve3D(aPoles, thePath.InternalKnots(), thePath.InternalMultiplicities(), thePath.Degree());
+        return new BSplineCurve3D(aPoles, thePath.InternalKnots(), thePath.InternalMultiplicities(), thePath.Degree);
     }
 
     private static void PipeTwoSections(Rng r, bool thePlanar)
@@ -506,7 +506,7 @@ internal static class SweepRecordingCases
             aPath = Flatten(aPath);
         }
         int aKind = r.I(0, 1) == 0 ? 0 : 3;
-        aPath.D1(aPath.FirstParameter(), out Point3D aP, out Vector3D aT);
+        aPath.D1(aPath.FirstParameter, out Point3D aP, out Vector3D aT);
         Rng aR2 = new(r.Next());
         Curve3D aS1 = MakeSection(r, aKind, aP, aT, 1.0);
         Curve3D aS2 = MakeSection(aR2, aKind, aP, aT, r.R(0.5, 2.0));
@@ -527,7 +527,7 @@ internal static class SweepRecordingCases
         int aNb = r.I(2, 4);
         int aKind = r.I(0, 1) == 0 ? 0 : 3;
         NCollection_Sequence<Curve3D> aSeq = new();
-        double f = aPath.FirstParameter(), l = aPath.LastParameter();
+        double f = aPath.FirstParameter, l = aPath.LastParameter;
         for (int i = 0; i < aNb; i++)
         {
             double t = f + (l - f) * i / (aNb - 1.0);
@@ -558,8 +558,8 @@ internal static class SweepRecordingCases
             double z = r.R(-0.5, 0.5);
             aPoles[i] = aPath.Pole(i).Translated(new Vector3D(x, y, z));
         }
-        BSplineCurve3D aGuide = new(aPoles, aPath.InternalKnots(), aPath.InternalMultiplicities(), aPath.Degree());
-        aPath.D1(aPath.FirstParameter(), out Point3D aP, out Vector3D aT);
+        BSplineCurve3D aGuide = new(aPoles, aPath.InternalKnots(), aPath.InternalMultiplicities(), aPath.Degree);
+        aPath.D1(aPath.FirstParameter, out Point3D aP, out Vector3D aT);
         int aKind = r.I(0, 3);
         Curve3D aSect = MakeSection(r, aKind, aP, aT, 1.0);
         bool byACR = r.I(0, 1) == 1, rotat = r.I(0, 1) == 1;
@@ -590,8 +590,8 @@ internal static class SweepRecordingCases
             double x2 = r.R(-0.1, 0.1);
             aP2[i] = aP.Translated(new Vector3D(x2, theR * Math.Cos(anAng), theR * Math.Sin(anAng)));
         }
-        theC1 = new BSplineCurve3D(aP1, thePath.InternalKnots(), thePath.InternalMultiplicities(), thePath.Degree());
-        theC2 = new BSplineCurve3D(aP2, thePath.InternalKnots(), thePath.InternalMultiplicities(), thePath.Degree());
+        theC1 = new BSplineCurve3D(aP1, thePath.InternalKnots(), thePath.InternalMultiplicities(), thePath.Degree);
+        theC2 = new BSplineCurve3D(aP2, thePath.InternalKnots(), thePath.InternalMultiplicities(), thePath.Degree);
     }
 
     private static void PipeEdge(Rng r, bool theOld)
@@ -638,7 +638,7 @@ internal static class SweepRecordingCases
             double aRad = r.R(5.0, 10.0);
             aPath = new TrimmedCurve3D(new CircleCurve3D(anAx, aRad), 0.0, anEnd);
         }
-        aPath.D1(aPath.FirstParameter(), out Point3D aP, out Vector3D aT);
+        aPath.D1(aPath.FirstParameter, out Point3D aP, out Vector3D aT);
         Curve3D? aSect = null;
         int aSectKind = 0;
         switch (aCase)
@@ -678,7 +678,7 @@ internal static class SweepRecordingCases
             if (aTwo)
             {
                 CircleCurve3D aC2 = (CircleCurve3D)aSect.Copy();
-                aC2.SetRadius(aC2.Radius() * r.R(0.5, 2.0));
+                aC2.SetRadius(aC2.Radius * r.R(0.5, 2.0));
                 aPipe.Init(aPath, aSect, aC2);
             }
             else
@@ -693,11 +693,11 @@ internal static class SweepRecordingCases
     private static void SweepEvolved(Rng r)
     {
         BSplineCurve3D aPath = MakePath(r, false, r.R(0.5, 4.0));
-        aPath.D1(aPath.FirstParameter(), out Point3D _, out Vector3D _);
+        aPath.D1(aPath.FirstParameter, out Point3D _, out Vector3D _);
         int aKind = r.I(0, 4);
         Curve3D aSect = MakeSection(r, aKind, new Point3D(0, 0, 0), new Vector3D(0, 0, 1), 1.0);
         LawsFunction aLaw;
-        double f = aPath.FirstParameter(), l = aPath.LastParameter();
+        double f = aPath.FirstParameter, l = aPath.LastParameter;
         if (r.I(0, 1) == 0)
         {
             Linear aLin = new();
@@ -844,7 +844,7 @@ internal static class SweepRecordingCases
             NCollection_Array1<Vector2D> aV2 = new(1, 1), aV22 = new(1, 1);
             aF.GetMinimalWeight(aW);
             DumpArrays("MINW", aP, aW);
-            double f = aPath.FirstParameter(), l = aPath.LastParameter();
+            double f = aPath.FirstParameter, l = aPath.LastParameter;
             for (int k = 0; k < 3; k++)
             {
                 double v = f + (l - f) * r.U();
@@ -876,7 +876,7 @@ internal static class SweepRecordingCases
         {
             aPath = aBPath;
         }
-        aPath.D1(aPath.FirstParameter(), out Point3D aP, out Vector3D aT);
+        aPath.D1(aPath.FirstParameter, out Point3D aP, out Vector3D aT);
         int aKind = r.I(0, 1) == 0 ? 0 : 3;
         Rng aR2 = new(r.Next());
         Curve3D aS1 = MakeSection(r, aKind, aP, aT, 1.0);
@@ -968,7 +968,7 @@ internal static class SweepRecordingCases
                 Direction3D aN = new(nx, ny, 1.0);
                 Frame3D anAx = new(aC, aN);
                 double a1 = r.R(0.0, 1.0), a2 = a1 + anAng;
-                Vector3D aX = new(anAx.XDirection()), aY = new(anAx.YDirection());
+                Vector3D aX = new(anAx.XDirection), aY = new(anAx.YDirection);
                 Vector3D aU1 = aX * Math.Cos(a1) + aY * Math.Sin(a1), aU2 = aX * Math.Cos(a2) + aY * Math.Sin(a2);
                 Point3D aP1 = aC.Translated(aU1 * aRad), aP2 = aC.Translated(aU2 * aRad);
                 Vector3D ns1 = -aU1, ns2 = -aU2, nplan = new(aN);
@@ -1040,7 +1040,7 @@ internal static class SweepRecordingCases
                     Frame3D anAx = new(new Point3D(px, 0, 0), new Direction3D(dx, 0, 1));
                     double aR = r.R(1, 3);
                     aC1 = new CircleCurve3D(anAx, aR);
-                    Frame3D anAx2 = anAx.Translated(new Vector3D(anAx.Direction()) * r.R(-5, 5));
+                    Frame3D anAx2 = anAx.Translated(new Vector3D(anAx.Direction) * r.R(-5, 5));
                     aC2 = new CircleCurve3D(anAx2, aCase == 1 ? aR : aR * r.R(0.3, 2.0));
                     break;
                 }

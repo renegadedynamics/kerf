@@ -11,7 +11,7 @@ namespace Kerf.Engine.Geometry.Evaluation.Grid;
 /// <summary>
 /// Efficient batch evaluator for 2D circle grid points: P(u) = C + R * (cos(u) * X + sin(u) * Y).
 /// </summary>
-public sealed class CircleGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
+internal sealed class CircleGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
 {
     private readonly CircleCurve2D? _geom;
 
@@ -36,19 +36,19 @@ public sealed class CircleGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
         NCollection_Array1<Point2D> result = new(1, nb);
 
         // Extract circle data from geometry
-        Circle2D circ = _geom.Circ2d();
-        Point2D center = circ.Location();
-        Direction2D xDir = circ.Position().XDirection();
-        Direction2D yDir = circ.Position().YDirection();
-        double radius = circ.Radius();
+        Circle2D circ = _geom.Circle;
+        Point2D center = circ.Location;
+        Direction2D xDir = circ.Position.XDirection;
+        Direction2D yDir = circ.Position.YDirection;
+        double radius = circ.Radius;
 
         // Pre-extract coordinates for performance
-        double cx = center.X();
-        double cy = center.Y();
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double yx = yDir.X();
-        double yy = yDir.Y();
+        double cx = center.X;
+        double cy = center.Y;
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double yx = yDir.X;
+        double yy = yDir.Y;
 
         for (int i = theParams.Lower(); i <= theParams.Upper(); ++i)
         {
@@ -74,18 +74,18 @@ public sealed class CircleGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
         int nb = theParams.Length();
         NCollection_Array1<Curve2D.ResD1> result = new(1, nb);
 
-        Circle2D circ = _geom.Circ2d();
-        Point2D center = circ.Location();
-        Direction2D xDir = circ.Position().XDirection();
-        Direction2D yDir = circ.Position().YDirection();
-        double radius = circ.Radius();
+        Circle2D circ = _geom.Circle;
+        Point2D center = circ.Location;
+        Direction2D xDir = circ.Position.XDirection;
+        Direction2D yDir = circ.Position.YDirection;
+        double radius = circ.Radius;
 
-        double cx = center.X();
-        double cy = center.Y();
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double yx = yDir.X();
-        double yy = yDir.Y();
+        double cx = center.X;
+        double cy = center.Y;
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double yx = yDir.X;
+        double yy = yDir.Y;
 
         for (int i = theParams.Lower(); i <= theParams.Upper(); ++i)
         {
@@ -116,18 +116,18 @@ public sealed class CircleGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
         int nb = theParams.Length();
         NCollection_Array1<Curve2D.ResD2> result = new(1, nb);
 
-        Circle2D circ = _geom.Circ2d();
-        Point2D center = circ.Location();
-        Direction2D xDir = circ.Position().XDirection();
-        Direction2D yDir = circ.Position().YDirection();
-        double radius = circ.Radius();
+        Circle2D circ = _geom.Circle;
+        Point2D center = circ.Location;
+        Direction2D xDir = circ.Position.XDirection;
+        Direction2D yDir = circ.Position.YDirection;
+        double radius = circ.Radius;
 
-        double cx = center.X();
-        double cy = center.Y();
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double yx = yDir.X();
-        double yy = yDir.Y();
+        double cx = center.X;
+        double cy = center.Y;
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double yx = yDir.X;
+        double yy = yDir.Y;
 
         for (int i = theParams.Lower(); i <= theParams.Upper(); ++i)
         {
@@ -160,18 +160,18 @@ public sealed class CircleGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
         int nb = theParams.Length();
         NCollection_Array1<Curve2D.ResD3> result = new(1, nb);
 
-        Circle2D circ = _geom.Circ2d();
-        Point2D center = circ.Location();
-        Direction2D xDir = circ.Position().XDirection();
-        Direction2D yDir = circ.Position().YDirection();
-        double radius = circ.Radius();
+        Circle2D circ = _geom.Circle;
+        Point2D center = circ.Location;
+        Direction2D xDir = circ.Position.XDirection;
+        Direction2D yDir = circ.Position.YDirection;
+        double radius = circ.Radius;
 
-        double cx = center.X();
-        double cy = center.Y();
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double yx = yDir.X();
-        double yy = yDir.Y();
+        double cx = center.X;
+        double cy = center.Y;
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double yx = yDir.X;
+        double yy = yDir.Y;
 
         for (int i = theParams.Lower(); i <= theParams.Upper(); ++i)
         {
@@ -206,15 +206,15 @@ public sealed class CircleGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
         int nb = theParams.Length();
         NCollection_Array1<Vector2D> result = new(1, nb);
 
-        Circle2D circ = _geom.Circ2d();
-        Direction2D xDir = circ.Position().XDirection();
-        Direction2D yDir = circ.Position().YDirection();
-        double radius = circ.Radius();
+        Circle2D circ = _geom.Circle;
+        Direction2D xDir = circ.Position.XDirection;
+        Direction2D yDir = circ.Position.YDirection;
+        double radius = circ.Radius;
 
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double yx = yDir.X();
-        double yy = yDir.Y();
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double yx = yDir.X;
+        double yy = yDir.Y;
 
         // Circle derivatives are cyclic with period 4:
         // D1 = R * (-sin(u) * X + cos(u) * Y)  -> coefficients: (-sin, cos)

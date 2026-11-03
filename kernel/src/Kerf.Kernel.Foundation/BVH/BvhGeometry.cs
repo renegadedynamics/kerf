@@ -9,7 +9,7 @@ using static Kerf.Engine.Geometry.Bvh.Constants;
 namespace Kerf.Engine.Geometry.Bvh;
 
 /// <summary>A set of abstract geometric objects organized with a bounding volume hierarchy (BVH).</summary>
-public class BvhGeometry<T, TVec> : ObjectSet<T, TVec>
+internal class BvhGeometry<T, TVec> : ObjectSet<T, TVec>
     where T : unmanaged, INumber<T>, IMinMaxValue<T>
     where TVec : unmanaged, INCollection_Vec<T, TVec>
 {

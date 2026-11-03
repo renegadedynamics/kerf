@@ -19,7 +19,7 @@ namespace Kerf.Engine.Geometry;
 /// <c>theNormal</c> is a <c>ref</c> parameter: as in OCCT, it is left unchanged when the status says that no
 /// normal was computed.
 /// </remarks>
-public static class CSLib
+internal static class CSLib
 {
     // Angular tolerance for parallel/opposite vector detection (radians).
     private const double THE_PARALLEL_ANGULAR_TOL = 1e-6;
@@ -38,8 +38,8 @@ public static class CSLib
     public static void Normal(in Vector3D d1U, in Vector3D d1V, double sinTol,
                               out DerivativeStatus status, ref Direction3D normal)
     {
-        double d1UMag  = d1U.SquareMagnitude();
-        double d1VMag  = d1V.SquareMagnitude();
+        double d1UMag  = d1U.SquareMagnitude;
+        double d1VMag  = d1V.SquareMagnitude;
         Vector3D d1UxD1V = d1U.Crossed(d1V);
 
         if (d1UMag <= Constants.Resolution() && d1VMag <= Constants.Resolution())
@@ -56,7 +56,7 @@ public static class CSLib
         }
         else
         {
-            double sin2 = d1UxD1V.SquareMagnitude() / (d1UMag * d1VMag);
+            double sin2 = d1UxD1V.SquareMagnitude / (d1UMag * d1VMag);
             if (sin2 < sinTol * sinTol)
             {
                 status = D1uIsParallelD1v;
@@ -88,8 +88,8 @@ public static class CSLib
         Vector3D d1Nv = d2UV.Crossed(d1V);
         d1Nv = d1Nv.Added(d1U.Crossed(d2V));
 
-        double ld1Nu = d1Nu.SquareMagnitude();
-        double ld1Nv = d1Nv.SquareMagnitude();
+        double ld1Nu = d1Nu.SquareMagnitude;
+        double ld1Nv = d1Nv.SquareMagnitude;
 
         if (ld1Nu <= RealEpsilon() && ld1Nv <= RealEpsilon())
         {
@@ -121,7 +121,7 @@ public static class CSLib
         else
         {
             Vector3D d1NCross = d1Nu.Crossed(d1Nv);
-            double sin2     = d1NCross.SquareMagnitude() / (ld1Nu * ld1Nv);
+            double sin2     = d1NCross.SquareMagnitude / (ld1Nu * ld1Nv);
 
             if (sin2 < sinTol * sinTol)
             {
@@ -144,10 +144,10 @@ public static class CSLib
     public static void Normal(in Vector3D d1U, in Vector3D d1V, double magTol,
                               out NormalStatus status, ref Direction3D normal)
     {
-        double d1UMag  = d1U.Magnitude();
-        double d1VMag  = d1V.Magnitude();
+        double d1UMag  = d1U.Magnitude;
+        double d1VMag  = d1V.Magnitude;
         Vector3D d1UxD1V = d1U.Crossed(d1V);
-        double nMag    = d1UxD1V.Magnitude();
+        double nMag    = d1UxD1V.Magnitude;
 
         if (nMag <= magTol || d1UMag <= magTol || d1VMag <= magTol)
         {
@@ -190,7 +190,7 @@ public static class CSLib
             {
                 int vIdx = order - foundUIdx;
                 d        = derNUV.Value(foundUIdx, vIdx);
-                norme    = d.Magnitude();
+                norme    = d.Magnitude;
                 found    = (norme >= sinTol);
                 --foundUIdx;
             }
@@ -222,13 +222,13 @@ public static class CSLib
         while (ratioIdx <= order && !isDefined)
         {
             Vector3D derVec = derNUV.Value(ratioIdx, order - ratioIdx);
-            if (derVec.Magnitude() <= sinTol)
+            if (derVec.Magnitude <= sinTol)
             {
                 ratio[ratioIdx] = 0.0;
             }
             else if (derVec.IsParallel(vk0, THE_PARALLEL_ANGULAR_TOL))
             {
-                double magnitudeRatio = derVec.Magnitude() / vk0.Magnitude();
+                double magnitudeRatio = derVec.Magnitude / vk0.Magnitude;
                 if (derVec.IsOpposite(vk0, THE_PARALLEL_ANGULAR_TOL))
                 {
                     magnitudeRatio = -magnitudeRatio;

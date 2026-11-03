@@ -34,20 +34,20 @@ public class ProjLib_ProjectOnPlaneTests
 
     private static Point3D ProjectPnt(in CoordinateSystem thePl, in Direction3D theD, in Point3D theP)
     {
-        Vector3D aPO = new(theP, thePl.Location());
-        double anAlpha = (aPO * new Vector3D(thePl.Direction())) / (theD * thePl.Direction());
+        Vector3D aPO = new(theP, thePl.Location);
+        double anAlpha = (aPO * new Vector3D(thePl.Direction)) / (theD * thePl.Direction);
         return theP.Translated(anAlpha * new Vector3D(theD));
     }
 
     private static Vector3D ProjectVec(in CoordinateSystem thePl, in Direction3D theD, in Vector3D theV)
     {
-        double anAlpha = (theV * new Vector3D(thePl.Direction())) / (theD * thePl.Direction());
+        double anAlpha = (theV * new Vector3D(thePl.Direction)) / (theD * thePl.Direction);
         return theV - anAlpha * new Vector3D(theD);
     }
 
     private static double DistanceToPlane(in CoordinateSystem thePl, in Point3D theP)
     {
-        return Math.Abs(new Vector3D(thePl.Location(), theP) * new Vector3D(thePl.Direction()));
+        return Math.Abs(new Vector3D(thePl.Location, theP) * new Vector3D(thePl.Direction));
     }
 
     private static double DistanceToCurve(Curve3D theC, in Point3D theP)
@@ -73,12 +73,12 @@ public class ProjLib_ProjectOnPlaneTests
         {
             double u = f + (l - f) * i / 16;
             Point3D anExp = ProjectPnt(aPl, aD, theC.Value(u));
-            Assert.True(theProj.Value(u).Distance(anExp) < theTol, $"point at {u}");
+            Assert.True(theProj.Value(u).DistanceTo(anExp) < theTol, $"point at {u}");
             if (theDerivs)
             {
                 theC.D1(u, out _, out Vector3D aCD1);
                 theProj.D1(u, out _, out Vector3D aD1);
-                Assert.True((aD1 - ProjectVec(aPl, aD, aCD1)).Magnitude() < theTol * 100, $"D1 at {u}");
+                Assert.True((aD1 - ProjectVec(aPl, aD, aCD1)).Magnitude < theTol * 100, $"D1 at {u}");
             }
         }
     }
@@ -99,8 +99,8 @@ public class ProjLib_ProjectOnPlaneTests
             Assert.True(DistanceToCurve(aRes, aP) < theTol, $"image of {t}");
         }
         // The bounds are the projections of the curve's ends.
-        Assert.True(theProj.Value(f).Distance(ProjectPnt(aPl, aD, theC.Value(theC.FirstParameter()))) < theTol);
-        Assert.True(theProj.Value(l).Distance(ProjectPnt(aPl, aD, theC.Value(theC.LastParameter()))) < theTol);
+        Assert.True(theProj.Value(f).DistanceTo(ProjectPnt(aPl, aD, theC.Value(theC.FirstParameter()))) < theTol);
+        Assert.True(theProj.Value(l).DistanceTo(ProjectPnt(aPl, aD, theC.Value(theC.LastParameter()))) < theTol);
     }
 
     [Fact]
@@ -112,7 +112,7 @@ public class ProjLib_ProjectOnPlaneTests
         Assert.Equal(CurveKind.Line, aProj.GetType());
         Assert.False(aProj.IsPeriodic);
         Line3D aLin = aProj.Line();
-        Assert.True(aLin.Direction().IsNormal(TiltedPlane().Direction(), 1.0e-12));
+        Assert.True(aLin.Direction.IsNormal(TiltedPlane().Direction, 1.0e-12));
         AssertSameImage(aProj, aC, 1.0e-9);
         Assert.Throws<NoSuchObjectException>(() => aProj.Circle());
         Assert.Throws<NoSuchObjectException>(() => aProj.Degree());
@@ -127,9 +127,9 @@ public class ProjLib_ProjectOnPlaneTests
         aProj.Load(aC, Tol, true);
         Assert.Equal(CurveKind.BSplineCurve, aProj.GetType());
         BSplineCurve3D aBS = aProj.BSpline();
-        Assert.Equal(1, aBS.Degree());
-        Assert.Equal(-2.0, aBS.FirstParameter(), 1.0e-12);
-        Assert.Equal(3.0, aBS.LastParameter(), 1.0e-12);
+        Assert.Equal(1, aBS.Degree);
+        Assert.Equal(-2.0, aBS.FirstParameter, 1.0e-12);
+        Assert.Equal(3.0, aBS.LastParameter, 1.0e-12);
         AssertKeepsParameters(aProj, aC, 1.0e-9);
     }
 
@@ -144,9 +144,9 @@ public class ProjLib_ProjectOnPlaneTests
         Assert.Equal(4.0, aProj.LastParameter());
         Point3D aP = aProj.Value(2.0);
         Point3D anExp = aC.Value(2.0);
-        Assert.Equal(anExp.X(), aP.X(), 1.0e-12);
-        Assert.Equal(anExp.Y(), aP.Y(), 1.0e-12);
-        Assert.Equal(1.0, aP.Z(), 1.0e-12);
+        Assert.Equal(anExp.X, aP.X, 1.0e-12);
+        Assert.Equal(anExp.Y, aP.Y, 1.0e-12);
+        Assert.Equal(1.0, aP.Z, 1.0e-12);
     }
 
     [Fact]
@@ -161,7 +161,7 @@ public class ProjLib_ProjectOnPlaneTests
         for (double u = 0.0; u <= 5.0; u += 1.0)
         {
             Point3D aP = aProj.Value(u);
-            Assert.True(aP.Distance(new Point3D(1, 2, -1)) < 1.0e-12);
+            Assert.True(aP.DistanceTo(new Point3D(1, 2, -1)) < 1.0e-12);
         }
     }
 
@@ -172,8 +172,8 @@ public class ProjLib_ProjectOnPlaneTests
         ProjectOnPlane aProj = new(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)));
         aProj.Load(aC, Tol, false);
         Assert.Equal(CurveKind.Circle, aProj.GetType());
-        Assert.Equal(2.0, aProj.Circle().Radius(), 1.0e-9);
-        Assert.Equal(0.0, aProj.Circle().Location().Z(), 1.0e-12);
+        Assert.Equal(2.0, aProj.Circle().Radius, 1.0e-9);
+        Assert.Equal(0.0, aProj.Circle().Location.Z, 1.0e-12);
         AssertSameImage(aProj, aC, 1.0e-7);
     }
 
@@ -185,9 +185,9 @@ public class ProjLib_ProjectOnPlaneTests
         aProj.Load(aC, Tol, false);
         Assert.Equal(CurveKind.Ellipse, aProj.GetType());
         Ellipse3D anE = aProj.Ellipse();
-        Assert.Equal(3.0, anE.MajorRadius(), 1.0e-9);
-        double aCos = SkewPlane().Direction().Z();
-        Assert.Equal(3.0 * aCos, anE.MinorRadius(), 1.0e-9);
+        Assert.Equal(3.0, anE.MajorRadius, 1.0e-9);
+        double aCos = SkewPlane().Direction.Z;
+        Assert.Equal(3.0 * aCos, anE.MinorRadius, 1.0e-9);
         AssertSameImage(aProj, aC, 1.0e-7);
         Assert.True(aProj.IsPeriodic);
         Assert.Equal(2 * M_PI, aProj.Period(), 1.0e-12);
@@ -212,7 +212,7 @@ public class ProjLib_ProjectOnPlaneTests
         Assert.Equal(CurveKind.BSplineCurve, aProj.GetType());
         Assert.False(aProj.IsPeriodic);
         Assert.Throws<NoSuchObjectException>(() => aProj.Period());
-        Assert.Equal(aProj.BSpline().Degree(), aProj.Degree());
+        Assert.Equal(aProj.BSpline().Degree, aProj.Degree());
         Assert.Equal(aProj.BSpline().PoleCount, aProj.PoleCount);
         Assert.Equal(aProj.BSpline().KnotCount, aProj.KnotCount);
         AssertKeepsParameters(aProj, aC, 1.0e-5, false);
@@ -253,7 +253,7 @@ public class ProjLib_ProjectOnPlaneTests
         ProjectOnPlane aProj = new(aPl);
         aProj.Load(aC, Tol, false);
         Assert.Equal(CurveKind.Parabola, aProj.GetType());
-        Assert.Equal(0.5 / Math.Cos(a), aProj.Parabola().Focal(), 1.0e-12);
+        Assert.Equal(0.5 / Math.Cos(a), aProj.Parabola().Focal, 1.0e-12);
         AssertSameImage(aProj, aC, 1.0e-7);
     }
 
@@ -267,7 +267,7 @@ public class ProjLib_ProjectOnPlaneTests
         ProjectOnPlane aProj = new(TiltedPlane());
         aProj.Load(aC, Tol, false);
         Assert.Equal(CurveKind.Parabola, aProj.GetType());
-        Assert.Equal(0.5 * Math.Cos(a) * Math.Cos(a), aProj.Parabola().Focal(), 1.0e-12);
+        Assert.Equal(0.5 * Math.Cos(a) * Math.Cos(a), aProj.Parabola().Focal, 1.0e-12);
         AssertSameImage(aProj, aC, 1.0e-7);
 
         // Keeping the parameter, the parabola's parameter would be scaled by cos: approximated, at the same parameter
@@ -277,7 +277,7 @@ public class ProjLib_ProjectOnPlaneTests
         for (int i = 0; i <= 10; i++)
         {
             double u = -3.0 + 0.5 * i;
-            Assert.True(aKept.Value(u).Distance(ProjectPnt(TiltedPlane(), TiltedPlane().Direction(), aC.Value(u))) < 1.0e-5);
+            Assert.True(aKept.Value(u).DistanceTo(ProjectPnt(TiltedPlane(), TiltedPlane().Direction, aC.Value(u))) < 1.0e-5);
         }
     }
 
@@ -412,9 +412,9 @@ public class ProjLib_ProjectOnPlaneTests
             double u = i / 8.0;
             aC.D3(u, out _, out _, out Vector3D aC2, out Vector3D aC3);
             aProj.D3(u, out _, out _, out Vector3D aP2, out Vector3D aP3);
-            Assert.True((aP2 - ProjectVec(TiltedPlane(), new Direction3D(0.2, 0.1, 1), aC2)).Magnitude() < 1.0e-6);
-            Assert.True((aP3 - ProjectVec(TiltedPlane(), new Direction3D(0.2, 0.1, 1), aC3)).Magnitude() < 1.0e-5);
-            Assert.True((aProj.DN(u, 2) - aP2).Magnitude() < 1.0e-9);
+            Assert.True((aP2 - ProjectVec(TiltedPlane(), new Direction3D(0.2, 0.1, 1), aC2)).Magnitude < 1.0e-6);
+            Assert.True((aP3 - ProjectVec(TiltedPlane(), new Direction3D(0.2, 0.1, 1), aC3)).Magnitude < 1.0e-5);
+            Assert.True((aProj.DN(u, 2) - aP2).Magnitude < 1.0e-9);
         }
 
         // Intervals and continuity are the curve's.
@@ -462,14 +462,14 @@ public class ProjLib_ProjectOnPlaneTests
         CurveAdaptorBase aTrim = aProj.Trim(1.0, 2.0, Tol);
         Assert.Equal(1.0, aTrim.FirstParameter());
         Assert.Equal(2.0, aTrim.LastParameter());
-        Assert.True(aTrim.Value(1.5).Distance(aProj.Value(1.5)) < 1.0e-15);
+        Assert.True(aTrim.Value(1.5).DistanceTo(aProj.Value(1.5)) < 1.0e-15);
 
         ProjectOnPlane aCopy = (ProjectOnPlane)aProj.ShallowCopy();
         Assert.Equal(aProj.GetType(), aCopy.GetType());
         Assert.NotSame(aProj.GetResult(), aCopy.GetResult());
         Assert.Equal(aProj.FirstParameter(), aCopy.FirstParameter());
         Assert.Equal(aProj.LastParameter(), aCopy.LastParameter());
-        Assert.True(aCopy.Value(0.7).Distance(aProj.Value(0.7)) < 1.0e-15);
+        Assert.True(aCopy.Value(0.7).DistanceTo(aProj.Value(0.7)) < 1.0e-15);
         Assert.Equal(aProj.Resolution(1.0), aCopy.Resolution(1.0));
     }
 }
@@ -507,12 +507,12 @@ public class ProjLib_ProjectOnSurfaceTests
         BSplineCurve3D aRes = aProj.BSpline();
         Assert.True(aRes.IsFrozen);
         Assert.Same(aRes, aProj.BSpline());
-        Assert.Equal(0.0, aRes.FirstParameter(), 1.0e-12);
-        Assert.Equal(3.0, aRes.LastParameter(), 1.0e-12);
+        Assert.Equal(0.0, aRes.FirstParameter, 1.0e-12);
+        Assert.Equal(3.0, aRes.LastParameter, 1.0e-12);
         // OCCT: each segment's poles are written at the start of the result's poles, which the copy loop then
         // overwrites with the segment's empty local poles: all poles after the first Degree() are the origin (the
         // first ones are the last segment's), so the curve ends at the origin instead of on the surface.
-        for (int i = aRes.Degree() + 1; i <= aRes.PoleCount; i++)
+        for (int i = aRes.Degree + 1; i <= aRes.PoleCount; i++)
         {
             Assert.Equal(new Point3D(0, 0, 0), aRes.Pole(i));
         }

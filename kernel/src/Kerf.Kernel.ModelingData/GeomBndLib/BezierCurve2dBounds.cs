@@ -14,7 +14,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Computes bounding box for a 2D Bezier curve (Geom2d_BezierCurve): the poles of the curve, segmented to the range
 /// when it is a strict sub-range.
 /// </summary>
-public sealed class BezierCurve2dBounds : Curve2dBounds.ICurve2dEvaluator
+internal sealed class BezierCurve2dBounds : Curve2dBounds.ICurve2dEvaluator
 {
     private readonly BezierCurve2D _geom;
 
@@ -28,14 +28,14 @@ public sealed class BezierCurve2dBounds : Curve2dBounds.ICurve2dEvaluator
     Curve2D? Curve2dBounds.ICurve2dEvaluator.CurveGeometry() => _geom;
 
     /// <summary>Compute bounding box for full curve.</summary>
-    public Box2d Box(double tol) => Box(_geom.FirstParameter(), _geom.LastParameter(), tol);
+    public Box2d Box(double tol) => Box(_geom.FirstParameter, _geom.LastParameter, tol);
 
     /// <summary>Compute bounding box for arc [theU1, theU2].</summary>
     public Box2d Box(double u1, double u2, double tol)
     {
         BezierCurve2D curve = _geom;
-        double aU1 = curve.FirstParameter();
-        double aU2 = curve.LastParameter();
+        double aU1 = curve.FirstParameter;
+        double aU2 = curve.LastParameter;
         double trim1 = Max(u1, aU1);
         double trim2 = Min(u2, aU2);
         double eps = global::Kerf.Engine.Foundation.Precision.PConfusion();

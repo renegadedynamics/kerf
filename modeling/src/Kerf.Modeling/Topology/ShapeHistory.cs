@@ -150,7 +150,7 @@ public sealed class ShapeHistory
             present.Add(sub);
         foreach (var sub in TrackedSubshapes(inputList))
         {
-            if (sub.ShapeType() == global::Kerf.Topology.ShapeType.Face)
+            if (sub.Type == global::Kerf.Topology.ShapeType.Face)
             {
                 if (sewing.IsModified(sub))
                     history.AddModified(sub, sewing.Modified(sub));
@@ -173,8 +173,8 @@ public sealed class ShapeHistory
     public static ShapeHistory FromRelocation(global::Kerf.Topology.Shape before, global::Kerf.Topology.Shape after)
     {
         var history = new History();
-        var beforeToLocal = before.Location().Inverted();
-        var afterToLocal = after.Location().Inverted();
+        var beforeToLocal = before.Placement.Inverted();
+        var afterToLocal = after.Placement.Inverted();
         var placed = new Dictionary<global::Kerf.Topology.Shape, global::Kerf.Topology.Shape>(ShapeHasher.Instance);
         foreach (var sub in TrackedSubshapes([after]))
             placed[sub.Moved(afterToLocal)] = sub;

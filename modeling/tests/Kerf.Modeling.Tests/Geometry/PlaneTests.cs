@@ -121,13 +121,13 @@ public class PlaneTests
         var mirrorAxes = new Frame3D();
         var xy = Plane.XY.ToGpPln();
         var mirrored = xy.Mirrored(mirrorAxes);
-        var position = mirrored.Position();
-        Assert.False(position.Direct());
+        var position = mirrored.Position;
+        Assert.False(position.IsDirect);
 
         var p = new Plane(mirrored);
         var pln = p.ToGpPln();
-        var fixedPosition = pln.Position();
-        Assert.True(fixedPosition.Direct());
+        var fixedPosition = pln.Position;
+        Assert.True(fixedPosition.IsDirect);
     }
 
     [Fact]

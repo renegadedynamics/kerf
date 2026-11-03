@@ -90,96 +90,114 @@ public readonly partial struct Ellipse3D : IEquatable<Ellipse3D>
 
     // Queries
 
-    public readonly double Area() => M_PI * _majorRadius * _minorRadius;
+    public readonly double Area => M_PI * _majorRadius * _minorRadius;
 
     /// <summary>The main axis: the normal to the ellipse's plane through its centre.</summary>
-    public readonly Axis3D Axis() => _pos.Axis();
+    public readonly Axis3D Axis => _pos.Axis;
 
     /// <summary>The first directrix, on the positive side of the major axis, parallel to the minor axis.</summary>
     /// <exception cref="ConstructionErrorException">The eccentricity is zero (a circle).</exception>
-    public readonly Axis3D Directrix1()
+    public readonly Axis3D Directrix1
     {
-        double e = Eccentricity();
-        Standard_ConstructionError_Raise_if(e <= Constants.Resolution(), "gp_Elips::Directrix1() - zero eccentricity");
-        Xyz orig = _pos.XDirection().XYZ();
-        orig.Multiply(_majorRadius / e);
-        orig.Add(_pos.Location().XYZ());
-        return new Axis3D(new Point3D(orig), _pos.YDirection());
+        get
+        {
+            double e = Eccentricity;
+            Standard_ConstructionError_Raise_if(e <= Constants.Resolution(), "gp_Elips::Directrix1() - zero eccentricity");
+            Xyz orig = _pos.XDirection.XYZ();
+            orig.Multiply(_majorRadius / e);
+            orig.Add(_pos.Location.XYZ());
+            return new Axis3D(new Point3D(orig), _pos.YDirection);
+        }
     }
 
     /// <summary>The second directrix, symmetric to the first about the minor axis.</summary>
     /// <exception cref="ConstructionErrorException">The eccentricity is zero (a circle).</exception>
-    public readonly Axis3D Directrix2()
+    public readonly Axis3D Directrix2
     {
-        double e = Eccentricity();
-        Standard_ConstructionError_Raise_if(e <= Constants.Resolution(), "gp_Elips::Directrix2() - zero eccentricity");
-        Xyz orig = _pos.XDirection().XYZ();
-        orig.Multiply(-_majorRadius / e);
-        orig.Add(_pos.Location().XYZ());
-        return new Axis3D(new Point3D(orig), _pos.YDirection());
+        get
+        {
+            double e = Eccentricity;
+            Standard_ConstructionError_Raise_if(e <= Constants.Resolution(), "gp_Elips::Directrix2() - zero eccentricity");
+            Xyz orig = _pos.XDirection.XYZ();
+            orig.Multiply(-_majorRadius / e);
+            orig.Add(_pos.Location.XYZ());
+            return new Axis3D(new Point3D(orig), _pos.YDirection);
+        }
     }
 
     /// <summary>sqrt(Major^2 - Minor^2) / Major, in [0, 1); 0 when the major radius is 0.</summary>
-    public readonly double Eccentricity()
+    public readonly double Eccentricity
     {
-        if (_majorRadius == 0.0)
+        get
         {
-            return 0.0;
-        }
-        else
-        {
-            return Math.Sqrt(_majorRadius * _majorRadius - _minorRadius * _minorRadius) / _majorRadius;
+            if (_majorRadius == 0.0)
+            {
+                return 0.0;
+            }
+            else
+            {
+                return Math.Sqrt(_majorRadius * _majorRadius - _minorRadius * _minorRadius) / _majorRadius;
+            }
         }
     }
 
     /// <summary>The distance between the two foci.</summary>
-    public readonly double Focal() => 2.0 * Math.Sqrt(_majorRadius * _majorRadius - _minorRadius * _minorRadius);
+    public readonly double Focal => 2.0 * Math.Sqrt(_majorRadius * _majorRadius - _minorRadius * _minorRadius);
 
     /// <summary>The focus on the positive side of the major axis.</summary>
-    public readonly Point3D Focus1()
+    public readonly Point3D Focus1
     {
-        double c = Math.Sqrt(_majorRadius * _majorRadius - _minorRadius * _minorRadius);
-        Point3D pp = _pos.Location();
-        Direction3D dd = _pos.XDirection();
-        return new Point3D(pp.X() + c * dd.X(), pp.Y() + c * dd.Y(), pp.Z() + c * dd.Z());
+        get
+        {
+            double c = Math.Sqrt(_majorRadius * _majorRadius - _minorRadius * _minorRadius);
+            Point3D pp = _pos.Location;
+            Direction3D dd = _pos.XDirection;
+            return new Point3D(pp.X + c * dd.X, pp.Y + c * dd.Y, pp.Z + c * dd.Z);
+        }
     }
 
     /// <summary>The focus on the negative side of the major axis.</summary>
-    public readonly Point3D Focus2()
+    public readonly Point3D Focus2
     {
-        double c = Math.Sqrt(_majorRadius * _majorRadius - _minorRadius * _minorRadius);
-        Point3D pp = _pos.Location();
-        Direction3D dd = _pos.XDirection();
-        return new Point3D(pp.X() - c * dd.X(), pp.Y() - c * dd.Y(), pp.Z() - c * dd.Z());
+        get
+        {
+            double c = Math.Sqrt(_majorRadius * _majorRadius - _minorRadius * _minorRadius);
+            Point3D pp = _pos.Location;
+            Direction3D dd = _pos.XDirection;
+            return new Point3D(pp.X - c * dd.X, pp.Y - c * dd.Y, pp.Z - c * dd.Z);
+        }
     }
 
     /// <summary>The centre of the ellipse.</summary>
-    public readonly Point3D Location() => _pos.Location();
+    public readonly Point3D Location => _pos.Location;
 
-    public readonly double MajorRadius() => _majorRadius;
+    public readonly double MajorRadius => _majorRadius;
 
-    public readonly double MinorRadius() => _minorRadius;
+    public readonly double MinorRadius => _minorRadius;
 
     /// <summary>The focal parameter, Minor^2 / Major; 0 when the major radius is 0.</summary>
-    public readonly double Parameter()
+    public readonly double Parameter
     {
-        if (_majorRadius == 0.0)
+        get
         {
-            return 0.0;
-        }
-        else
-        {
-            return (_minorRadius * _minorRadius) / _majorRadius;
+            if (_majorRadius == 0.0)
+            {
+                return 0.0;
+            }
+            else
+            {
+                return (_minorRadius * _minorRadius) / _majorRadius;
+            }
         }
     }
 
-    public readonly Frame3D Position() => _pos;
+    public readonly Frame3D Position => _pos;
 
     /// <summary>The major axis.</summary>
-    public readonly Axis3D XAxis() => new(_pos.Location(), _pos.XDirection());
+    public readonly Axis3D XAxis => new(_pos.Location, _pos.XDirection);
 
     /// <summary>The minor axis.</summary>
-    public readonly Axis3D YAxis() => new(_pos.Location(), _pos.YDirection());
+    public readonly Axis3D YAxis => new(_pos.Location, _pos.YDirection);
 
     public readonly Ellipse3D Mirrored(in Point3D p)
     {
@@ -235,13 +253,13 @@ public readonly partial struct Ellipse3D : IEquatable<Ellipse3D>
         Frame3D pos = _pos;
         double majorRadius = _majorRadius;
         double minorRadius = _minorRadius;
-        majorRadius *= t.ScaleFactor();
+        majorRadius *= t.ScaleFactor;
         if (majorRadius < 0)
         {
             majorRadius = -majorRadius;
         }
 
-        minorRadius *= t.ScaleFactor();
+        minorRadius *= t.ScaleFactor;
         if (minorRadius < 0)
         {
             minorRadius = -minorRadius;

@@ -65,9 +65,9 @@ public class IntWalkNativeStepsTests
     private static void RecPnt(StringBuilder theOut, string theTag, int theStatus, in PntOn2S theP)
     {
         theOut.Append(theTag).Append(' ').Append(theStatus.ToString(CultureInfo.InvariantCulture));
-        Hex(theOut, theP.Value().X());
-        Hex(theOut, theP.Value().Y());
-        Hex(theOut, theP.Value().Z());
+        Hex(theOut, theP.Value().X);
+        Hex(theOut, theP.Value().Y);
+        Hex(theOut, theP.Value().Z);
         theP.Parameters(out double u1, out double v1, out double u2, out double v2);
         Hex(theOut, u1);
         Hex(theOut, v1);

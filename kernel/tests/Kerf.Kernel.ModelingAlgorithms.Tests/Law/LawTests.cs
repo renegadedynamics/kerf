@@ -108,7 +108,7 @@ public class LawTests
         for (int i = 1; i <= 10; i++)
         {
             Point3D aP = aCurve.Value(aLaw.Value(i / 10.0));
-            double d = aP.Distance(aPrev);
+            double d = aP.DistanceTo(aPrev);
             aMin = Math.Min(aMin, d);
             aMax = Math.Max(aMax, d);
             aPrev = aP;
@@ -178,6 +178,6 @@ public class LawTests
         var aField = new ConstantField();
         Assert.False(aField.IsScalable);
         aField.Scale(global::Kerf.Engine.Construction.Laws.Law.ScaleCub(0, 1, true, true, 2, 2)); // does nothing
-        Assert.Equal(1.0, aField.Value(0.5).X());
+        Assert.Equal(1.0, aField.Value(0.5).X);
     }
 }

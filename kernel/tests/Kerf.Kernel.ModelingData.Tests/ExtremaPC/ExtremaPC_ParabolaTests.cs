@@ -86,7 +86,7 @@ public class ExtremaPC_ParabolaTest
         // Verify the point is on the parabola
         int aMinIdx = aResult.MinIndex();
         Point3D aPtOnParab = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, aParabola);
-        double aExpectedSq = aPoint.SquareDistance(aPtOnParab);
+        double aExpectedSq = aPoint.SquareDistanceTo(aPtOnParab);
         Assert.Equal(aExpectedSq, aResult[aMinIdx].SquareDistance, THE_TOL);
     }
 
@@ -105,8 +105,8 @@ public class ExtremaPC_ParabolaTest
         // Verify the closest point is on the parabola and distance is consistent
         int aMinIdx = aResult.MinIndex();
         Point3D aPtOnParab = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, aParabola);
-        Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnParab), THE_TOL);
-        Assert.Equal(aPoint.SquareDistance(aPtOnParab), aResult[aMinIdx].SquareDistance, THE_TOL);
+        Assert.Equal(0.0, aResult[aMinIdx].Point.DistanceTo(aPtOnParab), THE_TOL);
+        Assert.Equal(aPoint.SquareDistanceTo(aPtOnParab), aResult[aMinIdx].SquareDistance, THE_TOL);
 
         // For negative Y, parameter should be negative
         Assert.True(aResult[aMinIdx].Parameter < 0.0);
@@ -127,7 +127,7 @@ public class ExtremaPC_ParabolaTest
         // Verify the closest point is on the parabola
         int aMinIdx = aResult.MinIndex();
         Point3D aPtOnParab = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, aParabola);
-        Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnParab), THE_TOL);
+        Assert.Equal(0.0, aResult[aMinIdx].Point.DistanceTo(aPtOnParab), THE_TOL);
 
         // Distance should be less than distance to vertex (50)
         Assert.True(Math.Sqrt(aResult.MinSquareDistance()) < 50.0);
@@ -256,8 +256,8 @@ public class ExtremaPC_ParabolaTest
         // Verify point is on parabola and distance is consistent
         int aMinIdx = aResult.MinIndex();
         Point3D aPtOnParab = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, aParabola);
-        Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnParab), THE_TOL);
-        Assert.Equal(aPoint.SquareDistance(aPtOnParab), aResult[aMinIdx].SquareDistance, THE_TOL);
+        Assert.Equal(0.0, aResult[aMinIdx].Point.DistanceTo(aPtOnParab), THE_TOL);
+        Assert.Equal(aPoint.SquareDistanceTo(aPtOnParab), aResult[aMinIdx].SquareDistance, THE_TOL);
     }
 
     [Fact]
@@ -275,7 +275,7 @@ public class ExtremaPC_ParabolaTest
         // Verify point is on parabola
         int aMinIdx = aResult.MinIndex();
         Point3D aPtOnParab = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, aParabola);
-        Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnParab), THE_TOL);
+        Assert.Equal(0.0, aResult[aMinIdx].Point.DistanceTo(aPtOnParab), THE_TOL);
     }
 
     //==================================================================================================
@@ -362,8 +362,8 @@ public class ExtremaPC_ParabolaTest
         // Verify point is on parabola and distance is consistent
         int aMinIdx = aResult.MinIndex();
         Point3D aPtOnParab = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, aParabola);
-        Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnParab), THE_TOL);
-        Assert.Equal(aPoint.SquareDistance(aPtOnParab), aResult[aMinIdx].SquareDistance, THE_TOL);
+        Assert.Equal(0.0, aResult[aMinIdx].Point.DistanceTo(aPtOnParab), THE_TOL);
+        Assert.Equal(aPoint.SquareDistanceTo(aPtOnParab), aResult[aMinIdx].SquareDistance, THE_TOL);
     }
 
     //==================================================================================================
@@ -385,7 +385,7 @@ public class ExtremaPC_ParabolaTest
         // Verify extremum point is on the parabola
         int aMinIdx = aResult.MinIndex();
         Point3D aPtOnParab = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, aParabola);
-        Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnParab), THE_TOL);
+        Assert.Equal(0.0, aResult[aMinIdx].Point.DistanceTo(aPtOnParab), THE_TOL);
 
         // Distance should include X component (out of plane)
         Assert.True(aResult.MinSquareDistance() >= 9.0); // At least 3^2
@@ -406,7 +406,7 @@ public class ExtremaPC_ParabolaTest
         // Verify extremum point is on the parabola
         int aMinIdx = aResult.MinIndex();
         Point3D aPtOnParab = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, aParabola);
-        Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnParab), THE_TOL);
+        Assert.Equal(0.0, aResult[aMinIdx].Point.DistanceTo(aPtOnParab), THE_TOL);
 
         // Distance should include Y component (out of plane)
         Assert.True(aResult.MinSquareDistance() >= 9.0); // At least 3^2
@@ -431,9 +431,9 @@ public class ExtremaPC_ParabolaTest
         // Verify the projected point is on the parabola
         int aMinIdx = aResult.MinIndex();
         Point3D aPtOnCurve = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, aParabola);
-        Assert.Equal(aPtOnCurve.X(), aResult[aMinIdx].Point.X(), THE_TOL);
-        Assert.Equal(aPtOnCurve.Y(), aResult[aMinIdx].Point.Y(), THE_TOL);
-        Assert.Equal(aPtOnCurve.Z(), aResult[aMinIdx].Point.Z(), THE_TOL);
+        Assert.Equal(aPtOnCurve.X, aResult[aMinIdx].Point.X, THE_TOL);
+        Assert.Equal(aPtOnCurve.Y, aResult[aMinIdx].Point.Y, THE_TOL);
+        Assert.Equal(aPtOnCurve.Z, aResult[aMinIdx].Point.Z, THE_TOL);
     }
 
     [Fact]
@@ -450,7 +450,7 @@ public class ExtremaPC_ParabolaTest
 
         // Verify distance matches point distance
         int aMinIdx = aResult.MinIndex();
-        double aComputedSq = aPoint.SquareDistance(aResult[aMinIdx].Point);
+        double aComputedSq = aPoint.SquareDistanceTo(aResult[aMinIdx].Point);
         Assert.Equal(aComputedSq, aResult[aMinIdx].SquareDistance, THE_TOL);
     }
 }

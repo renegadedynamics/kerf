@@ -116,9 +116,9 @@ public class MakeShapeOnMesh : MakeShape
             Point3D p1 = _mesh.Node(idx0);
             Point3D p2 = _mesh.Node(idx1);
             Point3D p3 = _mesh.Node(idx2);
-            double d1 = p1.SquareDistance(p2);
-            double d2 = p1.SquareDistance(p3);
-            double d3 = p2.SquareDistance(p3);
+            double d1 = p1.SquareDistanceTo(p2);
+            double d2 = p1.SquareDistanceTo(p3);
+            double d3 = p2.SquareDistanceTo(p3);
             if (d1 < Constants.Resolution() || d2 < Constants.Resolution() || d3 < Constants.Resolution())
             {
                 continue;
@@ -220,18 +220,18 @@ public class MakeShapeOnMesh : MakeShape
             // within BRepBuilderAPI_MakeFace.
             var c1 = new EdgeCurveAdaptor(tEdge1);
             var c2 = new EdgeCurveAdaptor(tEdge2);
-            Direction3D d1 = c1.Line().Direction();
-            Direction3D d2 = c2.Line().Direction();
+            Direction3D d1 = c1.Line().Direction;
+            Direction3D d2 = c2.Line().Direction;
             Xyz n = d1.XYZ().Crossed(d2.XYZ());
             if (n.SquareModulus() < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
             {
                 continue;
             }
-            if (tEdge1.Orientation() == Reversed)
+            if (tEdge1.Orientation == Reversed)
             {
                 n.Reverse();
             }
-            if (tEdge2.Orientation() == Reversed)
+            if (tEdge2.Orientation == Reversed)
             {
                 n.Reverse();
             }

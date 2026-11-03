@@ -85,7 +85,7 @@ internal static class SWDRAWShapeToolCommands
             di.Append(arg1).Append(" inconnu\n");
             return 1 /* Error */;
         }
-        if (Shape.ShapeType() != ShapeType.Wire)
+        if (Shape.Type != ShapeType.Wire)
         {
             di.Append("Pas un WIRE\n");
             return 1 /* Error */;
@@ -102,7 +102,7 @@ internal static class SWDRAWShapeToolCommands
         var map = new IndexedSet<Shape>(ShapeHasher.Instance);
         for (var ext = new Iterator(W); ext.More(); ext.Next())
         {
-            if (ext.Value().ShapeType() != ShapeType.Edge)
+            if (ext.Value().Type != ShapeType.Edge)
             {
                 continue;
             }
@@ -173,7 +173,7 @@ internal static class SWDRAWShapeToolCommands
             di.Append("Shape unknown : ").Append(arg1).Append("\n");
             return 1 /* Error */;
         }
-        ShapeType shen = Shape.ShapeType();
+        ShapeType shen = Shape.Type;
         if (shen == ShapeType.Solid)
         {
             di.Append(" Already a Solide ! nothing done\n");

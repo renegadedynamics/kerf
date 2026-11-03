@@ -13,8 +13,9 @@ using static Kerf.Topology.ShapeType;
 namespace Kerf.Kernel.ModelingData.Tests;
 
 /// <summary>
-/// The builder members the modelling layer calls (Kerf unit 10B, where they replaced its UnsafeAccessors): public, and
-/// building a shape that stays open until <see cref="TShape.FreezeGraph"/>.
+/// The builder members the modelling layer calls (Kerf unit 10B, where they replaced its UnsafeAccessors): reachable from
+/// it (public, or internal with InternalsVisibleTo to it until 10M: unit 10L1, decision 1519), and building a shape that
+/// stays open until <see cref="TShape.FreezeGraph"/>.
 /// </summary>
 public class PublicBuilderTests
 {
@@ -30,9 +31,11 @@ public class PublicBuilderTests
     [InlineData(typeof(BrepBuilder), ".ctor")]
     [InlineData(typeof(BrepBuilder), "MakeFace")]
     [InlineData(typeof(TShape), "FreezeGraph")]
-    public void TheModellingLayersMembersArePublic(Type theType, string theName)
+    public void TheModellingLayersMembersAreReachable(Type theType, string theName)
     {
-        Assert.True(theType.IsPublic);
+        Assert.True(theType.IsPublic
+                    || theType.Assembly.GetCustomAttributes<System.Runtime.CompilerServices.InternalsVisibleToAttribute>()
+                        .Any(a => a.AssemblyName == "Kerf.Modeling"));
         const BindingFlags aPublic = BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly;
         MemberInfo[] aMembers = theName == ".ctor" ? theType.GetConstructors(aPublic) : theType.GetMember(theName, aPublic);
         Assert.NotEmpty(aMembers);
@@ -70,7 +73,7 @@ public class PublicBuilderTests
         new BrepBuilder().MakeFace(ref aFace, aTri);
         aFace.TShape()!.FreezeGraph();
 
-        Assert.Equal(ShapeType.Face, aFace.ShapeType());
+        Assert.Equal(ShapeType.Face, aFace.Type);
         Assert.False(Tool.IsGeometric(aFace));
         Assert.Same(aTri, Tool.Triangulation(aFace, out _));
         Assert.True(aFace.TShape()!.IsFrozen);

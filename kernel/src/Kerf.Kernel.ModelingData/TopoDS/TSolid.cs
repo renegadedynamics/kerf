@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Topology;
 
 /// <summary>A topological part of the 3D space, bounded by shells, edges and vertices.</summary>
-public class TSolid : TShape
+internal class TSolid : TShape
 {
     /// <summary>An empty TSolid.</summary>
     public TSolid() : base(global::Kerf.Topology.ShapeType.Solid)

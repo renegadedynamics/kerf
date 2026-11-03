@@ -42,9 +42,9 @@ public class IntCurveSurface_IntersectionPointTest
         Point3D aP = new(1.0, 2.0, 3.0);
         CurveSurfaceIntersectionPoint aPt = new(aP, 0.5, 0.6, 0.7, TransitionOnCurve.In);
 
-        Assert.Equal(1.0, aPt.Pnt().X(), 1e-15);
-        Assert.Equal(2.0, aPt.Pnt().Y(), 1e-15);
-        Assert.Equal(3.0, aPt.Pnt().Z(), 1e-15);
+        Assert.Equal(1.0, aPt.Pnt().X, 1e-15);
+        Assert.Equal(2.0, aPt.Pnt().Y, 1e-15);
+        Assert.Equal(3.0, aPt.Pnt().Z, 1e-15);
         Assert.Equal(0.5, aPt.U());
         Assert.Equal(0.6, aPt.V());
         Assert.Equal(0.7, aPt.W());

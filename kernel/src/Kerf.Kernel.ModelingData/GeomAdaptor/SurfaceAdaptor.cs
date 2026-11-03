@@ -408,7 +408,7 @@ public class SurfaceAdaptor : SurfaceAdaptorBase
         {
             throw new NullObjectException("GeomAdaptor_Surface::Load");
         }
-        surf.Bounds(out double u1, out double u2, out double v1, out double v2);
+        surf.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
         LoadCore(surf, u1, u2, v1, v2);
     }
 
@@ -483,32 +483,32 @@ public class SurfaceAdaptor : SurfaceAdaptorBase
             Type theType = s.DynamicType();
             if (theType == typeof(TrimmedSurface))
             {
-                Load(((TrimmedSurface)s).BasisSurface(), uFirst, uLast, vFirst, vLast);
+                Load(((TrimmedSurface)s).BasisSurface, uFirst, uLast, vFirst, vLast);
             }
             else if (theType == typeof(PlaneSurface))
             {
                 _surfaceType = global::Kerf.Geometry.SurfaceKind.Plane;
-                _surfaceData = ((PlaneSurface)s).Pln();
+                _surfaceData = ((PlaneSurface)s).Plane;
             }
             else if (theType == typeof(CylindricalSurface))
             {
                 _surfaceType = global::Kerf.Geometry.SurfaceKind.Cylinder;
-                _surfaceData = ((CylindricalSurface)s).Cylinder();
+                _surfaceData = ((CylindricalSurface)s).Cylinder;
             }
             else if (theType == typeof(ConicalSurface))
             {
                 _surfaceType = global::Kerf.Geometry.SurfaceKind.Cone;
-                _surfaceData = ((ConicalSurface)s).Cone();
+                _surfaceData = ((ConicalSurface)s).Cone;
             }
             else if (theType == typeof(SphericalSurface))
             {
                 _surfaceType = global::Kerf.Geometry.SurfaceKind.Sphere;
-                _surfaceData = ((SphericalSurface)s).Sphere();
+                _surfaceData = ((SphericalSurface)s).Sphere;
             }
             else if (theType == typeof(ToroidalSurface))
             {
                 _surfaceType = global::Kerf.Geometry.SurfaceKind.Torus;
-                _surfaceData = ((ToroidalSurface)s).Torus();
+                _surfaceData = ((ToroidalSurface)s).Torus;
             }
             else if (theType == typeof(RevolutionSurface))
             {
@@ -516,8 +516,8 @@ public class SurfaceAdaptor : SurfaceAdaptorBase
                 RevolutionSurface revSurf = (RevolutionSurface)_surface;
                 // Populate revolution surface data
                 RevolutionData revData = new RevolutionData();
-                revData.BasisCurve = new CurveAdaptor(revSurf.BasisCurve(), _vFirst, _vLast);
-                revData.Axis = revSurf.Axis();
+                revData.BasisCurve = new CurveAdaptor(revSurf.BasisCurve, _vFirst, _vLast);
+                revData.Axis = revSurf.Axis;
                 revData.EvalRep = revSurf.EvalRepresentation();
                 _surfaceData = revData;
             }
@@ -527,8 +527,8 @@ public class SurfaceAdaptor : SurfaceAdaptorBase
                 ExtrusionSurface extSurf = (ExtrusionSurface)_surface;
                 // Populate extrusion surface data with XYZ for fast evaluation
                 ExtrusionData extData = new ExtrusionData();
-                extData.BasisCurve = new CurveAdaptor(extSurf.BasisCurve(), _uFirst, _uLast);
-                extData.Direction = extSurf.Direction().XYZ();
+                extData.BasisCurve = new CurveAdaptor(extSurf.BasisCurve, _uFirst, _uLast);
+                extData.Direction = extSurf.Direction.XYZ();
                 extData.EvalRep = extSurf.EvalRepresentation();
                 _surfaceData = extData;
             }
@@ -554,7 +554,7 @@ public class SurfaceAdaptor : SurfaceAdaptorBase
                 global::Kerf.Geometry.OffsetSurface offSurf = (global::Kerf.Geometry.OffsetSurface)_surface;
                 // Populate offset surface data - reuse the original surface for osculating queries
                 OffsetData offsetData = new OffsetData();
-                offsetData.BasisAdaptor = new SurfaceAdaptor(offSurf.BasisSurface(),
+                offsetData.BasisAdaptor = new SurfaceAdaptor(offSurf.BasisSurface,
                                                                     _uFirst,
                                                                     _uLast,
                                                                     _vFirst,
@@ -562,7 +562,7 @@ public class SurfaceAdaptor : SurfaceAdaptorBase
                                                                     _tolU,
                                                                     _tolV);
                 offsetData.OffsetSurface = offSurf;
-                offsetData.Offset = offSurf.Offset();
+                offsetData.Offset = offSurf.Offset;
                 offsetData.EvalRep = offSurf.EvalRepresentation();
                 // Check if equivalent canonical surface exists for faster evaluation
                 Surface? equivSurf = offSurf.Surface();
@@ -599,7 +599,7 @@ public class SurfaceAdaptor : SurfaceAdaptorBase
                 global::Kerf.Geometry.BSplineSurface bSpl = ((BSplineData)_surfaceData!).Surface;
                 NCollection_Array1<double> tk = new(bSpl.InternalUKnots());
                 NCollection_Array1<int> tm = new(bSpl.InternalUMultiplicities());
-                return LocalContinuity(bSpl.UDegree(), bSpl.UKnotCount, tk, tm, _uFirst, _uLast, IsUPeriodic);
+                return LocalContinuity(bSpl.UDegree, bSpl.UKnotCount, tk, tm, _uFirst, _uLast, IsUPeriodic);
             }
             case SurfaceKind.OffsetSurface:
             {
@@ -646,7 +646,7 @@ public class SurfaceAdaptor : SurfaceAdaptorBase
                 global::Kerf.Geometry.BSplineSurface bSpl = ((BSplineData)_surfaceData!).Surface;
                 NCollection_Array1<double> tk = new(bSpl.InternalVKnots());
                 NCollection_Array1<int> tm = new(bSpl.InternalVMultiplicities());
-                return LocalContinuity(bSpl.VDegree(), bSpl.VKnotCount, tk, tm, _vFirst, _vLast, IsVPeriodic);
+                return LocalContinuity(bSpl.VDegree, bSpl.VKnotCount, tk, tm, _vFirst, _vLast, IsVPeriodic);
             }
             case SurfaceKind.OffsetSurface:
             {
@@ -697,7 +697,7 @@ public class SurfaceAdaptor : SurfaceAdaptorBase
             case SurfaceOfExtrusion:
             {
                 ExtrusionSurface myExtSurf = (ExtrusionSurface)_surface!;
-                CurveAdaptor myBasisCurve = new(myExtSurf.BasisCurve(), _uFirst, _uLast);
+                CurveAdaptor myBasisCurve = new(myExtSurf.BasisCurve, _uFirst, _uLast);
                 if (myBasisCurve.GetType() == BSplineCurve)
                 {
                     return myBasisCurve.NbIntervals(s);
@@ -754,7 +754,7 @@ public class SurfaceAdaptor : SurfaceAdaptorBase
             case SurfaceOfRevolution:
             {
                 RevolutionSurface myRevSurf = (RevolutionSurface)_surface!;
-                CurveAdaptor myBasisCurve = new(myRevSurf.BasisCurve(), _vFirst, _vLast);
+                CurveAdaptor myBasisCurve = new(myRevSurf.BasisCurve, _vFirst, _vLast);
                 if (myBasisCurve.GetType() == BSplineCurve)
                 {
                     return myBasisCurve.NbIntervals(s);
@@ -811,7 +811,7 @@ public class SurfaceAdaptor : SurfaceAdaptorBase
             }
             case SurfaceOfExtrusion:
             {
-                CurveAdaptor myBasisCurve = new(((ExtrusionSurface)_surface!).BasisCurve(),
+                CurveAdaptor myBasisCurve = new(((ExtrusionSurface)_surface!).BasisCurve,
                                                      _uFirst,
                                                      _uLast);
                 if (myBasisCurve.GetType() == BSplineCurve)
@@ -875,7 +875,7 @@ public class SurfaceAdaptor : SurfaceAdaptorBase
             case SurfaceOfRevolution:
             {
                 RevolutionSurface myRevSurf = (RevolutionSurface)_surface!;
-                CurveAdaptor myBasisCurve = new(myRevSurf.BasisCurve(), _vFirst, _vLast);
+                CurveAdaptor myBasisCurve = new(myRevSurf.BasisCurve, _vFirst, _vLast);
                 if (myBasisCurve.GetType() == BSplineCurve)
                 {
                     myBasisCurve.Intervals(t, s);
@@ -944,7 +944,7 @@ public class SurfaceAdaptor : SurfaceAdaptorBase
                 return false;
             }
 
-            _surface.Bounds(out double u1, out double u2, out _, out _);
+            _surface.ParameterBounds(out double u1, out double u2, out _, out _);
             if (_surface.IsUPeriodic)
             {
                 return (Math.Abs(Math.Abs(u1 - u2) - Math.Abs(_uFirst - _uLast)) < global::Kerf.Engine.Foundation.Precision.PConfusion());
@@ -964,7 +964,7 @@ public class SurfaceAdaptor : SurfaceAdaptorBase
                 return false;
             }
 
-            _surface.Bounds(out _, out _, out double v1, out double v2);
+            _surface.ParameterBounds(out _, out _, out double v1, out double v2);
             if (_surface.IsVPeriodic)
             {
                 return (Math.Abs(Math.Abs(v1 - v2) - Math.Abs(_vFirst - _vLast)) < global::Kerf.Engine.Foundation.Precision.PConfusion());
@@ -980,7 +980,7 @@ public class SurfaceAdaptor : SurfaceAdaptorBase
     public override double UPeriod()
     {
         Standard_NoSuchObject_Raise_if(!IsUPeriodic, " ");
-        return _surface!.UPeriod();
+        return _surface!.UPeriod;
     }
 
     public override bool IsVPeriodic => (_surface!.IsVPeriodic);
@@ -989,7 +989,7 @@ public class SurfaceAdaptor : SurfaceAdaptorBase
     public override double VPeriod()
     {
         Standard_NoSuchObject_Raise_if(!IsVPeriodic, " ");
-        return _surface!.VPeriod();
+        return _surface!.VPeriod;
     }
 
     private void RebuildCache(double u, double v)
@@ -999,8 +999,8 @@ public class SurfaceAdaptor : SurfaceAdaptorBase
             // Create cache for Bezier
             BezierData bezData = (BezierData)_surfaceData!;
             global::Kerf.Geometry.BezierSurface bezier = (global::Kerf.Geometry.BezierSurface)_surface!;
-            int degU = bezier.UDegree();
-            int degV = bezier.VDegree();
+            int degU = bezier.UDegree;
+            int degV = bezier.VDegree;
             NCollection_Array1<double> flatKnotsU = NCollection_Array1<double>.From(global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatBezierKnots(degU));
             NCollection_Array1<double> flatKnotsV = NCollection_Array1<double>.From(global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatBezierKnots(degV));
             if (bezData.Cache is null)
@@ -1027,10 +1027,10 @@ public class SurfaceAdaptor : SurfaceAdaptorBase
             global::Kerf.Geometry.BSplineSurface bSpl = bSplData.Surface;
             if (bSplData.Cache is null)
             {
-                bSplData.Cache = new SurfaceCache(bSpl.UDegree(),
+                bSplData.Cache = new SurfaceCache(bSpl.UDegree,
                                                      bSpl.IsUPeriodic,
                                                      bSpl.InternalUKnotSequence(),
-                                                     bSpl.VDegree(),
+                                                     bSpl.VDegree,
                                                      bSpl.IsVPeriodic,
                                                      bSpl.InternalVKnotSequence(),
                                                      bSpl.InternalWeights());
@@ -1174,7 +1174,7 @@ public class SurfaceAdaptor : SurfaceAdaptorBase
     }
 
     /// <exception cref="UndefinedDerivative3DException">The derivatives are undefined at (theU, theV) (swept or offset surfaces).</exception>
-    public sealed override global::Kerf.Geometry.Surface.ResD1 EvalD1(double theU, double theV)
+    internal sealed override global::Kerf.Geometry.Surface.ResD1 EvalD1(double theU, double theV)
     {
         double U = theU;
         double V = theV;
@@ -1297,7 +1297,7 @@ public class SurfaceAdaptor : SurfaceAdaptorBase
     }
 
     /// <exception cref="UndefinedDerivative3DException">The derivatives are undefined at (theU, theV) (swept or offset surfaces).</exception>
-    public sealed override global::Kerf.Geometry.Surface.ResD2 EvalD2(double theU, double theV)
+    internal sealed override global::Kerf.Geometry.Surface.ResD2 EvalD2(double theU, double theV)
     {
         double U = theU;
         double V = theV;
@@ -1486,7 +1486,7 @@ public class SurfaceAdaptor : SurfaceAdaptorBase
     }
 
     /// <exception cref="UndefinedDerivative3DException">The derivatives are undefined at (theU, theV) (swept or offset surfaces).</exception>
-    public sealed override global::Kerf.Geometry.Surface.ResD3 EvalD3(double theU, double theV)
+    internal sealed override global::Kerf.Geometry.Surface.ResD3 EvalD3(double theU, double theV)
     {
         double U = theU;
         double V = theV;
@@ -1796,7 +1796,7 @@ public class SurfaceAdaptor : SurfaceAdaptorBase
             case global::Kerf.Geometry.SurfaceKind.Torus:
             {
                 ToroidalSurface s = (ToroidalSurface)_surface!;
-                double r = s.MajorRadius() + s.MinorRadius();
+                double r = s.MajorRadius + s.MinorRadius;
                 if (r > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     res = r3d / (2.0 * r);
@@ -1806,7 +1806,7 @@ public class SurfaceAdaptor : SurfaceAdaptorBase
             case global::Kerf.Geometry.SurfaceKind.Sphere:
             {
                 SphericalSurface s = (SphericalSurface)_surface!;
-                double r = s.Radius();
+                double r = s.Radius;
                 if (r > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     res = r3d / (2.0 * r);
@@ -1816,7 +1816,7 @@ public class SurfaceAdaptor : SurfaceAdaptorBase
             case global::Kerf.Geometry.SurfaceKind.Cylinder:
             {
                 CylindricalSurface s = (CylindricalSurface)_surface!;
-                double r = s.Radius();
+                double r = s.Radius;
                 if (r > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     res = r3d / (2.0 * r);
@@ -1832,9 +1832,9 @@ public class SurfaceAdaptor : SurfaceAdaptorBase
                 }
                 ConicalSurface s = (ConicalSurface)_surface!;
                 Curve3D c = s.VIso(_vLast);
-                double rayon1 = ((CircleCurve3D)c).Radius();
+                double rayon1 = ((CircleCurve3D)c).Radius;
                 c = s.VIso(_vFirst);
-                double rayon2 = ((CircleCurve3D)c).Radius();
+                double rayon2 = ((CircleCurve3D)c).Radius;
                 double r = (rayon1 > rayon2) ? rayon1 : rayon2;
                 return (r > global::Kerf.Engine.Foundation.Precision.Confusion() ? (r3d / r) : 0.0);
             }
@@ -1882,7 +1882,7 @@ public class SurfaceAdaptor : SurfaceAdaptorBase
             case global::Kerf.Geometry.SurfaceKind.Torus:
             {
                 ToroidalSurface s = (ToroidalSurface)_surface!;
-                double r = s.MinorRadius();
+                double r = s.MinorRadius;
                 if (r > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     res = r3d / (2.0 * r);
@@ -1892,7 +1892,7 @@ public class SurfaceAdaptor : SurfaceAdaptorBase
             case global::Kerf.Geometry.SurfaceKind.Sphere:
             {
                 SphericalSurface s = (SphericalSurface)_surface!;
-                double r = s.Radius();
+                double r = s.Radius;
                 if (r > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     res = r3d / (2.0 * r);
@@ -1990,11 +1990,11 @@ public class SurfaceAdaptor : SurfaceAdaptorBase
     {
         if (_surfaceType == SurfaceKind.BSplineSurface)
         {
-            return ((BSplineData)_surfaceData!).Surface.UDegree();
+            return ((BSplineData)_surfaceData!).Surface.UDegree;
         }
         if (_surfaceType == SurfaceKind.BezierSurface)
         {
-            return ((global::Kerf.Geometry.BezierSurface)_surface!).UDegree();
+            return ((global::Kerf.Geometry.BezierSurface)_surface!).UDegree;
         }
         if (_surfaceType == SurfaceOfExtrusion)
         {
@@ -2029,11 +2029,11 @@ public class SurfaceAdaptor : SurfaceAdaptorBase
     {
         if (_surfaceType == SurfaceKind.BSplineSurface)
         {
-            return ((BSplineData)_surfaceData!).Surface.VDegree();
+            return ((BSplineData)_surfaceData!).Surface.VDegree;
         }
         if (_surfaceType == SurfaceKind.BezierSurface)
         {
-            return ((global::Kerf.Geometry.BezierSurface)_surface!).VDegree();
+            return ((global::Kerf.Geometry.BezierSurface)_surface!).VDegree;
         }
         if (_surfaceType == SurfaceOfRevolution)
         {
@@ -2156,7 +2156,7 @@ public class SurfaceAdaptor : SurfaceAdaptorBase
         {
             throw new NoSuchObjectException("GeomAdaptor_Surface::AxeOfRevolution");
         }
-        return ((RevolutionSurface)_surface!).Axis();
+        return ((RevolutionSurface)_surface!).Axis;
     }
 
     /// <exception cref="NoSuchObjectException">The surface is not a surface of linear extrusion.</exception>
@@ -2166,7 +2166,7 @@ public class SurfaceAdaptor : SurfaceAdaptorBase
         {
             throw new NoSuchObjectException("GeomAdaptor_Surface::Direction");
         }
-        return ((ExtrusionSurface)_surface!).Direction();
+        return ((ExtrusionSurface)_surface!).Direction;
     }
 
     /// <summary>A new adaptor of the basis curve of a swept surface (over the whole curve).</summary>
@@ -2176,11 +2176,11 @@ public class SurfaceAdaptor : SurfaceAdaptorBase
         Curve3D c;
         if (_surfaceType == SurfaceOfExtrusion)
         {
-            c = ((ExtrusionSurface)_surface!).BasisCurve();
+            c = ((ExtrusionSurface)_surface!).BasisCurve;
         }
         else if (_surfaceType == SurfaceOfRevolution)
         {
-            c = ((RevolutionSurface)_surface!).BasisCurve();
+            c = ((RevolutionSurface)_surface!).BasisCurve;
         }
         else
         {
@@ -2197,7 +2197,7 @@ public class SurfaceAdaptor : SurfaceAdaptorBase
         {
             throw new NoSuchObjectException("GeomAdaptor_Surface::BasisSurface");
         }
-        return new SurfaceAdaptor(((global::Kerf.Geometry.OffsetSurface)_surface!).BasisSurface(),
+        return new SurfaceAdaptor(((global::Kerf.Geometry.OffsetSurface)_surface!).BasisSurface,
                                        _uFirst,
                                        _uLast,
                                        _vFirst,
@@ -2211,7 +2211,7 @@ public class SurfaceAdaptor : SurfaceAdaptorBase
         {
             throw new NoSuchObjectException("GeomAdaptor_Surface::BasisSurface");
         }
-        return ((global::Kerf.Geometry.OffsetSurface)_surface!).Offset();
+        return ((global::Kerf.Geometry.OffsetSurface)_surface!).Offset;
     }
 
     // Locates U, V if they are a First or Last bound, processes the found span and returns the parameters for

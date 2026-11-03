@@ -73,51 +73,51 @@ public class BinaryCurve2dSet
     private static void Write(OStream os, LineCurve2D l)
     {
         os = os << Line;
-        Line2D c2d = l.Lin2d();
-        os = os << c2d.Location();  // Pnt2d
-        os = os << c2d.Direction(); // Dir2d
+        Line2D c2d = l.Line;
+        os = os << c2d.Location;  // Pnt2d
+        os = os << c2d.Direction; // Dir2d
     }
 
     private static void Write(OStream os, CircleCurve2D c)
     {
         os = os << Circle;
-        Circle2D c2d = c.Circ2d();
-        os = os << c2d.Location();
-        os = os << c2d.XAxis().Direction();
-        os = os << c2d.YAxis().Direction();
-        os = os << c2d.Radius();
+        Circle2D c2d = c.Circle;
+        os = os << c2d.Location;
+        os = os << c2d.XAxis.Direction;
+        os = os << c2d.YAxis.Direction;
+        os = os << c2d.Radius;
     }
 
     private static void Write(OStream os, EllipseCurve2D e)
     {
         os = os << Ellipse;
-        Ellipse2D c2d = e.Elips2d();
-        os = os << c2d.Location();
-        os = os << c2d.XAxis().Direction();
-        os = os << c2d.YAxis().Direction();
-        os = os << c2d.MajorRadius();
-        os = os << c2d.MinorRadius();
+        Ellipse2D c2d = e.Ellipse;
+        os = os << c2d.Location;
+        os = os << c2d.XAxis.Direction;
+        os = os << c2d.YAxis.Direction;
+        os = os << c2d.MajorRadius;
+        os = os << c2d.MinorRadius;
     }
 
     private static void Write(OStream os, ParabolaCurve2D p)
     {
         os = os << Parabola;
-        Parabola2D c2d = p.Parab2d();
-        os = os << c2d.Location();                 // Loc
-        os = os << c2d.Axis().XAxis().Direction(); // XDir
-        os = os << c2d.Axis().YAxis().Direction(); // YDir
-        os = os << c2d.Focal();                    // Focal
+        Parabola2D c2d = p.Parabola;
+        os = os << c2d.Location;                 // Loc
+        os = os << c2d.Axis.XAxis.Direction; // XDir
+        os = os << c2d.Axis.YAxis.Direction; // YDir
+        os = os << c2d.Focal;                    // Focal
     }
 
     private static void Write(OStream os, HyperbolaCurve2D h)
     {
         os = os << Hyperbola;
-        Hyperbola2D c2d = h.Hypr2d();
-        os = os << c2d.Location();          // Loc
-        os = os << c2d.XAxis().Direction(); // XDir
-        os = os << c2d.YAxis().Direction(); // YDir
-        os = os << c2d.MajorRadius();       // MajR
-        os = os << c2d.MinorRadius();
+        Hyperbola2D c2d = h.Hyperbola;
+        os = os << c2d.Location;          // Loc
+        os = os << c2d.XAxis.Direction; // XDir
+        os = os << c2d.YAxis.Direction; // YDir
+        os = os << c2d.MajorRadius;       // MajR
+        os = os << c2d.MinorRadius;
     }
 
     private static void Write(OStream os, BezierCurve2D b)
@@ -126,7 +126,7 @@ public class BinaryCurve2dSet
         bool rational = b.IsRational;
         os = os << rational; // rational
         // poles and weights
-        int i, degree = b.Degree();
+        int i, degree = b.Degree;
         os = os << (char)degree; // Degree
         for (i = 1; i <= degree + 1; i++)
         {
@@ -147,7 +147,7 @@ public class BinaryCurve2dSet
         os = os << periodic; // periodic
         // poles and weights
         int i, degree, nbPoles, nbKnots;
-        degree = b.Degree();
+        degree = b.Degree;
         nbPoles = b.PoleCount;
         nbKnots = b.KnotCount;
         os = os << (char)degree;
@@ -172,16 +172,16 @@ public class BinaryCurve2dSet
     private static void Write(OStream os, TrimmedCurve2D c)
     {
         os = os << Trimmed;
-        os = os << c.FirstParameter();
-        os = os << c.LastParameter();
-        WriteCurve2d(c.BasisCurve(), os);
+        os = os << c.FirstParameter;
+        os = os << c.LastParameter;
+        WriteCurve2d(c.BasisCurve, os);
     }
 
     private static void Write(OStream os, OffsetCurve2D c)
     {
         os = os << Offset;
-        os = os << c.Offset(); // Offset
-        WriteCurve2d(c.BasisCurve(), os);
+        os = os << c.Offset; // Offset
+        WriteCurve2d(c.BasisCurve, os);
     }
 
     /// <summary>Writes a 2D curve (its type byte, then its data).</summary>

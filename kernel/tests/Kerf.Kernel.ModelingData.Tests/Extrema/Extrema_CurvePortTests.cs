@@ -77,7 +77,7 @@ public class Extrema_CurvePortTests
         for (int i = 0; i <= theN; i++)
         {
             double u = aF + (aL - aF) * i / theN;
-            double d = theC.Value(u).SquareDistance(theP);
+            double d = theC.Value(u).SquareDistanceTo(theP);
             if (d < aBest)
             {
                 aBest = d;
@@ -129,9 +129,9 @@ public class Extrema_CurvePortTests
         Assert.Equal(1, anArc.ExtCount);
         Assert.False(anArc.IsMin(1));
         anArc.TrimmedSquareDistances(out double aD1, out double aD2, out Point3D aP1, out Point3D aP2);
-        Assert.Equal(aC.Value(2.0).SquareDistance(new Point3D(5, 0, 1)), aD1);
+        Assert.Equal(aC.Value(2.0).SquareDistanceTo(new Point3D(5, 0, 1)), aD1);
         Assert.Equal(aC.Value(4.0), aP2);
-        Assert.True(aD2 > 0.0 && aP1.Z() == 0.0);
+        Assert.True(aD2 > 0.0 && aP1.Z == 0.0);
     }
 
     [Fact]
@@ -166,14 +166,14 @@ public class Extrema_CurvePortTests
             for (int i = 1; i <= anExt.ExtCount; i++)
             {
                 POnCurv aPC = anExt.Point(i);
-                Assert.Equal(0.0, aC.Value(aPC.Parameter()).Distance(aPC.Value()), 1e-12);
-                Assert.Equal(aPC.Value().SquareDistance(aP), anExt.SquareDistance(i), 1e-9);
+                Assert.Equal(0.0, aC.Value(aPC.Parameter()).DistanceTo(aPC.Value()), 1e-12);
+                Assert.Equal(aPC.Value().SquareDistanceTo(aP), anExt.SquareDistance(i), 1e-9);
                 // (an extremum at the C0 knot u = 2 is a corner, not a root of the function)
                 if (theDegree == 3 && aPC.Parameter() > 0.0 && aPC.Parameter() < 3.0 && Math.Abs(aPC.Parameter() - 2.0) > 1e-3)
                 {
                     // An extremum inside a smooth span is orthogonal
                     aC.D1(aPC.Parameter(), out Point3D aPt, out Vector3D aD);
-                    Assert.Equal(0.0, new Vector3D(aP, aPt).Dot(aD) / aD.Magnitude(), 1e-6);
+                    Assert.Equal(0.0, new Vector3D(aP, aPt).Dot(aD) / aD.Magnitude, 1e-6);
                 }
             }
         }
@@ -279,7 +279,7 @@ public class Extrema_CurvePortTests
         {
             Point3D aPt = aLocB.Point().Value();
             aBez.D1(aLocB.Point().Parameter(), out _, out Vector3D aD);
-            Assert.Equal(0.0, new Vector3D(new Point3D(2, 2, 0), aPt).Dot(aD) / aD.Magnitude(), 1e-6);
+            Assert.Equal(0.0, new Vector3D(new Point3D(2, 2, 0), aPt).Dot(aD) / aD.Magnitude, 1e-6);
         }
 
         // 2D
@@ -347,7 +347,7 @@ public class Extrema_CurvePortTests
         {
             aMin = Math.Min(aMin, anExt.SquareDistance(i));
             anExt.Points(i, out POnCurv aP1, out POnCurv aP2);
-            Assert.Equal(aP1.Value().SquareDistance(aP2.Value()), anExt.SquareDistance(i), 1e-12);
+            Assert.Equal(aP1.Value().SquareDistanceTo(aP2.Value()), anExt.SquareDistance(i), 1e-12);
         }
 
         // Dense sampling of both curves
@@ -357,7 +357,7 @@ public class Extrema_CurvePortTests
             Point3D aPt = aBS.Value(3.0 * i / 600);
             for (int j = 0; j <= 600; j++)
             {
-                aSampled = Math.Min(aSampled, aPt.SquareDistance(aCirc.Value(2 * Math.PI * j / 600)));
+                aSampled = Math.Min(aSampled, aPt.SquareDistanceTo(aCirc.Value(2 * Math.PI * j / 600)));
             }
         }
         Assert.True(aMin <= aSampled + 1e-9, $"{aMin} > {aSampled}");
@@ -391,8 +391,8 @@ public class Extrema_CurvePortTests
         {
             aMin = Math.Min(aMin, anExt.SquareDistance(i));
             anExt.Points(i, out POnCurv2d aP1, out POnCurv2d aP2);
-            Assert.Equal(0.0, aC.Value(aP1.Parameter()).Distance(aP1.Value()), 1e-12);
-            Assert.Equal(0.0, aL.Value(aP2.Parameter()).Distance(aP2.Value()), 1e-12);
+            Assert.Equal(0.0, aC.Value(aP1.Parameter()).DistanceTo(aP1.Value()), 1e-12);
+            Assert.Equal(0.0, aL.Value(aP2.Parameter()).DistanceTo(aP2.Value()), 1e-12);
         }
         Assert.Equal(9.0, aMin, 1e-12);
 
@@ -481,8 +481,8 @@ public class Extrema_CurvePortTests
             Assert.Equal(the3d.Point(i).Parameter(), the2d.Point(i).Parameter());
             Assert.Equal(the3d.SquareDistance(i), the2d.SquareDistance(i));
             Assert.Equal(the3d.IsMin(i), the2d.IsMin(i));
-            Assert.Equal(the3d.Point(i).Value().X(), the2d.Point(i).Value().X());
-            Assert.Equal(the3d.Point(i).Value().Y(), the2d.Point(i).Value().Y());
+            Assert.Equal(the3d.Point(i).Value().X, the2d.Point(i).Value().X);
+            Assert.Equal(the3d.Point(i).Value().Y, the2d.Point(i).Value().Y);
         }
     }
 

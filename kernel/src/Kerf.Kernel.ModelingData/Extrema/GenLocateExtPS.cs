@@ -72,7 +72,7 @@ public class GenLocateExtPS
         double dv = Max(s.VResolution(10.0 * global::Kerf.Engine.Foundation.Precision.Confusion()), 10.0 * global::Kerf.Engine.Foundation.Precision.PConfusion());
         double u, v;
         Point3D p0 = s.Value(u0, v0);
-        double d0 = p.SquareDistance(p0);
+        double d0 = p.SquareDistanceTo(p0);
         int iu, iv;
         for (iu = -1; iu <= 1; ++iu)
         {
@@ -95,7 +95,7 @@ public class GenLocateExtPS
                     v = Max(v, s.FirstVParameter());
                     v = Min(v, s.LastVParameter());
                 }
-                double d = p.SquareDistance(s.Value(u, v));
+                double d = p.SquareDistanceTo(s.Value(u, v));
                 if (d < d0)
                 {
                     return false;

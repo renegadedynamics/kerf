@@ -237,9 +237,9 @@ public class ResolConstraint<MultiLine, ToolLine>
                 {
                     ToolLine.Value(ssp, _iPas[i], tabP);
                     poi = tabP[k];
-                    _secont[i + incSec] = poi.X();
-                    _secont[i + _incPass + incSec] = poi.Y();
-                    _secont[i + 2 * _incPass + incSec] = poi.Z();
+                    _secont[i + incSec] = poi.X;
+                    _secont[i + _incPass + incSec] = poi.Y;
+                    _secont[i + 2 * _incPass + incSec] = poi.Z;
                 }
                 incSec = incSec + 3 * _incPass;
 
@@ -247,9 +247,9 @@ public class ResolConstraint<MultiLine, ToolLine>
                 for (j = 1; j <= npol; j++)
                 {
                     poi = sCurv.Value(j).Point(k);
-                    start[j + incCol] = poi.X();
-                    start[j + npol + incCol] = poi.Y();
-                    start[j + npol2 + incCol] = poi.Z();
+                    start[j + incCol] = poi.X;
+                    start[j + npol + incCol] = poi.Y;
+                    start[j + npol2 + incCol] = poi.Z;
                 }
                 incCol = incCol + 3 * npol;
             }
@@ -261,8 +261,8 @@ public class ResolConstraint<MultiLine, ToolLine>
                     npt = _iTan[i];
                     ToolLine.Tangency(ssp, npt, tabV2d);
                     v2d = tabV2d[k - nb3d];
-                    t1 = v2d.X();
-                    t2 = v2d.Y();
+                    t1 = v2d.X;
+                    t2 = v2d.Y;
                     tmax = Math.Abs(t1);
                     ibont[k, i] = 1;
                     if (Math.Abs(t2) > tmax)
@@ -286,8 +286,8 @@ public class ResolConstraint<MultiLine, ToolLine>
                     // OCCT: indexes the 2d points with the passing point i where the curve k - nb3d is meant; out of
                     // range unless i - nb3d happens to be a 2d curve (unchecked in OCCT; the port throws)
                     poi2d = tabP2d[i - nb3d];
-                    _secont[i + incSec] = poi2d.X();
-                    _secont[i + _incPass + incSec] = poi2d.Y();
+                    _secont[i + incSec] = poi2d.X;
+                    _secont[i + _incPass + incSec] = poi2d.Y;
                 }
                 incSec = incSec + 2 * _incPass;
 
@@ -295,8 +295,8 @@ public class ResolConstraint<MultiLine, ToolLine>
                 for (j = 1; j <= npol; j++)
                 {
                     poi2d = sCurv.Value(j).Point2d(k);
-                    start[j + incCol] = poi2d.X();
-                    start[j + npol + incCol] = poi2d.Y();
+                    start[j + incCol] = poi2d.X;
+                    start[j + npol + incCol] = poi2d.Y;
                 }
                 incCol = incCol + npol2;
             }
@@ -323,14 +323,14 @@ public class ResolConstraint<MultiLine, ToolLine>
                         {
                             ToolLine.Tangency(ssp, npt, tabV);
                             v = tabV[k];
-                            t1 = v.X();
+                            t1 = v.X;
                             ip = 3 * npol;
                         }
                         else
                         {
                             ToolLine.Tangency(ssp, npt, tabV2d);
                             v2d = tabV2d[k - nb3d];
-                            t1 = v2d.X();
+                            t1 = v2d.X;
                             ip = 2 * npol;
                         }
                         addIndex_1 = 0;
@@ -349,7 +349,7 @@ public class ResolConstraint<MultiLine, ToolLine>
                         {
                             ToolLine.Tangency(ssp, npt, tabV2d);
                             v2d = tabV2d[k - nb3d];
-                            t1 = v2d.Y();
+                            t1 = v2d.Y;
                             ip = 2 * npol;
                         }
                         addIndex_1 = npol;
@@ -359,7 +359,7 @@ public class ResolConstraint<MultiLine, ToolLine>
                     {
                         ToolLine.Tangency(ssp, npt, tabV);
                         v = tabV[k];
-                        t1 = v.Z();
+                        t1 = v.Z;
                         ip = 3 * npol;
                         addIndex_1 = 2 * npol;
                         break;
@@ -375,13 +375,13 @@ public class ResolConstraint<MultiLine, ToolLine>
                         {
                             ToolLine.Tangency(ssp, npt, tabV);
                             v = tabV[k + 1];
-                            t2 = v.X();
+                            t2 = v.X;
                         }
                         else
                         {
                             ToolLine.Tangency(ssp, npt, tabV2d);
                             v2d = tabV2d[k + 1 - nb3d];
-                            t2 = v2d.X();
+                            t2 = v2d.X;
                         }
                         addIndex_2 = 0;
                         break;
@@ -392,13 +392,13 @@ public class ResolConstraint<MultiLine, ToolLine>
                         {
                             ToolLine.Tangency(ssp, npt, tabV);
                             v = tabV[k + 1];
-                            t2 = v.Y();
+                            t2 = v.Y;
                         }
                         else
                         {
                             ToolLine.Tangency(ssp, npt, tabV2d);
                             v2d = tabV2d[k + 1 - nb3d];
-                            t2 = v2d.Y();
+                            t2 = v2d.Y;
                         }
                         addIndex_2 = npol;
                         break;
@@ -407,7 +407,7 @@ public class ResolConstraint<MultiLine, ToolLine>
                     {
                         ToolLine.Tangency(ssp, npt, tabV);
                         v = tabV[k + 1];
-                        t2 = v.Z();
+                        t2 = v.Z;
                         addIndex_2 = 2 * npol;
                         break;
                     }
@@ -711,14 +711,14 @@ public class ResolConstraint<MultiLine, ToolLine>
                     {
                         ToolLine.Tangency(ssp, npt, tabV);
                         v = tabV[k];
-                        t1 = v.X();
+                        t1 = v.X;
                         ip = 3 * npol;
                     }
                     else
                     {
                         ToolLine.Tangency(ssp, npt, tabV2d);
                         v2d = tabV2d[k];
-                        t1 = v2d.X();
+                        t1 = v2d.X;
                         ip = 2 * npol;
                     }
                     if (ibont[k + 1, i] == 1)
@@ -727,13 +727,13 @@ public class ResolConstraint<MultiLine, ToolLine>
                         {
                             ToolLine.Tangency(ssp, npt, tabV);
                             v = tabV[k + 1];
-                            t2 = v.X();
+                            t2 = v.X;
                         }
                         else
                         {
                             ToolLine.Tangency(ssp, npt, tabV2d);
                             v2d = tabV2d[k + 1];
-                            t2 = v2d.X();
+                            t2 = v2d.X;
                         }
                         for (j = 1; j <= npol; j++)
                         {
@@ -749,13 +749,13 @@ public class ResolConstraint<MultiLine, ToolLine>
                         {
                             ToolLine.Tangency(ssp, npt, tabV);
                             v = tabV[k + 1];
-                            t2 = v.Y();
+                            t2 = v.Y;
                         }
                         else
                         {
                             ToolLine.Tangency(ssp, npt, tabV2d);
                             v2d = tabV2d[k + 1];
-                            t2 = v2d.Y();
+                            t2 = v2d.Y;
                         }
                         for (j = 1; j <= npol; j++)
                         {
@@ -769,7 +769,7 @@ public class ResolConstraint<MultiLine, ToolLine>
                     { // Relations entre T1x et T2z:
                         ToolLine.Tangency(ssp, npt, tabV);
                         v = tabV[k + 1];
-                        t2 = v.Z();
+                        t2 = v.Z;
                         for (j = 1; j <= npol; j++)
                         {
                             daij = dda[j];
@@ -785,14 +785,14 @@ public class ResolConstraint<MultiLine, ToolLine>
                     {
                         ToolLine.Tangency(ssp, npt, tabV);
                         v = tabV[k];
-                        t1 = v.Y();
+                        t1 = v.Y;
                         ip = 3 * npol;
                     }
                     else
                     {
                         ToolLine.Tangency(ssp, npt, tabV2d);
                         v2d = tabV2d[k];
-                        t1 = v2d.Y();
+                        t1 = v2d.Y;
                         ip = 2 * npol;
                     }
                     if (ibont[k + 1, i] == 1)
@@ -801,13 +801,13 @@ public class ResolConstraint<MultiLine, ToolLine>
                         {
                             ToolLine.Tangency(ssp, npt, tabV);
                             v = tabV[k + 1];
-                            t2 = v.X();
+                            t2 = v.X;
                         }
                         else
                         {
                             ToolLine.Tangency(ssp, npt, tabV2d);
                             v2d = tabV2d[k + 1];
-                            t2 = v2d.X();
+                            t2 = v2d.X;
                         }
                         for (j = 1; j <= npol; j++)
                         {
@@ -823,13 +823,13 @@ public class ResolConstraint<MultiLine, ToolLine>
                         {
                             ToolLine.Tangency(ssp, npt, tabV);
                             v = tabV[k + 1];
-                            t2 = v.Y();
+                            t2 = v.Y;
                         }
                         else
                         {
                             ToolLine.Tangency(ssp, npt, tabV2d);
                             v2d = tabV2d[k + 1];
-                            t2 = v2d.Y();
+                            t2 = v2d.Y;
                         }
                         for (j = 1; j <= npol; j++)
                         {
@@ -843,7 +843,7 @@ public class ResolConstraint<MultiLine, ToolLine>
                     { // Relations entre T1y et T2z:
                         ToolLine.Tangency(ssp, npt, tabV);
                         v = tabV[k + 1];
-                        t2 = v.Z();
+                        t2 = v.Z;
                         for (j = 1; j <= npol; j++)
                         {
                             daij = dda[j];
@@ -858,7 +858,7 @@ public class ResolConstraint<MultiLine, ToolLine>
                 {
                     ToolLine.Tangency(ssp, npt, tabV);
                     v = tabV[k];
-                    t1 = v.Z();
+                    t1 = v.Z;
                     ip = 3 * npol;
                     if (ibont[k + 1, i] == 1)
                     { // Relations entre T1z et T2x:
@@ -866,13 +866,13 @@ public class ResolConstraint<MultiLine, ToolLine>
                         {
                             ToolLine.Tangency(ssp, npt, tabV);
                             v = tabV[k + 1];
-                            t2 = v.X();
+                            t2 = v.X;
                         }
                         else
                         {
                             ToolLine.Tangency(ssp, npt, tabV2d);
                             v2d = tabV2d[k + 1];
-                            t2 = v2d.X();
+                            t2 = v2d.X;
                         }
                         for (j = 1; j <= npol; j++)
                         {
@@ -889,13 +889,13 @@ public class ResolConstraint<MultiLine, ToolLine>
                         {
                             ToolLine.Tangency(ssp, npt, tabV);
                             v = tabV[k + 1];
-                            t2 = v.Y();
+                            t2 = v.Y;
                         }
                         else
                         {
                             ToolLine.Tangency(ssp, npt, tabV2d);
                             v2d = tabV2d[k + 1];
-                            t2 = v2d.Y();
+                            t2 = v2d.Y;
                         }
                         for (j = 1; j <= npol; j++)
                         {
@@ -910,7 +910,7 @@ public class ResolConstraint<MultiLine, ToolLine>
                     { // Relations entre T1z et T2z:
                         ToolLine.Tangency(ssp, npt, tabV);
                         v = tabV[k + 1];
-                        t2 = v.Z();
+                        t2 = v.Z;
                         for (j = 1; j <= npol; j++)
                         {
                             daij = dda[j];

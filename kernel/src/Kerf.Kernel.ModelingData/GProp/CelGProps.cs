@@ -28,21 +28,21 @@ public class CelGProps : Properties
     public void Perform(in Circle3D c, double u1, double u2)
     {
         // a ring of radius R about the circle's axis (decision 1471)
-        double ray = c.Radius();
+        double ray = c.Radius;
         double aU1 = Math.Min(u1, u2), aU2 = Math.Max(u1, u2);
-        _dim = global::Kerf.Engine.Measurement.GProp.FromRevolution(c.Location(), c.XAxis().Direction().XYZ(), c.YAxis().Direction().XYZ(),
-                                                                    c.Axis().Direction().XYZ(), aU1, aU2, ray, ray * ray, ray * ray * ray,
+        _dim = global::Kerf.Engine.Measurement.GProp.FromRevolution(c.Location, c.XAxis.Direction.XYZ(), c.YAxis.Direction.XYZ(),
+                                                                    c.Axis.Direction.XYZ(), aU1, aU2, ray, ray * ray, ray * ray * ray,
                                                                     0.0, 0.0, 0.0, _loc, out _g, out _inertia);
     }
 
     public void Perform(in Line3D c, double u1, double u2)
     {
         // the segment's moments along its direction, about its location (decision 1471)
-        Axis3D pos = c.Position();
+        Axis3D pos = c.Position;
         double aU1 = Math.Min(u1, u2), aU2 = Math.Max(u1, u2);
-        Xyz v = pos.Direction().XYZ();
+        Xyz v = pos.Direction.XYZ();
         _dim = aU2 - aU1;
-        global::Kerf.Engine.Measurement.GProp.FromLocalMoments(pos.Location(), v, v, v, _dim, new Xyz((aU2 * aU2 - aU1 * aU1) / 2.0, 0.0, 0.0),
+        global::Kerf.Engine.Measurement.GProp.FromLocalMoments(pos.Location, v, v, v, _dim, new Xyz((aU2 * aU2 - aU1 * aU1) / 2.0, 0.0, 0.0),
                                                                [(aU2 * aU2 * aU2 - aU1 * aU1 * aU1) / 3.0, 0.0, 0.0, 0.0, 0.0, 0.0], _loc, out _g,
                                                                out _inertia);
     }

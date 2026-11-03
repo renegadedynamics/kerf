@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Topology;
 
 /// <summary>A topological part of a surface or of the 2D space, bounded by a set of wires and vertices. BRep_TFace adds its geometry.</summary>
-public class TFace : TShape
+internal class TFace : TShape
 {
     /// <summary>An empty TFace.</summary>
     public TFace() : base(global::Kerf.Topology.ShapeType.Face)

@@ -218,8 +218,8 @@ public partial class FaceFace
         if (inter.TypeInter() == ResultType.Ellipse)
         {
             Ellipse3D el = inter.Ellipse(1);
-            double majorR = el.MajorRadius();
-            double minorR = el.MinorRadius();
+            double majorR = el.MajorRadius;
+            double minorR = el.MinorRadius;
 
             return (majorR < 100000.0 * minorR);
         }
@@ -512,8 +512,8 @@ public partial class FaceFace
             }
             //
             double tolC = ic.Tolerance();
-            double first = c3D.FirstParameter();
-            double last = c3D.LastParameter();
+            double first = c3D.FirstParameter;
+            double last = c3D.LastParameter;
             //
             // Compute the tolerance for the curve
             Curve2D? c2D1 = ic.FirstCurve2d();

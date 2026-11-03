@@ -360,12 +360,12 @@ public class NurbsRangeSplitter : UVParamRangeSplitter
                             Point2D pnt2d = dpCurve.GetPoint(pointIt);
                             if ((paramDimensionFlag & (int)ParamDimension.Param_U) != 0)
                             {
-                                GetParametersU().Add(pnt2d.X());
+                                GetParametersU().Add(pnt2d.X);
                             }
 
                             if ((paramDimensionFlag & (int)ParamDimension.Param_V) != 0)
                             {
-                                GetParametersV().Add(pnt2d.Y());
+                                GetParametersV().Add(pnt2d.Y);
                             }
                         }
                     }
@@ -546,10 +546,10 @@ public class NurbsRangeSplitter : UVParamRangeSplitter
 
             double angle = 0.0;
 
-            if ((_prevControlVec.SquareMagnitude() > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
-                && (_currControlVec.SquareMagnitude() > global::Kerf.Engine.Foundation.Precision.SquareConfusion()))
+            if ((_prevControlVec.SquareMagnitude > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+                && (_currControlVec.SquareMagnitude > global::Kerf.Engine.Foundation.Precision.SquareConfusion()))
             {
-                angle = _prevControlVec.Angle(_currControlVec);
+                angle = _prevControlVec.AngleTo(_currControlVec);
             }
 
             double sqMaxDeflection = _dFace.GetDeflection() * _dFace.GetDeflection();
@@ -604,9 +604,9 @@ public class NurbsRangeSplitter : UVParamRangeSplitter
             if (sqDist < _dFace.GetDeflection() * _dFace.GetDeflection())
             {
                 // Lets check parameters for angular deflection.
-                if (_prevControlVec.SquareMagnitude() < Constants.Resolution()
-                    || tmpVec.SquareMagnitude() < Constants.Resolution()
-                    || _prevControlVec.Angle(tmpVec) < _parameters.AngleInterior)
+                if (_prevControlVec.SquareMagnitude < Constants.Resolution()
+                    || tmpVec.SquareMagnitude < Constants.Resolution()
+                    || _prevControlVec.AngleTo(tmpVec) < _parameters.AngleInterior)
                 {
                     // For current Iso line we can remove this parameter.
                     _controlParamsToRemove.Add(_currControlParam);

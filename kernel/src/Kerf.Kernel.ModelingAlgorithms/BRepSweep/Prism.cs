@@ -19,7 +19,7 @@ internal sealed class Prism
     public Prism(in Shape s, in Vector3D v, bool copy = false, bool canonize = true)
     {
         _translation = new Translation(s, NumShape(), Location(v), v, copy, canonize);
-        Standard_ConstructionError_Raise_if(v.Magnitude() <= global::Kerf.Engine.Foundation.Precision.Confusion(), "BRepSweep_Prism::Constructor");
+        Standard_ConstructionError_Raise_if(v.Magnitude <= global::Kerf.Engine.Foundation.Precision.Confusion(), "BRepSweep_Prism::Constructor");
     }
 
     /// <summary>A semi-infinite (<paramref name="inf"/> false) or infinite prism of base <paramref name="s"/>.</summary>

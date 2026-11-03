@@ -92,18 +92,18 @@ public class BRepMesh_IncrementalMeshTest
         Assert.True(aTriangulation.HasUVNodes);
         Assert.True(aTriangulation.TriangleCount > 0);
 
-        Transform3D aTrsf = aLocation.Transformation();
+        Transform3D aTrsf = aLocation.Transformation;
         for (int aNodeIdx = 1; aNodeIdx <= aTriangulation.NodeCount; ++aNodeIdx)
         {
             Point2D aUV = aTriangulation.UVNode(aNodeIdx);
-            Assert.True(aUV.X() >= THE_FIRST_U - global::Kerf.Engine.Foundation.Precision.PConfusion());
-            Assert.True(aUV.X() <= THE_LAST_U + global::Kerf.Engine.Foundation.Precision.PConfusion());
-            Assert.True(aUV.Y() >= THE_FIRST_V - global::Kerf.Engine.Foundation.Precision.PConfusion());
-            Assert.True(aUV.Y() <= THE_LAST_V + global::Kerf.Engine.Foundation.Precision.PConfusion());
+            Assert.True(aUV.X >= THE_FIRST_U - global::Kerf.Engine.Foundation.Precision.PConfusion());
+            Assert.True(aUV.X <= THE_LAST_U + global::Kerf.Engine.Foundation.Precision.PConfusion());
+            Assert.True(aUV.Y >= THE_FIRST_V - global::Kerf.Engine.Foundation.Precision.PConfusion());
+            Assert.True(aUV.Y <= THE_LAST_V + global::Kerf.Engine.Foundation.Precision.PConfusion());
 
-            Point3D anExpectedPoint = aCylinder.Value(aUV.X(), aUV.Y());
+            Point3D anExpectedPoint = aCylinder.Value(aUV.X, aUV.Y);
             Point3D anActualPoint = aTriangulation.Node(aNodeIdx).Transformed(aTrsf);
-            Assert.True(anActualPoint.Distance(anExpectedPoint) <= global::Kerf.Engine.Foundation.Precision.Confusion());
+            Assert.True(anActualPoint.DistanceTo(anExpectedPoint) <= global::Kerf.Engine.Foundation.Precision.Confusion());
         }
 
         for (int aTriangleIdx = 1; aTriangleIdx <= aTriangulation.TriangleCount; ++aTriangleIdx)
@@ -113,13 +113,13 @@ public class BRepMesh_IncrementalMeshTest
             Point2D aUV1 = aTriangulation.UVNode(aNode1);
             Point2D aUV2 = aTriangulation.UVNode(aNode2);
             Point2D aUV3 = aTriangulation.UVNode(aNode3);
-            Point3D anExpectedPoint = aCylinder.Value((aUV1.X() + aUV2.X() + aUV3.X()) / 3.0,
-                                                     (aUV1.Y() + aUV2.Y() + aUV3.Y()) / 3.0);
+            Point3D anExpectedPoint = aCylinder.Value((aUV1.X + aUV2.X + aUV3.X) / 3.0,
+                                                     (aUV1.Y + aUV2.Y + aUV3.Y) / 3.0);
             Point3D aPoint1 = aTriangulation.Node(aNode1).Transformed(aTrsf);
             Point3D aPoint2 = aTriangulation.Node(aNode2).Transformed(aTrsf);
             Point3D aPoint3 = aTriangulation.Node(aNode3).Transformed(aTrsf);
             Point3D anActualPoint = new((aPoint1.XYZ() + aPoint2.XYZ() + aPoint3.XYZ()) / 3.0);
-            Assert.True(anActualPoint.Distance(anExpectedPoint) <= THE_DEFLECTION);
+            Assert.True(anActualPoint.DistanceTo(anExpectedPoint) <= THE_DEFLECTION);
         }
     }
 

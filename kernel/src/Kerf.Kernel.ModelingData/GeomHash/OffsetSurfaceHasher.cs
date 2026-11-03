@@ -21,8 +21,8 @@ internal readonly struct OffsetSurfaceHasher(double theCompTolerance, double the
         var surfaceHasher = new SurfaceHasher(CompTolerance, HashTolerance);
         ReadOnlySpan<ulong> hashes =
         [
-            surfaceHasher.Hash(surface.BasisSurface()),
-            HashUtils.Hash((long)HashUtils.Round(surface.Offset() * factor))
+            surfaceHasher.Hash(surface.BasisSurface),
+            HashUtils.Hash((long)HashUtils.Round(surface.Offset * factor))
         ];
         return HashUtils.HashBytes(hashes);
     }
@@ -31,7 +31,7 @@ internal readonly struct OffsetSurfaceHasher(double theCompTolerance, double the
     public bool IsEqual(OffsetSurface surface1, OffsetSurface surface2)
     {
         var surfaceHasher = new SurfaceHasher(CompTolerance, HashTolerance);
-        return surfaceHasher.Equals(surface1.BasisSurface(), surface2.BasisSurface())
-               && Math.Abs(surface1.Offset() - surface2.Offset()) <= CompTolerance;
+        return surfaceHasher.Equals(surface1.BasisSurface, surface2.BasisSurface)
+               && Math.Abs(surface1.Offset - surface2.Offset) <= CompTolerance;
     }
 }

@@ -108,9 +108,9 @@ public sealed class StepToTopoDS_TranslateFaceTests
         Assert.Equal(4, aMesh.NodeCount);
         Assert.Equal(2, aMesh.TriangleCount);
         Assert.False(aMesh.HasNormals);
-        Assert.Equal(0.0, aMesh.Node(1).X(), 1e-12);
-        Assert.Equal(1.0, aMesh.Node(2).X(), 1e-12);
-        Assert.Equal(1.0, aMesh.Node(3).Y(), 1e-12);
+        Assert.Equal(0.0, aMesh.Node(1).X, 1e-12);
+        Assert.Equal(1.0, aMesh.Node(2).X, 1e-12);
+        Assert.Equal(1.0, aMesh.Node(3).Y, 1e-12);
 
         aMesh.Triangle(1).Get(out int aN1, out int aN2, out int aN3);
         Assert.Equal(1, aN1);
@@ -132,12 +132,12 @@ public sealed class StepToTopoDS_TranslateFaceTests
         Triangulation aMesh = getMesh(aTranslator);
         Assert.Equal(3, aMesh.NodeCount);
         Assert.Equal(1, aMesh.TriangleCount);
-        Assert.Equal(10.0, aMesh.Node(1).X(), 1e-12);
-        Assert.Equal(0.0, aMesh.Node(1).Y(), 1e-12);
-        Assert.Equal(10.0, aMesh.Node(2).X(), 1e-12);
-        Assert.Equal(10.0, aMesh.Node(2).Y(), 1e-12);
-        Assert.Equal(0.0, aMesh.Node(3).X(), 1e-12);
-        Assert.Equal(10.0, aMesh.Node(3).Y(), 1e-12);
+        Assert.Equal(10.0, aMesh.Node(1).X, 1e-12);
+        Assert.Equal(0.0, aMesh.Node(1).Y, 1e-12);
+        Assert.Equal(10.0, aMesh.Node(2).X, 1e-12);
+        Assert.Equal(10.0, aMesh.Node(2).Y, 1e-12);
+        Assert.Equal(0.0, aMesh.Node(3).X, 1e-12);
+        Assert.Equal(10.0, aMesh.Node(3).Y, 1e-12);
     }
 
     [Fact]
@@ -152,9 +152,9 @@ public sealed class StepToTopoDS_TranslateFaceTests
         Triangulation aMesh = getMesh(aTranslator);
         Assert.Equal(3, aMesh.NodeCount);
         Assert.Equal(1, aMesh.TriangleCount);
-        Assert.Equal(0.0, aMesh.Node(1).X(), 1e-12);
-        Assert.Equal(2.0, aMesh.Node(2).X(), 1e-12);
-        Assert.Equal(2.0, aMesh.Node(3).Y(), 1e-12);
+        Assert.Equal(0.0, aMesh.Node(1).X, 1e-12);
+        Assert.Equal(2.0, aMesh.Node(2).X, 1e-12);
+        Assert.Equal(2.0, aMesh.Node(3).Y, 1e-12);
     }
 
     [Fact]
@@ -169,11 +169,11 @@ public sealed class StepToTopoDS_TranslateFaceTests
 
         Triangulation aMesh = getMesh(aTranslator);
         Assert.Equal(3, aMesh.NodeCount);
-        Assert.Equal(0.0, aMesh.Node(1).X(), 1e-12);
-        Assert.Equal(5.0, aMesh.Node(2).X(), 1e-12);
-        Assert.Equal(5.0, aMesh.Node(2).Y(), 1e-12);
-        Assert.Equal(0.0, aMesh.Node(3).X(), 1e-12);
-        Assert.Equal(5.0, aMesh.Node(3).Y(), 1e-12);
+        Assert.Equal(0.0, aMesh.Node(1).X, 1e-12);
+        Assert.Equal(5.0, aMesh.Node(2).X, 1e-12);
+        Assert.Equal(5.0, aMesh.Node(2).Y, 1e-12);
+        Assert.Equal(0.0, aMesh.Node(3).X, 1e-12);
+        Assert.Equal(5.0, aMesh.Node(3).Y, 1e-12);
     }
 
     [Fact]
@@ -190,7 +190,7 @@ public sealed class StepToTopoDS_TranslateFaceTests
         Triangulation aMesh = getMesh(aTranslator);
         Assert.True(aMesh.HasNormals);
         Direction3D aNormal = aMesh.Normal(1);
-        Assert.Equal(1.0, aNormal.Z(), 1e-12);
+        Assert.Equal(1.0, aNormal.Z, 1e-12);
     }
 
     [Fact]
@@ -209,9 +209,9 @@ public sealed class StepToTopoDS_TranslateFaceTests
         for (int i = 1; i <= 3; ++i)
         {
             Direction3D aNormal = aMesh.Normal(i);
-            Assert.Equal(0.0, aNormal.X(), 1e-12);
-            Assert.Equal(1.0, aNormal.Y(), 1e-12);
-            Assert.Equal(0.0, aNormal.Z(), 1e-12);
+            Assert.Equal(0.0, aNormal.X, 1e-12);
+            Assert.Equal(1.0, aNormal.Y, 1e-12);
+            Assert.Equal(0.0, aNormal.Z, 1e-12);
         }
     }
 
@@ -227,8 +227,8 @@ public sealed class StepToTopoDS_TranslateFaceTests
 
         Triangulation aMesh = getMesh(aTranslator);
         // Coordinates should be scaled by length factor 25.4.
-        Assert.Equal(25.4, aMesh.Node(2).X(), 1e-10);
-        Assert.Equal(25.4, aMesh.Node(3).Y(), 1e-10);
+        Assert.Equal(25.4, aMesh.Node(2).X, 1e-10);
+        Assert.Equal(25.4, aMesh.Node(3).Y, 1e-10);
     }
 
     private static ComplexTriangulatedFace complexFace(CoordinatesList theCoords, int thePnmax,

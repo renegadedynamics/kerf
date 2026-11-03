@@ -112,7 +112,7 @@ public class InterferencePolygon2d : PolygonInterference
     /// <summary>The 2D point of the intersection point of address <paramref name="index"/> in the interference.</summary>
     public Point2D Pnt2dValue(int index)
     {
-        return new Point2D((_sPoins[index]).Pnt().X(), (_sPoins[index]).Pnt().Y());
+        return new Point2D((_sPoins[index]).Pnt().X, (_sPoins[index]).Pnt().Y);
     }
 
     private void Interference(Polygon2d obje1, Polygon2d obje2)
@@ -326,8 +326,8 @@ public class InterferencePolygon2d : PolygonInterference
 
         // Interference <begO> <segT>
         double dbOT = ((begO.XY() - begT.XY()) ^ segT) / lgT;
-        double dbObT = begO.Distance(begT);
-        double dbOeT = begO.Distance(endT);
+        double dbObT = begO.DistanceTo(begT);
+        double dbOeT = begO.DistanceTo(endT);
         if (Math.Abs(dbOT) <= _tolerance)
         {
             if (dbObT <= _tolerance)
@@ -360,8 +360,8 @@ public class InterferencePolygon2d : PolygonInterference
 
         // Interference <endO> <segT>
         double deOT = ((endO.XY() - begT.XY()) ^ segT) / lgT;
-        double deObT = endO.Distance(begT);
-        double deOeT = endO.Distance(endT);
+        double deObT = endO.DistanceTo(begT);
+        double deOeT = endO.DistanceTo(endT);
         if (Math.Abs(deOT) <= _tolerance)
         {
             if (deObT <= _tolerance)
@@ -455,7 +455,7 @@ public class InterferencePolygon2d : PolygonInterference
                 parO[nbpi] = parOSP;
                 parT[nbpi] = parTSP;
                 thePi.Append(
-                    new SectionPoint(new Point2D(begO.X() + (segO.X() * parOSP), begO.Y() + (segO.Y() * parOSP)),
+                    new SectionPoint(new Point2D(begO.X + (segO.X() * parOSP), begO.Y + (segO.Y() * parOSP)),
                                           PIType.Edge,
                                           iObje1,
                                           parOSP,
@@ -484,8 +484,8 @@ public class InterferencePolygon2d : PolygonInterference
                     while (nbpi < 2)
                     {
                         nbpi++;
-                        x = begO.X() + (segO.X() * parO[nbpi]);
-                        y = begO.Y() + (segO.Y() * parO[nbpi]);
+                        x = begO.X + (segO.X() * parO[nbpi]);
+                        y = begO.Y + (segO.Y() * parO[nbpi]);
                         thePi.Append(new SectionPoint(new Point2D(x, y),
                                                            PIType.External,
                                                            iObje1,
@@ -518,9 +518,9 @@ public class InterferencePolygon2d : PolygonInterference
 
                         if (ok)
                         {
-                            x = begO.X() + (segO.X() * parO[nbpi + 1]);
-                            y = begO.Y() + (segO.Y() * parO[nbpi + 1]);
-                            if (thePi[1].Pnt().Distance(new Point3D(x, y, 0)) >= (_tolerance / 4.0))
+                            x = begO.X + (segO.X() * parO[nbpi + 1]);
+                            y = begO.Y + (segO.Y() * parO[nbpi + 1]);
+                            if (thePi[1].Pnt().DistanceTo(new Point3D(x, y, 0)) >= (_tolerance / 4.0))
                             {
                                 nbpi++;
                                 thePi.Append(new SectionPoint(new Point2D(x, y),
@@ -603,8 +603,8 @@ public class InterferencePolygon2d : PolygonInterference
                             nbpi++;
                             parO[nbpi] = Max(0.0, Min(1.0, parOdeb));
                             parT[nbpi] = Max(0.0, Min(1.0, parTdeb));
-                            x = begO.X() + (segO.X() * parO[nbpi]);
-                            y = begO.Y() + (segO.Y() * parO[nbpi]);
+                            x = begO.X + (segO.X() * parO[nbpi]);
+                            y = begO.Y + (segO.Y() * parO[nbpi]);
                             thePi.Append(new SectionPoint(new Point2D(x, y),
                                                                PIType.External,
                                                                iObje1,
@@ -622,8 +622,8 @@ public class InterferencePolygon2d : PolygonInterference
                             nbpi++;
                             parO[nbpi] = Min(1.0, Max(0.0, parOfin));
                             parT[nbpi] = Min(1.0, Max(0.0, parTfin));
-                            x = begO.X() + (segO.X() * parO[nbpi]);
-                            y = begO.Y() + (segO.Y() * parO[nbpi]);
+                            x = begO.X + (segO.X() * parO[nbpi]);
+                            y = begO.Y + (segO.Y() * parO[nbpi]);
                             thePi.Append(new SectionPoint(new Point2D(x, y),
                                                                PIType.External,
                                                                iObje1,
@@ -647,7 +647,7 @@ public class InterferencePolygon2d : PolygonInterference
             {
                 Point3D pim1 = thePi[i - 1].Pnt();
                 Point3D pi = thePi[i].Pnt();
-                double d = pi.Distance(pim1);
+                double d = pi.DistanceTo(pim1);
                 d *= 50.0;
                 if (d < lgT && d < lgO)
                 {
@@ -667,7 +667,7 @@ public class InterferencePolygon2d : PolygonInterference
             if (edgeSP)
             {
                 thePi[1] =
-                    new SectionPoint(new Point2D(begO.X() + (segO.X() * parOSP), begO.Y() + (segO.Y() * parOSP)),
+                    new SectionPoint(new Point2D(begO.X + (segO.X() * parOSP), begO.Y + (segO.Y() * parOSP)),
                                           PIType.Edge,
                                           iObje1,
                                           parOSP,
@@ -757,7 +757,7 @@ public class InterferencePolygon2d : PolygonInterference
             if (edgeSP)
             {
                 theTZ.PolygonInsert(
-                    new SectionPoint(new Point2D(begO.X() + (segO.X() * parOSP), begO.Y() + (segO.Y() * parOSP)),
+                    new SectionPoint(new Point2D(begO.X + (segO.X() * parOSP), begO.Y + (segO.Y() * parOSP)),
                                           PIType.Edge,
                                           iObje1,
                                           parOSP,

@@ -15,20 +15,25 @@ namespace Kerf.Geometry;
 /// parameter, continuity, closure, periodicity, parameter bounds, and how the parameter changes when the curve
 /// is transformed or reversed. Every curve is at least C0.
 /// </summary>
-public abstract class Curve3D : Geometry3D
+public abstract partial class Curve3D : Geometry3D
 {
+    /// <summary>Only the kernel derives from it (unit 10L1).</summary>
+    private protected Curve3D()
+    {
+    }
+
     // Results with public fields, written through out parameters across the engine: 10L replaces them (geometry.md,
     // CurveDerivatives), so KERF0003 is off for them until then.
 #pragma warning disable KERF0003
     /// <summary>Result of D1 evaluation: point and first derivative.</summary>
-    public struct ResD1
+    internal struct ResD1
     {
         public Point3D Point;
         public Vector3D D1;
     }
 
     /// <summary>Result of D2 evaluation: point and first two derivatives.</summary>
-    public struct ResD2
+    internal struct ResD2
     {
         public Point3D Point;
         public Vector3D D1;
@@ -36,7 +41,7 @@ public abstract class Curve3D : Geometry3D
     }
 
     /// <summary>Result of D3 evaluation: point and first three derivatives.</summary>
-    public struct ResD3
+    internal struct ResD3
     {
         public Point3D Point;
         public Vector3D D1;
@@ -58,13 +63,13 @@ public abstract class Curve3D : Geometry3D
     /// The parameter on the curve transformed by T of the transform of the point of parameter U: U itself here,
     /// redefined by some curves (lines, for instance).
     /// </summary>
-    public virtual double TransformedParameter(double u, in Transform3D t) => u;
+    internal virtual double TransformedParameter(double u, in Transform3D t) => u;
 
     /// <summary>
     /// The coefficient to apply to a parameter of this curve to get the parameter of the transformed point on the
     /// curve transformed by T: 1 here, redefined by some curves.
     /// </summary>
-    public virtual double ParametricTransformation(in Transform3D t) => 1.0;
+    internal virtual double ParametricTransformation(in Transform3D t) => 1.0;
 
     /// <summary>A reversed copy of this curve.</summary>
     public Curve3D Reversed()
@@ -75,10 +80,10 @@ public abstract class Curve3D : Geometry3D
     }
 
     /// <summary>The first parameter (may be <c>RealFirst()</c> for an infinite curve).</summary>
-    public abstract double FirstParameter();
+    public abstract double FirstParameter { get; }
 
     /// <summary>The last parameter (may be <c>RealLast()</c> for an infinite curve).</summary>
-    public abstract double LastParameter();
+    public abstract double LastParameter { get; }
 
     /// <summary>True if the curve is closed (its end points are within <c>gp::Resolution()</c>).</summary>
     public abstract bool IsClosed { get; }
@@ -88,39 +93,42 @@ public abstract class Curve3D : Geometry3D
 
     /// <summary>The period of the curve.</summary>
     /// <exception cref="NoSuchObjectException">The curve is not periodic.</exception>
-    public virtual double Period()
+    public virtual double Period
     {
-        Standard_NoSuchObject_Raise_if(!IsPeriodic, "Geom_Curve::Period");
-        return (LastParameter() - FirstParameter());
+        get
+        {
+            Standard_NoSuchObject_Raise_if(!IsPeriodic, "Geom_Curve::Period");
+            return (LastParameter - FirstParameter);
+        }
     }
 
     /// <summary>The global continuity of the curve.</summary>
-    public abstract Continuity Continuity();
+    public abstract Continuity Continuity { get; }
 
     /// <summary>True if the curve is at least CN.</summary>
     /// <exception cref="RangeErrorException">N &lt; 0.</exception>
-    public abstract bool IsCN(int n);
+    internal abstract bool IsCN(int n);
 
     /// <summary>The point of parameter U. Throws on failure (an offset curve at a singular point, for instance).</summary>
-    public abstract Point3D EvalD0(double u);
+    internal abstract Point3D EvalD0(double u);
 
     /// <summary>The point and first derivative at U. Throws if the curve is not C1.</summary>
-    public abstract ResD1 EvalD1(double u);
+    internal abstract ResD1 EvalD1(double u);
 
     /// <summary>The point and first two derivatives at U. Throws if the curve is not C2.</summary>
-    public abstract ResD2 EvalD2(double u);
+    internal abstract ResD2 EvalD2(double u);
 
     /// <summary>The point and first three derivatives at U. Throws if the curve is not C3.</summary>
-    public abstract ResD3 EvalD3(double u);
+    internal abstract ResD3 EvalD3(double u);
 
     /// <summary>The Nth derivative at U. Throws if the curve is not CN, or N &lt; 1.</summary>
-    public abstract Vector3D EvalDN(double u, int n);
+    internal abstract Vector3D EvalDN(double u, int n);
 
     /// <summary>The point of parameter U.</summary>
-    public void D0(double u, out Point3D p) => p = EvalD0(u);
+    internal void D0(double u, out Point3D p) => p = EvalD0(u);
 
     /// <summary>The point of parameter U and the first derivative.</summary>
-    public void D1(double u, out Point3D p, out Vector3D v1)
+    internal void D1(double u, out Point3D p, out Vector3D v1)
     {
         ResD1 r = EvalD1(u);
         p = r.Point;
@@ -128,7 +136,7 @@ public abstract class Curve3D : Geometry3D
     }
 
     /// <summary>The point of parameter U and the first two derivatives.</summary>
-    public void D2(double u, out Point3D p, out Vector3D v1, out Vector3D v2)
+    internal void D2(double u, out Point3D p, out Vector3D v1, out Vector3D v2)
     {
         ResD2 r = EvalD2(u);
         p = r.Point;
@@ -137,7 +145,7 @@ public abstract class Curve3D : Geometry3D
     }
 
     /// <summary>The point of parameter U and the first three derivatives.</summary>
-    public void D3(double u, out Point3D p, out Vector3D v1, out Vector3D v2, out Vector3D v3)
+    internal void D3(double u, out Point3D p, out Vector3D v1, out Vector3D v2, out Vector3D v3)
     {
         ResD3 r = EvalD3(u);
         p = r.Point;
@@ -147,8 +155,8 @@ public abstract class Curve3D : Geometry3D
     }
 
     /// <summary>The derivative of order N at U.</summary>
-    public Vector3D DN(double u, int n) => EvalDN(u, n);
+    internal Vector3D DN(double u, int n) => EvalDN(u, n);
 
     /// <summary>The point of parameter U.</summary>
-    public Point3D Value(double u) => EvalD0(u);
+    internal Point3D Value(double u) => EvalD0(u);
 }

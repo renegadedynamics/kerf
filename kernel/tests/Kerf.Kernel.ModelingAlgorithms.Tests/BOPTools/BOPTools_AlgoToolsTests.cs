@@ -51,7 +51,7 @@ public class BOPTools_AlgoToolsTests
         BrepTools.UVBounds(theF, out double u1, out double u2, out double v1, out double v2);
         double du = 0.25 * (u2 - u1), dv = 0.25 * (v2 - v1);
         Surface aS = (Surface)Tool.Surface(theF)!.Copy();
-        Placement aLoc = theF.Location();
+        Placement aLoc = theF.Placement;
         Face aSplit = ShapeCasts.Face(new MakeFace(aS, u1 + du, u2 - du, v1 + dv, v2 - dv, global::Kerf.Engine.Foundation.Precision.Confusion()).InternalShape());
         return ShapeCasts.Face(aSplit.Located(aLoc));
     }
@@ -66,7 +66,7 @@ public class BOPTools_AlgoToolsTests
             foreach (Face aF in BOPToolsTestShapes.Faces(aShape))
             {
                 Face aSp = SplitOf(aF);
-                bool bExpected = aF.Orientation() == Reversed;
+                bool bExpected = aF.Orientation == Reversed;
                 Assert.Equal(bExpected, AlgoTools.IsSplitToReverse(aSp, aF, aCtx, out int anErr));
                 Assert.Equal(0, anErr);
                 Face aSpR = ShapeCasts.Face(aSp.Reversed());
@@ -113,7 +113,7 @@ public class BOPTools_AlgoToolsTests
                 double d = 0.25 * (l - f);
                 Edge aSp = ShapeCasts.Edge(new MakeEdge((Curve3D)aC.Copy(), f + d, l - d).InternalShape());
                 aSp = ShapeCasts.Edge(aSp.Located(aLoc));
-                bool bExpected = aE.Orientation() == Reversed;
+                bool bExpected = aE.Orientation == Reversed;
                 Assert.Equal(bExpected, AlgoTools.IsSplitToReverse(aSp, aE, aCtx, out int anErr));
                 Assert.Equal(0, anErr);
                 Assert.Equal(!bExpected, AlgoTools.IsSplitToReverse(ShapeCasts.Edge(aSp.Reversed()), aE, aCtx));
@@ -208,7 +208,7 @@ public class BOPTools_AlgoToolsTests
         {
             Exploration.Vertices(aE, out Vertex a, out Vertex b);
             Point3D pa = Tool.Pnt(a), pb = Tool.Pnt(b);
-            if (pa.X() == 0 && pa.Y() == 0 && pb.X() == 0 && pb.Y() == 0)
+            if (pa.X == 0 && pa.Y == 0 && pb.X == 0 && pb.Y == 0)
             {
                 aZ = aE;
                 break;
@@ -221,8 +221,8 @@ public class BOPTools_AlgoToolsTests
         Assert.Equal(2, aLF.Extent());
         Exploration.Vertices(aZ, out Vertex aV0, out Vertex aV1);
         Point3D p0 = Tool.Pnt(aV0), p1 = Tool.Pnt(aV1);
-        Vertex aW0 = ShapeCasts.Vertex(new MakeVertex(new Point3D(p0.X() + dx, p0.Y() + dy, p0.Z())).InternalShape());
-        Vertex aW1 = ShapeCasts.Vertex(new MakeVertex(new Point3D(p1.X() + dx, p1.Y() + dy, p1.Z())).InternalShape());
+        Vertex aW0 = ShapeCasts.Vertex(new MakeVertex(new Point3D(p0.X + dx, p0.Y + dy, p0.Z)).InternalShape());
+        Vertex aW1 = ShapeCasts.Vertex(new MakeVertex(new Point3D(p1.X + dx, p1.Y + dy, p1.Z)).InternalShape());
         Edge e1 = ShapeCasts.Edge(new MakeEdge(aV1, aW1).InternalShape());
         Edge e2 = ShapeCasts.Edge(new MakeEdge(aW1, aW0).InternalShape());
         Edge e3 = ShapeCasts.Edge(new MakeEdge(aW0, aV0).InternalShape());
@@ -267,7 +267,7 @@ public class BOPTools_AlgoToolsTests
         Assert.True(AlgoTools.GetEdgeOnFace(aE, aF2, ref aE2));
         Assert.True(AlgoTools.GetEdgeOnFace(aE, aIn, ref aEIn));
         Assert.True(aE1.IsSame(aE) && aE2.IsSame(aE));
-        Assert.NotEqual(aE1.Orientation(), aE2.Orientation());
+        Assert.NotEqual(aE1.Orientation, aE2.Orientation);
         Edge aOff = new();
         Assert.True(AlgoTools.GetEdgeOff(aE1, aF2, ref aOff));
         Assert.Equal(aE2, aOff);
@@ -312,12 +312,12 @@ public class BOPTools_AlgoToolsTests
         {
             Shape aC = new();
             AlgoTools.MakeContainer(aType, ref aC);
-            Assert.Equal(aType, aC.ShapeType());
+            Assert.Equal(aType, aC.Type);
             Assert.False(new Iterator(aC).More());
         }
         Shape aKeep = BOPToolsTestShapes.Box();
         AlgoTools.MakeContainer(ShapeType.Face, ref aKeep);
-        Assert.Equal(ShapeType.Solid, aKeep.ShapeType());
+        Assert.Equal(ShapeType.Solid, aKeep.Type);
     }
 
     [Fact]
@@ -331,13 +331,13 @@ public class BOPTools_AlgoToolsTests
             FaceIntegrand aProps = new(aF);
             FaceSurfaceAdaptor aBAS = new(aF);
             Plane3D aPln = aBAS.Plane();
-            Point3D aLoc = aPln.Location();
-            Direction3D aN = aPln.Axis().Direction();
-            if (Math.Abs(aN.X()) > 0.5 && aLoc.X() == 2)
+            Point3D aLoc = aPln.Location;
+            Direction3D aN = aPln.Axis.Direction;
+            if (Math.Abs(aN.X) > 0.5 && aLoc.X == 2)
             {
                 aFx = aF;
             }
-            if (Math.Abs(aN.Z()) > 0.5 && aLoc.Z() == 2)
+            if (Math.Abs(aN.Z) > 0.5 && aLoc.Z == 2)
             {
                 aFz = aF;
             }
@@ -357,8 +357,8 @@ public class BOPTools_AlgoToolsTests
             {
                 double t = f + (l - f) * i / 10.0;
                 Point2D uv = aC2!.Value(t);
-                Point3D p = aS.Value(uv.X(), uv.Y()).Transformed(aL.Transformation());
-                Assert.True(p.Distance(aLine.Value(t)) < 1.0e-9);
+                Point3D p = aS.Value(uv.X, uv.Y).Transformed(aL.Transformation);
+                Assert.True(p.DistanceTo(aLine.Value(t)) < 1.0e-9);
             }
         }
         Assert.True(Tool.SameParameter(aE));
@@ -400,8 +400,8 @@ public class BOPTools_AlgoToolsTests
         aLV.Append(aV3);
         AlgoTools.MakeVertex(aLV, ref aVnew);
         Assert.False(aVnew.IsSame(aV1) || aVnew.IsSame(aV3));
-        Assert.True(Tool.Pnt(aVnew).Distance(Tool.Pnt(aV1)) <= Tool.Tolerance(aVnew));
-        Assert.True(Tool.Pnt(aVnew).Distance(Tool.Pnt(aV3)) <= Tool.Tolerance(aVnew));
+        Assert.True(Tool.Pnt(aVnew).DistanceTo(Tool.Pnt(aV1)) <= Tool.Tolerance(aVnew));
+        Assert.True(Tool.Pnt(aVnew).DistanceTo(Tool.Pnt(aV3)) <= Tool.Tolerance(aVnew));
     }
 
     [Fact]
@@ -509,11 +509,11 @@ public class BOPTools_AlgoToolsTests
             Orientation o1 = Internal, o2 = Internal;
             for (Explorer x = new(aLF.First(), ShapeType.Edge); x.More(); x.Next())
             {
-                if (x.Current().IsSame(aE)) { o1 = x.Current().Orientation(); }
+                if (x.Current().IsSame(aE)) { o1 = x.Current().Orientation; }
             }
             for (Explorer x = new(aLF.Last(), ShapeType.Edge); x.More(); x.Next())
             {
-                if (x.Current().IsSame(aE)) { o2 = x.Current().Orientation(); }
+                if (x.Current().IsSame(aE)) { o2 = x.Current().Orientation; }
             }
             Assert.NotEqual(o1, o2);
         }
@@ -560,13 +560,13 @@ public class BOPTools_AlgoToolsTests
         AlgoTools.MakeNewVertex(new Point3D(0, 0, 0), 1.0e-3, out Vertex aV1);
         AlgoTools.MakeNewVertex(new Point3D(0.01, 0, 0), 1.0e-4, out Vertex aV2);
         AlgoTools.MakeNewVertex(aV1, aV2, out Vertex aVm);
-        Assert.Equal(0.005, Tool.Pnt(aVm).X(), 15);
+        Assert.Equal(0.005, Tool.Pnt(aVm).X, 15);
         Assert.Equal(1.0e-3 + 0.005, Tool.Tolerance(aVm), 15);
 
         Edge aE = ShapeCasts.Edge(new MakeEdge(new Point3D(0, 0, 0), new Point3D(4, 0, 0)).InternalShape());
         Edge aE2 = ShapeCasts.Edge(new MakeEdge(new Point3D(1, 1.0e-3, 0), new Point3D(1, 5, 0)).InternalShape());
         AlgoTools.MakeNewVertex(aE, 1.0, aE2, 0.0, out Vertex aVee);
-        Assert.Equal(1.0, Tool.Pnt(aVee).X(), 15);
+        Assert.Equal(1.0, Tool.Pnt(aVee).X, 15);
         Face aF = ShapeCasts.Face(new MakeFace(new Plane3D(), 0, 1, 0, 1).InternalShape());
         AlgoTools.MakeNewVertex(aE, 2.0, aF, out Vertex aVef);
         Assert.Equal(Tool.Tolerance(aE) + Tool.Tolerance(aF) + 1.0e-12, Tool.Tolerance(aVef));
@@ -593,7 +593,7 @@ public class BOPTools_AlgoToolsTests
         Assert.True(aVF.IsSame(aS1) && aVL.IsSame(aS2));
         Edge aCopy = AlgoTools.CopyEdge(ShapeCasts.Edge(aE.Reversed()));
         Assert.False(aCopy.IsSame(aE));
-        Assert.Equal(Reversed, aCopy.Orientation());
+        Assert.Equal(Reversed, aCopy.Orientation);
         Exploration.Vertices(aCopy, out Vertex aCF, out Vertex aCL);
         Exploration.Vertices(aE, out Vertex aEF, out Vertex aEL);
         Assert.True(aCF.IsSame(aEF) && aCL.IsSame(aEL));

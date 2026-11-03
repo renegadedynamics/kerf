@@ -178,8 +178,8 @@ public class GeomTools_PortTests
 
         global::Kerf.Engine.Exchange.Brep.GeomTools.Read(out Surface? aRead, new StringReader(aWriter.ToString()));
         var aCylinder2 = Assert.IsType<CylindricalSurface>(aRead);
-        Assert.False(aCylinder2.Position().Direct());
-        Assert.Equal(-1.0, aCylinder2.Position().YDirection().Y());
+        Assert.False(aCylinder2.Position.IsDirect);
+        Assert.Equal(-1.0, aCylinder2.Position.YDirection.Y);
     }
 
     [Fact]
@@ -323,7 +323,7 @@ public class GeomTools_PortTests
         {
             Printed++;
             OS.Write("42 ");
-            StreamUtilities.Write(OS, ((TestLine)C).Origin().X());
+            StreamUtilities.Write(OS, ((TestLine)C).Origin().X);
             OS.Write("\n");
         }
 
@@ -370,7 +370,7 @@ public class GeomTools_PortTests
 
             var aRead = new global::Kerf.Engine.Exchange.Brep.CurveSet();
             aRead.Read(new StringReader(aWriter.ToString()));
-            Assert.Equal(7.0, Assert.IsType<TestLine>(aRead.Curve(1)).Origin().X());
+            Assert.Equal(7.0, Assert.IsType<TestLine>(aRead.Curve(1)).Origin().X);
         }
         finally
         {

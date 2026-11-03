@@ -126,7 +126,7 @@ public static class ShapeTool
                     // Calculation of the length of the edge in 3D
                     // in order to check degenerativity
                     curve.D0(parameter, out Point3D pnt);
-                    length += prevPnt.Distance(pnt);
+                    length += prevPnt.DistanceTo(pnt);
 
                     if (length > vertexTolerance /*&& !theEdge->GetSameParam()*/)
                     {
@@ -151,10 +151,10 @@ public static class ShapeTool
     /// </remarks>
     public static void AddInFace(in Face face, Triangulation triangulation)
     {
-        Placement loc = face.Location();
+        Placement loc = face.Placement;
         if (!loc.IsIdentity)
         {
-            Transform3D trsf = loc.Transformation();
+            Transform3D trsf = loc.Transformation;
             trsf = trsf.Inverted();
             for (int nodeIter = 1; nodeIter <= triangulation.NodeCount; ++nodeIter)
             {
@@ -227,7 +227,7 @@ public static class ShapeTool
             return pnt;
         }
 
-        return pnt.Transformed(loc.Transformation());
+        return pnt.Transformed(loc.Transformation);
     }
 
     /// <summary>The UV points of the edge's ends on its pcurve on the face.</summary>

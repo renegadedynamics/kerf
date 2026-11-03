@@ -179,22 +179,22 @@ public class EvolRadInv : FuncInv
         Vector3D d1u1, d1v1, d1u2, d1v2;
         if (_first)
         {
-            _surf1.D1(pt2d.X(), pt2d.Y(), out pts1, out d1u1, out d1v1);
+            _surf1.D1(pt2d.X, pt2d.Y, out pts1, out d1u1, out d1v1);
             _surf2.D1(x[3], x[4], out pts2, out d1u2, out d1v2);
         }
         else
         {
             _surf1.D1(x[3], x[4], out pts1, out d1u1, out d1v1);
-            _surf2.D1(pt2d.X(), pt2d.Y(), out pts2, out d1u2, out d1v2);
+            _surf2.D1(pt2d.X, pt2d.Y, out pts2, out d1u2, out d1v2);
         }
 
-        f[1] = (nplan.X() * (pts1.X() + pts2.X()) + nplan.Y() * (pts1.Y() + pts2.Y())
-                + nplan.Z() * (pts1.Z() + pts2.Z()))
+        f[1] = (nplan.X * (pts1.X + pts2.X) + nplan.Y * (pts1.Y + pts2.Y)
+                + nplan.Z * (pts1.Z + pts2.Z))
                  / 2.0
                + theD;
 
         Vector3D ns1 = d1u1.Crossed(d1v1);
-        if (ns1.Magnitude() < Eps)
+        if (ns1.Magnitude < Eps)
         {
             if (_first)
             {
@@ -208,7 +208,7 @@ public class EvolRadInv : FuncInv
         }
 
         Vector3D ns2 = new Vector3D(d1u2.Crossed(d1v2).XYZ());
-        if (ns2.Magnitude() < Eps)
+        if (ns2.Magnitude < Eps)
         {
             if (!_first)
             {
@@ -223,8 +223,8 @@ public class EvolRadInv : FuncInv
 
         Vector3D ncrossns1 = nplan.Crossed(ns1);
         Vector3D ncrossns2 = nplan.Crossed(ns2);
-        double norm1 = ncrossns1.Magnitude();
-        double norm2 = ncrossns2.Magnitude();
+        double norm1 = ncrossns1.Magnitude;
+        double norm2 = ncrossns2.Magnitude;
 
         if (norm1 < Eps)
         {
@@ -242,9 +242,9 @@ public class EvolRadInv : FuncInv
         ns1 = Vector3D.LinearForm(ndotns1 / norm1, nplan, -1.0 / norm1, ns1);
         ns2 = Vector3D.LinearForm(ndotns2 / norm2, nplan, -1.0 / norm2, ns2);
         resul = Vector3D.LinearForm(_sg1 * ray, ns1, -1.0, new Vector3D(pts2.XYZ()), -_sg2 * ray, ns2, new Vector3D(pts1.XYZ()));
-        f[2] = resul.X();
-        f[3] = resul.Y();
-        f[4] = resul.Z();
+        f[2] = resul.X;
+        f[3] = resul.Y;
+        f[4] = resul.Z;
         return true;
     }
 
@@ -259,7 +259,7 @@ public class EvolRadInv : FuncInv
         _fevol.D1(x[2], out double ray, out double dray);
 
         _curv.D2(x[2], out Point3D ptcur, out Vector3D d1cur, out Vector3D d2cur);
-        double normtgcur = d1cur.Magnitude();
+        double normtgcur = d1cur.Magnitude;
         Vector3D nplan = d1cur.Normalized();
         double theD = -(nplan.XYZ().Dot(ptcur.XYZ()));
 
@@ -275,9 +275,9 @@ public class EvolRadInv : FuncInv
         Vector3D temp = new Vector3D();
         if (_first)
         {
-            _surf1.D2(p2d.X(), p2d.Y(), out pts1, out d1u1, out d1v1, out d2u1, out d2v1, out d2uv1);
+            _surf1.D2(p2d.X, p2d.Y, out pts1, out d1u1, out d1v1, out d2u1, out d2v1, out d2uv1);
             _surf2.D2(x[3], x[4], out pts2, out d1u2, out d1v2, out d2u2, out d2v2, out d2uv2);
-            temp = Vector3D.LinearForm(v2d.X(), d1u1, v2d.Y(), d1v1);
+            temp = Vector3D.LinearForm(v2d.X, d1u1, v2d.Y, d1v1);
             d[1, 1] = nplan.Dot(temp) / 2.0;
             temp = temp.WithXYZ(0.5 * (pts1.XYZ() + pts2.XYZ()) - ptcur.XYZ());
             d[1, 2] = dnplan.Dot(temp) - normtgcur;
@@ -287,8 +287,8 @@ public class EvolRadInv : FuncInv
         else
         {
             _surf1.D2(x[3], x[4], out pts1, out d1u1, out d1v1, out d2u1, out d2v1, out d2uv1);
-            _surf2.D2(p2d.X(), p2d.Y(), out pts2, out d1u2, out d1v2, out d2u2, out d2v2, out d2uv2);
-            temp = Vector3D.LinearForm(v2d.X(), d1u2, v2d.Y(), d1v2);
+            _surf2.D2(p2d.X, p2d.Y, out pts2, out d1u2, out d1v2, out d2u2, out d2v2, out d2uv2);
+            temp = Vector3D.LinearForm(v2d.X, d1u2, v2d.Y, d1v2);
             d[1, 1] = nplan.Dot(temp) / 2.0;
             temp = temp.WithXYZ(0.5 * (pts1.XYZ() + pts2.XYZ()) - ptcur.XYZ());
             d[1, 2] = dnplan.Dot(temp) - normtgcur;
@@ -296,13 +296,13 @@ public class EvolRadInv : FuncInv
             d[1, 4] = nplan.Dot(d1v1) / 2.0;
         }
 
-        f[1] = (nplan.X() * (pts1.X() + pts2.X()) + nplan.Y() * (pts1.Y() + pts2.Y())
-                + nplan.Z() * (pts1.Z() + pts2.Z()))
+        f[1] = (nplan.X * (pts1.X + pts2.X) + nplan.Y * (pts1.Y + pts2.Y)
+                + nplan.Z * (pts1.Z + pts2.Z))
                  / 2.0
                + theD;
 
         Vector3D ns1 = d1u1.Crossed(d1v1);
-        if (ns1.Magnitude() < Eps)
+        if (ns1.Magnitude < Eps)
         {
             if (_first)
             {
@@ -316,7 +316,7 @@ public class EvolRadInv : FuncInv
         }
 
         Vector3D ns2 = d1u2.Crossed(d1v2);
-        if (ns2.Magnitude() < Eps)
+        if (ns2.Magnitude < Eps)
         {
             if (!_first)
             {
@@ -331,8 +331,8 @@ public class EvolRadInv : FuncInv
 
         Vector3D ncrossns1 = nplan.Crossed(ns1);
         Vector3D ncrossns2 = nplan.Crossed(ns2);
-        double norm1 = ncrossns1.Magnitude();
-        double norm2 = ncrossns2.Magnitude();
+        double norm1 = ncrossns1.Magnitude;
+        double norm2 = ncrossns2.Magnitude;
         if (norm1 < Eps)
         {
             norm1 = 1.0;
@@ -353,9 +353,9 @@ public class EvolRadInv : FuncInv
         temp = Vector3D.LinearForm(ndotns2 / norm2, nplan, -1.0 / norm2, ns2);
         resul1 = resul1.Subtracted(_sg2 * ray * temp);
 
-        f[2] = resul1.X();
-        f[3] = resul1.Y();
-        f[4] = resul1.Z();
+        f[2] = resul1.X;
+        f[3] = resul1.Y;
+        f[4] = resul1.Z;
 
         // Derivee par rapport a u1
         temp = d2u1.Crossed(d1v1).Added(d1u1.Crossed(d2uv1));
@@ -371,18 +371,18 @@ public class EvolRadInv : FuncInv
 
         if (_first)
         {
-            d[2, 1] = v2d.X() * resul1.X() + v2d.Y() * resul2.X();
-            d[3, 1] = v2d.X() * resul1.Y() + v2d.Y() * resul2.Y();
-            d[4, 1] = v2d.X() * resul1.Z() + v2d.Y() * resul2.Z();
+            d[2, 1] = v2d.X * resul1.X + v2d.Y * resul2.X;
+            d[3, 1] = v2d.X * resul1.Y + v2d.Y * resul2.Y;
+            d[4, 1] = v2d.X * resul1.Z + v2d.Y * resul2.Z;
         }
         else
         {
-            d[2, 3] = resul1.X();
-            d[3, 3] = resul1.Y();
-            d[4, 3] = resul1.Z();
-            d[2, 4] = resul2.X();
-            d[3, 4] = resul2.Y();
-            d[4, 4] = resul2.Z();
+            d[2, 3] = resul1.X;
+            d[3, 3] = resul1.Y;
+            d[4, 3] = resul1.Z;
+            d[2, 4] = resul2.X;
+            d[3, 4] = resul2.Y;
+            d[4, 4] = resul2.Z;
         }
 
         // derivee par rapport a w (parametre sur ligne guide)
@@ -394,16 +394,16 @@ public class EvolRadInv : FuncInv
         resul2 = Vector3D.LinearForm(_sg2 / norm2 * (grosterme * ndotns2 - dnplan.Dot(ns2)), nplan, -_sg2 * ndotns2 / norm2,
                              dnplan, -_sg2 * grosterme / norm2, ns2);
 
-        d[2, 2] = ray * (resul1.X() + resul2.X());
-        d[3, 2] = ray * (resul1.Y() + resul2.Y());
-        d[4, 2] = ray * (resul1.Z() + resul2.Z());
+        d[2, 2] = ray * (resul1.X + resul2.X);
+        d[3, 2] = ray * (resul1.Y + resul2.Y);
+        d[4, 2] = ray * (resul1.Z + resul2.Z);
 
         temp = Vector3D.LinearForm(_sg1 * ndotns1 / norm1 - _sg2 * ndotns2 / norm2, nplan, -_sg1 / norm1, ns1, _sg2 / norm2,
                            ns2);
 
-        d[2, 2] += dray * temp.X();
-        d[3, 2] += dray * temp.Y();
-        d[4, 2] += dray * temp.Z();
+        d[2, 2] += dray * temp.X;
+        d[3, 2] += dray * temp.Y;
+        d[4, 2] += dray * temp.Z;
 
         // Derivee par rapport a u2
         temp = d2u2.Crossed(d1v2).Added(d1u2.Crossed(d2uv2));
@@ -421,18 +421,18 @@ public class EvolRadInv : FuncInv
 
         if (!_first)
         {
-            d[2, 1] = v2d.X() * resul1.X() + v2d.Y() * resul2.X();
-            d[3, 1] = v2d.X() * resul1.Y() + v2d.Y() * resul2.Y();
-            d[4, 1] = v2d.X() * resul1.Z() + v2d.Y() * resul2.Z();
+            d[2, 1] = v2d.X * resul1.X + v2d.Y * resul2.X;
+            d[3, 1] = v2d.X * resul1.Y + v2d.Y * resul2.Y;
+            d[4, 1] = v2d.X * resul1.Z + v2d.Y * resul2.Z;
         }
         else
         {
-            d[2, 3] = resul1.X();
-            d[3, 3] = resul1.Y();
-            d[4, 3] = resul1.Z();
-            d[2, 4] = resul2.X();
-            d[3, 4] = resul2.Y();
-            d[4, 4] = resul2.Z();
+            d[2, 3] = resul1.X;
+            d[3, 3] = resul1.Y;
+            d[4, 3] = resul1.Z;
+            d[2, 4] = resul2.X;
+            d[3, 4] = resul2.Y;
+            d[4, 4] = resul2.Z;
         }
 
         return true;

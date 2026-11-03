@@ -73,12 +73,12 @@ public sealed class Circ2dTanOnRad
                 if (type1 == Circle)
                 {
                     CircleCurve2D        ccc1 = (cc1 as CircleCurve2D)!;
-                    Circle2D            c1   = ccc1.Circ2d();
+                    Circle2D            c1   = ccc1.Circle;
                     QualifiedCirc qc1  = new(c1, qualified1.Qualifier());
                     if (type2 == Circle)
                     {
                         CircleCurve2D         cCon = (Con as CircleCurve2D)!;
-                        Circle2D             con  = cCon.Circ2d();
+                        Circle2D             con  = cCon.Circle;
                         AnalyticCirc2dTanOnRad circ = new(qc1, con, radius, tolerance);
                         _wellDone                   = circ.IsDone;
                         _nbrSol                     = circ.SolutionCount;
@@ -87,7 +87,7 @@ public sealed class Circ2dTanOnRad
                     else
                     {
                         LineCurve2D           lLon = (Con as LineCurve2D)!;
-                        Line2D              lon  = lLon.Lin2d();
+                        Line2D              lon  = lLon.Line;
                         AnalyticCirc2dTanOnRad circ = new(qc1, lon, radius, tolerance);
                         _wellDone                   = circ.IsDone;
                         _nbrSol                     = circ.SolutionCount;
@@ -97,12 +97,12 @@ public sealed class Circ2dTanOnRad
                 else
                 {
                     LineCurve2D         ll1 = (cc1 as LineCurve2D)!;
-                    Line2D            l1  = ll1.Lin2d();
+                    Line2D            l1  = ll1.Line;
                     QualifiedLin ql1 = new(l1, qualified1.Qualifier());
                     if (type2 == Circle)
                     {
                         CircleCurve2D         cCon = (Con as CircleCurve2D)!;
-                        Circle2D             con  = cCon.Circ2d();
+                        Circle2D             con  = cCon.Circle;
                         AnalyticCirc2dTanOnRad circ = new(ql1, con, radius, tolerance);
                         _wellDone                   = circ.IsDone;
                         _nbrSol                     = circ.SolutionCount;
@@ -111,7 +111,7 @@ public sealed class Circ2dTanOnRad
                     else
                     {
                         LineCurve2D           lLon = (Con as LineCurve2D)!;
-                        Line2D              lon  = lLon.Lin2d();
+                        Line2D              lon  = lLon.Line;
                         AnalyticCirc2dTanOnRad circ = new(ql1, lon, radius, tolerance);
                         _wellDone                   = circ.IsDone;
                         _nbrSol                     = circ.SolutionCount;
@@ -129,7 +129,7 @@ public sealed class Circ2dTanOnRad
                 if (type1 == Circle)
                 {
                     CircleCurve2D               ccc1    = (cc1 as CircleCurve2D)!;
-                    Circle2D                   c1      = ccc1.Circ2d();
+                    Circle2D                   c1      = ccc1.Circle;
                     QualifiedCirc        qc1     = new(c1, qualified1.Qualifier());
                     Circ2dTanOnRadGeo circGeo = new(qc1, onCurve, radius, tolerance);
                     _wellDone                            = circGeo.IsDone;
@@ -139,7 +139,7 @@ public sealed class Circ2dTanOnRad
                 else if (type1 == Line)
                 {
                     LineCurve2D                 ll1     = (cc1 as LineCurve2D)!;
-                    Line2D                    l1      = ll1.Lin2d();
+                    Line2D                    l1      = ll1.Line;
                     QualifiedLin         ql1     = new(l1, qualified1.Qualifier());
                     Circ2dTanOnRadGeo circGeo = new(ql1, onCurve, radius, tolerance);
                     _wellDone                            = circGeo.IsDone;
@@ -183,7 +183,7 @@ public sealed class Circ2dTanOnRad
                 if (type2 == Circle)
                 {
                     CircleCurve2D         cCon = (Con as CircleCurve2D)!;
-                    Circle2D             con  = cCon.Circ2d();
+                    Circle2D             con  = cCon.Circle;
                     AnalyticCirc2dTanOnRad circ = new(point1, con, radius, tolerance);
                     _wellDone                   = circ.IsDone;
                     _nbrSol                     = circ.SolutionCount;
@@ -192,7 +192,7 @@ public sealed class Circ2dTanOnRad
                 else
                 {
                     LineCurve2D           lLon = (Con as LineCurve2D)!;
-                    Line2D              lon  = lLon.Lin2d();
+                    Line2D              lon  = lLon.Line;
                     AnalyticCirc2dTanOnRad circ = new(point1, lon, radius, tolerance);
                     _wellDone                   = circ.IsDone;
                     _nbrSol                     = circ.SolutionCount;

@@ -29,8 +29,8 @@ internal static class ComputeDataRotule
     {
         // calcul du tore.
         //---------------
-        CoordinateSystem pos = pl.Position();
-        Direction3D dpl = pos.XDirection().Crossed(pos.YDirection());
+        CoordinateSystem pos = pl.Position;
+        Direction3D dpl = pos.XDirection.Crossed(pos.YDirection);
         Direction3D dfpl = dpl;
         Direction3D dplnat = dpl;
         if (opl == Reversed)
@@ -41,32 +41,32 @@ internal static class ComputeDataRotule
         {
             dfpl = dfpl.Reversed();
         }
-        pos = pl1.Position();
-        Direction3D dpl1 = pos.XDirection().Crossed(pos.YDirection());
+        pos = pl1.Position;
+        Direction3D dpl1 = pos.XDirection.Crossed(pos.YDirection);
         if (opl1 == Reversed)
         {
             dpl1 = dpl1.Reversed();
         }
-        pos = pl2.Position();
-        Direction3D dpl2 = pos.XDirection().Crossed(pos.YDirection());
+        pos = pl2.Position;
+        Direction3D dpl2 = pos.XDirection.Crossed(pos.YDirection);
         if (opl2 == Reversed)
         {
             dpl2 = dpl2.Reversed();
         }
-        double alpha = dpl1.Angle(dpl2);
+        double alpha = dpl1.AngleTo(dpl2);
         QuadQuadGeo lInt = new(pl1, pl2, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Point3D ptor = new(), pcirc;
         if (lInt.IsDone)
         {
-            pcirc = global::Kerf.Engine.Geometry.ElCLib.Value(global::Kerf.Engine.Geometry.ElCLib.Parameter(lInt.Line(1), pl.Location()), lInt.Line(1));
-            ptor = ptor.WithCoord(pcirc.X() + r * dpl.X(), pcirc.Y() + r * dpl.Y(), pcirc.Z() + r * dpl.Z());
+            pcirc = global::Kerf.Engine.Geometry.ElCLib.Value(global::Kerf.Engine.Geometry.ElCLib.Parameter(lInt.Line(1), pl.Location), lInt.Line(1));
+            ptor = ptor.WithCoord(pcirc.X + r * dpl.X, pcirc.Y + r * dpl.Y, pcirc.Z + r * dpl.Z);
         }
         else
         {
             return false;
         }
         CoordinateSystem ppos = new(ptor, dpl.Reversed(), dpl1);
-        if (ppos.YDirection().Dot(dpl2) < 0.0)
+        if (ppos.YDirection.Dot(dpl2) < 0.0)
         {
             ppos = ppos.YReversed();
         }
@@ -90,15 +90,15 @@ internal static class ComputeDataRotule
         //-----------------------------------------------------------------
         // du cote du plan
         //---------------
-        Frame3D circAx2 = ppos.Ax2();
+        Frame3D circAx2 = ppos.Frame;
         circAx2 = circAx2.WithLocation(pcirc);
         CircleCurve3D gc = new(circAx2, r);
         double u, v;
         global::Kerf.Engine.Geometry.ElSLib.Parameters(pl, pcirc, out u, out v);
         Point2D p2dcirc = new(u, v);
-        Direction2D dx2d = new(dpl1.Dot(pl.Position().XDirection()), dpl1.Dot(pl.Position().YDirection()));
-        Direction2D dy2d = new(ppos.YDirection().Dot(pl.Position().XDirection()),
-                            ppos.YDirection().Dot(pl.Position().YDirection()));
+        Direction2D dx2d = new(dpl1.Dot(pl.Position.XDirection), dpl1.Dot(pl.Position.YDirection));
+        Direction2D dy2d = new(ppos.YDirection.Dot(pl.Position.XDirection),
+                            ppos.YDirection.Dot(pl.Position.YDirection));
         Frame2D circ2dax = new(p2dcirc, dx2d, dy2d);
         CircleCurve2D gc2d = new(circ2dax, r);
         Point2D p2dlin = new(0.0, Math.PI / 2);

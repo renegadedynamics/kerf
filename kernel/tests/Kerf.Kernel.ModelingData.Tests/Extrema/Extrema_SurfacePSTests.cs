@@ -49,7 +49,7 @@ public class Extrema_SurfacePSTests
             for (int j = 0; j <= theN; j++)
             {
                 double v = theV1 + (theV2 - theV1) * j / theN;
-                aMin = Math.Min(aMin, theP.SquareDistance(theS.Value(u, v)));
+                aMin = Math.Min(aMin, theP.SquareDistanceTo(theS.Value(u, v)));
             }
         }
         return aMin;
@@ -70,14 +70,14 @@ public class Extrema_SurfacePSTests
     {
         thePS.Parameter(out double u, out double v);
         theS.D1(u, v, out Point3D aS, out Vector3D aDu, out Vector3D aDv);
-        Assert.True(aS.Distance(thePS.Value()) < 1e-9);
+        Assert.True(aS.DistanceTo(thePS.Value()) < 1e-9);
         Vector3D aPS = new(theP, aS);
-        if (aPS.Magnitude() < 1e-7)
+        if (aPS.Magnitude < 1e-7)
         {
             return;
         }
-        Assert.True(Math.Abs(aPS.Dot(aDu)) / (aPS.Magnitude() * aDu.Magnitude()) < theTol, "not normal along U");
-        Assert.True(Math.Abs(aPS.Dot(aDv)) / (aPS.Magnitude() * aDv.Magnitude()) < theTol, "not normal along V");
+        Assert.True(Math.Abs(aPS.Dot(aDu)) / (aPS.Magnitude * aDu.Magnitude) < theTol, "not normal along U");
+        Assert.True(Math.Abs(aPS.Dot(aDv)) / (aPS.Magnitude * aDv.Magnitude) < theTol, "not normal along V");
     }
 
     /// <summary>
@@ -126,7 +126,7 @@ public class Extrema_SurfacePSTests
             for (int i = 1; i <= anExt.ExtCount; i++)
             {
                 AssertStationary(anAdaptor, aP, anExt.Point(i));
-                Assert.Equal(aP.SquareDistance(anExt.Point(i).Value()), anExt.SquareDistance(i), 1e-9);
+                Assert.Equal(aP.SquareDistanceTo(anExt.Point(i).Value()), anExt.SquareDistance(i), 1e-9);
             }
         }
 
@@ -379,7 +379,7 @@ public class Extrema_SurfacePSTests
             // FuncPSNorm's F is (S - P).Su, FuncPSDist's gradient (P - S).Su
             Assert.Equal(-F[k], G[k], 1e-12);
         }
-        Assert.Equal(aP.SquareDistance(aBump.Value(1.3, 2.6)), aF);
+        Assert.Equal(aP.SquareDistanceTo(aBump.Value(1.3, 2.6)), aF);
 
         // Outside the range, FuncPSDist returns false
         X[1] = -1.0;

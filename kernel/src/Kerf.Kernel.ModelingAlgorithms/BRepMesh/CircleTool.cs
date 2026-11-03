@@ -76,8 +76,8 @@ public sealed class CircleTool
     /// <summary>Binds the circle to the index.</summary>
     public void Bind(int index, Circle2D circle)
     {
-        Xy coord = circle.Location().Coord();
-        double radius = circle.Radius();
+        Xy coord = circle.Location.Coord();
+        double radius = circle.Radius;
         BindCore(index, coord, radius);
     }
 

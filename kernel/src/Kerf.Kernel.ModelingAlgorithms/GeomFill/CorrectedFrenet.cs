@@ -43,7 +43,7 @@ public class CorrectedFrenet : TrihedronLaw
 
         aCurve.D3(param, out Point3D point, out Vector3D dc1, out Vector3D dc2, out Vector3D dc3);
         Vector3D dc1crossDC2 = dc1 ^ dc2;
-        double Norm_DC1crossDC2 = dc1crossDC2.Magnitude();
+        double Norm_DC1crossDC2 = dc1crossDC2.Magnitude;
 
         double dc1DC2DC3 = dc1crossDC2 * dc3; // mixed product
 
@@ -160,19 +160,19 @@ public class CorrectedFrenet : TrihedronLaw
             break;
 
             case Circle:
-                p = new PlaneSurface(new CoordinateSystem(theC.Circle().Position()));
+                p = new PlaneSurface(new CoordinateSystem(theC.Circle().Position));
                 break;
 
             case Ellipse:
-                p = new PlaneSurface(new CoordinateSystem(theC.Ellipse().Position()));
+                p = new PlaneSurface(new CoordinateSystem(theC.Ellipse().Position));
                 break;
 
             case Hyperbola:
-                p = new PlaneSurface(new CoordinateSystem(theC.Hyperbola().Position()));
+                p = new PlaneSurface(new CoordinateSystem(theC.Hyperbola().Position));
                 break;
 
             case Parabola:
-                p = new PlaneSurface(new CoordinateSystem(theC.Parabola().Position()));
+                p = new PlaneSurface(new CoordinateSystem(theC.Parabola().Position));
                 break;
 
             case BezierCurve:
@@ -442,7 +442,7 @@ public class CorrectedFrenet : TrihedronLaw
             }
 
             _frenet.D0(currParam, ref tangent, ref normal, ref bn);
-            if (prevTangent.Angle(tangent) < M_PI / 3 || i == 1)
+            if (prevTangent.AngleTo(tangent) < M_PI / 3 || i == 1)
             {
                 parameters.Append(currParam);
                 // OCC78
@@ -482,7 +482,7 @@ public class CorrectedFrenet : TrihedronLaw
                 // Evaluate the Next step
                 cs.D1(param, out Point3D ponC, out Vector3D d1);
                 double l = Math.Max(ponC.XYZ().Modulus() / 2, lengthMin);
-                double norm = d1.Magnitude();
+                double norm = d1.Magnitude;
                 if (norm < global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     norm = global::Kerf.Engine.Foundation.Precision.Confusion();
@@ -550,7 +550,7 @@ public class CorrectedFrenet : TrihedronLaw
     {
         double angle;
         Vector3D Normal_rot, cross;
-        angle = tangent.Angle(prevTangent);
+        angle = tangent.AngleTo(prevTangent);
         if (Math.Abs(angle) > global::Kerf.Engine.Foundation.Precision.Angular() && Math.Abs(angle) < M_PI - global::Kerf.Engine.Foundation.Precision.Angular())
         {
             cross = tangent.Crossed(prevTangent).Normalized();
@@ -561,7 +561,7 @@ public class CorrectedFrenet : TrihedronLaw
         {
             Normal_rot = normal;
         }
-        double angleAT = Normal_rot.Angle(prevNormal);
+        double angleAT = Normal_rot.AngleTo(prevNormal);
         if (angleAT > global::Kerf.Engine.Foundation.Precision.Angular() && M_PI - angleAT > global::Kerf.Engine.Foundation.Precision.Angular())
         {
             if (Normal_rot.Crossed(prevNormal).IsOpposite(prevTangent, global::Kerf.Engine.Foundation.Precision.Angular()))
@@ -850,7 +850,7 @@ public class CorrectedFrenet : TrihedronLaw
                     vec = vec.WithXY(point2d.XY() - old.XY());
                     if (k > 2)
                     {
-                        double theAngle = prevVec.Angle(vec);
+                        double theAngle = prevVec.AngleTo(vec);
                         if (Math.Abs(theAngle) > maxAngle)
                         {
                             return Trihedron.IsDiscreteTrihedron; // DiscreteTrihedron

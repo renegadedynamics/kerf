@@ -54,12 +54,12 @@ public class ShapeUpgrade_UnifySameDomainTest
         {
             Point3D        aFirstPoint   = Tool.Pnt(theFirst);
             Point3D        aLastPoint    = Tool.Pnt(theLast);
-            var           aFirstPoint2d = new Point2D(Math.Atan2(aFirstPoint.Y(), aFirstPoint.X()), aFirstPoint.Z());
-            var           aLastPoint2d  = new Point2D(Math.Atan2(aLastPoint.Y(), aLastPoint.X()), aLastPoint.Z());
+            var           aFirstPoint2d = new Point2D(Math.Atan2(aFirstPoint.Y, aFirstPoint.X), aFirstPoint.Z);
+            var           aLastPoint2d  = new Point2D(Math.Atan2(aLastPoint.Y, aLastPoint.X), aLastPoint.Z);
             var           aDirection    = new Vector2D(aFirstPoint2d, aLastPoint2d);
             Curve2D  aPCurve       = new LineCurve2D(aFirstPoint2d, new Direction2D(aDirection));
             theBuilder.UpdateEdge(anEdge, aPCurve, theSurface, theLocation, global::Kerf.Engine.Foundation.Precision.Confusion());
-            theBuilder.Range(anEdge, 0.0, aDirection.Magnitude());
+            theBuilder.Range(anEdge, 0.0, aDirection.Magnitude);
         }
         return anEdge;
     }
@@ -298,7 +298,7 @@ public class ShapeUpgrade_UnifySameDomainTest
         Wire anInternalWire = aMIW.Wire();
 
         // Set wire to INTERNAL orientation and add to face
-        anInternalWire.Orientation(Internal);
+        anInternalWire.Orient(Internal);
         aBuilder.Add(aFace, anInternalWire);
 
         // Create a shell with this face
@@ -382,7 +382,7 @@ public class ShapeUpgrade_UnifySameDomainTest
         aMIW1.Add(new MakeEdge(aIP1, aIP2).Edge());
         Assert.True(aMIW1.IsDone, "Failed to create internal wire 1");
         Wire anInternalWire1 = aMIW1.Wire();
-        anInternalWire1.Orientation(Internal);
+        anInternalWire1.Orient(Internal);
         aBuilder.Add(aFace1, anInternalWire1);
 
         // Add internal wire to second face
@@ -392,7 +392,7 @@ public class ShapeUpgrade_UnifySameDomainTest
         aMIW2.Add(new MakeEdge(aIP3, aIP4).Edge());
         Assert.True(aMIW2.IsDone, "Failed to create internal wire 2");
         Wire anInternalWire2 = aMIW2.Wire();
-        anInternalWire2.Orientation(Internal);
+        anInternalWire2.Orient(Internal);
         aBuilder.Add(aFace2, anInternalWire2);
 
         // Sew the faces together to share common edge
@@ -464,7 +464,7 @@ public class ShapeUpgrade_UnifySameDomainTest
         Assert.True(aMIW.IsDone, "Failed to create internal wire");
 
         Wire anInternalWire = aMIW.Wire();
-        anInternalWire.Orientation(Internal);
+        anInternalWire.Orient(Internal);
         aBuilder.Add(aFace, anInternalWire);
 
         // Create shell

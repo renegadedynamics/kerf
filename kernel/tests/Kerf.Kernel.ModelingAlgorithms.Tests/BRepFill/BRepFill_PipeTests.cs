@@ -77,7 +77,7 @@ public class BRepFill_PipeTests
         for (WireExplorer anExp = new(aSpine); anExp.More(); anExp.Next(), i++)
         {
             Shape aGenerated = aPipe.Generated(anExp.Current(), aProfile);
-            Assert.Equal(ShapeType.Edge, aGenerated.ShapeType());
+            Assert.Equal(ShapeType.Edge, aGenerated.Type);
             Assert.True(aGenerated.TShape()!.IsFrozen);
             bool isInResult = false;
             for (Explorer anInResult = new(aResult, ShapeType.Edge); anInResult.More(); anInResult.Next())
@@ -86,8 +86,8 @@ public class BRepFill_PipeTests
             }
             Assert.True(isInResult);
             List<Point3D> anEnds = Points(aGenerated);
-            Assert.Contains(anEnds, p => p.Distance(aCorners[i]) < 1e-6);
-            Assert.Contains(anEnds, p => p.Distance(aCorners[i + 1]) < 1e-6);
+            Assert.Contains(anEnds, p => p.DistanceTo(aCorners[i]) < 1e-6);
+            Assert.Contains(anEnds, p => p.DistanceTo(aCorners[i + 1]) < 1e-6);
         }
         Assert.Equal(2, i);
     }
@@ -161,17 +161,17 @@ public class BRepFill_PipeTests
         Shape aFirst = aPipe.FirstShape();
         Shape aLast = aPipe.LastShape();
         Assert.True(aFirst.TShape()!.IsFrozen);
-        Assert.Equal(ShapeType.Solid, aFirst.ShapeType());
-        Assert.True(aFirst.Location().IsIdentity); // RemoveLocations
-        Assert.True(aLast.Location().IsIdentity);
+        Assert.Equal(ShapeType.Solid, aFirst.Type);
+        Assert.True(aFirst.Placement.IsIdentity); // RemoveLocations
+        Assert.True(aLast.Placement.IsIdentity);
         List<Point3D> aBoxPoints = Points(aBox), aFirstPoints = Points(aFirst), aLastPoints = Points(aLast);
         Assert.Equal(aBoxPoints.Count, aFirstPoints.Count);
         Vector3D aShift = new(aBoxPoints[0], aFirstPoints[0]);
-        Assert.True(Math.Abs(aShift.X()) < 1e-9 && Math.Abs(aShift.Y()) < 1e-9);
+        Assert.True(Math.Abs(aShift.X) < 1e-9 && Math.Abs(aShift.Y) < 1e-9);
         for (int i = 0; i < aBoxPoints.Count; i++)
         {
-            Assert.True(aBoxPoints[i].Translated(aShift).Distance(aFirstPoints[i]) < 1e-9);
-            Assert.True(aFirstPoints[i].Translated(new Vector3D(0, 0, 10)).Distance(aLastPoints[i]) < 1e-9);
+            Assert.True(aBoxPoints[i].Translated(aShift).DistanceTo(aFirstPoints[i]) < 1e-9);
+            Assert.True(aFirstPoints[i].Translated(new Vector3D(0, 0, 10)).DistanceTo(aLastPoints[i]) < 1e-9);
         }
         Assert.Equal(aBoxText, Text(aBox));
 
@@ -192,7 +192,7 @@ public class BRepFill_PipeTests
         Pipe aPipe = new();
         Assert.Throws<DomainErrorException>(() => aPipe.Perform(aSpine, aBox));
         Assert.True(aPipe.Shape().IsNull);
-        Assert.Equal(ShapeType.Wire, aPipe.Spine().ShapeType());
+        Assert.Equal(ShapeType.Wire, aPipe.Spine().Type);
 
         Edge aSpineEdge = ShapeCasts.Edge(new Explorer(aSpine, ShapeType.Edge).Current());
         Edge aBoxEdge = ShapeCasts.Edge(new Explorer(aBox, ShapeType.Edge).Current());
@@ -206,7 +206,7 @@ public class BRepFill_PipeTests
         Assert.ThrowsAny<Exception>(() => aPipe.Section(aSpineVertex));
         // PipeLine sweeps a point along the spine (the location law was made before the profile was refused)
         Wire aLine = aPipe.PipeLine(new Point3D(0, 0, 0));
-        Assert.Equal(ShapeType.Wire, aLine.ShapeType());
+        Assert.Equal(ShapeType.Wire, aLine.Type);
         Assert.True(aLine.TShape()!.IsFrozen);
 
         NCollection_List<Shape> aList = new();

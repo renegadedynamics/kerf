@@ -35,9 +35,9 @@ internal sealed class SweepingTool
 
     public Shape Shape(int anIndex) => _map[anIndex - 1];
 
-    public ShapeType Type(in Shape aShape) => aShape.ShapeType();
+    public ShapeType Type(in Shape aShape) => aShape.Type;
 
-    public Orientation Orientation(in Shape aShape) => aShape.Orientation();
+    public Orientation Orientation(in Shape aShape) => aShape.Orientation;
 
-    public void SetOrientation(ref Shape aShape, Orientation or) => aShape.Orientation(or);
+    public void SetOrientation(ref Shape aShape, Orientation or) => aShape.Orient(or);
 }

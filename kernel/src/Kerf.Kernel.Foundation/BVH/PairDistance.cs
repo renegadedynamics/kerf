@@ -11,7 +11,7 @@ namespace Kerf.Engine.Geometry.Bvh;
 /// The minimum (square) distance between the elements of two BVH trees. A derived class defines only <c>Accept</c>,
 /// the distance between two elements.
 /// </summary>
-public abstract class PairDistance<T, TVec, TSet> : PairTraverse<T, TVec, TSet, T>
+internal abstract class PairDistance<T, TVec, TSet> : PairTraverse<T, TVec, TSet, T>
     where T : unmanaged, IFloatingPointIeee754<T>, IMinMaxValue<T>
     where TVec : unmanaged, INCollection_Vec<T, TVec>
     where TSet : class

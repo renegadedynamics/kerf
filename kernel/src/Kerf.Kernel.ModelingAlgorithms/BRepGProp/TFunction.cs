@@ -91,7 +91,7 @@ public class TFunction : Function
         double uMax;
 
         _surface.D12d(x, out p2d, out v2d);
-        uMax = p2d.X();
+        uMax = p2d.X;
 
         if (uMax - _uMin < tolU)
         {
@@ -100,11 +100,11 @@ public class TFunction : Function
         }
 
         NCollection_HArray1<double> uKnots = _surface.GetUKnots(_uMin, uMax);
-        _uFunction.SetVParam(p2d.Y());
+        _uFunction.SetVParam(p2d.Y);
 
         // Compute the integral from myUMin to aUMax of myUFunction.
         int i;
-        double coeff = v2d.Y();
+        double coeff = v2d.Y;
         // int aNbUIntervals = aUKnots->Length() - 1;
         // double    aTol          = myTolerance/aNbUIntervals;
         double tol = _tolerance;

@@ -96,15 +96,15 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     public Placement ToTopLoc() => Wrapped;
 
     /// <summary>A new OCCT gp_Trsf for this location's transformation.</summary>
-    public Transform3D ToGpTrsf() => Wrapped.Transformation();
+    public Transform3D ToGpTrsf() => Wrapped.Transformation;
 
     /// <summary>The position (translation) part.</summary>
     public Vector Position
     {
         get
         {
-            var trsf = Wrapped.Transformation();
-            var t = trsf.TranslationPart();
+            var trsf = Wrapped.Transformation;
+            var t = trsf.TranslationXyz();
             return new Vector(t);
         }
     }
@@ -114,7 +114,7 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     {
         get
         {
-            var trsf = Wrapped.Transformation();
+            var trsf = Wrapped.Transformation;
             var q = trsf.GetRotation();
             double a = 0, b = 0, c = 0;
             q.GetEulerAngles(EulerSequence.Intrinsic_XYZ, out a, out b, out c);
@@ -131,7 +131,7 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
         var trsfPosition = new Transform3D();
         var v = position.ToGpVec();
         trsfPosition = trsfPosition.WithTranslationPart(v);
-        var current = Wrapped.Transformation();
+        var current = Wrapped.Transformation;
         var rotation = current.GetRotation();
         var trsfOrientation = new Transform3D();
         trsfOrientation = trsfOrientation.WithRotation(rotation);
@@ -142,8 +142,8 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     /// <summary>This location with a new orientation (intrinsic XYZ Euler angles in degrees) and the same position.</summary>
     public Location WithOrientation(Vector orientation)
     {
-        var current = Wrapped.Transformation();
-        var xyz = current.TranslationPart();
+        var current = Wrapped.Transformation;
+        var xyz = current.TranslationXyz();
         var trsfPosition = new Transform3D();
         var v = new Vector3D(xyz.X(), xyz.Y(), xyz.Z());
         trsfPosition = trsfPosition.WithTranslationPart(v);
@@ -231,7 +231,7 @@ public class Location : IEquatable<Location>, IFormattable, IGeometry
     {
         get
         {
-            var trsf = Wrapped.Transformation();
+            var trsf = Wrapped.Transformation;
             var q = trsf.GetRotation();
             return (Position.Key, GeomKey.Quaternion(q));
         }

@@ -19,7 +19,7 @@ namespace Kerf.Engine.Geometry.Properties;
 /// <see cref="CLProps"/> on an adaptor (generated from it by substituting the type). A working object: its
 /// setters are public. The resolution is the linear tolerance used to decide that a vector is null.
 /// </remarks>
-public class CLProps3d
+internal class CLProps3d
 {
     private CurveAdaptorBase? _curve;
     private double _u;
@@ -139,7 +139,7 @@ public class CLProps3d
                         return false;
                 }
 
-                if (v.SquareMagnitude() > tolSq)
+                if (v.SquareMagnitude > tolSq)
                 {
                     _significantFirstDerivativeOrder = order;
                     _tangentStatus = Defined;

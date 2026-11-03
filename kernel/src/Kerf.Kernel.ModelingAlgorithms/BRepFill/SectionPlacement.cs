@@ -43,7 +43,7 @@ public sealed class SectionPlacement
         Edge e;
         e = law.Edge(ind);
         t = Tool.Parameter(theV, e);
-        if (e.Orientation() == Reversed)
+        if (e.Orientation == Reversed)
         {
             double lf, ll;
             Tool.Curve(e, out double f, out double l);

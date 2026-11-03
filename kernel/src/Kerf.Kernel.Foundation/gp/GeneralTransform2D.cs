@@ -58,7 +58,7 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
     }
 
     /// <summary>The transformation <c>theM * P + theV</c>.</summary>
-    public GeneralTransform2D(in Matrix2x2 m, in Xy v)
+    internal GeneralTransform2D(in Matrix2x2 m, in Xy v)
     {
         _matrix = m;
         _loc = v;
@@ -81,20 +81,20 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
         double scale = _scale;
         shape = Other;
         scale = 0.0;
-        double a = A.Direction().X();
-        double b = A.Direction().Y();
+        double a = A.Direction.X;
+        double b = A.Direction.Y;
         matrix.SetValue(1, 1, (1.0 - ratio) * a * a + ratio);
         matrix.SetValue(2, 2, (1.0 - ratio) * b * b + ratio);
         matrix.SetValue(1, 2, (1.0 - ratio) * a * b);
         matrix.SetValue(2, 1, matrix.Value(1, 2));
-        loc = A.Location().XY();
+        loc = A.Location.XY();
         loc.Reverse();
         loc.Multiply(matrix);
-        loc.Add(A.Location().XY());
+        loc.Add(A.Location.XY());
         return new GeneralTransform2D(matrix, loc, shape, scale);
     }
 
-    public readonly GeneralTransform2D WithValue(int row, int col, double value)
+    internal readonly GeneralTransform2D WithValue(int row, int col, double value)
     {
         Matrix2x2 matrix = _matrix;
         Xy loc = _loc;
@@ -113,15 +113,15 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
         return new GeneralTransform2D(matrix, loc, shape, _scale);
     }
 
-    public readonly GeneralTransform2D WithTranslationPart(in Xy coord)
+    internal readonly GeneralTransform2D WithTranslationPart(in Xy coord)
     {
         Xy loc = _loc;
         TransformForm shape = _shape;
         loc = coord;
-        if (Form() == CompoundTrsf || Form() == Other || Form() == Translation)
+        if (Form == CompoundTrsf || Form == Other || Form == Translation)
         {
         }
-        else if (Form() == Identity)
+        else if (Form == Identity)
         {
             shape = Translation;
         }
@@ -134,7 +134,7 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
 
     public readonly GeneralTransform2D WithTrsf2d(in Transform2D t) => new(t);
 
-    public readonly GeneralTransform2D WithVectorialPart(in Matrix2x2 matrix)
+    internal readonly GeneralTransform2D WithVectorialPart(in Matrix2x2 matrix)
     {
         Matrix2x2 newMatrix = _matrix;
         TransformForm shape = _shape;
@@ -151,14 +151,14 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
 
     public readonly bool IsSingular => _matrix.IsSingular();
 
-    public readonly TransformForm Form() => _shape;
+    public readonly TransformForm Form => _shape;
 
-    public readonly Xy TranslationPart() => _loc;
+    internal readonly Xy TranslationXy() => _loc;
 
-    public readonly Matrix2x2 VectorialPart() => _matrix;
+    internal readonly Matrix2x2 VectorialPart => _matrix;
 
     /// <summary>The coefficient at a row (1 to 2) and column (1 to 3) of the 2x3 matrix.</summary>
-    public readonly double Value(int row, int col)
+    internal readonly double Value(int row, int col)
     {
         Standard_OutOfRange_Raise_if(row < 1 || row > 2 || col < 1 || col > 3, " ");
         if (col == 3)
@@ -191,7 +191,7 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
         }
         else
         {
-            Transform2D t = Trsf2d();
+            Transform2D t = ToTransform();
             t = t.Inverted();
             (matrix, loc, shape, scale) = new GeneralTransform2D(matrix, loc, shape, scale).WithTrsf2d(t);
         }
@@ -205,7 +205,7 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
         Xy loc = _loc;
         TransformForm shape = _shape;
         double scale = _scale;
-        if (Form() == Other || t.Form() == Other)
+        if (Form == Other || t.Form == Other)
         {
             shape = Other;
             loc.Add(t._loc.Multiplied(matrix));
@@ -213,8 +213,8 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
         }
         else
         {
-            Transform2D t1 = Trsf2d();
-            Transform2D t2 = t.Trsf2d();
+            Transform2D t1 = ToTransform();
+            Transform2D t2 = t.ToTransform();
             t1 = t1.Multiplied(t2);
             matrix = t1._matrix;
             loc = t1._loc;
@@ -231,7 +231,7 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
         Xy loc = _loc;
         TransformForm shape = _shape;
         double scale = _scale;
-        if (Form() == Other || t.Form() == Other)
+        if (Form == Other || t.Form == Other)
         {
             shape = Other;
             loc.Multiply(t._matrix);
@@ -240,8 +240,8 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
         }
         else
         {
-            Transform2D t1 = Trsf2d();
-            Transform2D t2 = t.Trsf2d();
+            Transform2D t1 = ToTransform();
+            Transform2D t2 = t.ToTransform();
             t1 = t1.PreMultiplied(t2);
             matrix = t1._matrix;
             loc = t1._loc;
@@ -303,7 +303,7 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
             }
             else
             {
-                Transform2D t = Trsf2d();
+                Transform2D t = ToTransform();
                 t = t.Powered(n);
                 (matrix, loc, shape, scale) = new GeneralTransform2D(matrix, loc, shape, scale).WithTrsf2d(t);
             }
@@ -311,7 +311,7 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
         return new GeneralTransform2D(matrix, loc, shape, scale);
     }
 
-    public readonly void Transforms(ref Xy coord)
+    internal readonly void Transforms(ref Xy coord)
     {
         coord.Multiply(_matrix);
         if (!(_shape == Other) && !(_scale == 1.0))
@@ -322,14 +322,14 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
         coord.Add(_loc);
     }
 
-    public readonly Xy Transformed(in Xy coord)
+    internal readonly Xy Transformed(in Xy coord)
     {
         Xy newCoord = coord;
         Transforms(ref newCoord);
         return newCoord;
     }
 
-    public readonly void Transforms(ref double x, ref double y)
+    internal readonly void Transforms(ref double x, ref double y)
     {
         Xy doublet = new(x, y);
         doublet.Multiply(_matrix);
@@ -344,13 +344,13 @@ public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2
 
     /// <summary>This transformation as a <see cref="Transform2D"/>.</summary>
     /// <exception cref="ConstructionErrorException">The form is gp_Other, or the matrix is not orthogonal.</exception>
-    public readonly Transform2D Trsf2d()
+    public readonly Transform2D ToTransform()
     {
         // Test of orthogonality
         double tolerance = global::Kerf.Engine.Foundation.Precision.Angular();
         double tolerance2 = 2.0 * tolerance;
 
-        if (Form() == Other)
+        if (Form == Other)
         {
             throw new ConstructionErrorException("gp_GTrsf2d::Trsf2d() - non-orthogonal GTrsf2d(0)");
         }

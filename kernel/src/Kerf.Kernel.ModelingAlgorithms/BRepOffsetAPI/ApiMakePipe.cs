@@ -104,11 +104,11 @@ public class ApiMakePipe : MakeSweep
     /// <summary><see cref="Generated(in Shape, in Shape)"/> without freezing.</summary>
     internal Shape InternalGenerated(in Shape sSpine, in Shape sProfile)
     {
-        if (sProfile.ShapeType() == ShapeType.Edge)
+        if (sProfile.Type == ShapeType.Edge)
         {
             return FromSwept(_pipe.InternalFace(ShapeCasts.Edge(sSpine), ShapeCasts.Edge(sProfile)));
         }
-        else if (sProfile.ShapeType() == ShapeType.Vertex)
+        else if (sProfile.Type == ShapeType.Vertex)
         {
             return FromSwept(_pipe.InternalEdge(ShapeCasts.Edge(sSpine), ShapeCasts.Vertex(sProfile)));
         }

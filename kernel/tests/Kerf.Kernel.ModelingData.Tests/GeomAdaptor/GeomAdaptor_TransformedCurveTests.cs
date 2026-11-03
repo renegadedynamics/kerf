@@ -47,7 +47,7 @@ public class GeomAdaptor_TransformedCurveTest
         TransformedCurve aCurve = new();
         Assert.True(aCurve.Is3DCurve());
         Assert.False(aCurve.IsCurveOnSurface);
-        Assert.Equal(TransformForm.Identity, aCurve.Trsf().Form());
+        Assert.Equal(TransformForm.Identity, aCurve.Trsf().Form);
     }
 
     [Fact]
@@ -59,7 +59,7 @@ public class GeomAdaptor_TransformedCurveTest
         TransformedCurve aCurve = new(aLine, aTrsf);
         Assert.True(aCurve.Is3DCurve());
         Assert.Equal(CurveKind.Line, aCurve.GetType());
-        Assert.Equal(TransformForm.Translation, aCurve.Trsf().Form());
+        Assert.Equal(TransformForm.Translation, aCurve.Trsf().Form);
     }
 
     [Fact]
@@ -87,7 +87,7 @@ public class GeomAdaptor_TransformedCurveTest
         double aT = 5.0;
         Point3D aPnt = aCurve.Value(aT);
         Point3D aExpected = aLine.Value(aT);
-        Assert.Equal(0.0, aPnt.Distance(aExpected), THE_TOLERANCE);
+        Assert.Equal(0.0, aPnt.DistanceTo(aExpected), THE_TOLERANCE);
     }
 
     [Fact]
@@ -104,7 +104,7 @@ public class GeomAdaptor_TransformedCurveTest
         {
             Point3D aPnt = aCurve.Value(aParam);
             Point3D aExpected = aCircle.Value(aParam);
-            Assert.Equal(0.0, aPnt.Distance(aExpected), THE_TOLERANCE);
+            Assert.Equal(0.0, aPnt.DistanceTo(aExpected), THE_TOLERANCE);
         }
     }
 
@@ -118,9 +118,9 @@ public class GeomAdaptor_TransformedCurveTest
 
         // Line along X at Z=0, translated to Z=5
         Point3D aPnt = aCurve.Value(3.0);
-        Assert.Equal(3.0, aPnt.X(), THE_TOLERANCE);
-        Assert.Equal(0.0, aPnt.Y(), THE_TOLERANCE);
-        Assert.Equal(5.0, aPnt.Z(), THE_TOLERANCE);
+        Assert.Equal(3.0, aPnt.X, THE_TOLERANCE);
+        Assert.Equal(0.0, aPnt.Y, THE_TOLERANCE);
+        Assert.Equal(5.0, aPnt.Z, THE_TOLERANCE);
     }
 
     [Fact]
@@ -131,9 +131,9 @@ public class GeomAdaptor_TransformedCurveTest
 
         // Line along X rotated 90 degrees -> line along Y
         Point3D aPnt = aCurve.Value(3.0);
-        Assert.Equal(0.0, aPnt.X(), THE_TOLERANCE);
-        Assert.Equal(3.0, aPnt.Y(), THE_TOLERANCE);
-        Assert.Equal(0.0, aPnt.Z(), THE_TOLERANCE);
+        Assert.Equal(0.0, aPnt.X, THE_TOLERANCE);
+        Assert.Equal(3.0, aPnt.Y, THE_TOLERANCE);
+        Assert.Equal(0.0, aPnt.Z, THE_TOLERANCE);
     }
 
     [Fact]
@@ -148,8 +148,8 @@ public class GeomAdaptor_TransformedCurveTest
         {
             Point3D aPnt = aCurve.Value(aParams.Value(i));
             Point3D aLocal = aCircle.Value(aParams.Value(i));
-            Point3D aExpected = new(aLocal.X() + 10, aLocal.Y() + 20, aLocal.Z() + 30);
-            Assert.Equal(0.0, aPnt.Distance(aExpected), THE_TOLERANCE);
+            Point3D aExpected = new(aLocal.X + 10, aLocal.Y + 20, aLocal.Z + 30);
+            Assert.Equal(0.0, aPnt.DistanceTo(aExpected), THE_TOLERANCE);
         }
     }
 
@@ -169,12 +169,12 @@ public class GeomAdaptor_TransformedCurveTest
 
             // Point should be translated
             Point3D aLocalPnt = aCircle.Value(aParams.Value(i));
-            Point3D aExpectedPnt = new(aLocalPnt.X() + 10, aLocalPnt.Y() + 20, aLocalPnt.Z() + 30);
-            Assert.Equal(0.0, aPnt.Distance(aExpectedPnt), THE_TOLERANCE);
+            Point3D aExpectedPnt = new(aLocalPnt.X + 10, aLocalPnt.Y + 20, aLocalPnt.Z + 30);
+            Assert.Equal(0.0, aPnt.DistanceTo(aExpectedPnt), THE_TOLERANCE);
 
             // D1 vector: translation doesn't change vectors, so should match local D1
             aCircle.D1(aParams.Value(i), out _, out Vector3D aLocalD1);
-            Assert.Equal(0.0, (aD1 - aLocalD1).Magnitude(), THE_TOLERANCE);
+            Assert.Equal(0.0, (aD1 - aLocalD1).Magnitude, THE_TOLERANCE);
         }
     }
 
@@ -187,9 +187,9 @@ public class GeomAdaptor_TransformedCurveTest
         aCurve.D1(3.0, out _, out Vector3D aD1);
 
         // D1 for line along X is (1,0,0), rotated 90 degrees becomes (0,1,0)
-        Assert.Equal(0.0, aD1.X(), THE_TOLERANCE);
-        Assert.Equal(1.0, aD1.Y(), THE_TOLERANCE);
-        Assert.Equal(0.0, aD1.Z(), THE_TOLERANCE);
+        Assert.Equal(0.0, aD1.X, THE_TOLERANCE);
+        Assert.Equal(1.0, aD1.Y, THE_TOLERANCE);
+        Assert.Equal(0.0, aD1.Z, THE_TOLERANCE);
     }
 
     [Fact]
@@ -205,8 +205,8 @@ public class GeomAdaptor_TransformedCurveTest
             aCurve.D2(aParams.Value(i), out _, out Vector3D aD1, out Vector3D aD2);
             aCircle.D2(aParams.Value(i), out _, out Vector3D aLocalD1, out Vector3D aLocalD2);
 
-            Assert.Equal(0.0, (aD1 - aLocalD1).Magnitude(), THE_TOLERANCE);
-            Assert.Equal(0.0, (aD2 - aLocalD2).Magnitude(), THE_TOLERANCE);
+            Assert.Equal(0.0, (aD1 - aLocalD1).Magnitude, THE_TOLERANCE);
+            Assert.Equal(0.0, (aD2 - aLocalD2).Magnitude, THE_TOLERANCE);
         }
     }
 
@@ -230,10 +230,10 @@ public class GeomAdaptor_TransformedCurveTest
             aLocalD2 = aLocalD2.Transformed(aTrsf);
             aLocalD3 = aLocalD3.Transformed(aTrsf);
 
-            Assert.Equal(0.0, aPnt.Distance(aLocalP), THE_TOLERANCE);
-            Assert.Equal(0.0, (aD1 - aLocalD1).Magnitude(), THE_TOLERANCE);
-            Assert.Equal(0.0, (aD2 - aLocalD2).Magnitude(), THE_TOLERANCE);
-            Assert.Equal(0.0, (aD3 - aLocalD3).Magnitude(), THE_TOLERANCE);
+            Assert.Equal(0.0, aPnt.DistanceTo(aLocalP), THE_TOLERANCE);
+            Assert.Equal(0.0, (aD1 - aLocalD1).Magnitude, THE_TOLERANCE);
+            Assert.Equal(0.0, (aD2 - aLocalD2).Magnitude, THE_TOLERANCE);
+            Assert.Equal(0.0, (aD3 - aLocalD3).Magnitude, THE_TOLERANCE);
         }
     }
 
@@ -249,7 +249,7 @@ public class GeomAdaptor_TransformedCurveTest
             Vector3D aResult = aCurve.DN(1.0, aOrder);
             Vector3D aExpected = aCircle.DN(1.0, aOrder);
             aExpected = aExpected.Transformed(aTrsf);
-            Assert.Equal(0.0, (aResult - aExpected).Magnitude(), THE_TOLERANCE);
+            Assert.Equal(0.0, (aResult - aExpected).Magnitude, THE_TOLERANCE);
         }
     }
 
@@ -264,10 +264,10 @@ public class GeomAdaptor_TransformedCurveTest
         Line3D aExtracted = aCurve.Line();
 
         // Line should be translated: origin at (0,0,5), direction unchanged
-        Assert.Equal(0.0, aExtracted.Location().X(), THE_TOLERANCE);
-        Assert.Equal(0.0, aExtracted.Location().Y(), THE_TOLERANCE);
-        Assert.Equal(5.0, aExtracted.Location().Z(), THE_TOLERANCE);
-        Assert.Equal(1.0, aExtracted.Direction().X(), THE_TOLERANCE);
+        Assert.Equal(0.0, aExtracted.Location.X, THE_TOLERANCE);
+        Assert.Equal(0.0, aExtracted.Location.Y, THE_TOLERANCE);
+        Assert.Equal(5.0, aExtracted.Location.Z, THE_TOLERANCE);
+        Assert.Equal(1.0, aExtracted.Direction.X, THE_TOLERANCE);
     }
 
     [Fact]
@@ -279,10 +279,10 @@ public class GeomAdaptor_TransformedCurveTest
         Circle3D aExtracted = aCurve.Circle();
 
         // Circle center should be translated to (10,0,0)
-        Assert.Equal(10.0, aExtracted.Location().X(), THE_TOLERANCE);
-        Assert.Equal(0.0, aExtracted.Location().Y(), THE_TOLERANCE);
-        Assert.Equal(0.0, aExtracted.Location().Z(), THE_TOLERANCE);
-        Assert.Equal(2.0, aExtracted.Radius(), THE_TOLERANCE);
+        Assert.Equal(10.0, aExtracted.Location.X, THE_TOLERANCE);
+        Assert.Equal(0.0, aExtracted.Location.Y, THE_TOLERANCE);
+        Assert.Equal(0.0, aExtracted.Location.Z, THE_TOLERANCE);
+        Assert.Equal(2.0, aExtracted.Radius, THE_TOLERANCE);
     }
 
     // Tests for ShallowCopy
@@ -299,6 +299,6 @@ public class GeomAdaptor_TransformedCurveTest
         // Copy should evaluate the same
         Point3D aPnt1 = aCurve.Value(3.0);
         Point3D aPnt2 = aCopy.Value(3.0);
-        Assert.Equal(0.0, aPnt1.Distance(aPnt2), THE_TOLERANCE);
+        Assert.Equal(0.0, aPnt1.DistanceTo(aPnt2), THE_TOLERANCE);
     }
 }

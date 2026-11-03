@@ -236,7 +236,7 @@ public partial struct Box2d : IEquatable<Box2d>, ISpatialTreeBox<Box2d>
         }
     }
 
-    internal void Add(in Point2D pnt) => Update(pnt.X(), pnt.Y());
+    internal void Add(in Point2D pnt) => Update(pnt.X, pnt.Y);
 
     internal void Add(in Point2D pnt, in Direction2D dir)
     {
@@ -246,8 +246,8 @@ public partial struct Box2d : IEquatable<Box2d>, ISpatialTreeBox<Box2d>
 
     internal void Add(in Direction2D d)
     {
-        double dx = d.X();
-        double dy = d.Y();
+        double dx = d.X;
+        double dy = d.Y;
 
         if (dx < -RealEpsilon())
         {
@@ -438,7 +438,7 @@ public partial struct Box2d : IEquatable<Box2d>, ISpatialTreeBox<Box2d>
     /// <summary>The box bounding this box transformed by <paramref name="t"/>.</summary>
     public readonly Box2d Transformed(in Transform2D t)
     {
-        TransformForm f = t.Form();
+        TransformForm f = t.Form;
         Box2d newBox = this;
         if (IsVoid)
         {
@@ -450,7 +450,7 @@ public partial struct Box2d : IEquatable<Box2d>, ISpatialTreeBox<Box2d>
         }
         else if (f == Translation)
         {
-            t.TranslationPart().Coord(out double dx, out double dy);
+            t.TranslationXy().Coord(out double dx, out double dy);
             if ((_flags & XminMask) == 0)
             {
                 newBox._xmin += dx;
@@ -561,8 +561,8 @@ public partial struct Box2d : IEquatable<Box2d>, ISpatialTreeBox<Box2d>
         }
         else
         {
-            double x = p.X();
-            double y = p.Y();
+            double x = p.X;
+            double y = p.Y;
             if ((_flags & XminMask) == 0 && (x < (_xmin - _gap)))
             {
                 return true;
@@ -606,9 +606,9 @@ public partial struct Box2d : IEquatable<Box2d>, ISpatialTreeBox<Box2d>
 
         Span<double> prod =
         [
-            l.Direction().XY() ^ (center - l.Location().XY()),
-            l.Direction().X() * heigh.Y(),
-            l.Direction().Y() * heigh.X(),
+            l.Direction.XY() ^ (center - l.Location.XY()),
+            l.Direction.X * heigh.Y(),
+            l.Direction.Y * heigh.X(),
         ];
         bool status = (Math.Abs(prod[0]) > (Math.Abs(prod[1]) + Math.Abs(prod[2])));
         return status;

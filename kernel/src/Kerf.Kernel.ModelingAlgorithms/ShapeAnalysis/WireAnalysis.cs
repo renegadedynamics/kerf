@@ -817,7 +817,7 @@ public class WireAnalysis : Transient
 
         Point3D p1 = Tool.Pnt(v1);
         Point3D p2 = Tool.Pnt(v2);
-        _min3d   = p1.Distance(p2);
+        _min3d   = p1.DistanceTo(p2);
         if (_min3d <= Constants.Resolution())
         {
             _status |= global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE1);
@@ -841,7 +841,7 @@ public class WireAnalysis : Transient
             {
                 v2          = sae.LastVertex(e2);
                 p2          = Tool.Pnt(v2);
-                double dist = p1.Distance(p2);
+                double dist = p1.DistanceTo(p2);
                 if (dist > _precision)
                 {
                     _status = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.FAIL1);
@@ -896,7 +896,7 @@ public class WireAnalysis : Transient
 
         Point3D p1   = Tool.Pnt(v1);
         Point3D p2   = Tool.Pnt(v2);
-        double dist = p1.Distance(p2);
+        double dist = p1.DistanceTo(p2);
         double prec = precsmall; // Min ( myPrecision, precsmall );
         if (dist > prec)
         {
@@ -926,7 +926,7 @@ public class WireAnalysis : Transient
             }
         }
 
-        if (midpoint.Distance(p1) > prec || midpoint.Distance(p2) > prec)
+        if (midpoint.DistanceTo(p1) > prec || midpoint.DistanceTo(p2) > prec)
         {
             return false;
         }
@@ -963,7 +963,7 @@ public class WireAnalysis : Transient
 
         // Extract the Two PCurves of the Seam
         Face forwardFace = _face;
-        forwardFace.Orientation(Forward);
+        forwardFace.Orient(Forward);
         // szv#4:S4163:12Mar99 SGI warns
         Shape ef = e.Oriented(Forward);
         Shape er = e.Oriented(Reversed);
@@ -1033,7 +1033,7 @@ public class WireAnalysis : Transient
                 Point2D p12 = c2d!.Value(lp);
                 sae.PCurve(e3, _face, out c2d, out fp, out lp, true);
                 Point2D p31 = c2d!.Value(fp);
-                if (Math.Abs(p12.Distance(p31) - p21.Distance(p22)) > 2 * Kerf.Engine.Foundation.Precision.PConfusion())
+                if (Math.Abs(p12.DistanceTo(p31) - p21.DistanceTo(p22)) > 2 * Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     // pcurve is bad => we can remove this edge in ShapeFix
                     // if set needed status
@@ -1080,9 +1080,9 @@ public class WireAnalysis : Transient
         double precVtx   = (_precision < Tool.Tolerance(v1) ? 2 * precFin : precFin);
 
         //  forward : si Edge <num> FWD/REV. Si LACK, toujours True
-        bool forward = (e2.Orientation() == Forward);
+        bool forward = (e2.Orientation == Forward);
         //  FIX FEV 1998 : recompute singularity according precision
-        if (p1.Distance(p2) <= precFirst)
+        if (p1.DistanceTo(p2) <= precFirst)
         { // edge DGNR
             dgnr = _surf!.DegeneratedValues(p1, precVtx, ref p2d1, ref p2d2, ref par1, ref par2, forward); // smh#9
             if (dgnr)
@@ -1091,7 +1091,7 @@ public class WireAnalysis : Transient
                 if (c3d is not null)
                 {
                     Point3D p = c3d.Value(0.5 * (a + b));
-                    if (p.SquareDistance(p1) > precVtx * precVtx)
+                    if (p.SquareDistanceTo(p1) > precVtx * precVtx)
                     {
                         dgnr = false;
                     }
@@ -1102,7 +1102,7 @@ public class WireAnalysis : Transient
         if (!dgnr)
         {
             //: i9 abv 23 Sep 98: CTS20315-2 #63231: check that previous edge is not degenerated
-            if (n1 != n2 && p1.Distance(pp) <= precFirst && _surf!.IsDegenerated(pp, precFirst)
+            if (n1 != n2 && p1.DistanceTo(pp) <= precFirst && _surf!.IsDegenerated(pp, precFirst)
                 && !Tool.Degenerated(e1))
             {
                 return false;
@@ -1111,7 +1111,7 @@ public class WireAnalysis : Transient
             // rln S4135 ShapeAnalysis_Surface new algorithms for singularities
             //: 45 by abv 16 Dec 97: BUC60035 2659: precision increased to vertex tolerance
             //: 51 abv 22 Dec 97: recompute singularities if necessary
-            if (p0.Distance(p1) <= precFin)
+            if (p0.DistanceTo(p1) <= precFin)
             { // ou DGNR manquante ?
                 // rln S4135 singularity with precision = 2 * prec, but distance <= prec
                 double tmpPreci = 0.0;
@@ -1124,7 +1124,7 @@ public class WireAnalysis : Transient
                 for (int i = 1; i <= _surf!.NbSingularities(precVtx); i++)
                 {
                     _surf.Singularity(i, ref tmpPreci, ref tmpP3d, ref p2d1, ref p2d2, ref par1, ref par2, ref tmpUIsoDeg);
-                    double gap2 = p1.SquareDistance(tmpP3d);
+                    double gap2 = p1.SquareDistanceTo(tmpP3d);
                     if (gap2 <= precVtx * precVtx)
                     {
                         if (gapMin2 > gap2)
@@ -1208,7 +1208,7 @@ public class WireAnalysis : Transient
         //(i.e. the parametric space is closed)
         SurfaceAdaptor ads = _surf.Adaptor3d()!;
         double              max = Max(ads.UResolution(_precision), ads.VResolution(_precision));
-        if (p2d1.Distance(p2d2) /*Abs (par1 - par2)*/ <= max + Constants.Resolution())
+        if (p2d1.DistanceTo(p2d2) /*Abs (par1 - par2)*/ <= max + Constants.Resolution())
         {
             return false;
         }
@@ -1252,7 +1252,7 @@ public class WireAnalysis : Transient
 
         Point3D p1 = c1!.Value(ul1);
         Point3D p2 = c2!.Value(uf2);
-        _min3d = _max3d = p1.Distance(p2);
+        _min3d = _max3d = p1.DistanceTo(p2);
         if (_min3d > _precision)
         {
             _status = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE1);
@@ -1295,7 +1295,7 @@ public class WireAnalysis : Transient
 
         Point2D p1 = c1!.Value(ul1);
         Point2D p2 = c2!.Value(uf2);
-        _min2d = _max2d = p1.Distance(p2);
+        _min2d = _max2d = p1.DistanceTo(p2);
         SurfaceAdaptor sa = _surf.Adaptor3d()!;
         if (_min2d > (Max(sa.UResolution(_precision), sa.VResolution(_precision)) + Kerf.Engine.Foundation.Precision.PConfusion()))
         {
@@ -1342,7 +1342,7 @@ public class WireAnalysis : Transient
         {
             cpnt  = c!.Value(cuf + i * (cul - cuf) / (nbp - 1));
             pcpnt = acs.Value(pcuf + i * (pcul - pcuf) / (nbp - 1));
-            dist  = cpnt.SquareDistance(pcpnt);
+            dist  = cpnt.SquareDistanceTo(pcpnt);
             if (maxdist < dist)
             {
                 maxdist = dist;
@@ -1368,12 +1368,12 @@ public class WireAnalysis : Transient
             Curve3D? conS = Tool.Curve(edge, out Placement l, out _, out _);
             if (conS is not null)
             {
-                return conS.Value(param).Transformed(l.Transformation());
+                return conS.Value(param).Transformed(l.Transformation);
             }
         }
 
         Point2D p2d = crv2d.Value(param);
-        return surf.Adaptor3d()!.Value(p2d.X(), p2d.Y());
+        return surf.Adaptor3d()!.Value(p2d.X, p2d.Y);
     }
 
     /// <summary>
@@ -1438,8 +1438,8 @@ public class WireAnalysis : Transient
             }
 
             Point3D pint   = GetPointOnEdge(edge, _surf!, ac, ip.ParamOnFirst());
-            double dist21 = pnt1.SquareDistance(pint);
-            double dist22 = pnt2.SquareDistance(pint);
+            double dist21 = pnt1.SquareDistanceTo(pint);
+            double dist22 = pnt2.SquareDistanceTo(pint);
             if (dist21 > tol1 * tol1 && dist22 > tol2 * tol2)
             {
                 points2d.Append(ip);
@@ -1518,8 +1518,8 @@ public class WireAnalysis : Transient
             return false; //:f7 abv 6 May 98: BUC50070 on #42276
         }
 
-        bool isForward1 = (edge1.Orientation() == Forward);
-        bool isForward2 = (edge2.Orientation() == Forward);
+        bool isForward1 = (edge1.Orientation == Forward);
+        bool isForward2 = (edge2.Orientation == Forward);
 
         double tol0 = Max(Tool.Tolerance(v1), Tool.Tolerance(v2));
         double tol  = tol0;
@@ -1610,8 +1610,8 @@ public class WireAnalysis : Transient
             Point3D pi1   = GetPointOnEdge(edge1, _surf!, c1, param1); //:h0: thesurf.Value ( Crv1->Value ( param1 ) );
             Point3D pi2   = GetPointOnEdge(edge2, _surf!, c2, param2); //:h0: thesurf.Value ( Crv2->Value ( param2 ) );
             Point3D pint  = new Point3D(0.5 * (pi1.XYZ() + pi2.XYZ()));
-            double di1   = pi1.SquareDistance(pnt);
-            double di2   = pi2.SquareDistance(pnt);
+            double di1   = pi1.SquareDistanceTo(pnt);
+            double di2   = pi2.SquareDistanceTo(pnt);
             double dist2 = Max(di1, di2);
 
             // rln 03/02/98: CSR#BUC50004 entity 56 (to avoid later inserting lacking edge)
@@ -1622,18 +1622,18 @@ public class WireAnalysis : Transient
                 //: l0 test like in BRepCheck
                 SurfaceAdaptor ads   = _surf!.Adaptor3d()!;
                 double              tol2d = 2 * Max(ads.UResolution(tol), ads.VResolution(tol));
-                isLacking                 = (end1.SquareDistance(end2) >= tol2d * tol2d) ? 1 : 0;
+                isLacking                 = (end1.SquareDistanceTo(end2) >= tol2d * tol2d) ? 1 : 0;
             }
 
             if ((dist2 > tolt * tolt || //: 86: tol -> tolt
                  isLacking != 0)
                 && //: l0
                 (!BrepTools.Compare(vp, vn) || //: 63
-                 dist2 < pint.SquareDistance(Tool.Pnt(vp))))
+                 dist2 < pint.SquareDistanceTo(Tool.Pnt(vp))))
             { //: 63
                 points2d.Append(ip);
                 points3d.Append(pint);
-                errors.Append(0.5 * pi1.Distance(pi2));
+                errors.Append(0.5 * pi1.DistanceTo(pi2));
                 _status |= global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE1);
             }
         }
@@ -1759,7 +1759,7 @@ public class WireAnalysis : Transient
 
             for (int j = 1; (j <= 2) && !ok1; j++)
             {
-                double di1 = pi1.SquareDistance(vertexPoints[j]);
+                double di1 = pi1.SquareDistanceTo(vertexPoints[j]);
                 if (di1 < vertexTolers[j] * vertexTolers[j])
                 {
                     ok1 = true;
@@ -1768,7 +1768,7 @@ public class WireAnalysis : Transient
 
             for (int j = 3; (j <= 4) && !ok2; j++)
             {
-                double di2 = pi2.SquareDistance(vertexPoints[j]);
+                double di2 = pi2.SquareDistanceTo(vertexPoints[j]);
                 if (di2 < vertexTolers[j] * vertexTolers[j])
                 {
                     ok2 = true;
@@ -1780,7 +1780,7 @@ public class WireAnalysis : Transient
                 Point3D pint = new Point3D(0.5 * (pi1.XYZ() + pi2.XYZ()));
                 points2d.Append(ip);
                 points3d.Append(pint);
-                errors.Append(0.5 * pi1.Distance(pi2));
+                errors.Append(0.5 * pi1.DistanceTo(pi2));
                 _status |= global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE1);
             }
         }
@@ -1847,7 +1847,7 @@ public class WireAnalysis : Transient
 
         CurveAdaptor2D adapt = new CurveAdaptor2D(c2d!);
         adapt.D1(b, out p2d1, out v1);
-        if (e1.Orientation() == Reversed)
+        if (e1.Orientation == Reversed)
         {
             v1 = v1.Reversed();
         }
@@ -1860,13 +1860,13 @@ public class WireAnalysis : Transient
 
         adapt.Load(c2d!);
         adapt.D1(a, out p2d2, out v2);
-        if (e2.Orientation() == Reversed)
+        if (e2.Orientation == Reversed)
         {
             v2 = v2.Reversed();
         }
 
         v12     = new Vector2D(p2d2.XY() - p2d1.XY());
-        _max2d = v12.SquareMagnitude();
+        _max2d = v12.SquareMagnitude;
 
         // test like in BRepCheck
         double tol = Max(Tool.Tolerance(V1), Tool.Tolerance(V2));
@@ -1883,8 +1883,8 @@ public class WireAnalysis : Transient
         _max3d = tol * _max2d / Max(tol2d, Constants.Resolution());
         _status |= global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE1);
         if (_max2d < Kerf.Engine.Foundation.Precision.PConfusion() || //: abv 03.06.02 CTS21866.stp
-            (v1.SquareMagnitude() > Constants.Resolution() && Math.Abs(v12.Angle(v1)) > 0.9 * M_PI)
-            || (v2.SquareMagnitude() > Constants.Resolution() && Math.Abs(v12.Angle(v2)) > 0.9 * M_PI))
+            (v1.SquareMagnitude > Constants.Resolution() && Math.Abs(v12.AngleTo(v1)) > 0.9 * M_PI)
+            || (v2.SquareMagnitude > Constants.Resolution() && Math.Abs(v12.AngleTo(v2)) > 0.9 * M_PI))
         {
             _status |= global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE2);
         }
@@ -1949,14 +1949,14 @@ public class WireAnalysis : Transient
         {
             param = uFirst;
             proj  = ad.Value(uFirst);
-            return proj.Distance(pnt);
+            return proj.DistanceTo(pnt);
         }
 
         if (param > uLast)
         {
             param = uLast;
             proj  = ad.Value(uLast);
-            return proj.Distance(pnt);
+            return proj.DistanceTo(pnt);
         }
 
         return dist;
@@ -2011,7 +2011,7 @@ public class WireAnalysis : Transient
             return false;
         }
 
-        if (e1.Orientation() == Reversed)
+        if (e1.Orientation == Reversed)
         {
             c2d1!.D1(a1, out p2d1, out v1);
         }
@@ -2027,7 +2027,7 @@ public class WireAnalysis : Transient
             return false;
         }
 
-        if (e2.Orientation() == Reversed)
+        if (e2.Orientation == Reversed)
         {
             c2d2!.D1(b2, out p2d2, out v2);
             v2 = v2.Reversed();
@@ -2037,12 +2037,12 @@ public class WireAnalysis : Transient
             c2d2!.D1(a2, out p2d2, out v2);
         }
 
-        if (v2.Magnitude() < Constants.Resolution() || v1.Magnitude() < Constants.Resolution())
+        if (v2.Magnitude < Constants.Resolution() || v1.Magnitude < Constants.Resolution())
         {
             return false;
         }
 
-        if (Math.Abs(v2.Angle(v1)) > 0.1 || p2d1.Distance(p2d2) > tolerance)
+        if (Math.Abs(v2.AngleTo(v1)) > 0.1 || p2d1.DistanceTo(p2d2) > tolerance)
         {
             return false;
         }
@@ -2060,10 +2060,10 @@ public class WireAnalysis : Transient
 
         CurveAnalysis sac = new CurveAnalysis();
 
-        p2d2         = c2d2.Value(e2.Orientation() == Forward ? b2 : a2);
-        p2d1         = c2d1.Value(e1.Orientation() == Forward ? a1 : b1);
-        double dist1 = ProjectInside(ad1, new Point3D(p2d2.X(), p2d2.Y(), 0), tolerance, out Point3D proj1, out double param1, false);
-        double dist2 = ProjectInside(ad2, new Point3D(p2d1.X(), p2d1.Y(), 0), tolerance, out _, out double param2, false);
+        p2d2         = c2d2.Value(e2.Orientation == Forward ? b2 : a2);
+        p2d1         = c2d1.Value(e1.Orientation == Forward ? a1 : b1);
+        double dist1 = ProjectInside(ad1, new Point3D(p2d2.X, p2d2.Y, 0), tolerance, out Point3D proj1, out double param1, false);
+        double dist2 = ProjectInside(ad2, new Point3D(p2d1.X, p2d1.Y, 0), tolerance, out _, out double param2, false);
 
         if (dist1 > tolerance && dist2 > tolerance)
         {
@@ -2175,7 +2175,7 @@ public class WireAnalysis : Transient
                 Xyz vec     = current - center;
 
                 cross += prev3d ^ vec;
-                length += pnt3d.Distance(pnt);
+                length += pnt3d.DistanceTo(pnt);
 
                 pnt3d  = pnt;
                 prev3d = vec;
@@ -2238,13 +2238,13 @@ public class WireAnalysis : Transient
         Edge        e;
         Wire        w;
         EdgeAnalysis sae = new EdgeAnalysis();
-        if (shape.ShapeType() == ShapeType.Edge)
+        if (shape.Type == ShapeType.Edge)
         {
             e  = ShapeCasts.Edge(shape);
             v1 = sae.FirstVertex(e);
             v2 = sae.LastVertex(e);
         }
-        else if (shape.ShapeType() == ShapeType.Wire)
+        else if (shape.Type == ShapeType.Wire)
         {
             w = ShapeCasts.Wire(shape);
             ShapeAnalysisAnalysis.FindBounds(w, out v1, out v2);
@@ -2264,10 +2264,10 @@ public class WireAnalysis : Transient
         Point3D pf = Tool.Pnt(vfirst);
         Point3D pl = Tool.Pnt(vlast);
 
-        tailhead   = p1.Distance(pl);
-        tailtail   = p2.Distance(pl);
-        headhead   = p1.Distance(pf);
-        headtail   = p2.Distance(pf);
+        tailhead   = p1.DistanceTo(pl);
+        tailtail   = p2.DistanceTo(pl);
+        headhead   = p1.DistanceTo(pf);
+        headtail   = p2.DistanceTo(pf);
         double dm1 = tailhead, dm2 = headtail;
         int    res1 = 0, res2 = 0;
         if (tailhead > tailtail)
@@ -2450,7 +2450,7 @@ public class WireAnalysis : Transient
 
         double p0 = firstParameter, p1 = lastParameter;
         Point3D prj0 = curve.Value(p0), prj1 = curve.Value(p1);
-        double dist0 = point.Distance(prj0), dist1 = point.Distance(prj1);
+        double dist0 = point.DistanceTo(prj0), dist1 = point.DistanceTo(prj1);
         int    pi    = (dist0 <= dist1) ? 0 : 1;
         parameter  = pi == 0 ? p0 : p1;
         projection = pi == 0 ? prj0 : prj1;
@@ -2511,11 +2511,11 @@ public class WireAnalysis : Transient
                     return false;
                 }
 
-                vIs[ei] = (es[ei].Orientation() == Reversed) ? ei : 1 - ei;
+                vIs[ei] = (es[ei].Orientation == Reversed) ? ei : 1 - ei;
                 vPs[ei] = cs[ei]!.Value(ls[ei, vIs[ei]]);
             }
 
-            if (vPs[0].SquareDistance(vPs[1]) > sqTol2)
+            if (vPs[0].SquareDistanceTo(vPs[1]) > sqTol2)
             {
                 return false;
             }
@@ -2646,7 +2646,7 @@ public class WireAnalysis : Transient
         }
 
         // Check whether both edges must be removed.
-        if (isWholes[0] && isWholes[1] && ps2[0].SquareDistance(ps2[1]) <= sqTol3)
+        if (isWholes[0] && isWholes[1] && ps2[0].SquareDistanceTo(ps2[1]) <= sqTol3)
         {
             edge11 = edge1;
             edge21 = edge2;

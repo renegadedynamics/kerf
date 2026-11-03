@@ -15,7 +15,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Computes bounding box for an offset surface (Geom_OffsetSurface): through its analytic equivalent surface when
 /// it has one, otherwise the basis surface's box enlarged by |offset|.
 /// </summary>
-public sealed class OffsetSurfaceBounds : SurfaceBounds.ISurfaceEvaluator
+internal sealed class OffsetSurfaceBounds : SurfaceBounds.ISurfaceEvaluator
 {
     private readonly global::Kerf.Geometry.OffsetSurface _geom;
 
@@ -29,7 +29,7 @@ public sealed class OffsetSurfaceBounds : SurfaceBounds.ISurfaceEvaluator
     /// <summary>Compute bounding box for full surface.</summary>
     public Box Box(double tol)
     {
-        _geom.Bounds(out double u1, out double u2, out double v1, out double v2);
+        _geom.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
         return Box(u1, u2, v1, v2, tol);
     }
 
@@ -47,8 +47,8 @@ public sealed class OffsetSurfaceBounds : SurfaceBounds.ISurfaceEvaluator
         }
 
         // Conservative fallback: basis surface box enlarged by |offset|.
-        Surface basis = _geom.BasisSurface();
-        double offset = Math.Abs(_geom.Offset());
+        Surface basis = _geom.BasisSurface;
+        double offset = Math.Abs(_geom.Offset);
         SurfaceBounds surfEval = new(basis);
         Box localBox = surfEval.Box(uMin, uMax, vMin, vMax, 0.0);
         // OCCT: Enlarge keeps the larger gap, so the tolerance is not added to the offset (occt-issues.md).
@@ -60,7 +60,7 @@ public sealed class OffsetSurfaceBounds : SurfaceBounds.ISurfaceEvaluator
     /// <summary>Compute precise bounding box for full surface.</summary>
     public Box BoxOptimal(double tol)
     {
-        _geom.Bounds(out double u1, out double u2, out double v1, out double v2);
+        _geom.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
         return BoxOptimal(u1, u2, v1, v2, tol);
     }
 

@@ -32,7 +32,7 @@ public sealed class MakeRectangularTrimmedSurface : GeometryRoot
 
         TCollection_HAsciiString name = new TCollection_HAsciiString("");
 
-        MakeSurface mkSurf = new MakeSurface(rtSurf.BasisSurface(), localFactors);
+        MakeSurface mkSurf = new MakeSurface(rtSurf.BasisSurface, localFactors);
         if (!mkSurf.IsDone)
         {
             _done = false;
@@ -40,7 +40,7 @@ public sealed class MakeRectangularTrimmedSurface : GeometryRoot
         }
         StepSurface stepSurf = mkSurf.Value();
 
-        rtSurf.Bounds(out double u1, out double u2, out double v1, out double v2);
+        rtSurf.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
 
         // -----------------------------------------
         // Modification of the Trimming Parameters ?
@@ -52,7 +52,7 @@ public sealed class MakeRectangularTrimmedSurface : GeometryRoot
         double uFact = 1.0;
         double vFact = 1.0;
         double lengthFact = localFactors.LengthFactor();
-        Surface theSurf = rtSurf.BasisSurface();
+        Surface theSurf = rtSurf.BasisSurface;
         if (theSurf is CylindricalSurface)
         {
             uFact = angleFact;
@@ -70,7 +70,7 @@ public sealed class MakeRectangularTrimmedSurface : GeometryRoot
         else if (theSurf is ConicalSurface)
         {
             ConicalSurface conicS = theSurf as ConicalSurface;
-            double semAng = conicS.SemiAngle();
+            double semAng = conicS.SemiAngle;
             uFact = angleFact;
             vFact = Math.Cos(semAng) / lengthFact;
         }

@@ -76,7 +76,7 @@ public class ShellSewing
         {
             return;
         }
-        if (shape.ShapeType() == ShapeType.Shell)
+        if (shape.Type == ShapeType.Shell)
         {
             _shells.Add(shape);
         }

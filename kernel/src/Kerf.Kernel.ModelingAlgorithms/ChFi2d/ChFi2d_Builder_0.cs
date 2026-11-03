@@ -70,10 +70,10 @@ public sealed partial class PlanarBuilder
         _status = global::Kerf.Engine.Fillets.Planar.ChFi2d.FindConnectedEdges(_newFace, commonVertex, ref ee1, ref ee2);
         if (ee1.IsSame(e2))
         {
-            Orientation orient = ee1.Orientation();
+            Orientation orient = ee1.Orientation;
             ee1 = ee2;
             ee2 = e2;
-            ee2.Orientation(orient);
+            ee2.Orient(orient);
         }
 
         ComputeChamfer(commonVertex, ee1, ee2, d1, d2, ref e1Mod, ref e2Mod, ref chamfer);
@@ -117,10 +117,10 @@ public sealed partial class PlanarBuilder
         // on <newFace>
         if (adjEdge2.IsSame(e))
         {
-            Orientation orient = adjEdge2.Orientation();
+            Orientation orient = adjEdge2.Orientation;
             adjEdge2 = adjEdge1;
             adjEdge1 = e;
-            adjEdge1.Orientation(orient);
+            adjEdge1.Orient(orient);
         }
 
         if (IsAFillet(adjEdge1) || IsAChamfer(adjEdge1) || IsAFillet(adjEdge2) || IsAChamfer(adjEdge2))
@@ -250,10 +250,10 @@ public sealed partial class PlanarBuilder
         // on <newFace>
         if (adjEdge1.IsSame(e2))
         {
-            Orientation orient = adjEdge1.Orientation();
+            Orientation orient = adjEdge1.Orientation;
             adjEdge1 = adjEdge2;
             adjEdge2 = e2;
-            adjEdge2.Orientation(orient);
+            adjEdge2.Orient(orient);
         }
 
         aChamfer = InternalAddChamfer(adjEdge1, adjEdge2, d1, d2);
@@ -414,8 +414,8 @@ public sealed partial class PlanarBuilder
                 Curve3D? curve = Tool.Curve(e1, out loc, out first, out last);
                 makeEdge.Init(curve!, commonVertex, lastVertex);
                 newEdge1 = makeEdge.InternalEdge();
-                newEdge1.Orientation(basisEdge1.Orientation());
-                newEdge1.Location(basisEdge1.Location());
+                newEdge1.Orient(basisEdge1.Orientation);
+                newEdge1.Location(basisEdge1.Placement);
             } // if (firstVertex ...
             else if (lastVertex.IsSame(connectionE1Chamfer))
             {
@@ -425,8 +425,8 @@ public sealed partial class PlanarBuilder
                 Curve3D? curve = Tool.Curve(e1, out loc, out first, out last);
                 makeEdge.Init(curve!, firstVertex, commonVertex);
                 newEdge1 = makeEdge.InternalEdge();
-                newEdge1.Orientation(basisEdge1.Orientation());
-                newEdge1.Location(basisEdge1.Location());
+                newEdge1.Orient(basisEdge1.Orientation);
+                newEdge1.Location(basisEdge1.Placement);
             } // else if (lastVertex ...
         } // else ...
 
@@ -458,8 +458,8 @@ public sealed partial class PlanarBuilder
                 Curve3D? curve = Tool.Curve(e2, out loc, out first, out last);
                 makeEdge.Init(curve!, commonVertex, lastVertex);
                 newEdge2 = makeEdge.InternalEdge();
-                newEdge2.Orientation(basisEdge2.Orientation());
-                newEdge2.Location(basisEdge2.Location());
+                newEdge2.Orient(basisEdge2.Orientation);
+                newEdge2.Location(basisEdge2.Placement);
             } // if (firstVertex ...
             else if (lastVertex.IsSame(connectionE2Chamfer))
             {
@@ -469,8 +469,8 @@ public sealed partial class PlanarBuilder
                 Curve3D? curve = Tool.Curve(e2, out loc, out first, out last);
                 makeEdge.Init(curve!, firstVertex, commonVertex);
                 newEdge2 = makeEdge.InternalEdge();
-                newEdge2.Orientation(basisEdge2.Orientation());
-                newEdge2.Location(basisEdge2.Location());
+                newEdge2.Orient(basisEdge2.Orientation);
+                newEdge2.Location(basisEdge2.Placement);
             } // else if (lastVertex ...
         } // else ...
 
@@ -513,8 +513,8 @@ public sealed partial class PlanarBuilder
         var b = new BrepBuilder();
         b.MakeVertex(ref newExtr1, p1, tol);
         b.MakeVertex(ref newExtr2, p2, tol);
-        newExtr1.Orientation(Forward);
-        newExtr2.Orientation(Reversed);
+        newExtr1.Orient(Forward);
+        newExtr2.Orient(Reversed);
 
         // chamfer edge construction
         Surface? refSurf = Tool.Surface(_refFace, out Placement loc);
@@ -523,7 +523,7 @@ public sealed partial class PlanarBuilder
         var myVec = new Vector3D(p1, p2);
         var myDir = new Direction3D(myVec);
         var newLine = new LineCurve3D(p1, myDir);
-        double param = global::Kerf.Engine.Geometry.ElCLib.Parameter(newLine.Lin(), p2);
+        double param = global::Kerf.Engine.Geometry.ElCLib.Parameter(newLine.Line, p2);
         b.MakeEdge(ref chamfer, newLine, tol);
         b.Range(chamfer, 0.0, param);
         b.Add(chamfer, newExtr1);
@@ -537,22 +537,22 @@ public sealed partial class PlanarBuilder
         Vertex v2 = Exploration.LastVertex(adjEdge1);
         if (v1.IsSame(v))
         {
-            newExtr1.Orientation(v1.Orientation());
+            newExtr1.Orient(v1.Orientation);
         }
         else
         {
-            newExtr1.Orientation(v2.Orientation());
+            newExtr1.Orient(v2.Orientation);
         }
 
         v1 = Exploration.FirstVertex(adjEdge2);
         v2 = Exploration.LastVertex(adjEdge2);
         if (v1.IsSame(v))
         {
-            newExtr2.Orientation(v1.Orientation());
+            newExtr2.Orient(v1.Orientation);
         }
         else
         {
-            newExtr2.Orientation(v2.Orientation());
+            newExtr2.Orient(v2.Orientation);
         }
         UpdateNewVertex(b, newExtr1, param1, adjEdge1, tol);
         UpdateNewVertex(b, newExtr2, param2, adjEdge2, tol);
@@ -594,7 +594,7 @@ public sealed partial class PlanarBuilder
         Point3D point;
         Vector3D tan;
         c.D1(first, out point, out tan);
-        if (point.Distance(p) > global::Kerf.Engine.Foundation.Precision.Confusion())
+        if (point.DistanceTo(p) > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             c.D1(last, out point, out tan);
         }
@@ -603,11 +603,11 @@ public sealed partial class PlanarBuilder
         Orientation orient;
         if (v1.IsSame(v))
         {
-            orient = v1.Orientation();
+            orient = v1.Orientation;
         }
         else
         {
-            orient = v2.Orientation();
+            orient = v2.Orientation;
         }
         if (orient == Reversed)
         {
@@ -627,11 +627,11 @@ public sealed partial class PlanarBuilder
         var b = new BrepBuilder();
         b.MakeVertex(ref newExtr1, p1, tol);
         b.MakeVertex(ref newExtr2, p2, tol);
-        newExtr1.Orientation(Forward);
-        newExtr2.Orientation(Reversed);
+        newExtr1.Orient(Forward);
+        newExtr2.Orient(Reversed);
 
         // chamfer edge construction
-        double param = global::Kerf.Engine.Geometry.ElCLib.Parameter(newLine.Lin(), p2);
+        double param = global::Kerf.Engine.Geometry.ElCLib.Parameter(newLine.Line, p2);
         b.MakeEdge(ref chamfer, newLine, tol);
         b.Range(chamfer, 0.0, param);
         b.Add(chamfer, newExtr1);
@@ -645,22 +645,22 @@ public sealed partial class PlanarBuilder
         Vertex V2 = Exploration.LastVertex(adjEdge1);
         if (V1.IsSame(v))
         {
-            newExtr1.Orientation(V1.Orientation());
+            newExtr1.Orient(V1.Orientation);
         }
         else
         {
-            newExtr1.Orientation(V2.Orientation());
+            newExtr1.Orient(V2.Orientation);
         }
 
         V1 = Exploration.FirstVertex(adjEdge2);
         V2 = Exploration.LastVertex(adjEdge2);
         if (V1.IsSame(v))
         {
-            newExtr2.Orientation(V1.Orientation());
+            newExtr2.Orient(V1.Orientation);
         }
         else
         {
-            newExtr2.Orientation(V2.Orientation());
+            newExtr2.Orient(V2.Orientation);
         }
         UpdateNewVertex(b, newExtr1, param1, adjEdge1, tol);
         UpdateNewVertex(b, newExtr2, param2, adjEdge2, tol);
@@ -726,7 +726,7 @@ public sealed partial class PlanarBuilder
         if (c.GetType() == Circle)
         {
             Circle3D cir = c.Circle();
-            double radius = cir.Radius();
+            double radius = cir.Radius;
             Exploration.Vertices(e, out Vertex v1, out Vertex v2);
             double param1, param2;
             if (v.IsSame(v1))
@@ -767,7 +767,7 @@ public sealed partial class PlanarBuilder
             }
 
             CurveAdaptor cc = c.Curve();
-            if (p.Distance(c.Value(first)) <= global::Kerf.Engine.Foundation.Precision.Confusion())
+            if (p.DistanceTo(c.Value(first)) <= global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 var computePoint = new AbscissaPoint(cc, d, first);
                 param = computePoint.Parameter();
@@ -789,7 +789,7 @@ public sealed partial class PlanarBuilder
     {
         var adaptor3dSurface = new FaceSurfaceAdaptor(f);
         var refSurf = new PlaneSurface(adaptor3dSurface.Plane());
-        Curve2D lin2d = Projections.To2d(l, refSurf.Pln())!;
+        Curve2D lin2d = Projections.To2d(l, refSurf.Plane)!;
         Curve2D? c2d;
         double first, last;
         c2d = Tool.CurveOnSurface(e, f, out first, out last);
@@ -819,7 +819,7 @@ public sealed partial class PlanarBuilder
             } // while ( i <= ...
         } // if (Intersection.IsDone ...
 
-        Point3D thePoint = adaptor3dSurface.Value(p2d.X(), p2d.Y());
+        Point3D thePoint = adaptor3dSurface.Value(p2d.X, p2d.Y);
         return thePoint;
     } // ComputePoint
 
@@ -827,25 +827,25 @@ public sealed partial class PlanarBuilder
 
     private static void OrientChamfer(ref Edge chamfer, in Edge e, in Vertex v)
     {
-        Orientation vOrient, orient = e.Orientation();
+        Orientation vOrient, orient = e.Orientation;
         Exploration.Vertices(e, out Vertex v1, out Vertex v2);
         if (v1.IsSame(v))
         {
-            vOrient = v2.Orientation();
+            vOrient = v2.Orientation;
         }
         else
         {
-            vOrient = v1.Orientation();
+            vOrient = v1.Orientation;
         }
 
         if ((orient == Forward && vOrient == Forward)
             || (orient == Reversed && vOrient == Reversed))
         {
-            chamfer.Orientation(Forward);
+            chamfer.Orient(Forward);
         }
         else
         {
-            chamfer.Orientation(Reversed);
+            chamfer.Orient(Reversed);
         }
     } // OrientChamfer
 }

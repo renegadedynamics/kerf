@@ -11,7 +11,7 @@ using Occt;
 namespace Kerf.Engine.Geometry.Library;
 
 /// <summary>A sampling of [A, B] in N points spaced logarithmically: A - 1 + exp(Index * log(B - A) / N).</summary>
-public sealed class LogSample : FunctionSample
+internal sealed class LogSample : FunctionSample
 {
     private readonly double _f;
     private readonly double _myexp;

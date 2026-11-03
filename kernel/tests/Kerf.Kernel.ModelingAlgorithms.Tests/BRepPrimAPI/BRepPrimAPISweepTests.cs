@@ -87,7 +87,7 @@ public class BRepPrimAPISweepTests
         Vertex aV = new MakeVertex(new Point3D(1, 2, 3)).Vertex();
         var aMP = new ApiMakePrism(aV, new Vector3D(0, 3, 4));
         Shape aS = aMP.Shape();
-        Assert.Equal(ShapeType.Edge, aS.ShapeType());
+        Assert.Equal(ShapeType.Edge, aS.Type);
         Assert.Equal(5.0, MassPropertiesBuilder.LinearProperties(aS).Mass(), Tol);
         Assert.True(aMP.FirstShape().IsSame(aV));
         Assert.True(Tool.Pnt(ShapeCasts.Vertex(aMP.LastShape())).IsEqual(new Point3D(1, 5, 7), Tol));
@@ -99,19 +99,19 @@ public class BRepPrimAPISweepTests
     {
         Edge anE = new MakeEdge(new Point3D(0, 0, 0), new Point3D(2, 0, 0)).Edge();
         Shape aF = new ApiMakePrism(anE, new Vector3D(0, 0, 3)).Shape();
-        Assert.Equal(global::Kerf.Topology.ShapeType.Face, aF.ShapeType());
+        Assert.Equal(global::Kerf.Topology.ShapeType.Face, aF.Type);
         Assert.Equal(6.0, Area(aF), Tol);
         Assert.IsType<PlaneSurface>(Tool.Surface(ShapeCasts.Face(aF)));
         Assert.Equal(4, Count(aF, ShapeType.Edge));
 
         Wire aW = Polygon(false, new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0), new Point3D(0, 1, 0));
         Shape aSh = new ApiMakePrism(aW, new Vector3D(0, 0, 2)).Shape();
-        Assert.Equal(ShapeType.Shell, aSh.ShapeType());
+        Assert.Equal(ShapeType.Shell, aSh.Type);
         Assert.Equal(3, Count(aSh, global::Kerf.Topology.ShapeType.Face));
         Assert.Equal(10, Count(aSh, ShapeType.Edge));
         Assert.Equal(8, Count(aSh, ShapeType.Vertex));
         Assert.Equal(6.0, Area(aSh), Tol);
-        Assert.False(aSh.Closed());
+        Assert.False(aSh.IsClosed);
     }
 
     [Fact]
@@ -120,7 +120,7 @@ public class BRepPrimAPISweepTests
         Face aF = Face(new Point3D(0, 0, 0), new Point3D(2, 0, 0), new Point3D(2, 1, 0), new Point3D(0, 1, 0));
         var aMP = new ApiMakePrism(aF, new Vector3D(0, 0, 3));
         Shape aS = aMP.Shape();
-        Assert.Equal(ShapeType.Solid, aS.ShapeType());
+        Assert.Equal(ShapeType.Solid, aS.Type);
         Assert.Equal(6, Count(aS, global::Kerf.Topology.ShapeType.Face));
         Assert.Equal(12, Count(aS, ShapeType.Edge));
         Assert.Equal(8, Count(aS, ShapeType.Vertex));
@@ -169,7 +169,7 @@ public class BRepPrimAPISweepTests
         // a shell of one face on a plane
         Shape aShell = new MakeShell(new PlaneSurface(new CoordinateSystem()), 0, 2, 0, 1).Shape();
         Shape aCS = new ApiMakePrism(aShell, new Vector3D(0, 0, 1)).Shape();
-        Assert.Equal(ShapeType.CompSolid, aCS.ShapeType());
+        Assert.Equal(ShapeType.CompSolid, aCS.Type);
         Assert.Equal(1, Count(aCS, ShapeType.Solid));
         Assert.Equal(2.0, Volume(aCS), Tol);
     }
@@ -180,7 +180,7 @@ public class BRepPrimAPISweepTests
         Face aF = UnitSquare();
         var aSemi = new ApiMakePrism(aF, new Direction3D(0, 0, 1), false);
         Shape aS = aSemi.Shape();
-        Assert.Equal(ShapeType.Solid, aS.ShapeType());
+        Assert.Equal(ShapeType.Solid, aS.Type);
         Assert.Equal(5, Count(aS, global::Kerf.Topology.ShapeType.Face)); // the base and four half-infinite walls
         Assert.True(aSemi.FirstShape().IsSame(aF));
         Assert.True(aSemi.LastShape().IsNull);
@@ -218,7 +218,7 @@ public class BRepPrimAPISweepTests
             Assert.True(Contains(aS, anExp.Current()));
             Assert.False(aMP.IsDeleted(anExp.Current()));
             Shape aGen = Assert.Single(aMP.Generated(anExp.Current()));
-            Assert.Equal(ShapeType.Edge, aGen.ShapeType());
+            Assert.Equal(ShapeType.Edge, aGen.Type);
             Assert.True(Contains(aS, aGen));
             Assert.True(aMP.FirstShape(anExp.Current()).IsSame(anExp.Current()));
         }
@@ -226,17 +226,17 @@ public class BRepPrimAPISweepTests
         {
             Assert.True(Contains(aS, anExp.Current()));
             Shape aFirst = aMP.FirstShape(anExp.Current());
-            Assert.Equal(ShapeType.Edge, aFirst.ShapeType());
+            Assert.Equal(ShapeType.Edge, aFirst.Type);
             Assert.True(Contains(aS, aFirst));
             Assert.True(Contains(aS, aMP.LastShape(anExp.Current())));
             Shape aWall = Assert.Single(aMP.Generated(anExp.Current()));
-            Assert.Equal(global::Kerf.Topology.ShapeType.Face, aWall.ShapeType());
+            Assert.Equal(global::Kerf.Topology.ShapeType.Face, aWall.Type);
             Assert.True(Contains(aS, aWall));
         }
         Shape aBottom = aMP.FirstShape();
-        Assert.Equal(global::Kerf.Topology.ShapeType.Face, aBottom.ShapeType());
+        Assert.Equal(global::Kerf.Topology.ShapeType.Face, aBottom.Type);
         Assert.True(Contains(aS, aBottom));
-        Assert.Equal(ShapeType.Solid, Assert.Single(aMP.Generated(aF)).ShapeType());
+        Assert.Equal(ShapeType.Solid, Assert.Single(aMP.Generated(aF)).Type);
 
         // a copy shares nothing with the base
         var aCopied = new ApiMakePrism(aF, new Vector3D(0, 0, 1), true);
@@ -318,7 +318,7 @@ public class BRepPrimAPISweepTests
         Face aF = XZRectangle(1, 2, 0, 1);
         var aMR = new ApiMakeRevol(aF, OZ);
         Shape aS = aMR.Shape();
-        Assert.Equal(ShapeType.Solid, aS.ShapeType());
+        Assert.Equal(ShapeType.Solid, aS.Type);
         Assert.Equal(Math.PI * (4 - 1) * 1, Volume(aS), 1e-9); // Pappus
         Assert.Equal(4, Count(aS, global::Kerf.Topology.ShapeType.Face));
         Assert.True(IsValid(aS));
@@ -400,25 +400,25 @@ public class BRepPrimAPISweepTests
     {
         Vertex aV = new MakeVertex(new Point3D(2, 0, 1)).Vertex();
         Shape aCircle = new ApiMakeRevol(aV, OZ).Shape();
-        Assert.Equal(ShapeType.Edge, aCircle.ShapeType());
+        Assert.Equal(ShapeType.Edge, aCircle.Type);
         Assert.Equal(4 * Math.PI, MassPropertiesBuilder.LinearProperties(aCircle).Mass(), 1e-9);
 
         Edge anE = new MakeEdge(new Point3D(1, 0, 0), new Point3D(1, 0, 2)).Edge();
         var aMR = new ApiMakeRevol(anE, OZ, Math.PI);
         Shape aF = aMR.Shape();
-        Assert.Equal(global::Kerf.Topology.ShapeType.Face, aF.ShapeType());
+        Assert.Equal(global::Kerf.Topology.ShapeType.Face, aF.Type);
         Assert.Equal(2 * Math.PI, Area(aF), 1e-9);
         Assert.IsType<CylindricalSurface>(Tool.Surface(ShapeCasts.Face(aF)));
         Exploration.Vertices(anE, out Vertex aV1, out Vertex _);
         Shape anArc = Assert.Single(aMR.Generated(aV1));
-        Assert.Equal(ShapeType.Edge, anArc.ShapeType());
+        Assert.Equal(ShapeType.Edge, anArc.Type);
         // the edge gets a pcurve on the cylinder: the result holds a changed copy of the frozen edge
         Shape aFirst = aMR.FirstShape();
-        Assert.Equal(ShapeType.Edge, aFirst.ShapeType());
+        Assert.Equal(ShapeType.Edge, aFirst.Type);
         Assert.False(aFirst.IsSame(anE));
         Assert.True(Contains(aF, aFirst));
         Assert.True(aMR.FirstShape(anE).IsSame(aFirst));
-        Assert.Equal(ShapeType.Edge, aMR.LastShape().ShapeType());
+        Assert.Equal(ShapeType.Edge, aMR.LastShape().Type);
         Assert.False(aMR.LastShape().IsSame(aFirst));
     }
 
@@ -445,7 +445,7 @@ public class BRepPrimAPISweepTests
         {
             Assert.False(aMR.IsDeleted(anExp.Current()));
             Shape aGen = Assert.Single(aMR.Generated(anExp.Current()));
-            Assert.Equal(global::Kerf.Topology.ShapeType.Face, aGen.ShapeType());
+            Assert.Equal(global::Kerf.Topology.ShapeType.Face, aGen.Type);
             Assert.True(Contains(aS, aGen));
             Assert.True(Contains(aS, aMR.FirstShape(anExp.Current())));
             Assert.True(Contains(aS, aMR.LastShape(anExp.Current())));

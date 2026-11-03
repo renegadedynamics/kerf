@@ -31,7 +31,7 @@ public class DistFunction : Function
         _u1 = u1;
         _u2 = u2;
         Point3D p1 = curve.Value(u1), p2 = curve.Value(u2);
-        if (p1.SquareDistance(p2) > Constants.Resolution())
+        if (p1.SquareDistanceTo(p2) > Constants.Resolution())
         {
             _lin = new Line3D(p1, new Direction3D(p2.XYZ() - p1.XYZ()));
         }
@@ -59,7 +59,7 @@ public class DistFunction : Function
             f = 0.0;
             return false;
         }
-        f = -_lin.SquareDistance(_curve.Value(x));
+        f = -_lin.SquareDistanceTo(_curve.Value(x));
         return true;
     }
 }

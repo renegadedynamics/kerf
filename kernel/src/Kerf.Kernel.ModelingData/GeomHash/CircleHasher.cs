@@ -21,8 +21,8 @@ internal readonly struct CircleHasher(double theCompTolerance, double theHashTol
         var axisHasher = new AxisPlacement(CompTolerance, HashTolerance);
         ReadOnlySpan<ulong> hashes =
         [
-            axisHasher.Hash(circle.Position()),
-            HashUtils.Hash((long)HashUtils.Round(circle.Radius() * factor))
+            axisHasher.Hash(circle.Position),
+            HashUtils.Hash((long)HashUtils.Round(circle.Radius * factor))
         ];
         return HashUtils.HashBytes(hashes);
     }
@@ -31,7 +31,7 @@ internal readonly struct CircleHasher(double theCompTolerance, double theHashTol
     public bool IsEqual(CircleCurve3D circle1, CircleCurve3D circle2)
     {
         var axisHasher = new AxisPlacement(CompTolerance, HashTolerance);
-        return axisHasher.IsEqual(circle1.Position(), circle2.Position())
-               && Math.Abs(circle1.Radius() - circle2.Radius()) <= CompTolerance;
+        return axisHasher.IsEqual(circle1.Position, circle2.Position)
+               && Math.Abs(circle1.Radius - circle2.Radius) <= CompTolerance;
     }
 }

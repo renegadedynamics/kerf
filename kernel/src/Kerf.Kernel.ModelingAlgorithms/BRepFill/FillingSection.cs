@@ -72,11 +72,11 @@ public partial struct FillingSection : IEquatable<FillingSection>
         remLoc.Remove(profile);
         Shape aProfile = remLoc.InternalGetResult();
 
-        if (aProfile.ShapeType() == global::Kerf.Topology.ShapeType.Wire)
+        if (aProfile.Type == global::Kerf.Topology.ShapeType.Wire)
         {
             _wire = ShapeCasts.Wire(aProfile);
         }
-        else if (aProfile.ShapeType() == global::Kerf.Topology.ShapeType.Vertex)
+        else if (aProfile.Type == global::Kerf.Topology.ShapeType.Vertex)
         {
             _ispunctual = true;
             Vertex vertex = ShapeCasts.Vertex(aProfile);
@@ -143,7 +143,7 @@ public partial struct FillingSection : IEquatable<FillingSection>
     {
         Shape modifiedShape = new();
 
-        switch (shape.ShapeType())
+        switch (shape.Type)
         {
             case global::Kerf.Topology.ShapeType.Wire:
                 if (shape.IsSame(_originalShape))

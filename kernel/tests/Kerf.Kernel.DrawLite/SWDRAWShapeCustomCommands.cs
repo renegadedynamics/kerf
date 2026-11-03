@@ -131,18 +131,18 @@ internal static class SWDRAWShapeCustomCommands
 
         if (aCurve is TrimmedCurve2D aTrimmed)
         {
-            expcurv2d(aTrimmed.BasisCurve(), Nb, Degree, MaxSeg, theCont, theFirst, theLast);
+            expcurv2d(aTrimmed.BasisCurve, Nb, Degree, MaxSeg, theCont, theFirst, theLast);
             return;
         }
         if (aCurve is OffsetCurve2D anOffset)
         {
-            expcurv2d(anOffset.BasisCurve(), Nb, Degree, MaxSeg, theCont, theFirst, theLast);
+            expcurv2d(anOffset.BasisCurve, Nb, Degree, MaxSeg, theCont, theFirst, theLast);
             return;
         }
-        int aCont = ContToInteger(aCurve.Continuity());
+        int aCont = ContToInteger(aCurve.Continuity);
         if (aCurve is BSplineCurve2D Bs)
         {
-            if (Bs.Degree() > Degree)
+            if (Bs.Degree > Degree)
             {
                 Nb[1, 1]++;
             }
@@ -156,7 +156,7 @@ internal static class SWDRAWShapeCustomCommands
             }
             if (aCont < theCont && Bs.KnotCount > 2)
             {
-                int nbInt = ckeckKnots(Bs.Knots(), theFirst, theLast);
+                int nbInt = ckeckKnots(Bs.Knots, theFirst, theLast);
                 if (nbInt > 1)
                 {
                     Nb[1, 4]++;
@@ -166,7 +166,7 @@ internal static class SWDRAWShapeCustomCommands
         }
         if (aCurve is BezierCurve2D Bz)
         {
-            if (Bz.Degree() > Degree)
+            if (Bz.Degree > Degree)
             {
                 Nb[2, 1]++;
             }
@@ -195,19 +195,19 @@ internal static class SWDRAWShapeCustomCommands
         }
         if (aCurve is TrimmedCurve3D aTrimmed)
         {
-            expcurv(aTrimmed.BasisCurve(), Nb, Degree, MaxSeg, theCont, theFirst, theLast);
+            expcurv(aTrimmed.BasisCurve, Nb, Degree, MaxSeg, theCont, theFirst, theLast);
             return;
         }
         if (aCurve is OffsetCurve3D anOffset)
         {
-            expcurv(anOffset.BasisCurve(), Nb, Degree, MaxSeg, theCont, theFirst, theLast);
+            expcurv(anOffset.BasisCurve, Nb, Degree, MaxSeg, theCont, theFirst, theLast);
             return;
         }
 
-        int aCont = ContToInteger(aCurve.Continuity());
+        int aCont = ContToInteger(aCurve.Continuity);
         if (aCurve is BSplineCurve3D Bs)
         {
-            if (Bs.Degree() > Degree)
+            if (Bs.Degree > Degree)
             {
                 Nb[1, 1]++;
             }
@@ -221,7 +221,7 @@ internal static class SWDRAWShapeCustomCommands
             }
             if (aCont < theCont && Bs.KnotCount > 2)
             {
-                int nbInt = ckeckKnots(Bs.Knots(), theFirst, theLast);
+                int nbInt = ckeckKnots(Bs.Knots, theFirst, theLast);
                 if (nbInt > 1)
                 {
                     Nb[1, 4]++;
@@ -231,7 +231,7 @@ internal static class SWDRAWShapeCustomCommands
         }
         if (aCurve is BezierCurve3D Bz)
         {
-            if (Bz.Degree() > Degree)
+            if (Bz.Degree > Degree)
             {
                 Nb[2, 1]++;
             }
@@ -259,25 +259,25 @@ internal static class SWDRAWShapeCustomCommands
         }
         if (aSurface is SweptSurface aSwept)
         {
-            Curve3D BasCurve = aSwept.BasisCurve();
-            expcurv(BasCurve, NbSurf, Degree, MaxSeg, theCont, BasCurve.FirstParameter(), BasCurve.LastParameter());
+            Curve3D BasCurve = aSwept.BasisCurve;
+            expcurv(BasCurve, NbSurf, Degree, MaxSeg, theCont, BasCurve.FirstParameter, BasCurve.LastParameter);
             return;
         }
         if (aSurface is TrimmedSurface aTrimmed)
         {
-            expsurf(aTrimmed.BasisSurface(), NbSurf, Degree, MaxSeg, theCont);
+            expsurf(aTrimmed.BasisSurface, NbSurf, Degree, MaxSeg, theCont);
             return;
         }
         if (aSurface is OffsetSurface anOffset)
         {
-            expsurf(anOffset.BasisSurface(), NbSurf, Degree, MaxSeg, theCont);
+            expsurf(anOffset.BasisSurface, NbSurf, Degree, MaxSeg, theCont);
             return;
         }
-        int aCont = ContToInteger(aSurface.Continuity());
+        int aCont = ContToInteger(aSurface.Continuity);
 
         if (aSurface is BSplineSurface BS)
         {
-            if (BS.UDegree() > Degree || BS.VDegree() > Degree)
+            if (BS.UDegree > Degree || BS.VDegree > Degree)
             {
                 NbSurf[1, 1]++;
             }
@@ -297,7 +297,7 @@ internal static class SWDRAWShapeCustomCommands
         }
         if (aSurface is BezierSurface BZ)
         {
-            if (BZ.UDegree() > Degree || BZ.VDegree() > Degree)
+            if (BZ.UDegree > Degree || BZ.VDegree > Degree)
             {
                 NbSurf[2, 1]++;
             }

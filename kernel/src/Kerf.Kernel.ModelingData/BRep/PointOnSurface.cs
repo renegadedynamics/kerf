@@ -10,7 +10,7 @@ using Occt;
 namespace Kerf.Engine.Topology.Brep;
 
 /// <summary>The representation of a vertex by parameters (U, V) on a surface.</summary>
-public class PointOnSurface : PointsOnSurface
+internal class PointOnSurface : PointsOnSurface
 {
     private double _parameter2;
 
@@ -23,7 +23,7 @@ public class PointOnSurface : PointsOnSurface
 
     /// <summary>A point on the surface <paramref name="s"/>.</summary>
     public override bool IsPointOnSurface(Surface? s, in Placement l)
-        => ReferenceEquals(Surface(), s) && (Location() == l);
+        => ReferenceEquals(Surface(), s) && (Location().IsEqual(l));
 
     public override double Parameter2() => _parameter2;
 

@@ -297,7 +297,7 @@ public class ExtremaPC_CurveTest
         for (int i = 0; i < aResult.ExtCount; ++i)
         {
             double aStoredSqDist = aResult[i].SquareDistance;
-            double aComputedSqDist = aPoint.SquareDistance(aResult[i].Point);
+            double aComputedSqDist = aPoint.SquareDistanceTo(aResult[i].Point);
             Assert.Equal(aComputedSqDist, aStoredSqDist, THE_TOL);
         }
     }
@@ -329,7 +329,7 @@ public class ExtremaPC_CurveTest
         for (int i = 0; i < aResult.ExtCount; ++i)
         {
             double aStoredSqDist = aResult[i].SquareDistance;
-            double aComputedSqDist = aPoint.SquareDistance(aResult[i].Point);
+            double aComputedSqDist = aPoint.SquareDistanceTo(aResult[i].Point);
             Assert.Equal(aComputedSqDist, aStoredSqDist, THE_TOL);
         }
     }
@@ -733,7 +733,7 @@ public class ExtremaPC_CurveTest
         int aMinIdx = aResult.MinIndex();
         Assert.Equal(5.0, aResult[aMinIdx].Parameter, THE_TOL);
         Assert.Equal(25.0, aResult[aMinIdx].SquareDistance, THE_TOL);
-        Assert.Equal(10.0, aResult[aMinIdx].Point.Y(), THE_TOL);
+        Assert.Equal(10.0, aResult[aMinIdx].Point.Y, THE_TOL);
     }
 
     [Fact]
@@ -782,9 +782,9 @@ public class ExtremaPC_CurveTest
         int aMinIdx = aResult.MinIndex();
         int aMinIdxTr = aResultTr.MinIndex();
         Assert.Equal(aResultTr[aMinIdxTr].Parameter, aResult[aMinIdx].Parameter, THE_TOL);
-        Assert.Equal(aResult[aMinIdx].Point.X() + 10.0, aResultTr[aMinIdxTr].Point.X(), THE_TOL);
-        Assert.Equal(aResult[aMinIdx].Point.Y() + 20.0, aResultTr[aMinIdxTr].Point.Y(), THE_TOL);
-        Assert.Equal(aResult[aMinIdx].Point.Z() + 30.0, aResultTr[aMinIdxTr].Point.Z(), THE_TOL);
+        Assert.Equal(aResult[aMinIdx].Point.X + 10.0, aResultTr[aMinIdxTr].Point.X, THE_TOL);
+        Assert.Equal(aResult[aMinIdx].Point.Y + 20.0, aResultTr[aMinIdxTr].Point.Y, THE_TOL);
+        Assert.Equal(aResult[aMinIdx].Point.Z + 30.0, aResultTr[aMinIdxTr].Point.Z, THE_TOL);
     }
 
     //==================================================================================================
@@ -811,8 +811,8 @@ public class ExtremaPC_CurveTest
 
         int aMinIdx = aResult.MinIndex();
         Assert.Equal(3.0, Math.Sqrt(aResult[aMinIdx].SquareDistance), THE_TOL);
-        Assert.Equal(0.0, aResult[aMinIdx].Point.X(), THE_TOL);
-        Assert.Equal(5.0, aResult[aMinIdx].Point.Y(), THE_TOL);
+        Assert.Equal(0.0, aResult[aMinIdx].Point.X, THE_TOL);
+        Assert.Equal(5.0, aResult[aMinIdx].Point.Y, THE_TOL);
     }
 
     [Fact]
@@ -876,9 +876,9 @@ public class ExtremaPC_CurveTest
         Assert.Equal(aResultTr[aMinIdxTr].Parameter, aResult[aMinIdx].Parameter, THE_TOL);
 
         Point3D aExpectedPt = aResult[aMinIdx].Point.Transformed(aTrsf);
-        Assert.Equal(aExpectedPt.X(), aResultTr[aMinIdxTr].Point.X(), THE_TOL);
-        Assert.Equal(aExpectedPt.Y(), aResultTr[aMinIdxTr].Point.Y(), THE_TOL);
-        Assert.Equal(aExpectedPt.Z(), aResultTr[aMinIdxTr].Point.Z(), THE_TOL);
+        Assert.Equal(aExpectedPt.X, aResultTr[aMinIdxTr].Point.X, THE_TOL);
+        Assert.Equal(aExpectedPt.Y, aResultTr[aMinIdxTr].Point.Y, THE_TOL);
+        Assert.Equal(aExpectedPt.Z, aResultTr[aMinIdxTr].Point.Z, THE_TOL);
     }
 
     //==================================================================================================
@@ -987,7 +987,7 @@ public class ExtremaPC_CurveTest
         {
             Assert.True(aResult[i].Parameter >= -THE_TOL);
             Assert.True(aResult[i].Parameter <= M_PI / 2.0 + THE_TOL);
-            Assert.Equal(50.0, aResult[i].Point.Z(), THE_TOL);
+            Assert.Equal(50.0, aResult[i].Point.Z, THE_TOL);
         }
     }
 
@@ -1009,7 +1009,7 @@ public class ExtremaPC_CurveTest
         int aMinIdx = aResult.MinIndex();
         Assert.Equal(5.0, aResult[aMinIdx].Parameter, THE_TOL);
         Assert.Equal(9.0, aResult[aMinIdx].SquareDistance, THE_TOL);
-        Assert.Equal(5.0, aResult[aMinIdx].Point.Y(), THE_TOL);
+        Assert.Equal(5.0, aResult[aMinIdx].Point.Y, THE_TOL);
     }
 
     //==================================================================================================
@@ -1092,9 +1092,9 @@ public class ExtremaPC_CurveTest
         int aMinIdx = aResult.MinIndex();
         int aMinIdxTr = aResultTr.MinIndex();
         Point3D aExpectedPt = aResult[aMinIdx].Point.Transformed(aTrsf);
-        Assert.Equal(aExpectedPt.X(), aResultTr[aMinIdxTr].Point.X(), THE_TOL);
-        Assert.Equal(aExpectedPt.Y(), aResultTr[aMinIdxTr].Point.Y(), THE_TOL);
-        Assert.Equal(aExpectedPt.Z(), aResultTr[aMinIdxTr].Point.Z(), THE_TOL);
+        Assert.Equal(aExpectedPt.X, aResultTr[aMinIdxTr].Point.X, THE_TOL);
+        Assert.Equal(aExpectedPt.Y, aResultTr[aMinIdxTr].Point.Y, THE_TOL);
+        Assert.Equal(aExpectedPt.Z, aResultTr[aMinIdxTr].Point.Z, THE_TOL);
     }
 
     [Fact]

@@ -282,8 +282,8 @@ public class TopolTool : Transient
     /// <remarks>OCCT ignores <paramref name="reacdreOnPeriodic"/>.</remarks>
     public virtual Containment Classify(in Point2D p, double tol, bool reacdreOnPeriodic = true)
     {
-        double u = p.X();
-        double v = p.Y();
+        double u = p.X;
+        double v = p.Y;
 
         if (_nbRestr == 4)
         {
@@ -446,8 +446,8 @@ public class TopolTool : Transient
     /// <remarks>OCCT ignores <paramref name="reacdreOnPeriodic"/>.</remarks>
     public virtual bool IsThePointOn(in Point2D p, double tol, bool reacdreOnPeriodic = true)
     {
-        double u = p.X();
-        double v = p.Y();
+        double u = p.X;
+        double v = p.Y;
 
         if (_nbRestr == 4)
         {
@@ -652,18 +652,18 @@ public class TopolTool : Transient
                 Point3D a = array2.Value(i, 1);
                 Point3D b = array2.Value(i, 2);
                 Point3D c = array2.Value(i, 3);
-                vi = vi.WithCoord(c.X() - b.X() - b.X() + a.X(),
-                            c.Y() - b.Y() - b.Y() + a.Y(),
-                            c.Z() - b.Z() - b.Z() + a.Z());
+                vi = vi.WithCoord(c.X - b.X - b.X + a.X,
+                            c.Y - b.Y - b.Y + a.Y,
+                            c.Z - b.Z - b.Z + a.Z);
                 int locnbch = 0;
                 for (j = 3; j < nbvp; j++)
                 { //-- try
                     Point3D a1 = array2.Value(i, j - 1);
                     Point3D b1 = array2.Value(i, j);
                     Point3D c1 = array2.Value(i, j + 1);
-                    vip1 = vip1.WithCoord(c1.X() - b1.X() - b1.X() + a1.X(),
-                                  c1.Y() - b1.Y() - b1.Y() + a1.Y(),
-                                  c1.Z() - b1.Z() - b1.Z() + a1.Z());
+                    vip1 = vip1.WithCoord(c1.X - b1.X - b1.X + a1.X,
+                                  c1.Y - b1.Y - b1.Y + a1.Y,
+                                  c1.Z - b1.Z - b1.Z + a1.Z);
                     double pd = vi.Dot(vip1);
                     vi = vip1;
                     if (pd > 1.0e-7 || pd < -1.0e-7)
@@ -702,18 +702,18 @@ public class TopolTool : Transient
                 Point3D a = array2.Value(1, j);
                 Point3D b = array2.Value(2, j);
                 Point3D c = array2.Value(3, j);
-                vi = vi.WithCoord(c.X() - b.X() - b.X() + a.X(),
-                            c.Y() - b.Y() - b.Y() + a.Y(),
-                            c.Z() - b.Z() - b.Z() + a.Z());
+                vi = vi.WithCoord(c.X - b.X - b.X + a.X,
+                            c.Y - b.Y - b.Y + a.Y,
+                            c.Z - b.Z - b.Z + a.Z);
                 int locnbch = 0;
                 for (i = 3; i < nbup; i++)
                 { //-- try
                     Point3D a1 = array2.Value(i - 1, j);
                     Point3D b1 = array2.Value(i, j);
                     Point3D c1 = array2.Value(i + 1, j);
-                    vip1 = vip1.WithCoord(c1.X() - b1.X() - b1.X() + a1.X(),
-                                  c1.Y() - b1.Y() - b1.Y() + a1.Y(),
-                                  c1.Z() - b1.Z() - b1.Z() + a1.Z());
+                    vip1 = vip1.WithCoord(c1.X - b1.X - b1.X + a1.X,
+                                  c1.Y - b1.Y - b1.Y + a1.Y,
+                                  c1.Z - b1.Z - b1.Z + a1.Z);
                     double pd = vi.Dot(vip1);
                     vi = vip1;
                     if (pd > 1.0e-7 || pd < -1.0e-7)
@@ -1130,9 +1130,9 @@ public class TopolTool : Transient
         }
 
         int nbsu = ui2 - ui1 + 1;
-        nbsu += (nbsu - 1) * (bs.UDegree() - 1);
+        nbsu += (nbsu - 1) * (bs.UDegree - 1);
         int nbsv = vi2 - vi1 + 1;
-        nbsv += (nbsv - 1) * (bs.VDegree() - 1);
+        nbsv += (nbsv - 1) * (bs.VDegree - 1);
         bool bUuniform = false;
         bool bVuniform = false;
 
@@ -1201,7 +1201,7 @@ public class TopolTool : Transient
         }
         else
         {
-            int nbi = bs.UDegree();
+            int nbi = bs.UDegree;
             k = 0;
             t1 = uinf;
             for (i = ui1 + 1; i <= ui2; ++i)
@@ -1246,7 +1246,7 @@ public class TopolTool : Transient
         }
         else
         {
-            int nbi = bs.VDegree();
+            int nbi = bs.VDegree;
             k = 0;
             t1 = vinf;
             for (i = vi1 + 1; i <= vi2; ++i)
@@ -1302,7 +1302,7 @@ public class TopolTool : Transient
                     t2 = uPars[k];
                     Point3D p2 = _s.Value(t2, t1);
 
-                    if (p1.SquareDistance(p2) <= tol)
+                    if (p1.SquareDistanceTo(p2) <= tol)
                     {
                         continue;
                     }
@@ -1318,7 +1318,7 @@ public class TopolTool : Transient
                         }
 
                         Point3D pp = _s.Value(uPars[l], t1);
-                        double d = lin.SquareDistance(pp);
+                        double d = lin.SquareDistanceTo(pp);
 
                         if (d <= defl2)
                         {
@@ -1413,7 +1413,7 @@ public class TopolTool : Transient
                     t2 = vPars[k];
                     Point3D p2 = _s.Value(t1, t2);
 
-                    if (p1.SquareDistance(p2) <= tol)
+                    if (p1.SquareDistanceTo(p2) <= tol)
                     {
                         continue;
                     }
@@ -1428,7 +1428,7 @@ public class TopolTool : Transient
                         }
 
                         Point3D pp = _s.Value(t1, vPars[l]);
-                        double d = lin.SquareDistance(pp);
+                        double d = lin.SquareDistanceTo(pp);
 
                         if (d <= defl2)
                         {
@@ -1567,26 +1567,26 @@ public class TopolTool : Transient
     /// <summary>Computes the parameters of the apex of a cone.</summary>
     public static void GetConeApexParam(in Cone c, out double u, out double v)
     {
-        CoordinateSystem pos = c.Position();
-        double radius = c.RefRadius();
-        double sAngle = c.SemiAngle();
-        Point3D p = c.Apex();
+        CoordinateSystem pos = c.Position;
+        double radius = c.RefRadius;
+        double sAngle = c.SemiAngle;
+        Point3D p = c.Apex;
 
         Transform3D t = new Transform3D().WithTransformation(pos);
         Point3D ploc = p.Transformed(t);
 
-        if (ploc.X() == 0.0 && ploc.Y() == 0.0)
+        if (ploc.X == 0.0 && ploc.Y == 0.0)
         {
             u = 0.0;
         }
-        else if (-radius > ploc.Z() * Math.Tan(sAngle))
+        else if (-radius > ploc.Z * Math.Tan(sAngle))
         {
             // the point is at the `wrong` side of the apex
-            u = Math.Atan2(-ploc.Y(), -ploc.X());
+            u = Math.Atan2(-ploc.Y, -ploc.X);
         }
         else
         {
-            u = Math.Atan2(ploc.Y(), ploc.X());
+            u = Math.Atan2(ploc.Y, ploc.X);
         }
 
         if (u < -1.0e-16)
@@ -1599,6 +1599,6 @@ public class TopolTool : Transient
         }
 
         v =
-            Math.Sin(sAngle) * (ploc.X() * Math.Cos(u) + ploc.Y() * Math.Sin(u) - radius) + Math.Cos(sAngle) * ploc.Z();
+            Math.Sin(sAngle) * (ploc.X * Math.Cos(u) + ploc.Y * Math.Sin(u) - radius) + Math.Cos(sAngle) * ploc.Z;
     }
 }

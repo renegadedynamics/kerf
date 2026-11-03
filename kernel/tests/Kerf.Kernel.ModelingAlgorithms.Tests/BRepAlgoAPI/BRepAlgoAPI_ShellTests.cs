@@ -74,7 +74,7 @@ public class BRepAlgoAPI_ShellTests
         Shape anInternal = aFuse.InternalShape();
         Assert.False(anInternal.TShape()!.IsFrozen); // the internal read doesn't publish
         Shape aResult = aFuse.Shape();
-        Assert.Equal(ShapeType.Compound, aResult.ShapeType());
+        Assert.Equal(ShapeType.Compound, aResult.Type);
         Assert.True(AllFrozen(aResult));
 
         // the result shares every argument sub-shape (nothing split)
@@ -132,7 +132,7 @@ public class BRepAlgoAPI_ShellTests
         var aCommon = new Common(Box(0), Box(5));
         Assert.True(aCommon.IsDone);
         Shape aResult = aCommon.Shape();
-        Assert.Equal(ShapeType.Compound, aResult.ShapeType());
+        Assert.Equal(ShapeType.Compound, aResult.Type);
         Assert.False(new Iterator(aResult).More());
     }
 
@@ -288,7 +288,7 @@ public class BRepAlgoAPI_ShellTests
 
         // a plane becomes an unbounded face; one far from the box doesn't interfere, one through it does
         var s2 = new SectionOperation(a, aFar);
-        Assert.Equal(ShapeType.Face, s2.Shape2().ShapeType());
+        Assert.Equal(ShapeType.Face, s2.Shape2().Type);
         Assert.True(s2.IsDone);
         Assert.False(new Iterator(s2.Shape()).More());
 
@@ -297,11 +297,11 @@ public class BRepAlgoAPI_ShellTests
         Assert.Equal(4, TShapes(s2b.Shape(), ShapeType.Edge).Count);
 
         var s3 = new SectionOperation(new PlaneSurface(aFar), a);
-        Assert.Equal(ShapeType.Face, s3.Shape1().ShapeType());
+        Assert.Equal(ShapeType.Face, s3.Shape1().Type);
         Assert.True(s3.IsDone);
 
         var s4 = new SectionOperation(new PlaneSurface(aFar), new PlaneSurface(new Plane3D(new Point3D(), new Direction3D(1, 0, 0))), false);
-        Assert.Equal(ShapeType.Face, s4.Shape1().ShapeType());
+        Assert.Equal(ShapeType.Face, s4.Shape1().Type);
         Assert.False(s4.IsDone);
 
         var s5 = new SectionOperation(a, Box(5), false);

@@ -71,8 +71,8 @@ public class GeomFill_GordonRecordingsTests(ITestOutputHelper output)
 
     private static void PutSurface(List<string> theOut, BSplineSurface theSurface)
     {
-        theOut.Add("ud:" + theSurface.UDegree());
-        theOut.Add("vd:" + theSurface.VDegree());
+        theOut.Add("ud:" + theSurface.UDegree);
+        theOut.Add("vd:" + theSurface.VDegree);
         theOut.Add("up:" + (theSurface.IsUPeriodic ? "1" : "0"));
         theOut.Add("vp:" + (theSurface.IsVPeriodic ? "1" : "0"));
         theOut.Add("ur:" + (theSurface.IsURational ? "1" : "0"));
@@ -88,7 +88,7 @@ public class GeomFill_GordonRecordingsTests(ITestOutputHelper output)
             {
                 Point3D aP = theSurface.Pole(i, j);
                 double aW = isRational ? theSurface.Weight(i, j) : 1.0;
-                double[] aVals = [aP.X(), aP.Y(), aP.Z(), aW];
+                double[] aVals = [aP.X, aP.Y, aP.Z, aW];
                 for (int k = 0; k < (isRational ? 4 : 3); ++k)
                 {
                     ulong aBits = (ulong)BitConverter.DoubleToInt64Bits(aVals[k]);
@@ -100,7 +100,7 @@ public class GeomFill_GordonRecordingsTests(ITestOutputHelper output)
                 }
                 if (aCount++ < 12)
                 {
-                    theOut.Add("p:" + Hex(aP.X()) + "," + Hex(aP.Y()) + "," + Hex(aP.Z()));
+                    theOut.Add("p:" + Hex(aP.X) + "," + Hex(aP.Y) + "," + Hex(aP.Z));
                     if (isRational)
                     {
                         theOut.Add("w:" + Hex(aW));
@@ -124,7 +124,7 @@ public class GeomFill_GordonRecordingsTests(ITestOutputHelper output)
             for (int j = 0; j <= 4; ++j)
             {
                 Point3D aP = theSurface.Value(aU0 + (aU1 - aU0) * i / 4.0, aV0 + (aV1 - aV0) * j / 4.0);
-                theOut.Add("g:" + Hex(aP.X()) + "," + Hex(aP.Y()) + "," + Hex(aP.Z()));
+                theOut.Add("g:" + Hex(aP.X) + "," + Hex(aP.Y) + "," + Hex(aP.Z));
             }
         }
     }

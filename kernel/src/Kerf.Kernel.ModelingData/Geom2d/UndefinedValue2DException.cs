@@ -9,7 +9,7 @@ namespace Kerf.Engine.Geometry.Objects;
 
 /// <summary>Thrown when a value of a Geom2d object is undefined.</summary>
 /// <remarks>OCCT's <c>Geom2d_UndefinedValue_Raise_if</c> macro is defined but never used, so it isn't ported.</remarks>
-public class UndefinedValue2DException : DomainErrorException
+internal class UndefinedValue2DException : DomainErrorException
 {
     public UndefinedValue2DException() { }
     public UndefinedValue2DException(string? message) : base(message) { }

@@ -70,7 +70,7 @@ public sealed class GridEvaluator
     /// Builds the grid from GeomGridEval D1 results at the given parameters (any bounds; ascending for B-spline
     /// evaluators, as GeomGridEval requires).
     /// </summary>
-    public void BuildGrid<TGridEval>(TGridEval eval, math_Vector theParams)
+    internal void BuildGrid<TGridEval>(TGridEval eval, math_Vector theParams)
         where TGridEval : GeomGridEvalGrid.ICurveEvaluator
     {
         // Use Array1() accessor to pass to GeomGridEval which expects NCollection_Array1
@@ -162,7 +162,7 @@ public sealed class GridEvaluator
             // Compute distance function value: F(u) = (C(u) - P) . C'(u)
             Vector3D vec = new(p, gp.Point);
             double f = vec.Dot(gp.D1);
-            double dist = vec.SquareMagnitude();
+            double dist = vec.SquareMagnitude;
 
             // Check for sign change with previous point
             if (prevValid && prevF * f < 0.0 && !_processed[i - 1])
@@ -197,7 +197,7 @@ public sealed class GridEvaluator
             // Check for local extremum by distance comparison (3-point test)
             if (i > 0 && i < nbGrid - 1 && !_processed[i])
             {
-                double nextDist = p.SquareDistance(_grid[i + 1].Point);
+                double nextDist = p.SquareDistanceTo(_grid[i + 1].Point);
 
                 // Local minimum: distance decreases then increases
                 bool isLocalMin = (dist <= prevDist && dist <= nextDist);
@@ -257,7 +257,7 @@ public sealed class GridEvaluator
         for (int c = 0; c < _candidates.Count; ++c)
         {
             Candidate cand = _candidates[c];
-            double estDist = p.SquareDistance(_grid[cand.IdxLo].Point);
+            double estDist = p.SquareDistanceTo(_grid[cand.IdxLo].Point);
             _sortedIndices.Add((c, estDist));
         }
 
@@ -354,7 +354,7 @@ public sealed class GridEvaluator
                     {
                         double u = refUMin + i * step0;
                         Point3D pt0 = curve.Value(u);
-                        double dist = p.SquareDistance(pt0);
+                        double dist = p.SquareDistanceTo(pt0);
 
                         if (dist < bestDist)
                         {
@@ -411,14 +411,14 @@ public sealed class GridEvaluator
                 continue;
 
             Point3D pt = curve.Value(rootU);
-            double sqDist = p.SquareDistance(pt);
+            double sqDist = p.SquareDistanceTo(pt);
 
             // Classify as min/max using neighbor sampling
             double step = (domain.Max - domain.Min) * global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.THE_REFINEMENT_STEP_RATIO;
             double distPlus =
-              p.SquareDistance(curve.Value(Min(domain.Max, rootU + step)));
+              p.SquareDistanceTo(curve.Value(Min(domain.Max, rootU + step)));
             double distMinus =
-              p.SquareDistance(curve.Value(Max(domain.Min, rootU - step)));
+              p.SquareDistanceTo(curve.Value(Max(domain.Min, rootU - step)));
             bool isMin = (sqDist <= distPlus) && (sqDist <= distMinus);
 
             // Filter by mode

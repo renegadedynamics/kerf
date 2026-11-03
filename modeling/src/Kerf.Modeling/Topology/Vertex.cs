@@ -56,19 +56,19 @@ public sealed class Vertex : Shape
     }
 
     /// <summary>The X coordinate, including the vertex's Location.</summary>
-    public double X { get { var p = Point; return p.X(); } }
+    public double X { get { var p = Point; return p.X; } }
 
     /// <summary>The Y coordinate, including the vertex's Location.</summary>
-    public double Y { get { var p = Point; return p.Y(); } }
+    public double Y { get { var p = Point; return p.Y; } }
 
     /// <summary>The Z coordinate, including the vertex's Location.</summary>
-    public double Z { get { var p = Point; return p.Z(); } }
+    public double Z { get { var p = Point; return p.Z; } }
 
     /// <summary>The coordinates of the vertex.</summary>
     public void Deconstruct(out double x, out double y, out double z)
     {
         var p = Point;
-        (x, y, z) = (p.X(), p.Y(), p.Z());
+        (x, y, z) = (p.X, p.Y, p.Z);
     }
 
     /// <summary>The point the vertex is at.</summary>
@@ -166,7 +166,7 @@ public sealed class Vertex : Shape
     private global::Kerf.Topology.Face? OwningFace()
     {
         for (int i = TopoPath.Count - 1; i >= 0; i--)
-            if (!TopoPath[i].IsEmpty && TopoPath[i].TopoShape.ShapeType() == global::Kerf.Topology.ShapeType.Face)
+            if (!TopoPath[i].IsEmpty && TopoPath[i].TopoShape.Type == global::Kerf.Topology.ShapeType.Face)
                 return ShapeCasts.Face(TopoPath[i].TopoShape);
         return null;
     }
@@ -214,14 +214,14 @@ public sealed class Vertex : Shape
             foreach (var (param, sign) in new[] { (curve.FirstParameter(), 1.0), (curve.LastParameter(), -1.0) })
             {
                 var end = curve.Value(param);
-                if (Math.Pow(end.X() - here.X(), 2) + Math.Pow(end.Y() - here.Y(), 2) > Constants.Tolerance)
+                if (Math.Pow(end.X - here.X, 2) + Math.Pow(end.Y - here.Y, 2) > Constants.Tolerance)
                     continue;
                 var point = new Point2D();
                 var tangent = new Vector2D();
                 curve.D1(param, out point, out tangent);
-                var length = Math.Sqrt(tangent.X() * tangent.X() + tangent.Y() * tangent.Y());
+                var length = Math.Sqrt(tangent.X * tangent.X + tangent.Y * tangent.Y);
                 if (length > 0)
-                    directions.Add((sign * tangent.X() / length, sign * tangent.Y() / length));
+                    directions.Add((sign * tangent.X / length, sign * tangent.Y / length));
             }
         }
         return directions;
@@ -246,7 +246,7 @@ public sealed class Vertex : Shape
         BrepTools.UVBounds(face, out uMin, out uMax, out vMin, out vMax);
         var step = 1e-4 * Math.Sqrt(Math.Pow(uMax - uMin, 2) + Math.Pow(vMax - vMin, 2)) / span;
         var here = Tool.Parameters(TopoVertex, face);
-        var probe = new Point2D(here.X() + bisector.U * step, here.Y() + bisector.V * step);
+        var probe = new Point2D(here.X + bisector.U * step, here.Y + bisector.V * step);
         var classifier = new FaceClassifier2D(face, Constants.Tolerance);
         return classifier.Perform(probe) == Containment.In ? Convexity.Convex : Convexity.Concave;
     }

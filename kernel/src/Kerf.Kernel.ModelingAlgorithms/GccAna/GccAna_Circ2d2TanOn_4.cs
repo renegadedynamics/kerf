@@ -49,30 +49,30 @@ public sealed partial class AnalyticCirc2d2TanOn
         double tol = Math.Abs(tolerance);
         Direction2D dirx = new(Direction2D.D.X);
         Line2D l1 = qualified1.Qualified();
-        Point2D originL1 = l1.Location();
-        Direction2D dirL1 = l1.Direction();
-        Direction2D normal = new(-dirL1.Y(), dirL1.X());
+        Point2D originL1 = l1.Location;
+        Direction2D dirL1 = l1.Direction;
+        Direction2D normal = new(-dirL1.Y, dirL1.X);
 
         //=========================================================================
         //   Processing of boundary cases.                                          +
         //=========================================================================
 
-        if (dirL1.IsEqual(onLine.Direction(), global::Kerf.Engine.Foundation.Precision.Confusion())
-            && onLine.Distance(originL1) < global::Kerf.Engine.Foundation.Precision.Confusion())
+        if (dirL1.IsEqual(onLine.Direction, global::Kerf.Engine.Foundation.Precision.Confusion())
+            && onLine.DistanceTo(originL1) < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             // POP : l2s 2 straight line are identic : no Sol
             _nbrSol = 0;
             return;
         }
 
-        double dp2l = onLine.Distance(point2);
-        Direction2D donline = onLine.Direction();
-        Point2D pinterm = new(point2.XY() + dp2l * new Xy(-donline.Y(), donline.X()));
-        if (onLine.Distance(pinterm) > tol)
+        double dp2l = onLine.DistanceTo(point2);
+        Direction2D donline = onLine.Direction;
+        Point2D pinterm = new(point2.XY() + dp2l * new Xy(-donline.Y, donline.X));
+        if (onLine.DistanceTo(pinterm) > tol)
         {
-            pinterm = new Point2D(point2.XY() - dp2l * new Xy(-donline.Y(), donline.X()));
+            pinterm = new Point2D(point2.XY() - dp2l * new Xy(-donline.Y, donline.X));
         }
-        double dist = l1.Distance(pinterm);
+        double dist = l1.DistanceTo(pinterm);
         if (Math.Abs(dist - dp2l) <= tol)
         {
             Direction2D dirbid = new(originL1.XY() - pinterm.XY());
@@ -107,8 +107,8 @@ public sealed partial class AnalyticCirc2d2TanOn
                 {
                     _qualifier1[_nbrSol] = Qualifier.Enclosed;
                 }
-                double sign = dc2.Dot(new Direction2D(-dirL1.Y(), dirL1.X()));
-                dc2 = new Direction2D(sign * new Xy(-dirL1.Y(), dirL1.X()));
+                double sign = dc2.Dot(new Direction2D(-dirL1.Y, dirL1.X));
+                dc2 = new Direction2D(sign * new Xy(-dirL1.Y, dirL1.X));
                 _pnttg1sol[_nbrSol] = new Point2D(pinterm.XY() + dp2l * dc2.XY());
                 _pnttg2sol[_nbrSol] = point2;
                 _pntcen[_nbrSol] = pinterm;
@@ -146,13 +146,13 @@ public sealed partial class AnalyticCirc2d2TanOn
                     for (int j = 1; j <= intp.PointCount; j++)
                     {
                         Point2D center = intp.Point(j).Value();
-                        double radius = l1.Distance(center);
+                        double radius = l1.DistanceTo(center);
                         //	  int nbsol = 1;
                         bool ok = false;
                         if (qualified1.IsEnclosed)
                         {
-                            if ((((originL1.X() - center.X()) * (-dirL1.Y()))
-                                 + ((originL1.Y() - center.Y()) * (dirL1.X())))
+                            if ((((originL1.X - center.X) * (-dirL1.Y))
+                                 + ((originL1.Y - center.Y) * (dirL1.X)))
                                 <= 0)
                             {
                                 ok = true;
@@ -160,8 +160,8 @@ public sealed partial class AnalyticCirc2d2TanOn
                         }
                         else if (qualified1.IsOutside)
                         {
-                            if ((((originL1.X() - center.X()) * (-dirL1.Y()))
-                                 + ((originL1.Y() - center.Y()) * (dirL1.X())))
+                            if ((((originL1.X - center.X) * (-dirL1.Y))
+                                 + ((originL1.Y - center.Y) * (dirL1.X)))
                                 >= 0)
                             {
                                 ok = true;

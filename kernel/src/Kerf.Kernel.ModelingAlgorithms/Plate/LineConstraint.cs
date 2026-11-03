@@ -20,9 +20,9 @@ public class LineConstraint
     public LineConstraint(in Xy point2d, in Line3D lin, int iu = 0, int iv = 0)
     {
         _lsc = new LinearScalarConstraint(2, 1);
-        Xyz point = lin.Location().XYZ();
+        Xyz point = lin.Location.XYZ();
         _lsc.SetPPC(1, new PinpointConstraint(point2d, point, iu, iv));
-        Xyz dir = lin.Direction().XYZ();
+        Xyz dir = lin.Direction.XYZ();
         // one builds two directions orthogonal to dir
         Xyz dX = new(1, 0, 0);
         Xyz dY = new(0, 1, 0);

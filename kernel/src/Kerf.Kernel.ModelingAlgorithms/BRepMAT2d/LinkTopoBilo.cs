@@ -55,7 +55,7 @@ public sealed class LinkTopoBilo
         Shape s = explo.Shape();
         int indContour = 1;
 
-        if (s.ShapeType() == ShapeType.Face)
+        if (s.Type == ShapeType.Face)
         {
             Explorer exp = new(s, ShapeType.Wire);
 
@@ -137,7 +137,7 @@ public sealed class LinkTopoBilo
 
             if (type == typeof(CartesianPoint2))
             {
-                if (s.Orientation() == Reversed)
+                if (s.Orientation == Reversed)
                 {
                     Exploration.Vertices(ShapeCasts.Edge(s), out vl, out vf);
                 }
@@ -162,7 +162,7 @@ public sealed class LinkTopoBilo
 
             if (kc < 0)
             {
-                _beShape[be] = s.Oriented(global::Kerf.Engine.Topology.TopAbs.Reverse(s.Orientation()));
+                _beShape[be] = s.Oriented(global::Kerf.Engine.Topology.TopAbs.Reverse(s.Orientation));
             }
             else
             {

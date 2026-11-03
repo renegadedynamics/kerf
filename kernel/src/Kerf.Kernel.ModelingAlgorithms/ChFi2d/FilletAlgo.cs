@@ -145,11 +145,11 @@ public sealed class FilletAlgo
 
         while (_curve1.IsPeriodic && _start1 >= _end1)
         {
-            _end1 += _curve1.Period();
+            _end1 += _curve1.Period;
         }
         while (_curve2.IsPeriodic && _start2 >= _end2)
         {
-            _end2 += _curve2.Period();
+            _end2 += _curve2.Period;
         }
 
         if (bac1.GetType() == bac2.GetType())
@@ -185,7 +185,7 @@ public sealed class FilletAlgo
     {
         // Check the given start and end if they are identical. If yes
         // return false
-        if (start.SquareDistance(end) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+        if (start.SquareDistanceTo(end) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             return false;
         }
@@ -203,14 +203,14 @@ public sealed class FilletAlgo
                 continue; // point is not on edge
             }
 
-            if (point.Distance(start) < global::Kerf.Engine.Foundation.Precision.Confusion())
+            if (point.DistanceTo(start) < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 if (!startConnected)
                 {
                     return true;
                 }
             }
-            if (point.Distance(end) < global::Kerf.Engine.Foundation.Precision.Confusion())
+            if (point.DistanceTo(end) < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 return true;
             }
@@ -223,19 +223,19 @@ public sealed class FilletAlgo
         for (a = inter.NbSegments(); a > 0; a--)
         {
             // anInter.Segment(a, aCurve); //not implemented (bug in OCC)
-            point = aCurve.Value(aCurve.FirstParameter());
+            point = aCurve.Value(aCurve.FirstParameter);
 
             var projInt = new ProjectPointOnCurve2D(point, curve, curveMin, curveMax);
             if (projInt.NbPoints() != 0 && projInt.LowerDistanceParameter() < global::Kerf.Engine.Foundation.Precision.Confusion()) // OCCT: a parameter
             { // point is on edge
-                if (point.Distance(start) < global::Kerf.Engine.Foundation.Precision.Confusion())
+                if (point.DistanceTo(start) < global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     if (!startConnected)
                     {
                         return true;
                     }
                 }
-                if (point.Distance(end) < global::Kerf.Engine.Foundation.Precision.Confusion())
+                if (point.DistanceTo(end) < global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     return true;
                 }
@@ -244,19 +244,19 @@ public sealed class FilletAlgo
                     return true;
                 }
             }
-            point = aCurve.Value(aCurve.LastParameter());
+            point = aCurve.Value(aCurve.LastParameter);
 
             projInt.Init(point, curve, curveMin, curveMax);
             if (projInt.NbPoints() != 0 && projInt.LowerDistanceParameter() < global::Kerf.Engine.Foundation.Precision.Confusion()) // OCCT: a parameter
             { // point is on edge
-                if (point.Distance(start) < global::Kerf.Engine.Foundation.Precision.Confusion())
+                if (point.DistanceTo(start) < global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     if (!startConnected)
                     {
                         return true;
                     }
                 }
-                if (point.Distance(end) < global::Kerf.Engine.Foundation.Precision.Confusion())
+                if (point.DistanceTo(end) < global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     return true;
                 }
@@ -290,19 +290,19 @@ public sealed class FilletAlgo
             }
             step *= 2;
             _curve1!.D1(param, out aPoint, out Vector2D vec);
-            if (vec.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.Confusion())
+            if (vec.SquareMagnitude < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 continue;
             }
 
-            var perp = new Vector2D(((_startSide) ? -1 : 1) * vec.Y(), ((_startSide) ? 1 : -1) * vec.X());
+            var perp = new Vector2D(((_startSide) ? -1 : 1) * vec.Y, ((_startSide) ? 1 : -1) * vec.X);
             perp = perp.Normalized();
             perp = perp.Multiplied(_radius);
             center = aPoint.Translated(perp);
 
             var projInt = new ProjectPointOnCurve2D(aPoint, _curve2!, _start2, _end2);
             if (projInt.NbPoints() == 0
-                || aPoint.Distance(projInt.NearestPoint()) > global::Kerf.Engine.Foundation.Precision.Confusion())
+                || aPoint.DistanceTo(projInt.NearestPoint()) > global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 valid = true;
                 break;
@@ -319,7 +319,7 @@ public sealed class FilletAlgo
         int a, nb = proj.NbPoints();
         for (a = nb; a > 0; a--)
         {
-            if (aPoint.SquareDistance(proj.Point(a)) < global::Kerf.Engine.Foundation.Precision.Confusion())
+            if (aPoint.SquareDistanceTo(proj.Point(a)) < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 continue;
             }
@@ -334,7 +334,7 @@ public sealed class FilletAlgo
             double paramProj = proj.Parameter(a);
             while (_curve2!.IsPeriodic && paramProj < _start2)
             {
-                paramProj += _curve2.Period();
+                paramProj += _curve2.Period;
             }
 
             double d = proj.Distance(a);
@@ -589,7 +589,7 @@ public sealed class FilletAlgo
     {
         double x, y;
         Point2D targetPoint2d = new();
-        global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(_plane!.Pln().Position(), point, out x, out y);
+        global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(_plane!.Plane.Position, point, out x, out y);
         targetPoint2d = targetPoint2d.WithCoord(x, y);
 
         // iterate through all possible solutions.
@@ -618,7 +618,7 @@ public sealed class FilletAlgo
         Edge result = new();
         Point2D targetPoint2d = new();
         double x, y;
-        global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(_plane!.Pln().Position(), point, out x, out y);
+        global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(_plane!.Plane.Position, point, out x, out y);
         targetPoint2d = targetPoint2d.WithCoord(x, y);
 
         // choose the nearest circle
@@ -638,7 +638,7 @@ public sealed class FilletAlgo
             p = double.MaxValue;
             if (iSolution == -1)
             {
-                p = Math.Abs(aPoint.GetCenter().Distance(targetPoint2d) - _radius);
+                p = Math.Abs(aPoint.GetCenter().DistanceTo(targetPoint2d) - _radius);
             }
             else if (iSolution == iSol)
             {
@@ -662,14 +662,14 @@ public sealed class FilletAlgo
         }
 
         // create circle edge
-        Point3D center = global::Kerf.Engine.Geometry.ElSLib.PlaneValue(nearest.GetCenter().X(),
-                                           nearest.GetCenter().Y(),
-                                           _plane.Pln().Position());
-        var circle = new CircleCurve3D(new Frame3D(center, _plane.Pln().Axis().Direction()), _radius);
+        Point3D center = global::Kerf.Engine.Geometry.ElSLib.PlaneValue(nearest.GetCenter().X,
+                                           nearest.GetCenter().Y,
+                                           _plane.Plane.Position);
+        var circle = new CircleCurve3D(new Frame3D(center, _plane.Plane.Axis.Direction), _radius);
         _curve1!.D0(nearest.GetParam(), out Point2D point2d1);
         _curve2!.D0(nearest.GetParam2(), out Point2D point2d2);
-        Point3D point1 = global::Kerf.Engine.Geometry.ElSLib.PlaneValue(point2d1.X(), point2d1.Y(), _plane.Pln().Position());
-        Point3D point2 = global::Kerf.Engine.Geometry.ElSLib.PlaneValue(point2d2.X(), point2d2.Y(), _plane.Pln().Position());
+        Point3D point1 = global::Kerf.Engine.Geometry.ElSLib.PlaneValue(point2d1.X, point2d1.Y, _plane.Plane.Position);
+        Point3D point2 = global::Kerf.Engine.Geometry.ElSLib.PlaneValue(point2d2.X, point2d2.Y, _plane.Plane.Position);
 
         var proj = new ProjectPointOnCurve(point, circle);
         double targetParam = proj.LowerDistanceParameter();
@@ -677,8 +677,8 @@ public sealed class FilletAlgo
 
         // There is a bug in Open CASCADE in calculation of nearest point to a circle near the parameter
         // 0.0 Therefore I check this extrema point manually:
-        Point3D p0 = global::Kerf.Engine.Geometry.ElCLib.Value(0.0, circle.Circ());
-        if (p0.Distance(point) < pointOnCircle.Distance(point))
+        Point3D p0 = global::Kerf.Engine.Geometry.ElCLib.Value(0.0, circle.Circle);
+        if (p0.DistanceTo(point) < pointOnCircle.DistanceTo(point))
         {
             targetParam = 0.0;
             pointOnCircle = p0;
@@ -694,7 +694,7 @@ public sealed class FilletAlgo
         {
             isOut = !isOut;
         }
-        var builder = new MakeEdge(circle.Circ(),
+        var builder = new MakeEdge(circle.Circle,
                                                    isOut ? param2 : param1,
                                                    isOut ? param1 : param2);
         result = builder.Edge();
@@ -706,7 +706,7 @@ public sealed class FilletAlgo
 
         circle.D1(param1, out point1, out Vector3D circleDir);
 
-        if ((circleDir.Angle(dir) > M_PI / 2.0) ? !isOut : isOut)
+        if ((circleDir.AngleTo(dir) > M_PI / 2.0) ? !isOut : isOut)
         {
             start = nearest.GetParam();
         }
@@ -738,7 +738,7 @@ public sealed class FilletAlgo
 
         circle.D1(param2, out point2, out circleDir);
 
-        if ((circleDir.Angle(dir) > M_PI / 2.0) ? isOut : !isOut)
+        if ((circleDir.AngleTo(dir) > M_PI / 2.0) ? isOut : !isOut)
         {
             start = nearest.GetParam2();
         }

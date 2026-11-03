@@ -107,7 +107,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
             foreach (Curve3D aC in theCandidates)
             {
                 if (aC.GetType() == aStored.GetType()
-                    && aC.Value(0.5 * (aF + aL)).Distance(aP) <= 1e-9 * Math.Max(1.0, aP.XYZ().Modulus()))
+                    && aC.Value(0.5 * (aF + aL)).DistanceTo(aP) <= 1e-9 * Math.Max(1.0, aP.XYZ().Modulus()))
                 {
                     aCurve = aC;
                     break;
@@ -158,7 +158,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
 
     private static (double First, double Last) CurveRange(Oracle theO, Curve3D theC)
     {
-        double aFirst = theC.FirstParameter(), aLast = theC.LastParameter();
+        double aFirst = theC.FirstParameter, aLast = theC.LastParameter;
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aFirst) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aLast))
         {
             double a = theO.Real(-5, 0), b = theO.Real(0.5, 5);
@@ -203,7 +203,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
         thePort = aPC;
         while (thePort is TrimmedCurve3D aT)
         {
-            thePort = aT.BasisCurve();
+            thePort = aT.BasisCurve;
         }
         using (aNC)
         {
@@ -227,7 +227,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
         theIsos = [];
         using (aNS)
         {
-            aPS.Bounds(out double u1, out double u2, out double v1, out double v2);
+            aPS.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
             double aU1 = u1, aU2 = u2, aV1 = v1, aV2 = v2;
             N.TopoDS_Face? aFace;
             if (theWhole)
@@ -280,13 +280,13 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
         Surface S = SS, BS = SS;
         if (S is TrimmedSurface RS)
         {
-            BS = RS.BasisSurface();
+            BS = RS.BasisSurface;
         }
-        BS.Bounds(out double umin, out double umax, out double vmin, out double vmax);
+        BS.ParameterBounds(out double umin, out double umax, out double vmin, out double vmax);
         if (BS.GetType() == typeof(OffsetSurface))
         {
             var OS = (OffsetSurface)BS;
-            Surface Base = OS.BasisSurface();
+            Surface Base = OS.BasisSurface;
             if (Base.GetType() == typeof(ExtrusionSurface))
             {
                 S = global::Kerf.Engine.Foundation.Precision.IsInfinite(umin) || global::Kerf.Engine.Foundation.Precision.IsInfinite(umax)
@@ -340,7 +340,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
     private static bool IsParabolic(Curve3D theCurve) => theCurve switch
     {
         ParabolaCurve3D => true,
-        TrimmedCurve3D aTrimmed => IsParabolic(aTrimmed.BasisCurve()),
+        TrimmedCurve3D aTrimmed => IsParabolic(aTrimmed.BasisCurve),
         _ => false,
     };
 
@@ -498,12 +498,12 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
         else if (aST == SurfaceKind.BSplineSurface)
         {
             BSplineSurface aBSpl = BS.BSpline();
-            return (aBSpl.UDegree() == 1 && aBSpl.UKnotCount == 2) || (aBSpl.VDegree() == 1 && aBSpl.VKnotCount == 2);
+            return (aBSpl.UDegree == 1 && aBSpl.UKnotCount == 2) || (aBSpl.VDegree == 1 && aBSpl.VKnotCount == 2);
         }
         else if (aST == SurfaceKind.BezierSurface)
         {
             BezierSurface aBz = BS.Bezier();
-            return aBz.UDegree() == 1 || aBz.VDegree() == 1;
+            return aBz.UDegree == 1 || aBz.VDegree == 1;
         }
         return false;
     }
@@ -514,7 +514,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
         CurveKind aCT = theC.GetType();
         if (aCT == CurveKind.OffsetCurve)
         {
-            return IsLinear(new CurveAdaptor(theC.OffsetCurve().BasisCurve()));
+            return IsLinear(new CurveAdaptor(theC.OffsetCurve().BasisCurve));
         }
         if (aCT == CurveKind.BSplineCurve || aCT == CurveKind.BezierCurve)
         {
@@ -550,7 +550,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
     private static int IsWCS(in Direction3D theDir)
     {
         double aToler = global::Kerf.Engine.Foundation.Precision.Angular() * global::Kerf.Engine.Foundation.Precision.Angular();
-        double aX = theDir.X(), aY = theDir.Y(), aZ = theDir.Z();
+        double aX = theDir.X, aY = theDir.Y, aZ = theDir.Z;
         double aVx = aY * aY + aZ * aZ, aVy = aX * aX + aZ * aZ, aVz = aX * aX + aY * aY;
         if (aVz < aToler)
         {
@@ -650,12 +650,12 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
         global::Kerf.Engine.Geometry.Xyz aZDir = new(0, 0, 1);
         global::Kerf.Engine.Geometry.Xyz aCenter = (aPMin.XYZ() + aPMax.XYZ()) / 2.0;
         global::Kerf.Engine.Geometry.Xyz anOBBHSize = (aPMax.XYZ() - aPMin.XYZ()) / 2.0;
-        bool anIdentity = aTrsf.Form() == TransformForm.Identity;
+        bool anIdentity = aTrsf.Form == TransformForm.Identity;
         if (!anIdentity)
         {
             aTrsf = aTrsf.Inverted();
             aTrsf.Transforms(ref aCenter);
-            Matrix3x3 aMat = aTrsf.HVectorialPart();
+            Matrix3x3 aMat = aTrsf.RotationPart;
             aXDir = new global::Kerf.Engine.Geometry.Xyz(aMat.Value(1, 1), aMat.Value(2, 1), aMat.Value(3, 1));
             aYDir = new global::Kerf.Engine.Geometry.Xyz(aMat.Value(1, 2), aMat.Value(2, 2), aMat.Value(3, 2));
             aZDir = new global::Kerf.Engine.Geometry.Xyz(aMat.Value(1, 3), aMat.Value(2, 3), aMat.Value(3, 3));
@@ -685,11 +685,11 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
         {
             if (theC is TrimmedCurve3D aT)
             {
-                theC = aT.BasisCurve();
+                theC = aT.BasisCurve;
             }
             else if (theC is OffsetCurve3D anO)
             {
-                theC = anO.BasisCurve();
+                theC = anO.BasisCurve;
             }
             else
             {
@@ -700,13 +700,13 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
         {
             return false;
         }
-        if (aBS.FirstParameter() == theU1 && aBS.LastParameter() == theU2)
+        if (aBS.FirstParameter == theU1 && aBS.LastParameter == theU2)
         {
             return false;
         }
         double aU1 = theU1, aU2 = theU2;
-        global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(aBS.FirstParameter(), aBS.LastParameter(), global::Kerf.Engine.Foundation.Precision.PConfusion(), ref aU1, ref aU2);
-        double aPeriod = aBS.LastParameter() - aBS.FirstParameter();
+        global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(aBS.FirstParameter, aBS.LastParameter, global::Kerf.Engine.Foundation.Precision.PConfusion(), ref aU1, ref aU2);
+        double aPeriod = aBS.LastParameter - aBS.FirstParameter;
         double aMinDiff = Math.Min(Math.Abs(aU2 - aU1), Math.Min(Math.Abs(aU2 - aPeriod - aU1), Math.Abs(aU1 - aPeriod - aU2)));
         return aMinDiff == 0.0;
     }
@@ -726,11 +726,11 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
         {
             if (theS is TrimmedSurface aT)
             {
-                theS = aT.BasisSurface();
+                theS = aT.BasisSurface;
             }
             else if (theS is OffsetSurface anO)
             {
-                theS = anO.BasisSurface();
+                theS = anO.BasisSurface;
             }
             else
             {
@@ -739,8 +739,8 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
         }
         return theS switch
         {
-            ExtrusionSurface anExt => SegmentsWithZeroTolerance(anExt.BasisCurve(), theUV.U1, theUV.U2),
-            RevolutionSurface aRev => SegmentsWithZeroTolerance(aRev.BasisCurve(), theUV.V1, theUV.V2),
+            ExtrusionSurface anExt => SegmentsWithZeroTolerance(anExt.BasisCurve, theUV.U1, theUV.U2),
+            RevolutionSurface aRev => SegmentsWithZeroTolerance(aRev.BasisCurve, theUV.V1, theUV.V2),
             _ => false,
         };
     }

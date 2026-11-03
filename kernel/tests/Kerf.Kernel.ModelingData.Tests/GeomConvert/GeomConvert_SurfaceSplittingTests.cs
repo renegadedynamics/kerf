@@ -67,7 +67,7 @@ public class GeomConvert_SurfaceSplittingTests
     }
 
     private static void AssertNear(in Point3D theExpected, in Point3D theActual, double theTol = 1e-10)
-        => Assert.True(theExpected.Distance(theActual) <= theTol, $"{theExpected} vs {theActual}");
+        => Assert.True(theExpected.DistanceTo(theActual) <= theTol, $"{theExpected} vs {theActual}");
 
     [Fact]
     public void KnotSplitting_ByContinuity()
@@ -149,8 +149,8 @@ public class GeomConvert_SurfaceSplittingTests
             {
                 BezierSurface aPatch = aPatches[i, j];
                 Assert.False(aPatch.IsFrozen);
-                Assert.Equal(theSurf.UDegree(), aPatch.UDegree());
-                Assert.Equal(theSurf.VDegree(), aPatch.VDegree());
+                Assert.Equal(theSurf.UDegree, aPatch.UDegree);
+                Assert.Equal(theSurf.VDegree, aPatch.VDegree);
                 for (int s = 0; s <= 4; s++)
                 {
                     for (int t = 0; t <= 4; t++)
@@ -309,7 +309,7 @@ public class GeomConvert_SurfaceSplittingTests
 
         var aConv = new CompBezierSurfacesToBSplineSurface(aPatches);
         Assert.Equal(3, aConv.UDegree());
-        Assert.Equal(2, aPatches[1, 1].UDegree());
+        Assert.Equal(2, aPatches[1, 1].UDegree);
         BSplineSurface aResult = Build(aConv);
         for (int s = 0; s <= 8; s++)
         {
@@ -334,7 +334,7 @@ public class GeomConvert_SurfaceSplittingTests
 
         // Corners of the grid are those of the surface
         BSplineSurface aResult = Build(aConv);
-        aResult.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+        aResult.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
         AssertNear(aSurf.Value(0.0, 0.0), aResult.Value(aU1, aV1));
         AssertNear(aSurf.Value(1.0, 3.0), aResult.Value(aU2, aV2));
 
@@ -347,7 +347,7 @@ public class GeomConvert_SurfaceSplittingTests
         Assert.Equal([4, 1, 1, 4], aConv2.UMultiplicities().AsSpan().ToArray());
         Assert.Equal(6, aConv2.UPoleCount);
         BSplineSurface aResult2 = Build(aConv2);
-        aResult2.Bounds(out aU1, out aU2, out aV1, out aV2);
+        aResult2.ParameterBounds(out aU1, out aU2, out aV1, out aV2);
         AssertNear(aSurf2.Value(0.0, 0.0), aResult2.Value(aU1, aV1), 1e-8);
         AssertNear(aSurf2.Value(3.0, 1.0), aResult2.Value(aU2, aV2), 1e-8);
     }

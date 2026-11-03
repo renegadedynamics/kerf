@@ -17,7 +17,7 @@ namespace Kerf.Engine.Geometry.Library;
 /// Computes the parameters of a point on a curve or a surface (the point must lie on it, or within MaxDist, and the
 /// result must be unambiguous), and the deviation of a 2D curve from the chord between two of its points.
 /// </summary>
-public static class GeometryLibraryTool
+internal static class GeometryLibraryTool
 {
     // The functions Parameter(s) are used to compute parameter(s) of point
     // on curves and surfaces. The main rule is that tested point must lied

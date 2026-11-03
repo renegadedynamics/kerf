@@ -225,7 +225,7 @@ public class ShapeConvertToBezier : ShapeDivide
             for (var exp = new Explorer(_result, ShapeType.Face); exp.More(); exp.Next())
             {
                 Face face = ShapeCasts.Face(exp.Current());
-                face.Orientation(Forward);
+                face.Orient(Forward);
                 for (var exp1 = new Explorer(face, ShapeType.Wire); exp1.More(); exp1.Next())
                 {
                     Wire wire = ShapeCasts.Wire(exp1.Current());
@@ -258,12 +258,12 @@ public class ShapeConvertToBezier : ShapeDivide
                                     Point3D p2 = bezier3d.Value(last);
                                     Point3D p1v = Tool.Pnt(v1);
                                     Point3D p2v = Tool.Pnt(v2);
-                                    if (p1.Distance(p1v) > Kerf.Engine.Foundation.Precision.Confusion())
+                                    if (p1.DistanceTo(p1v) > Kerf.Engine.Foundation.Precision.Confusion())
                                     {
                                         bezier3d = Mutable3d(bezier3d);
                                         bezier3d.SetPole(1, p1v);
                                     }
-                                    if (p2.Distance(p2v) > Kerf.Engine.Foundation.Precision.Confusion())
+                                    if (p2.DistanceTo(p2v) > Kerf.Engine.Foundation.Precision.Confusion())
                                     {
                                         bezier3d = Mutable3d(bezier3d);
                                         bezier3d.SetPole(bezier3d.PoleCount, p2v);
@@ -352,7 +352,7 @@ public class ShapeConvertToBezier : ShapeDivide
                                     {
                                         global::Kerf.Engine.Geometry.Library.GeomLib.SameRange(preci, c2drev, first, last, 0, 1, ref newRevCurve);
                                     }
-                                    if (edge.Orientation() == Forward)
+                                    if (edge.Orientation == Forward)
                                     {
                                         B.UpdateEdge(edge, newCurve, newRevCurve, face, 0.0);
                                     }
@@ -415,7 +415,7 @@ public class ShapeConvertToBezier : ShapeDivide
                                     {
                                         global::Kerf.Engine.Geometry.Library.GeomLib.SameRange(preci, c2drevnext, first2, last2, 0, 1, ref newRevCurve);
                                     }
-                                    if (edge.Orientation() == Forward)
+                                    if (edge.Orientation == Forward)
                                     {
                                         B.UpdateEdge(edgenext, newnextCurve, newRevCurve, face, 0.0);
                                     }
@@ -434,10 +434,10 @@ public class ShapeConvertToBezier : ShapeDivide
                         }
 
                         double f1, l1, f2, l2;
-                        f1 = bezier.FirstParameter();
-                        l1 = bezier.LastParameter();
-                        f2 = beziernext.FirstParameter();
-                        l2 = beziernext.LastParameter();
+                        f1 = bezier.FirstParameter;
+                        l1 = bezier.LastParameter;
+                        f2 = beziernext.FirstParameter;
+                        l2 = beziernext.LastParameter;
                         Point2D p2d1 = bezier.Value(f1);
                         Point2D p2d2 = bezier.Value(l1);
                         Point2D p2d1next = beziernext.Value(f2);
@@ -450,36 +450,36 @@ public class ShapeConvertToBezier : ShapeDivide
                             change(edgenext, beziernext!, b => b.SetPole(indexNext, aPnt));
                         }
 
-                        if (edge.Orientation() == Forward && edgenext.Orientation() == Forward)
+                        if (edge.Orientation == Forward && edgenext.Orientation == Forward)
                         {
-                            if (p2d2.Distance(p2d1next) > Kerf.Engine.Foundation.Precision.PConfusion())
+                            if (p2d2.DistanceTo(p2d1next) > Kerf.Engine.Foundation.Precision.PConfusion())
                             {
                                 var pmid = new Point2D(0.5 * (p2d2.XY() + p2d1next.XY()));
                                 SetPoles(bezier.PoleCount, 1, pmid);
                             }
                         }
 
-                        if (edge.Orientation() == Forward && edgenext.Orientation() == Reversed)
+                        if (edge.Orientation == Forward && edgenext.Orientation == Reversed)
                         {
-                            if (p2d2.Distance(p2d2next) > Kerf.Engine.Foundation.Precision.PConfusion())
+                            if (p2d2.DistanceTo(p2d2next) > Kerf.Engine.Foundation.Precision.PConfusion())
                             {
                                 var pmid = new Point2D(0.5 * (p2d2.XY() + p2d2next.XY()));
                                 SetPoles(bezier.PoleCount, beziernext.PoleCount, pmid);
                             }
                         }
 
-                        if (edge.Orientation() == Reversed && edgenext.Orientation() == Forward)
+                        if (edge.Orientation == Reversed && edgenext.Orientation == Forward)
                         {
-                            if (p2d1.Distance(p2d1next) > Kerf.Engine.Foundation.Precision.PConfusion())
+                            if (p2d1.DistanceTo(p2d1next) > Kerf.Engine.Foundation.Precision.PConfusion())
                             {
                                 var pmid = new Point2D(0.5 * (p2d1.XY() + p2d1next.XY()));
                                 SetPoles(1, 1, pmid);
                             }
                         }
 
-                        if (edge.Orientation() == Reversed && edgenext.Orientation() == Reversed)
+                        if (edge.Orientation == Reversed && edgenext.Orientation == Reversed)
                         {
-                            if (p2d1.Distance(p2d2next) > Kerf.Engine.Foundation.Precision.PConfusion())
+                            if (p2d1.DistanceTo(p2d2next) > Kerf.Engine.Foundation.Precision.PConfusion())
                             {
                                 var pmid = new Point2D(0.5 * (p2d1.XY() + p2d2next.XY()));
                                 SetPoles(1, beziernext.PoleCount, pmid);

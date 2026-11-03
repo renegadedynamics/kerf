@@ -58,13 +58,13 @@ public class BRepToolsReShapeOracleTests(ITestOutputHelper output)
                 return;
             }
 
-            theOracle.Same((int)theN.ShapeType(), (int)theP.ShapeType(), theWhat + " type");
-            theOracle.Same((int)theN.Orientation(), (int)theP.Orientation(), theWhat + " orientation");
+            theOracle.Same((int)theN.ShapeType(), (int)theP.Type, theWhat + " type");
+            theOracle.Same((int)theN.Orientation(), (int)theP.Orientation, theWhat + " orientation");
             using (N.TopLoc_Location aNL = theN.Location())
             {
-                theOracle.Same(aNL.IsIdentity(), theP.Location().IsIdentity, theWhat + " identity location");
+                theOracle.Same(aNL.IsIdentity(), theP.Placement.IsIdentity, theWhat + " identity location");
                 using N.gp_Trsf aNT = aNL.Transformation();
-                theOracle.Same(aNT, theP.Location().Transformation(), theWhat + " location");
+                theOracle.Same(aNT, theP.Placement.Transformation, theWhat + " location");
             }
 
             TShape aT = theP.TShape()!;
@@ -233,7 +233,7 @@ public class BRepToolsReShapeOracleTests(ITestOutputHelper output)
                             // a shape rebuilt inside Status(last) and never handed out whole: pair it with the native
                             // element that isn't known either
                             N.TopoDS_Shape? aNewN = aNModified.Find(n => !anIds.IsKnown(n)
-                                                                         && (int)n.Orientation() == (int)aM.Orientation());
+                                                                         && (int)n.Orientation() == (int)aM.Orientation);
                             if (aNewN is not null)
                             {
                                 anIds.MatchTree(anOracle, aNewN, aM, "History Modified new element",
@@ -243,7 +243,7 @@ public class BRepToolsReShapeOracleTests(ITestOutputHelper output)
                         }
 
                         bool isFound = aTwin is not null && aNModified.Exists(n => n.IsPartner(aTwin)
-                                                                                   && (int)n.Orientation() == (int)aM.Orientation()
+                                                                                   && (int)n.Orientation() == (int)aM.Orientation
                                                                                    && SameLocation(n, aM));
                         anOracle.Same(true, isFound, "History Modified element");
                         anOracle.Same(true, aM.TShape()!.IsFrozen, "History Modified element is frozen");
@@ -289,7 +289,7 @@ public class BRepToolsReShapeOracleTests(ITestOutputHelper output)
     {
         using N.TopLoc_Location aNL = theN.Location();
         using N.gp_Trsf aNT = aNL.Transformation();
-        Transform3D aT = theP.Location().Transformation();
+        Transform3D aT = theP.Placement.Transformation;
         for (int r = 1; r <= 3; r++)
         {
             for (int c = 1; c <= 4; c++)

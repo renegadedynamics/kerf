@@ -157,7 +157,7 @@ public class MultiPoint
         }
         Point3D p, newP = new();
         p = Point(cuIndex);
-        newP = newP.WithCoord(x + p.X() * dx, y + p.Y() * dy, z + p.Z() * dz);
+        newP = newP.WithCoord(x + p.X * dx, y + p.Y * dy, z + p.Z * dz);
         TabPoint.SetValue(cuIndex, newP);
     }
 
@@ -172,7 +172,7 @@ public class MultiPoint
         }
         Point2D p, newP = new();
         p = Point2d(cuIndex);
-        newP = newP.WithCoord(x + p.X() * dx, y + p.Y() * dy);
+        newP = newP.WithCoord(x + p.X * dx, y + p.Y * dy);
         SetPoint2d(cuIndex, newP);
     }
 
@@ -217,9 +217,9 @@ public class MultiPoint
             for (int i = TabPoint.Lower(); i <= TabPoint.Upper(); i++)
             {
                 o.Write("3D-Point #" + Int(i) + '\n');
-                o.Write(" Pole x = " + Real(TabPoint.Value(i).X()) + '\n');
-                o.Write(" Pole y = " + Real(TabPoint.Value(i).Y()) + '\n');
-                o.Write(" Pole z = " + Real(TabPoint.Value(i).Z()) + '\n');
+                o.Write(" Pole x = " + Real(TabPoint.Value(i).X) + '\n');
+                o.Write(" Pole y = " + Real(TabPoint.Value(i).Y) + '\n');
+                o.Write(" Pole z = " + Real(TabPoint.Value(i).Z) + '\n');
             }
         }
         if (nbPnts2D > 0)
@@ -227,8 +227,8 @@ public class MultiPoint
             for (int i = TabPoint2d.Lower(); i <= TabPoint2d.Upper(); i++)
             {
                 o.Write("2D-Point #" + Int(i) + '\n');
-                o.Write(" Pole x = " + Real(TabPoint2d.Value(i).X()) + '\n');
-                o.Write(" Pole y = " + Real(TabPoint2d.Value(i).Y()) + '\n');
+                o.Write(" Pole x = " + Real(TabPoint2d.Value(i).X) + '\n');
+                o.Write(" Pole y = " + Real(TabPoint2d.Value(i).Y) + '\n');
             }
         }
     }

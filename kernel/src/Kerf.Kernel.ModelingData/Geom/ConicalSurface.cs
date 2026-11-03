@@ -18,7 +18,7 @@ namespace Kerf.Geometry;
 /// its radius in the reference plane (the XOY plane of the local system).
 /// P(U, V) = O + (R + V * sin(Ang)) * (cos(U) * XDir + sin(U) * YDir) + V * cos(Ang) * ZDir.
 /// </summary>
-public class ConicalSurface : ElementarySurface
+public sealed class ConicalSurface : ElementarySurface
 {
     private double _radius;
     private double _semiAngle;
@@ -40,9 +40,9 @@ public class ConicalSurface : ElementarySurface
     /// <summary>A cone from a gp cone.</summary>
     public ConicalSurface(in Cone c)
     {
-        _radius = c.RefRadius();
-        _semiAngle = c.SemiAngle();
-        _pos = c.Position();
+        _radius = c.RefRadius;
+        _semiAngle = c.SemiAngle;
+        _pos = c.Position;
     }
 
     public sealed override Geometry3D Copy()
@@ -67,10 +67,10 @@ public class ConicalSurface : ElementarySurface
     }
 
     /// <summary>The reference radius (in the XOY plane of the local system).</summary>
-    public double RefRadius() => _radius;
+    public double RefRadius => _radius;
 
     /// <summary>The semi-angle, in ]-PI/2, PI/2[, non-zero.</summary>
-    public double SemiAngle() => _semiAngle;
+    public double SemiAngle => _semiAngle;
 
     /// <summary>True.</summary>
     public sealed override bool IsUClosed => true;
@@ -85,14 +85,14 @@ public class ConicalSurface : ElementarySurface
     public sealed override bool IsVPeriodic => false;
 
     /// <summary>The non-persistent gp cone with the same geometry.</summary>
-    public Cone Cone() => new Cone(_pos, _semiAngle, _radius);
+    public Cone Cone => new Cone(_pos, _semiAngle, _radius);
 
     internal void SetCone(in Cone c)
     {
         CheckMutable();
-        _radius = c.RefRadius();
-        _semiAngle = c.SemiAngle();
-        _pos = c.Position();
+        _radius = c.RefRadius;
+        _semiAngle = c.SemiAngle;
+        _pos = c.Position;
     }
 
     /// <exception cref="ConstructionErrorException">R &lt; 0.</exception>
@@ -144,16 +144,19 @@ public class ConicalSurface : ElementarySurface
     }
 
     /// <summary>The apex of the cone, on its axis, on the side where the radius decreases.</summary>
-    public Point3D Apex()
+    public Point3D Apex
     {
-        Xyz coord = Position().Direction().XYZ();
-        coord.Multiply(-_radius / Math.Tan(_semiAngle));
-        coord.Add(Position().Location().XYZ());
-        return new Point3D(coord);
+        get
+        {
+            Xyz coord = Position.Direction.XYZ();
+            coord.Multiply(-_radius / Math.Tan(_semiAngle));
+            coord.Add(Position.Location.XYZ());
+            return new Point3D(coord);
+        }
     }
 
     /// <summary>U in [0, 2*PI], V infinite.</summary>
-    public sealed override void Bounds(out double u1, out double u2, out double v1, out double v2)
+    internal sealed override void ParameterBounds(out double u1, out double u2, out double v1, out double v2)
     {
         u1 = 0.0;
         u2 = 2.0 * M_PI;
@@ -165,7 +168,7 @@ public class ConicalSurface : ElementarySurface
     /// The coefficients of the implicit equation in the absolute system:
     /// A1.X**2 + A2.Y**2 + A3.Z**2 + 2.(B1.X.Y + B2.X.Z + B3.Y.Z) + 2.(C1.X + C2.Y + C3.Z) + D = 0.
     /// </summary>
-    public void Coefficients(out double a1,
+    internal void Coefficients(out double a1,
                              out double a2,
                              out double a3,
                              out double b1,
@@ -203,16 +206,16 @@ public class ConicalSurface : ElementarySurface
         d = t14 * t14 + t24 * t24 - _radius * _radius - t34 * t34 - 2.0 * _radius * t34;
     }
 
-    public sealed override Point3D EvalD0(double u, double v) => global::Kerf.Engine.Geometry.ElSLib.ConeValue(u, v, _pos, _radius, _semiAngle);
+    internal sealed override Point3D EvalD0(double u, double v) => global::Kerf.Engine.Geometry.ElSLib.ConeValue(u, v, _pos, _radius, _semiAngle);
 
-    public sealed override ResD1 EvalD1(double u, double v)
+    internal sealed override ResD1 EvalD1(double u, double v)
     {
         ResD1 result;
         global::Kerf.Engine.Geometry.ElSLib.ConeD1(u, v, _pos, _radius, _semiAngle, out result.Point, out result.D1U, out result.D1V);
         return result;
     }
 
-    public sealed override ResD2 EvalD2(double u, double v)
+    internal sealed override ResD2 EvalD2(double u, double v)
     {
         ResD2 result;
         global::Kerf.Engine.Geometry.ElSLib.ConeD2(u,
@@ -229,7 +232,7 @@ public class ConicalSurface : ElementarySurface
         return result;
     }
 
-    public sealed override ResD3 EvalD3(double u, double v)
+    internal sealed override ResD3 EvalD3(double u, double v)
     {
         ResD3 result;
         global::Kerf.Engine.Geometry.ElSLib.ConeD3(u,
@@ -251,7 +254,7 @@ public class ConicalSurface : ElementarySurface
     }
 
     /// <exception cref="UndefinedDerivative3DException">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
-    public sealed override Vector3D EvalDN(double u, double v, int nu, int nv)
+    internal sealed override Vector3D EvalDN(double u, double v, int nu, int nv)
     {
         if (nu + nv < 1 || nu < 0 || nv < 0)
         {
@@ -284,25 +287,25 @@ public class ConicalSurface : ElementarySurface
     protected internal sealed override void Transform(in Transform3D t)
     {
         CheckMutable();
-        _radius = _radius * Math.Abs(t.ScaleFactor());
+        _radius = _radius * Math.Abs(t.ScaleFactor);
         _pos = _pos.Transformed(t);
     }
 
     /// <summary>V scaled by |T.ScaleFactor()| (unless infinite); U unchanged.</summary>
-    public sealed override void TransformParameters(ref double u, ref double v, in Transform3D t)
+    internal sealed override void TransformParameters(ref double u, ref double v, in Transform3D t)
     {
         if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(v))
         {
-            v *= Math.Abs(t.ScaleFactor());
+            v *= Math.Abs(t.ScaleFactor);
         }
     }
 
     /// <summary>An affinity of ratio |T.ScaleFactor()| along V.</summary>
-    public sealed override GeneralTransform2D ParametricTransformation(in Transform3D t)
+    internal sealed override GeneralTransform2D ParametricTransformation(in Transform3D t)
     {
         GeneralTransform2D t2 = new GeneralTransform2D();
         Axis2D axis = new Axis2D(Constants.Origin2d(), Constants.DX2d());
-        t2 = t2.WithAffinity(axis, Math.Abs(t.ScaleFactor()));
+        t2 = t2.WithAffinity(axis, Math.Abs(t.ScaleFactor));
         return t2;
     }
 }

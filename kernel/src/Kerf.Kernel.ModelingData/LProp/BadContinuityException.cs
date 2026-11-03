@@ -9,7 +9,7 @@ namespace Kerf.Engine.Geometry.Properties;
 
 /// <summary>Thrown when a local property needs more continuity than the curve or surface has.</summary>
 /// <remarks>OCCT's <c>LProp_BadContinuity_Raise_if</c> macro is defined but never used, so it isn't ported.</remarks>
-public class BadContinuityException : FailureException
+internal class BadContinuityException : FailureException
 {
     public BadContinuityException() { }
     public BadContinuityException(string? message) : base(message) { }

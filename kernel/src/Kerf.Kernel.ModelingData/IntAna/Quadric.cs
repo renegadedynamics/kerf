@@ -108,7 +108,7 @@ public sealed class Quadric
     public void SetQuadric(in Cone cone)
     {
         cone.Coefficients(out _cxx, out _cyy, out _czz, out _cxy, out _cxz, out _cyz, out _cx, out _cy, out _cz, out _cCte);
-        double vParam = -cone.RefRadius() / Math.Sin(cone.SemiAngle());
+        double vParam = -cone.RefRadius / Math.Sin(cone.SemiAngle);
         _specialPoints.Append(global::Kerf.Engine.Geometry.ElSLib.Value(0.0, vParam, cone));
     }
 

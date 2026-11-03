@@ -79,9 +79,9 @@ public class MakeWireOffset : MakeShape
     /// <summary><see cref="ConvertFace"/> without freezing, for <see cref="Perform"/>.</summary>
     internal static Face InternalConvertFace(in Face face, double angleTolerance)
     {
-        Orientation or = face.Orientation();
+        Orientation or = face.Orientation;
         Face aFace = face;
-        aFace.Orientation(Forward);
+        aFace.Orient(Forward);
         Face newFace = ShapeCasts.Face(aFace.EmptyCopied());
         BrepBuilder bb = new();
         Iterator iter = new(aFace);
@@ -90,16 +90,16 @@ public class MakeWireOffset : MakeShape
             Wire wire = ShapeCasts.Wire(iter.Value());
             if (NeedsConvertion(wire))
             {
-                Orientation orOfWire = wire.Orientation();
-                wire.Orientation(Forward);
+                Orientation orOfWire = wire.Orientation;
+                wire.Orient(Forward);
                 // OCCT.NET: the converted wire is new; BuildCurves3d writes into it (decision 915)
                 wire = global::Kerf.Engine.Booleans.Algo.BRepAlgo.InternalConvertWire(wire, angleTolerance, aFace);
                 BrepLibrary.BuildCurves3d(wire);
-                wire.Orientation(orOfWire);
+                wire.Orient(orOfWire);
             }
             bb.Add(newFace, wire);
         }
-        newFace.Orientation(or);
+        newFace.Orient(or);
         return newFace;
     }
 
@@ -198,8 +198,8 @@ public class MakeWireOffset : MakeShape
         if (anExp.More())
         {
             wire2 = anExp.Current();
-            if ((wire1.Orientation() == wire2.Orientation() && isPositive)
-                || (wire1.Orientation() == global::Kerf.Engine.Topology.TopAbs.Complement(wire2.Orientation()) && !isPositive))
+            if ((wire1.Orientation == wire2.Orientation && isPositive)
+                || (wire1.Orientation == global::Kerf.Engine.Topology.TopAbs.Complement(wire2.Orientation) && !isPositive))
             {
                 NCollection_List<Shape> lWires = new();
                 NCollection_List<Shape>.Iterator itl1 = new();
@@ -223,7 +223,7 @@ public class MakeWireOffset : MakeShape
         for (; itl.More(); itl.Next())
         {
             Wire w = ShapeCasts.Wire(itl.Value());
-            if (w.Closed())
+            if (w.IsClosed)
             {
                 fr.Add(w);
                 continue;
@@ -365,7 +365,7 @@ public class MakeWireOffset : MakeShape
                         {
                             Wire newWire = global::Kerf.Engine.Booleans.Algo.BRepAlgo.InternalConvertWire(wire, tol, face);
                             BrepLibrary.BuildCurves3d(newWire);
-                            newWire.Orientation(wire.Orientation());
+                            newWire.Orient(wire.Orientation);
                             itl.ChangeValue() = newWire;
                         }
                     }

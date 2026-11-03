@@ -29,7 +29,7 @@ public class GeomBndLib_CurveIssueTests
         Box anAdd = new();
         Add3dCurve.Add(new CurveAdaptor(aParab), -6.0, 6.0, 0.0, ref anAdd);
 
-        double aTrueXmin = aParab.Value(4.0).X();
+        double aTrueXmin = aParab.Value(4.0).X;
         Assert.Equal(-Math.Sqrt(2.0), aTrueXmin, 1e-12);
         Assert.Equal(aTrueXmin, aBox.GetXMin(), 1e-12);
         Assert.Equal(aBox.GetXMin(), anAdd.GetXMin());

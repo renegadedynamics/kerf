@@ -176,7 +176,7 @@ public class SectionOperation : BooleanOperation
         {
             return bRes;
         }
-        if (aE.ShapeType() != ShapeType.Edge)
+        if (aE.Type != ShapeType.Edge)
         {
             return bRes;
         }
@@ -237,7 +237,7 @@ public class SectionOperation : BooleanOperation
     // A face (C2 or smoother surfaces) or a shell on the whole surface, unfrozen (made here, as in OCCT).
     private static Shape MakeShape(Surface s)
     {
-        Continuity c = s.Continuity();
+        Continuity c = s.Continuity;
         if (c >= C2)
         {
             return new MakeFace(s, global::Kerf.Engine.Foundation.Precision.Confusion()).InternalShape();

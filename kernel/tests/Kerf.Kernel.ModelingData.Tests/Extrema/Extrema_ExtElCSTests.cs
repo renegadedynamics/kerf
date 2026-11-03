@@ -21,7 +21,7 @@ public class Extrema_ExtElCSTests
         while (true)
         {
             var aV = new Vector3D(theRandom.NextDouble() - 0.5, theRandom.NextDouble() - 0.5, theRandom.NextDouble() - 0.5);
-            if (aV.Magnitude() > 0.1)
+            if (aV.Magnitude > 0.1)
             {
                 return new Direction3D(aV);
             }
@@ -58,10 +58,10 @@ public class Extrema_ExtElCSTests
         {
             theExt.Points(i, out POnCurv aP1, out POnSurf aP2);
             double aScale = Math.Max(1.0, aP1.Value().XYZ().Modulus());
-            Assert.True(aP1.Value().Distance(theCurve(aP1.Parameter())) < 1e-9 * aScale, $"{theWhat} extremum {i} on the curve");
+            Assert.True(aP1.Value().DistanceTo(theCurve(aP1.Parameter())) < 1e-9 * aScale, $"{theWhat} extremum {i} on the curve");
             aP2.Parameter(out double aU, out double aV);
-            Assert.True(aP2.Value().Distance(theSurf(aU, aV)) < 1e-9 * aScale, $"{theWhat} extremum {i} on the surface");
-            Assert.Equal(aP1.Value().SquareDistance(aP2.Value()), theExt.SquareDistance(i), 1e-9 * aScale * aScale);
+            Assert.True(aP2.Value().DistanceTo(theSurf(aU, aV)) < 1e-9 * aScale, $"{theWhat} extremum {i} on the surface");
+            Assert.Equal(aP1.Value().SquareDistanceTo(aP2.Value()), theExt.SquareDistance(i), 1e-9 * aScale * aScale);
         }
     }
 
@@ -192,7 +192,7 @@ public class Extrema_ExtElCSTests
         {
             CoordinateSystem anAx = RandomAx3(aRandom);
             var aC = new Cylinder(anAx, Real(aRandom, 0.5, 5));
-            var aCirc = new Circle3D(new Frame3D(anAx.Location().Translated(new Vector3D(RandomDir(aRandom)) * Real(aRandom, 0, 8)),
+            var aCirc = new Circle3D(new Frame3D(anAx.Location.Translated(new Vector3D(RandomDir(aRandom)) * Real(aRandom, 0, 8)),
                                                RandomDir(aRandom)), Real(aRandom, 0.5, 6));
             var anExt = new ExtElCS(aCirc, aC);
             CheckPoints(anExt, t => global::Kerf.Engine.Geometry.ElCLib.Value(t, aCirc), (u, v) => global::Kerf.Engine.Geometry.ElSLib.Value(u, v, aC), $"case {i}");
@@ -219,7 +219,7 @@ public class Extrema_ExtElCSTests
         {
             CoordinateSystem anAx = RandomAx3(aRandom);
             var aS = new Sphere(anAx, Real(aRandom, 0.5, 5));
-            var aCirc = new Circle3D(new Frame3D(anAx.Location().Translated(new Vector3D(RandomDir(aRandom)) * Real(aRandom, 0.5, 8)),
+            var aCirc = new Circle3D(new Frame3D(anAx.Location.Translated(new Vector3D(RandomDir(aRandom)) * Real(aRandom, 0.5, 8)),
                                                RandomDir(aRandom)), Real(aRandom, 0.5, 6));
             var anExt = new ExtElCS(aCirc, aS);
             if (!anExt.IsDone)
@@ -235,7 +235,7 @@ public class Extrema_ExtElCSTests
             double aMin = MinSqDist(anExt), aSampled = double.MaxValue;
             for (int j = 0; j < 360; j++)
             {
-                double aD = global::Kerf.Engine.Geometry.ElCLib.Value(j * M_PI / 180, aCirc).Distance(anAx.Location()) - aS.Radius();
+                double aD = global::Kerf.Engine.Geometry.ElCLib.Value(j * M_PI / 180, aCirc).DistanceTo(anAx.Location) - aS.Radius;
                 aSampled = Math.Min(aSampled, aD * aD);
             }
             Assert.True(aMin <= aSampled + 1e-9, $"case {i}: {aMin} > {aSampled}");
@@ -256,9 +256,9 @@ public class Extrema_ExtElCSTests
         CheckPoints(anExt, t => global::Kerf.Engine.Geometry.ElCLib.Value(t, aHypr), (u, v) => global::Kerf.Engine.Geometry.ElSLib.Value(u, v, aPln), "hyperbola");
         // The extremum is a local minimum of the height above the plane
         anExt.Points(1, out POnCurv aP, out _);
-        double aH0 = aPln.Distance(aP.Value());
-        Assert.True(aPln.Distance(global::Kerf.Engine.Geometry.ElCLib.Value(aP.Parameter() + 1e-3, aHypr)) >= aH0);
-        Assert.True(aPln.Distance(global::Kerf.Engine.Geometry.ElCLib.Value(aP.Parameter() - 1e-3, aHypr)) >= aH0);
+        double aH0 = aPln.DistanceTo(aP.Value());
+        Assert.True(aPln.DistanceTo(global::Kerf.Engine.Geometry.ElCLib.Value(aP.Parameter() + 1e-3, aHypr)) >= aH0);
+        Assert.True(aPln.DistanceTo(global::Kerf.Engine.Geometry.ElCLib.Value(aP.Parameter() - 1e-3, aHypr)) >= aH0);
 
         var aPar = new ExtElCS(new Hyperbola3D(new Frame3D(new Point3D(0, 0, 4), new Direction3D(0, 0, 1)), 3, 1), aPln);
         Assert.True(aPar.IsParallel);
@@ -273,8 +273,8 @@ public class Extrema_ExtElCSTests
         {
             CoordinateSystem anAx = RandomAx3(aRandom);
             double aR = Real(aRandom, 0.5, 5);
-            var aLin = new Line3D(anAx.Location().Translated(new Vector3D(RandomDir(aRandom)) * Real(aRandom, 0, 8)), RandomDir(aRandom));
-            var aCirc = new Circle3D(new Frame3D(aLin.Location(), RandomDir(aRandom)), Real(aRandom, 0.5, 6));
+            var aLin = new Line3D(anAx.Location.Translated(new Vector3D(RandomDir(aRandom)) * Real(aRandom, 0, 8)), RandomDir(aRandom));
+            var aCirc = new Circle3D(new Frame3D(aLin.Location, RandomDir(aRandom)), Real(aRandom, 0.5, 6));
             var aPln = new Plane3D(anAx);
             var aCyl = new Cylinder(anAx, aR);
             var aSph = new Sphere(anAx, aR);

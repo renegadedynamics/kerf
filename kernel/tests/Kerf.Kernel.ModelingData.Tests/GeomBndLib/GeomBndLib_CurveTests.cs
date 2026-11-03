@@ -589,6 +589,6 @@ public class GeomBndLib_CurveTest
 
         BSplineCurve3D aBSpl = new(aPoles, aKnots, aMults, aDegree);
         CurveAdaptor aBSplGA = new(aBSpl);
-        Assert.Equal(312, SamplingHelpers.ComputeNbSamples(aBSplGA, aBSpl.FirstParameter(), aBSpl.LastParameter()));
+        Assert.Equal(312, SamplingHelpers.ComputeNbSamples(aBSplGA, aBSpl.FirstParameter, aBSpl.LastParameter));
     }
 }

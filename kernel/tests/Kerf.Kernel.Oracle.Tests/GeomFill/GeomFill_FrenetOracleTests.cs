@@ -48,7 +48,7 @@ public class GeomFill_FrenetOracleTests(ITestOutputHelper output)
                 aPoles[k] = new Point3D(k * 2.0 + anOracle.Real(-0.3, 0.3), aY, 0);
                 if (k > 2 && anOracle.Int(0, 5) == 0)
                 {
-                    aPoles[k] = new Point3D(2 * aPoles[k - 1].X() - aPoles[k - 2].X(), 2 * aPoles[k - 1].Y() - aPoles[k - 2].Y(), 0);
+                    aPoles[k] = new Point3D(2 * aPoles[k - 1].X - aPoles[k - 2].X, 2 * aPoles[k - 1].Y - aPoles[k - 2].Y, 0);
                 }
             }
             NCollection_Array1<double>? aWeights = anOracle.Bool() ? null : anOracle.Weights(aNbPoles, true);

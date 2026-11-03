@@ -126,7 +126,7 @@ internal sealed class ProductMesh
         }
         var subs = part.SubShapes
                            .Select((s, i) => (Sub: s, Index: i))
-                           .OrderBy(p => (int)p.Sub.Shape.ShapeType())
+                           .OrderBy(p => (int)p.Sub.Shape.Type)
                            .ThenBy(p => p.Index)
                            .ToList();
         foreach ((SubShape sub, int _) in subs)
@@ -148,10 +148,10 @@ internal sealed class ProductMesh
 
     private static void AddFace(Group theGroup, in Face face, Triangulation tri, in Placement loc, bool toComputeNormals)
     {
-        Transform3D trsf = loc.Transformation();
+        Transform3D trsf = loc.Transformation;
         bool isIdentity = loc.IsIdentity;
-        bool isMirrored = trsf.VectorialPart().Determinant() < 0.0;
-        bool isReversed = face.Orientation() == Orientation.Reversed;
+        bool isMirrored = trsf.VectorialPart.Determinant < 0.0;
+        bool isReversed = face.Orientation == Orientation.Reversed;
 
         Triangulation? normalsTri = tri.HasNormals
                                             ? tri
@@ -170,9 +170,9 @@ internal sealed class ProductMesh
             {
                 p = p.Transformed(trsf);
             }
-            theGroup.Positions.Add(p.X());
-            theGroup.Positions.Add(p.Y());
-            theGroup.Positions.Add(p.Z());
+            theGroup.Positions.Add(p.X);
+            theGroup.Positions.Add(p.Y);
+            theGroup.Positions.Add(p.Z);
             if (theGroup.HasNormals)
             {
                 Direction3D n = normalsTri!.Normal(i);
@@ -184,9 +184,9 @@ internal sealed class ProductMesh
                 {
                     n = n.Transformed(trsf);
                 }
-                theGroup.Normals.Add((float)n.X());
-                theGroup.Normals.Add((float)n.Y());
-                theGroup.Normals.Add((float)n.Z());
+                theGroup.Normals.Add((float)n.X);
+                theGroup.Normals.Add((float)n.Y);
+                theGroup.Normals.Add((float)n.Z);
             }
         }
 

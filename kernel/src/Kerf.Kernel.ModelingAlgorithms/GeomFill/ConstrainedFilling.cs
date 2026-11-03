@@ -128,8 +128,8 @@ public class ConstrainedFilling
             {
                 bound[j].Points(out qf, out ql);
                 //  Modified by skv - Fri Jun 18 12:52:54 2004 OCC6129 Begin
-                double df = qf.Distance(pl);
-                double dl = ql.Distance(pl);
+                double df = qf.DistanceTo(pl);
+                double dl = ql.DistanceTo(pl);
                 if (df < dl)
                 {
                     if (df < stat[i + 1].Gap())
@@ -164,7 +164,7 @@ public class ConstrainedFilling
             bound[nb - 1].Points(out pl, out pf);
         }
         bound[0].Points(out qf, out ql);
-        stat[0].Gap(pl.Distance(qf));
+        stat[0].Gap(pl.DistanceTo(qf));
 
         // flaguer les angles entre tangentes au coins et entre les normales au
         // coins pour les bords contraints.
@@ -200,14 +200,14 @@ public class ConstrainedFilling
             {
                 tgn = tgn.Reversed();
             }
-            double ang = M_PI - tgi.Angle(tgn);
+            double ang = M_PI - tgi.AngleTo(tgn);
             stat[next].TgtAng(ang);
             if (bound[i].HasNormals && bound[next].HasNormals)
             {
                 stat[next].Constraint();
                 nori = bound[i].Norm(li);
                 norn = bound[next].Norm(fn);
-                ang = nori.Angle(norn);
+                ang = nori.AngleTo(norn);
                 stat[next].NorAng(ang);
             }
         }
@@ -1192,7 +1192,7 @@ public class ConstrainedFilling
         {
             double uu = 0.2 + iu * ll;
             Vector3D vv = _tgalg[i]!.Value(uu);
-            double temp = vv.SquareMagnitude();
+            double temp = vv.SquareMagnitude;
             if (temp < minmag)
             {
                 minmag = temp;
@@ -1263,7 +1263,7 @@ public class ConstrainedFilling
     {
         int nbp = 30;
         double uu = 0, duu = 0, vv = 0, dvv = 0, ww = 0, dww = 0, u1, u2, v1, v2;
-        _surf!.Bounds(out u1, out u2, out v1, out v2);
+        _surf!.ParameterBounds(out u1, out u2, out v1, out v2);
         bool enu = false;
         switch (i)
         {
@@ -1353,9 +1353,9 @@ public class ConstrainedFilling
                     caplisse = true;
                 }
             }
-            if (vnor.Magnitude() > 1.0e-15 && vtg.Magnitude() > 1.0e-15)
+            if (vnor.Magnitude > 1.0e-15 && vtg.Magnitude > 1.0e-15)
             {
-                double alpha = Math.Abs(M_PI / 2.0 - Math.Abs(vnor.Angle(vtg)));
+                double alpha = Math.Abs(M_PI / 2.0 - Math.Abs(vnor.AngleTo(vtg)));
                 if (Math.Abs(alpha) > maxang)
                 {
                     maxang = Math.Abs(alpha);
@@ -1395,18 +1395,18 @@ public class ConstrainedFilling
                             _nm[i % 2]!.Array1(), out pbid);
                 vapp = vapp.WithXYZ(pbid.XYZ());
                 vbound = bou.Norm(uu);
-                if (vapp.Magnitude() > 1.0e-15 && vbound.Magnitude() > 1.0e-15)
+                if (vapp.Magnitude > 1.0e-15 && vbound.Magnitude > 1.0e-15)
                 {
-                    double alpha = Math.Abs(M_PI / 2.0 - Math.Abs(vbound.Angle(vapp)));
+                    double alpha = Math.Abs(M_PI / 2.0 - Math.Abs(vbound.AngleTo(vapp)));
                     if (Math.Abs(alpha) > maxang)
                     {
                         maxang = Math.Abs(alpha);
                     }
                 }
             }
-            if (papp.Distance(pbound) > maxdist)
+            if (papp.DistanceTo(pbound) > maxdist)
             {
-                maxdist = papp.Distance(pbound);
+                maxdist = papp.DistanceTo(pbound);
             }
         }
         anOut.Write("Controle approx/contrainte sur bord " + i.ToString(CultureInfo.InvariantCulture) + " : \n");
@@ -1428,7 +1428,7 @@ public class ConstrainedFilling
         bool donor = _tgalg[i] is not null;
         double maxang = 0.0, maxdist = 0.0;
         double uu = 0, duu = 0, vv = 0, dvv = 0, ww = 0, dww = 0, u1, u2, v1, v2;
-        _surf!.Bounds(out u1, out u2, out v1, out v2);
+        _surf!.ParameterBounds(out u1, out u2, out v1, out v2);
         switch (i)
         {
             case 0:
@@ -1473,9 +1473,9 @@ public class ConstrainedFilling
                 Vector3D V1, V2;
                 _surf.D1(uu, vv, out pres[k], out V1, out V2);
                 vres[k] = V1.Crossed(V2);
-                if (vres[k].Magnitude() > 1.0e-15 && vbound[k].Magnitude() > 1.0e-15)
+                if (vres[k].Magnitude > 1.0e-15 && vbound[k].Magnitude > 1.0e-15)
                 {
-                    double alpha = Math.Abs(vres[k].Angle(vbound[k]));
+                    double alpha = Math.Abs(vres[k].AngleTo(vbound[k]));
                     alpha = Min(alpha, Math.Abs(M_PI - alpha));
                     if (alpha > maxang)
                     {
@@ -1483,9 +1483,9 @@ public class ConstrainedFilling
                     }
                 }
             }
-            if (pres[k].Distance(pbound[k]) > maxdist)
+            if (pres[k].DistanceTo(pbound[k]) > maxdist)
             {
-                maxdist = pres[k].Distance(pbound[k]);
+                maxdist = pres[k].DistanceTo(pbound[k]);
             }
             uu += duu;
             vv += dvv;

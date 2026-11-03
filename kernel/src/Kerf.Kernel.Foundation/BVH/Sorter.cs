@@ -8,7 +8,7 @@ using System.Numerics;
 namespace Kerf.Engine.Geometry.Bvh;
 
 /// <summary>A tool to sort an abstract primitive set.</summary>
-public abstract class Sorter<T, TVec>
+internal abstract class Sorter<T, TVec>
     where T : unmanaged, INumber<T>, IMinMaxValue<T>
     where TVec : unmanaged, INCollection_Vec<T, TVec>
 {

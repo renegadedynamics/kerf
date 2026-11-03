@@ -181,7 +181,7 @@ public class InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhedron,
         while (iCl.More())
         {
             indTri = iCl.Value();
-            Intersect(lin.Location(), lin.Location().Translated(new Vector3D(lin.Direction())), true, indTri,
+            Intersect(lin.Location, lin.Location.Translated(new Vector3D(lin.Direction)), true, indTri,
                       polyh);
             iCl.Next();
         }
@@ -217,8 +217,8 @@ public class InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhedron,
             while (ilC.More())
             {
                 indTri = ilC.Value();
-                Intersect(lins[_iLin].Location(),
-                          lins[_iLin].Location().Translated(new Vector3D(lins[_iLin].Direction())), true, indTri,
+                Intersect(lins[_iLin].Location,
+                          lins[_iLin].Location.Translated(new Vector3D(lins[_iLin].Direction)), true, indTri,
                           polyh);
                 ilC.Next();
             }
@@ -266,7 +266,7 @@ public class InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhedron,
         while (lCi.More())
         {
             indTri = lCi.Value();
-            Intersect(lin.Location(), lin.Location().Translated(new Vector3D(lin.Direction())), true, indTri,
+            Intersect(lin.Location, lin.Location.Translated(new Vector3D(lin.Direction)), true, indTri,
                       polyh);
             lCi.Next();
         }
@@ -300,8 +300,8 @@ public class InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhedron,
             while (tlC.More())
             {
                 indTri = tlC.Value();
-                Intersect(lins[_iLin].Location(),
-                          lins[_iLin].Location().Translated(new Vector3D(lins[_iLin].Direction())), true, indTri,
+                Intersect(lins[_iLin].Location,
+                          lins[_iLin].Location.Translated(new Vector3D(lins[_iLin].Direction)), true, indTri,
                           polyh);
                 tlC.Next();
             }
@@ -343,7 +343,7 @@ public class InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhedron,
                 Vector3D paPb = new(pa, pb);
                 Vector3D paPc = new(pa, pc);
                 Vector3D normale = paPb.Crossed(paPc);
-                double Norm_Normale = normale.Magnitude();
+                double Norm_Normale = normale.Magnitude;
                 if (Norm_Normale < 1e-14)
                 {
                     continue;
@@ -387,7 +387,7 @@ public class InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhedron,
         while (iCl.More())
         {
             indTri = iCl.Value();
-            Intersect(lin.Location(), lin.Location().Translated(new Vector3D(lin.Direction())), true, indTri,
+            Intersect(lin.Location, lin.Location.Translated(new Vector3D(lin.Direction)), true, indTri,
                       polyh);
             iCl.Next();
         }
@@ -422,8 +422,8 @@ public class InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhedron,
             while (ilC.More())
             {
                 indTri = ilC.Value();
-                Intersect(lins[_iLin].Location(),
-                          lins[_iLin].Location().Translated(new Vector3D(lins[_iLin].Direction())), true, indTri,
+                Intersect(lins[_iLin].Location,
+                          lins[_iLin].Location.Translated(new Vector3D(lins[_iLin].Direction)), true, indTri,
                           polyh);
                 ilC.Next();
             }
@@ -468,7 +468,7 @@ public class InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhedron,
         while (lCi.More())
         {
             indTri = lCi.Value();
-            Intersect(lin.Location(), lin.Location().Translated(new Vector3D(lin.Direction())), true, indTri,
+            Intersect(lin.Location, lin.Location.Translated(new Vector3D(lin.Direction)), true, indTri,
                       polyh);
             lCi.Next();
         }
@@ -499,8 +499,8 @@ public class InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhedron,
             while (tlC.More())
             {
                 indTri = tlC.Value();
-                Intersect(lins[_iLin].Location(),
-                          lins[_iLin].Location().Translated(new Vector3D(lins[_iLin].Direction())), true, indTri,
+                Intersect(lins[_iLin].Location,
+                          lins[_iLin].Location.Translated(new Vector3D(lins[_iLin].Direction)), true, indTri,
                           polyh);
                 tlC.Next();
             }
@@ -836,14 +836,14 @@ public class InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhedron,
                         Direction3D dirTri = new(vecTri);
                         Line3D linTri = new(begP, dirTri);
                         Point3D pOnE = new(spLieu);
-                        double dist = linTri.Distance(pOnE);
+                        double dist = linTri.DistanceTo(pOnE);
 
                         if (dist <= deflection)
                         {
                             Vector3D vLocPOnE = new(begP, pOnE);
                             Vector3D vecDirTri = new(dirTri);
                             double par = vLocPOnE * vecDirTri;
-                            double maxPar = vecTri.Magnitude();
+                            double maxPar = vecTri.Magnitude;
 
                             if (par >= 0 && par <= maxPar)
                             {
@@ -864,7 +864,7 @@ public class InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhedron,
         //-- If this distance is less than Tolerance, a section point is created.
         {
             Vector3D vecPol = new(begO, endO);
-            double nVecPol = vecPol.Magnitude();
+            double nVecPol = vecPol.Magnitude;
             if (nVecPol < global::Kerf.Engine.Foundation.Precision.Computational())
             {
                 return;
@@ -880,7 +880,7 @@ public class InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhedron,
                 Point3D begT = ToolPolyh.Point(polyh, pTri_ip1pc3);
                 Point3D endT = ToolPolyh.Point(polyh, pTri_i);
                 Vector3D vecTri = new(begT, endT);
-                double nVecTri = vecTri.Magnitude();
+                double nVecTri = vecTri.Magnitude;
                 if (nVecTri < global::Kerf.Engine.Foundation.Precision.Computational())
                 {
                     continue;

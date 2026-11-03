@@ -56,8 +56,8 @@ public partial struct Conic : IEquatable<Conic>
         // with P1(X,Y)= A1 X X + B1 Y Y + 2 C1 X Y + 2 D1 X + 2 E1 Y + F1
         //             = A  x x + B  y y + 2 C  x y + 2 D  x + 2 E  y + f
 
-        dir1.Direction().Coord(out t11, out t21);
-        dir1.Location().Coord(out t13, out t23);
+        dir1.Direction.Coord(out t11, out t21);
+        dir1.Location.Coord(out t13, out t23);
 
         t22 = t11;
         t12 = -t21;

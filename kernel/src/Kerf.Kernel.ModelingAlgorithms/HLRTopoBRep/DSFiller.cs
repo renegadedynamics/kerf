@@ -49,7 +49,7 @@ public static class DSFiller
             {
                 f++;
                 Face s1 = ShapeCasts.Face(ex.Current());
-                s1.Orientation(Forward);
+                s1.Orient(Forward);
                 BrepTopolTool domain;
                 SurfaceAdaptorBase? surface;
                 if (mst.ContainsKey(s1))
@@ -177,7 +177,7 @@ public static class DSFiller
                                         Surface s = Tool.Surface(f, out Placement loc)!;
                                         if (!loc.IsIdentity)
                                         {
-                                            s = (Surface)s.Transformed(loc.Transformation());
+                                            s = (Surface)s.Transformed(loc.Transformation);
                                         }
                                         double Tol = 1e-7;
                                         c2d = global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(c, first, last, s, ref Tol);
@@ -246,29 +246,29 @@ public static class DSFiller
                                             knots.SetValue(i, (double)i);
                                             mults.SetValue(i, 1);
                                             Point3D p = line.Point(i + ipF - 1).Value();
-                                            if (p.X() < minx)
+                                            if (p.X < minx)
                                             {
-                                                minx = p.X();
+                                                minx = p.X;
                                             }
-                                            if (p.Y() < miny)
+                                            if (p.Y < miny)
                                             {
-                                                miny = p.Y();
+                                                miny = p.Y;
                                             }
-                                            if (p.Z() < minz)
+                                            if (p.Z < minz)
                                             {
-                                                minz = p.Z();
+                                                minz = p.Z;
                                             }
-                                            if (p.X() > maxx)
+                                            if (p.X > maxx)
                                             {
-                                                maxx = p.X();
+                                                maxx = p.X;
                                             }
-                                            if (p.Y() > maxy)
+                                            if (p.Y > maxy)
                                             {
-                                                maxy = p.Y();
+                                                maxy = p.Y;
                                             }
-                                            if (p.Z() > maxz)
+                                            if (p.Z > maxz)
                                             {
-                                                maxz = p.Z();
+                                                maxz = p.Z;
                                             }
                                             points.SetValue(i, p);
                                         }
@@ -378,8 +378,8 @@ public static class DSFiller
                                             appVal2.Curve(2, poles2d);
                                             c2d = new BSplineCurve2D(poles2d, appVal2.Knots(),
                                                                           appVal2.Multiplicities(), appVal2.Degree());
-                                            first = c2d.FirstParameter();
-                                            last = c2d.LastParameter();
+                                            first = c2d.FirstParameter;
+                                            last = c2d.LastParameter;
                                         }
                                     }
                                 }
@@ -398,8 +398,8 @@ public static class DSFiller
                                 Edge e = new();
                                 BrepBuilder b = new();
                                 b.MakeEdge(ref e, c, tol);
-                                vf.Orientation(Forward);
-                                vl.Orientation(Reversed);
+                                vf.Orient(Forward);
+                                vl.Orient(Reversed);
                                 b.Add(e, vf);
                                 b.Add(e, vl);
                                 b.Range(e, first, last);
@@ -428,14 +428,14 @@ public static class DSFiller
         for (; itl1.More(); itl1.Next())
         {
             Edge intLine = ShapeCasts.Edge(itl1.Value());
-            intLine.Orientation(Forward);
+            intLine.Orient(Forward);
             Vertex[] ver = new Vertex[2];
             Exploration.Vertices(intLine, out ver[0], out ver[1]);
             NCollection_List<Shape>.Iterator itl2 = new(itl1);
             for (; itl2.More(); itl2.Next())
             {
                 Edge intLine2 = ShapeCasts.Edge(itl2.Value());
-                intLine2.Orientation(Forward);
+                intLine2.Orient(Forward);
                 if (intLine2.IsSame(intLine))
                 {
                     continue;
@@ -456,11 +456,11 @@ public static class DSFiller
                             continue;
                         }
                         Point3D pnt2 = Tool.Pnt(ver2[j]);
-                        if (pnt1.SquareDistance(pnt2) <= sqTol)
+                        if (pnt1.SquareDistanceTo(pnt2) <= sqTol)
                         {
                             BrepBuilder bb = new();
                             bb.Remove(intLine2, ver2[j]);
-                            ver[i].Orientation((j == 0) ? Forward : Reversed);
+                            ver[i].Orient((j == 0) ? Forward : Reversed);
                             bb.Add(intLine2, ver[i]);
                         }
                     }
@@ -584,36 +584,36 @@ public static class DSFiller
             vf = Exploration.FirstVertex(e);
             vl = Exploration.LastVertex(e);
             Tool.Range(e, out pf, out pl);
-            vf.Orientation(Forward);
-            vl.Orientation(Reversed);
+            vf.Orient(Forward);
+            vl.Orient(Reversed);
 
             for (ds.InitVertex(e); ds.MoreVertex(); ds.NextVertex())
             {
                 vi = ds.Vertex();
                 pi = ds.Parameter();
-                vi.Orientation(Reversed);
+                vi.Orient(Reversed);
                 newE = e;
                 newE.EmptyCopy();
-                newE.Orientation(Forward);
+                newE.Orient(Forward);
                 b.Add(newE, vf);
                 b.UpdateVertex(vf, pf, newE, Tool.Tolerance(vf));
                 b.Add(newE, vi);
                 b.UpdateVertex(vi, pi, newE, Tool.Tolerance(vi));
-                newE.Orientation(e.Orientation());
+                newE.Orient(e.Orientation);
                 splE.Append(newE);
                 // prepare next edge
                 vf = vi;
                 pf = pi;
-                vf.Orientation(Forward);
+                vf.Orient(Forward);
             }
             newE = e;
             newE.EmptyCopy();
-            newE.Orientation(Forward);
+            newE.Orient(Forward);
             b.Add(newE, vf);
             b.UpdateVertex(vf, pf, newE, Tool.Tolerance(vf));
             b.Add(newE, vl);
             b.UpdateVertex(vl, pl, newE, Tool.Tolerance(vl));
-            newE.Orientation(e.Orientation());
+            newE.Orient(e.Orientation);
             splE.Append(newE);
         }
     }

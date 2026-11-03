@@ -58,18 +58,18 @@ public static class ShapeAnalysisAnalysis
         v1 = new Vertex();
         v2 = new Vertex();
         EdgeAnalysis ea = new EdgeAnalysis();
-        if (shape.ShapeType() == ShapeType.Wire)
+        if (shape.Type == ShapeType.Wire)
         {
             Wire w = ShapeCasts.Wire(shape);
             // invalid work with reversed wires replaced on TopExp
             Exploration.Vertices(w, out v1, out v2);
         }
-        else if (shape.ShapeType() == ShapeType.Edge)
+        else if (shape.Type == ShapeType.Edge)
         {
             v1 = ea.FirstVertex(ShapeCasts.Edge(shape));
             v2 = ea.LastVertex(ShapeCasts.Edge(shape));
         }
-        else if (shape.ShapeType() == ShapeType.Vertex)
+        else if (shape.Type == ShapeType.Vertex)
         {
             v1 = v2 = ShapeCasts.Vertex(shape);
         }
@@ -90,7 +90,7 @@ public static class ShapeAnalysisAnalysis
                 nbc++;
                 NCollection_Sequence<Point2D> seqPnt = new NCollection_Sequence<Point2D>();
                 CurveAnalysis.GetSamplePoints(c2d, f2d, l2d, seqPnt);
-                if (edge.Orientation() == Reversed)
+                if (edge.Orientation == Reversed)
                 {
                     seqPnt.Reverse();
                 }
@@ -105,13 +105,13 @@ public static class ShapeAnalysisAnalysis
                 for (; j <= seqPnt.Length(); j++)
                 {
                     luv = seqPnt.Value(j);
-                    totcross += (fuv.X() - luv.X()) * (fuv.Y() + luv.Y()) / 2;
+                    totcross += (fuv.X - luv.X) * (fuv.Y + luv.Y) / 2;
                     fuv = luv;
                 }
             }
         }
 
-        totcross += (fuv.X() - uv0.X()) * (fuv.Y() + uv0.Y()) / 2;
+        totcross += (fuv.X - uv0.X) * (fuv.Y + uv0.Y) / 2;
         return totcross;
     }
 
@@ -135,7 +135,7 @@ public static class ShapeAnalysisAnalysis
                 }
 
                 nbc++;
-                if (edge.Orientation() == Reversed)
+                if (edge.Orientation == Reversed)
                 {
                     seqPnt.Reverse();
                 }
@@ -166,7 +166,7 @@ public static class ShapeAnalysisAnalysis
     {
         Face f = face;
         Wire w = new Wire();
-        f.Orientation(Forward);
+        f.Orient(Forward);
         int nbw = 0;
         for (Explorer exp = new Explorer(f, ShapeType.Wire); exp.More(); exp.Next())
         {
@@ -199,7 +199,7 @@ public static class ShapeAnalysisAnalysis
     public static Wire OuterWire(in Face face)
     {
         Face f = face;
-        f.Orientation(Forward);
+        f.Orient(Forward);
 
         Explorer it = new Explorer(f, ShapeType.Wire);
         while (it.More())
@@ -232,11 +232,11 @@ public static class ShapeAnalysisAnalysis
     public static void GetFaceUVBounds(in Face F, out double uMin, out double uMax, out double vMin, out double vMax)
     {
         Face ff = F;
-        ff.Orientation(Forward);
+        ff.Orient(Forward);
         Explorer ex = new Explorer(ff, ShapeType.Edge);
         if (!ex.More())
         {
-            Tool.Surface(F, out _)!.Bounds(out uMin, out uMax, out vMin, out vMax);
+            Tool.Surface(F, out _)!.ParameterBounds(out uMin, out uMax, out vMin, out vMax);
             return;
         }
 

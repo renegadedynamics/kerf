@@ -15,7 +15,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// Converts an arc of a 2D hyperbola into a rational B-spline curve (degree 2, 3 poles). The hyperbola's
 /// parametrisation is P(U) = Loc + MajorRadius * cosh(U) * XDir + MinorRadius * sinh(U) * YDir.
 /// </summary>
-public class HyperbolaToBSplineCurve : ConicToBSplineCurve
+internal class HyperbolaToBSplineCurve : ConicToBSplineCurve
 {
     private const int TheDegree = 2;
     private const int MaxNbKnots = 2;
@@ -41,11 +41,11 @@ public class HyperbolaToBSplineCurve : ConicToBSplineCurve
 
         // construction of hyperbola in the reference xOy.
 
-        double R = h.MajorRadius();
-        double r = h.MinorRadius();
-        Direction2D ox = h.Axis().XDirection();
-        Direction2D oy = h.Axis().YDirection();
-        double s = (ox.X() * oy.Y() - ox.Y() * oy.X() > 0.0) ? 1 : -1;
+        double R = h.MajorRadius;
+        double r = h.MinorRadius;
+        Direction2D ox = h.Axis.XDirection;
+        Direction2D oy = h.Axis.YDirection;
+        double s = (ox.X * oy.Y - ox.Y * oy.X > 0.0) ? 1 : -1;
 
         // poles expressed in the reference mark
         // the 2nd pole is at the intersection of 2 tangents to the curve
@@ -64,7 +64,7 @@ public class HyperbolaToBSplineCurve : ConicToBSplineCurve
         _poles[3] = new Point2D(R * Math.Cosh(ul), s * r * Math.Sinh(ul));
 
         // replace the bspline in the mark of the hyperbola
-        Transform2D trsf = new Transform2D().WithTransformation(h.Axis().XAxis(), Constants.OX2d());
+        Transform2D trsf = new Transform2D().WithTransformation(h.Axis.XAxis, Constants.OX2d());
         _poles[1] = _poles[1].Transformed(trsf);
         _poles[2] = _poles[2].Transformed(trsf);
         _poles[3] = _poles[3].Transformed(trsf);

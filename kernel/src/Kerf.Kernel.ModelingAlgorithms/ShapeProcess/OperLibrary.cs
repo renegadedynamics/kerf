@@ -72,7 +72,7 @@ public static class OperLibrary
         Shape sf = s.Oriented(Forward);
 
         // Process COMPOUNDs separately in order to handle sharing in assemblies
-        if (sf.ShapeType() == ShapeType.Compound)
+        if (sf.Type == ShapeType.Compound)
         {
             bool locModified = false;
             var c = new Compound();
@@ -81,12 +81,12 @@ public static class OperLibrary
             for (var it = new Iterator(sf); it.More(); it.Next())
             {
                 Shape shape = it.Value();
-                Placement l = shape.Location(), nullLoc = new();
+                Placement l = shape.Placement, nullLoc = new();
                 shape.Location(nullLoc);
                 Shape res;
                 if (map.ContainsKey(shape))
                 {
-                    res = map.GetValue(shape).Oriented(shape.Orientation());
+                    res = map.GetValue(shape).Oriented(shape.Orientation);
                 }
                 else
                 {
@@ -106,7 +106,7 @@ public static class OperLibrary
             }
 
             map[sf] = c;
-            return c.Oriented(s.Orientation());
+            return c.Oriented(s.Orientation);
         }
 
         // Modify the shape
@@ -114,7 +114,7 @@ public static class OperLibrary
         md.SetMutableInput(mutableInput);
         md.Perform(m);
         context.RecordModification(sf, md, msg);
-        return md.InternalModifiedShape(sf).Oriented(s.Orientation());
+        return md.InternalModifiedShape(sf).Oriented(s.Orientation);
     }
 
     // activate message mechanism if it is supported by context

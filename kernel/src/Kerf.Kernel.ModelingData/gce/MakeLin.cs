@@ -36,7 +36,7 @@ public sealed class MakeLin : Root
     /// <summary>A line through two points; fails with gce_ConfusedPoints if they are coincident.</summary>
     public MakeLin(in Point3D p1, in Point3D p2)
     {
-        if (p1.Distance(p2) >= Constants.Resolution())
+        if (p1.DistanceTo(p2) >= Constants.Resolution())
         {
             _theLin = new Line3D(p1, new Direction3D(p2.XYZ() - p1.XYZ()));
             _theError = Done;
@@ -50,7 +50,7 @@ public sealed class MakeLin : Root
     /// <summary>A line parallel to Lin through the point P.</summary>
     public MakeLin(in Line3D lin, in Point3D p)
     {
-        _theLin = new Line3D(p, lin.Direction());
+        _theLin = new Line3D(p, lin.Direction);
         _theError = Done;
     }
 

@@ -67,7 +67,7 @@ public class GCPnts_PortTests
         for (int i = 1; i <= theNb; i++)
         {
             Point3D aP = theC.Value(theU1 + (theU2 - theU1) * i / theNb);
-            aL += aPrev.Distance(aP);
+            aL += aPrev.DistanceTo(aP);
             aPrev = aP;
         }
         return aL;
@@ -77,7 +77,7 @@ public class GCPnts_PortTests
     private static double Sag(CurveAdaptorBase theC, double theU1, double theU2, int theNb = 50)
     {
         Point3D aP1 = theC.Value(theU1), aP2 = theC.Value(theU2);
-        if (aP1.Distance(aP2) < 1e-12)
+        if (aP1.DistanceTo(aP2) < 1e-12)
         {
             return 0.0;
         }
@@ -85,7 +85,7 @@ public class GCPnts_PortTests
         double aMax = 0.0;
         for (int i = 1; i < theNb; i++)
         {
-            aMax = Math.Max(aMax, aChord.Distance(theC.Value(theU1 + (theU2 - theU1) * i / theNb)));
+            aMax = Math.Max(aMax, aChord.DistanceTo(theC.Value(theU1 + (theU2 - theU1) * i / theNb)));
         }
         return aMax;
     }

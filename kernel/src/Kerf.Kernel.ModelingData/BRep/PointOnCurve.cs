@@ -10,7 +10,7 @@ using Occt;
 namespace Kerf.Engine.Topology.Brep;
 
 /// <summary>The representation of a vertex by a parameter on a 3D curve.</summary>
-public class PointOnCurve : PointRepresentation
+internal class PointOnCurve : PointRepresentation
 {
     private Curve3D? _curve;
 
@@ -26,7 +26,7 @@ public class PointOnCurve : PointRepresentation
 
     /// <summary>A point on the curve <paramref name="c"/>.</summary>
     public override bool IsPointOnCurve(Curve3D? c, in Placement l)
-        => ReferenceEquals(_curve, c) && (Location() == l);
+        => ReferenceEquals(_curve, c) && (Location().IsEqual(l));
 
     public override Curve3D? Curve() => _curve;
 

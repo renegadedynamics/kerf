@@ -143,8 +143,8 @@ public class LocationGuide : SurfaceLocationLaw
         if (_sec.IsConstant(ref tol))
         {
             mySection = _sec.ConstantSection();
-            _uf = mySection.FirstParameter();
-            _ul = mySection.LastParameter();
+            _uf = mySection.FirstParameter;
+            _ul = mySection.LastParameter;
 
             isconst = true;
         }
@@ -244,9 +244,9 @@ public class LocationGuide : SurfaceLocationLaw
                 {
                     // Intersection de secour entre surf revol et guide
                     // equation
-                    _x[1] = _poles2d.Value(1, ii - 1).Y();
-                    _x[2] = _poles2d.Value(2, ii - 1).X();
-                    _x[3] = _poles2d.Value(2, ii - 1).Y();
+                    _x[1] = _poles2d.Value(1, ii - 1).Y;
+                    _x[2] = _poles2d.Value(2, ii - 1).X;
+                    _x[3] = _poles2d.Value(2, ii - 1).Y;
                     FunctionGuide e = new FunctionGuide(_sec, _guide, u);
                     e.SetParam(u, p, T.XYZ(), n.XYZ());
                     // resolution   =>  angle
@@ -298,13 +298,13 @@ public class LocationGuide : SurfaceLocationLaw
 
             if (ii > 1)
             {
-                diff = w - _poles2d.Value(1, ii - 1).Y();
+                diff = w - _poles2d.Value(1, ii - 1).Y;
                 if (Math.Abs(diff) > deltaG)
                 {
                     if (_guide.IsPeriodic)
                     {
-                        InGoodPeriod(_poles2d.Value(1, ii - 1).Y(), _guide.Period(), ref w);
-                        diff = w - _poles2d.Value(1, ii - 1).Y();
+                        InGoodPeriod(_poles2d.Value(1, ii - 1).Y, _guide.Period(), ref w);
+                        diff = w - _poles2d.Value(1, ii - 1).Y;
                     }
                 }
             }
@@ -329,9 +329,9 @@ public class LocationGuide : SurfaceLocationLaw
             {
                 if (uperiodic)
                 {
-                    InGoodPeriod(_poles2d.Value(2, ii - 1).Y(), uPeriod, ref v);
+                    InGoodPeriod(_poles2d.Value(2, ii - 1).Y, uPeriod, ref v);
                 }
-                diff = v - _poles2d.Value(2, ii - 1).Y();
+                diff = v - _poles2d.Value(2, ii - 1).Y;
             }
 
             p1 = p1.WithCoord(t, w); // on stocke les parametres
@@ -398,7 +398,7 @@ public class LocationGuide : SurfaceLocationLaw
         l = (TrihedronWithGuide)_law.Copy();
         LocationGuide copy = new LocationGuide(l);
         copy.SetOrigine(_origParam1, _origParam2);
-        copy.Set(_sec!, _rotation, _firstS, _lastS, _poles2d.Value(1, 1).X(), ref la);
+        copy.Set(_sec!, _rotation, _firstS, _lastS, _poles2d.Value(1, 1).X, ref la);
         copy.SetTrsf(_trans);
 
         return copy;
@@ -423,7 +423,7 @@ public class LocationGuide : SurfaceLocationLaw
             if (_rotation)
             {
                 // OCCT: the start angle passed is the first path parameter, not the first angle.
-                SetRotation(_poles2d.Value(1, 1).X(), ref lastAngle);
+                SetRotation(_poles2d.Value(1, 1).X, ref lastAngle);
             }
         }
         return _status == SurfacePipeError.PipeOk;
@@ -763,13 +763,13 @@ public class LocationGuide : SurfaceLocationLaw
         int ideb = 1, ifin = _poles2d.RowLength(), idemi;
         double valeur, t1, t2;
 
-        valeur = _poles2d.Value(1, ideb).X();
+        valeur = _poles2d.Value(1, ideb).X;
         if (param == valeur)
         {
             ifin = ideb + 1;
         }
 
-        valeur = _poles2d.Value(1, ifin).X();
+        valeur = _poles2d.Value(1, ifin).X;
         if (param == valeur)
         {
             ideb = ifin - 1;
@@ -778,7 +778,7 @@ public class LocationGuide : SurfaceLocationLaw
         while (ideb + 1 != ifin)
         {
             idemi = (ideb + ifin) / 2;
-            valeur = _poles2d.Value(1, idemi).X();
+            valeur = _poles2d.Value(1, idemi).X;
             if (valeur < param)
             {
                 ideb = idemi;
@@ -797,8 +797,8 @@ public class LocationGuide : SurfaceLocationLaw
             }
         }
 
-        t1 = _poles2d.Value(1, ideb).X();
-        t2 = _poles2d.Value(1, ifin).X();
+        t1 = _poles2d.Value(1, ideb).X;
+        t2 = _poles2d.Value(1, ifin).X;
         double diff = t2 - t1;
 
         double w1, w2;
@@ -864,7 +864,7 @@ public class LocationGuide : SurfaceLocationLaw
                 return theStatus;
             }
             Point3D pointOnGuide = _law.CurrentPointOnGuide();
-            double curWidth = p.Distance(pointOnGuide);
+            double curWidth = p.DistanceTo(pointOnGuide);
 
             Point2D paramWithRadius = new Point2D(t, curWidth);
             parAndRad.SetValue(ii, paramWithRadius);

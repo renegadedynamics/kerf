@@ -49,11 +49,11 @@ public sealed partial class AnalyticCirc2d2TanOn
         Direction2D dirx = new(Direction2D.D.X);
         NCollection_Array1<double> radius = new(1, 2);
         NCollection_Array1<double> rradius = new(1, 2);
-        Point2D center1 = c1.Location();
-        Point2D center2 = c2.Location();
+        Point2D center1 = c1.Location;
+        Point2D center2 = c2.Location;
 
-        double r1 = c1.Radius();
-        double r2 = c2.Radius();
+        double r1 = c1.Radius;
+        double r2 = c2.Radius;
 
         //=========================================================================
         //   Processing of boundary cases.                                          +
@@ -61,12 +61,12 @@ public sealed partial class AnalyticCirc2d2TanOn
 
         int nbsol1 = 1;
         int nbsol2 = 0;
-        double ron = onCirc.Radius();
-        double distcco = onCirc.Location().Distance(center1);
-        Direction2D dircc = new(onCirc.Location().XY() - center1.XY());
+        double ron = onCirc.Radius;
+        double distcco = onCirc.Location.DistanceTo(center1);
+        Direction2D dircc = new(onCirc.Location.XY() - center1.XY());
         Point2D pinterm = new(center1.XY() + (distcco - ron) * dircc.XY());
-        double distcc2 = pinterm.Distance(center2);
-        double distcc1 = pinterm.Distance(center1);
+        double distcc2 = pinterm.DistanceTo(center2);
+        double distcc1 = pinterm.DistanceTo(center1);
         double d1 = Math.Abs(distcc2 - r2 - Math.Abs(distcc1 - r1));
         double d2 = Math.Abs(distcc2 + r2 - Math.Abs(distcc1 - r1));
         double d3 = Math.Abs(distcc2 - r2 - (distcc1 + r1));
@@ -74,8 +74,8 @@ public sealed partial class AnalyticCirc2d2TanOn
         if (d1 > tol || d2 > tol || d3 > tol || d4 > tol)
         {
             pinterm = new Point2D(center1.XY() + (distcco + ron) * dircc.XY());
-            distcc2 = pinterm.Distance(center2);
-            distcc1 = pinterm.Distance(center1);
+            distcc2 = pinterm.DistanceTo(center2);
+            distcc1 = pinterm.DistanceTo(center1);
             d1 = Math.Abs(distcc2 - r2 - Math.Abs(distcc1 - r1));
             d2 = Math.Abs(distcc2 + r2 - Math.Abs(distcc1 - r1));
             d3 = Math.Abs(distcc2 - r2 - (distcc1 + r1));
@@ -131,8 +131,8 @@ public sealed partial class AnalyticCirc2d2TanOn
                         //        ===========================================================
                         Direction2D dc1 = new(center1.XY() - pinterm.XY());
                         Direction2D dc2 = new(center2.XY() - pinterm.XY());
-                        distcc1 = pinterm.Distance(center1);
-                        distcc2 = pinterm.Distance(center2);
+                        distcc1 = pinterm.DistanceTo(center1);
+                        distcc2 = pinterm.DistanceTo(center2);
                         if (!qualified1.IsUnqualified)
                         {
                             _qualifier1[_nbrSol] = qualified1.Qualifier();
@@ -167,7 +167,7 @@ public sealed partial class AnalyticCirc2d2TanOn
                         }
                         _pnttg1sol[_nbrSol] = new Point2D(pinterm.XY() + radius[i] * dc1.XY());
                         _pnttg2sol[_nbrSol] = new Point2D(pinterm.XY() + radius[i] * dc2.XY());
-                        _pntcen[_nbrSol] = _cirsol[_nbrSol].Location();
+                        _pntcen[_nbrSol] = _cirsol[_nbrSol].Location;
                         _par1sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);
                         _pararg1[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(c1, _pnttg1sol[_nbrSol]);
                         _par2sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg2sol[_nbrSol]);
@@ -220,13 +220,13 @@ public sealed partial class AnalyticCirc2d2TanOn
                         for (int j = 1; j <= intp.PointCount; j++)
                         {
                             Point2D center = intp.Point(j).Value();
-                            double dist1 = center.Distance(center1);
-                            double dist2 = center.Distance(center2);
+                            double dist1 = center.DistanceTo(center1);
+                            double dist2 = center.DistanceTo(center2);
                             int nbsol = 0;
                             int nsol = 0;
                             int nnsol = 0;
-                            r1 = c1.Radius();
-                            r2 = c2.Radius();
+                            r1 = c1.Radius;
+                            r2 = c2.Radius;
                             if (qualified1.IsEnclosed)
                             {
                                 if (dist1 - r1 < tol)
@@ -302,8 +302,8 @@ public sealed partial class AnalyticCirc2d2TanOn
                                     _nbrSol++;
                                     _cirsol[_nbrSol] = new Circle2D(new Axis2D(center, dirx), radius[k]);
                                     //              ==========================================================
-                                    distcc1 = center.Distance(center1);
-                                    distcc2 = center.Distance(center2);
+                                    distcc1 = center.DistanceTo(center1);
+                                    distcc2 = center.DistanceTo(center2);
                                     if (!qualified1.IsUnqualified)
                                     {
                                         _qualifier1[_nbrSol] = qualified1.Qualifier();
@@ -336,8 +336,8 @@ public sealed partial class AnalyticCirc2d2TanOn
                                     {
                                         _qualifier2[_nbrSol] = Qualifier.Enclosing;
                                     }
-                                    if (center.Distance(center1) <= tolerance
-                                        && Math.Abs(radius[k] - c1.Radius()) <= tolerance)
+                                    if (center.DistanceTo(center1) <= tolerance
+                                        && Math.Abs(radius[k] - c1.Radius) <= tolerance)
                                     {
                                         _theSame1[_nbrSol] = 1;
                                     }
@@ -349,8 +349,8 @@ public sealed partial class AnalyticCirc2d2TanOn
                                         _par1sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);
                                         _pararg1[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(c1, _pnttg1sol[_nbrSol]);
                                     }
-                                    if (center.Distance(center2) <= tolerance
-                                        && Math.Abs(radius[k] - c2.Radius()) <= tolerance)
+                                    if (center.DistanceTo(center2) <= tolerance
+                                        && Math.Abs(radius[k] - c2.Radius) <= tolerance)
                                     {
                                         _theSame2[_nbrSol] = 1;
                                     }

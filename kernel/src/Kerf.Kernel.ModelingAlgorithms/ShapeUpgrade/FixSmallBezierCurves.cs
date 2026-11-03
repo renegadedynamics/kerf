@@ -55,7 +55,7 @@ public class FixSmallBezierCurves : FixSmallCurves
                 last = l;
             }
             Curve3D trc = new TrimmedCurve3D(c3d!, first, last);
-            Continuity cont = trc.Continuity();
+            Continuity cont = trc.Continuity;
             if (cont == C3 || cont == CN)
             {
                 cont = C2;
@@ -103,7 +103,7 @@ public class FixSmallBezierCurves : FixSmallCurves
                 last = l;
             }
             Curve2D trc2d = new TrimmedCurve2D(c2d!, first, last);
-            Continuity cont = trc2d.Continuity();
+            Continuity cont = trc2d.Continuity;
             try
             {
                 var aproxCurve2d = new ApproxCurve2D(trc2d, prec, cont, 1, 9);
@@ -147,7 +147,7 @@ public class FixSmallBezierCurves : FixSmallCurves
                     last = l;
                 }
                 Curve2D trc2d = new TrimmedCurve2D(c2!, first, last);
-                Continuity cont = trc2d.Continuity();
+                Continuity cont = trc2d.Continuity;
                 var aproxCurve2d = new ApproxCurve2D(trc2d, prec, cont, 1, 9);
                 try
                 {

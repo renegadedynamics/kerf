@@ -18,7 +18,7 @@ namespace Kerf.Engine.Geometry.Adaptors;
 /// parametrized by U) of an <see cref="SurfaceAdaptorBase"/>, restricted to a parameter range.
 /// </summary>
 /// <remarks>An adaptor is a working object: <see cref="Load(SurfaceAdaptorBase)"/> is public, as in OCCT.</remarks>
-public class IsoCurve : CurveAdaptorBase
+internal class IsoCurve : CurveAdaptorBase
 {
     private SurfaceAdaptorBase? _surface;
     private IsoType _iso;
@@ -389,7 +389,7 @@ public class IsoCurve : CurveAdaptorBase
     }
 
     /// <summary>The point and first derivative at theU.</summary>
-    public sealed override Curve3D.ResD1 EvalD1(double u)
+    internal sealed override Curve3D.ResD1 EvalD1(double u)
     {
         switch (_iso)
         {
@@ -410,7 +410,7 @@ public class IsoCurve : CurveAdaptorBase
     }
 
     /// <summary>The point and first two derivatives at theU.</summary>
-    public sealed override Curve3D.ResD2 EvalD2(double u)
+    internal sealed override Curve3D.ResD2 EvalD2(double u)
     {
         switch (_iso)
         {
@@ -431,7 +431,7 @@ public class IsoCurve : CurveAdaptorBase
     }
 
     /// <summary>The point and first three derivatives at theU.</summary>
-    public sealed override Curve3D.ResD3 EvalD3(double u)
+    internal sealed override Curve3D.ResD3 EvalD3(double u)
     {
         switch (_iso)
         {
@@ -560,9 +560,9 @@ public class IsoCurve : CurveAdaptorBase
 
     private static void ComputeHR(in CoordinateSystem axes, in Point3D p, out double h, out double radius)
     {
-        Vector3D v = new Vector3D(axes.Location(), p);
-        h = v * new Vector3D(axes.Direction());
-        radius = v * new Vector3D(axes.XDirection());
+        Vector3D v = new Vector3D(axes.Location, p);
+        h = v * new Vector3D(axes.Direction);
+        radius = v * new Vector3D(axes.XDirection);
     }
 
     public override Circle3D Circle()
@@ -585,7 +585,7 @@ public class IsoCurve : CurveAdaptorBase
                             }
                         case IsoV:
                             {
-                                return global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(cyl.Position(), cyl.Radius(), _parameter);
+                                return global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(cyl.Position, cyl.Radius, _parameter);
                             }
                         case NoneIso:
                             {
@@ -608,7 +608,7 @@ public class IsoCurve : CurveAdaptorBase
                             }
                         case IsoV:
                             {
-                                return global::Kerf.Engine.Geometry.ElSLib.ConeVIso(cone.Position(), cone.RefRadius(), cone.SemiAngle(), _parameter);
+                                return global::Kerf.Engine.Geometry.ElSLib.ConeVIso(cone.Position, cone.RefRadius, cone.SemiAngle, _parameter);
                             }
                         case NoneIso:
                             {
@@ -627,12 +627,12 @@ public class IsoCurve : CurveAdaptorBase
 
                         case IsoU:
                             {
-                                return global::Kerf.Engine.Geometry.ElSLib.SphereUIso(sph.Position(), sph.Radius(), _parameter);
+                                return global::Kerf.Engine.Geometry.ElSLib.SphereUIso(sph.Position, sph.Radius, _parameter);
                             }
 
                         case IsoV:
                             {
-                                return global::Kerf.Engine.Geometry.ElSLib.SphereVIso(sph.Position(), sph.Radius(), _parameter);
+                                return global::Kerf.Engine.Geometry.ElSLib.SphereVIso(sph.Position, sph.Radius, _parameter);
                             }
 
                         case NoneIso:
@@ -652,12 +652,12 @@ public class IsoCurve : CurveAdaptorBase
 
                         case IsoU:
                             {
-                                return global::Kerf.Engine.Geometry.ElSLib.TorusUIso(tor.Position(), tor.MajorRadius(), tor.MinorRadius(), _parameter);
+                                return global::Kerf.Engine.Geometry.ElSLib.TorusUIso(tor.Position, tor.MajorRadius, tor.MinorRadius, _parameter);
                             }
 
                         case IsoV:
                             {
-                                return global::Kerf.Engine.Geometry.ElSLib.TorusVIso(tor.Position(), tor.MajorRadius(), tor.MinorRadius(), _parameter);
+                                return global::Kerf.Engine.Geometry.ElSLib.TorusVIso(tor.Position, tor.MajorRadius, tor.MinorRadius, _parameter);
                             }
 
                         case NoneIso:
@@ -676,16 +676,16 @@ public class IsoCurve : CurveAdaptorBase
                         Axis3D ax1 = _surface.AxeOfRevolution();
                         if (new Line3D(ax1).Contains(val0, global::Kerf.Engine.Foundation.Precision.Confusion()))
                         {
-                            return new Circle3D(new Frame3D(val0, ax1.Direction()), 0);
+                            return new Circle3D(new Frame3D(val0, ax1.Direction), 0);
                         }
                         else
                         {
-                            Vector3D dx = new Vector3D(ax1.Location(), val0);
-                            axes = new CoordinateSystem(ax1.Location(), ax1.Direction(), new Direction3D(dx));
+                            Vector3D dx = new Vector3D(ax1.Location, val0);
+                            axes = new CoordinateSystem(ax1.Location, ax1.Direction, new Direction3D(dx));
                             ComputeHR(axes, val0, out h, out radius);
-                            Vector3D vt = new Vector3D(axes.Direction());
+                            Vector3D vt = new Vector3D(axes.Direction);
                             axes = axes.Translated(vt * h);
-                            return new Circle3D(axes.Ax2(), radius);
+                            return new Circle3D(axes.Frame, radius);
                         }
                     }
                     else

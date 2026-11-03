@@ -307,7 +307,7 @@ public class WireDivide : UpgradeTool
             {
                 Edge e = ShapeCasts.Edge(exp.Current());
                 // skip degenerated edges (and also INTERNAL/EXTERNAL, to avoid failures)
-                if (e.Orientation() == Internal || e.Orientation() == External)
+                if (e.Orientation == Internal || e.Orientation == External)
                 {
                     b.Add(newWire, e);
                     continue;
@@ -418,7 +418,7 @@ public class WireDivide : UpgradeTool
                 // Exploring theEdge
                 Vertex v1o = Exploration.FirstVertex(e, false);
                 Vertex v2o = Exploration.LastVertex(e, false);
-                bool isForward = (e.Orientation() == Forward);
+                bool isForward = (e.Orientation == Forward);
                 double tolEdge = Tool.Tolerance(e);
                 bool isDeg = Tool.Degenerated(e);
 
@@ -429,7 +429,7 @@ public class WireDivide : UpgradeTool
                 Vertex v2;
                 if (v1o.IsSame(v2o))
                 {
-                    Shape tmpV = v1.Oriented(v2o.Orientation());
+                    Shape tmpV = v1.Oriented(v2o.Orientation);
                     v2 = ShapeCasts.Vertex(tmpV);
                 }
                 else
@@ -461,8 +461,8 @@ public class WireDivide : UpgradeTool
                 var sac = new CurveAnalysis();
                 for (; itv.More(); itv.Next())
                 {
-                    if (itv.Value().Orientation() == Internal
-                        || itv.Value().Orientation() == External)
+                    if (itv.Value().Orientation == Internal
+                        || itv.Value().Orientation == External)
                     {
                         Vertex vold = ShapeCasts.Vertex(itv.Value());
                         seqNMVertices.Append(vold);
@@ -560,8 +560,8 @@ public class WireDivide : UpgradeTool
                         {
                             if (theNewCurve3d is BoundedCurve3D)
                             {
-                                par = theNewCurve3d.LastParameter();
-                                parf = theNewCurve3d.FirstParameter();
+                                par = theNewCurve3d.LastParameter;
+                                parf = theNewCurve3d.FirstParameter;
                             }
                             else
                             {
@@ -581,8 +581,8 @@ public class WireDivide : UpgradeTool
                             }
                             if (theNewPCurve1 is BoundedCurve2D)
                             {
-                                par = theNewPCurve1.LastParameter();
-                                parf = theNewPCurve1.FirstParameter();
+                                par = theNewPCurve1.LastParameter;
+                                parf = theNewPCurve1.FirstParameter;
                             }
                             else
                             {
@@ -592,15 +592,15 @@ public class WireDivide : UpgradeTool
                             Point2D p2d = theNewPCurve1!.Value(par);
                             Point2D p2df = theNewPCurve1.Value(parf);
                             Point2D p2dM = theNewPCurve1.Value((parf + par) / 2);
-                            p = surf!.Value(p2d.X(), p2d.Y());
-                            p1 = surf.Value(p2df.X(), p2df.Y());
-                            pm = surf.Value(p2dM.X(), p2dM.Y());
-                            p = p.Transformed(loc.Transformation());
-                            p1 = p1.Transformed(loc.Transformation());
-                            pm = pm.Transformed(loc.Transformation());
+                            p = surf!.Value(p2d.X, p2d.Y);
+                            p1 = surf.Value(p2df.X, p2df.Y);
+                            pm = surf.Value(p2dM.X, p2dM.Y);
+                            p = p.Transformed(loc.Transformation);
+                            p1 = p1.Transformed(loc.Transformation);
+                            pm = pm.Transformed(loc.Transformation);
                         }
 
-                        if (p.Distance(pntV1) < MinTolerance() && p.Distance(pm) < MinTolerance()
+                        if (p.DistanceTo(pntV1) < MinTolerance() && p.DistanceTo(pm) < MinTolerance()
                             && !_face.IsNull)
                         {
                             if (small == 0)
@@ -613,14 +613,14 @@ public class WireDivide : UpgradeTool
                             if (icurv == nbc)
                             {
                                 Vertex vvv = v1;
-                                vvv.Orientation(v2.Orientation());
+                                vvv.Orient(v2.Orientation);
                                 Context()!.Replace(v2, vvv);
                             }
                             continue;
                         }
                         if (small != 0)
                         {
-                            if (p.Distance(p1) > MinTolerance() || p.Distance(pm) > MinTolerance())
+                            if (p.DistanceTo(p1) > MinTolerance() || p.DistanceTo(pm) > MinTolerance())
                             {
                                 // FixSmallCurveTool->Perform(prevEdge,theNewCurve3d,theNewPCurve1,revPCurve,SavParf,SavParl);
                                 var pmid = new Point3D(0.5 * (pntV1.XYZ() + p1.XYZ()));
@@ -664,14 +664,14 @@ public class WireDivide : UpgradeTool
                     var sbe = new BuildEdgeBuilder();
                     if (isForward)
                     {
-                        v1.Orientation(Forward);
-                        v.Orientation(Reversed);
+                        v1.Orient(Forward);
+                        v.Orient(Reversed);
                         newEdge = sbe.InternalCopyReplaceVertices(e, v1, v);
                     }
                     else
                     {
-                        v1.Orientation(Reversed);
-                        v.Orientation(Forward);
+                        v1.Orient(Reversed);
+                        v.Orient(Forward);
                         newEdge = sbe.InternalCopyReplaceVertices(e, v, v1);
                     }
                     sbe.CopyPCurves(newEdge, e);
@@ -695,8 +695,8 @@ public class WireDivide : UpgradeTool
                     {
                         if (theNewCurve3d is BoundedCurve3D)
                         {
-                            f3d = theNewCurve3d.FirstParameter();
-                            l3d = theNewCurve3d.LastParameter();
+                            f3d = theNewCurve3d.FirstParameter;
+                            l3d = theNewCurve3d.LastParameter;
                             srNew = ((f3d == theKnots3d!.Value(savnum)) && (l3d == theKnots3d.Value(icurv + 1)));
                         }
                         else
@@ -716,8 +716,8 @@ public class WireDivide : UpgradeTool
                     {
                         if (theNewPCurve1 is BoundedCurve2D)
                         {
-                            f2d = theNewPCurve1.FirstParameter();
-                            l2d = theNewPCurve1.LastParameter();
+                            f2d = theNewPCurve1.FirstParameter;
+                            l2d = theNewPCurve1.LastParameter;
                             srNew &= ((f2d == theKnots2d!.Value(savnum)) && (l2d == theKnots2d.Value(icurv + 1)));
                         }
                         else
@@ -750,7 +750,7 @@ public class WireDivide : UpgradeTool
 
                     if (isSeam)
                     {
-                        if (newEdge.Orientation() == Forward)
+                        if (newEdge.Orientation == Forward)
                         {
                             b.UpdateEdge(newEdge, theNewPCurve1, revPCurve, _face, 0.0);
                         }
@@ -826,7 +826,7 @@ public class WireDivide : UpgradeTool
         if (Status(ExtendStatus.Done))
         {
             newWire.Closed(Tool.IsClosed(newWire));
-            Shape tmpW = Context()!.InternalApply(newWire).Oriented(_wire.Orientation());
+            Shape tmpW = Context()!.InternalApply(newWire).Oriented(_wire.Orientation);
             _wire = ShapeCasts.Wire(tmpW);
         }
     }

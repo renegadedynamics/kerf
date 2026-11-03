@@ -63,7 +63,7 @@ internal sealed class TestGeomAdaptor_Curve : CurveAdaptorBase
         {
             throw new global::Kerf.Engine.Foundation.NullObjectException();
         }
-        load(theCurve, theCurve.FirstParameter(), theCurve.LastParameter());
+        load(theCurve, theCurve.FirstParameter, theCurve.LastParameter);
     }
 
     public void Load(Curve3D theCurve, double theUFirst, double theULast)
@@ -97,27 +97,27 @@ internal sealed class TestGeomAdaptor_Curve : CurveAdaptorBase
             switch (C)
             {
                 case TrimmedCurve3D aTrimmed when C.GetType() == typeof(TrimmedCurve3D):
-                    Load(aTrimmed.BasisCurve(), UFirst, ULast);
+                    Load(aTrimmed.BasisCurve, UFirst, ULast);
                     break;
                 case CircleCurve3D aCircle when C.GetType() == typeof(CircleCurve3D):
                     myTypeCurve = global::Kerf.Geometry.CurveKind.Circle;
-                    myCirc = aCircle.Circ();
+                    myCirc = aCircle.Circle;
                     break;
                 case LineCurve3D aLine when C.GetType() == typeof(LineCurve3D):
                     myTypeCurve = global::Kerf.Geometry.CurveKind.Line;
-                    myLin = aLine.Lin();
+                    myLin = aLine.Line;
                     break;
                 case EllipseCurve3D anEllipse when C.GetType() == typeof(EllipseCurve3D):
                     myTypeCurve = global::Kerf.Geometry.CurveKind.Ellipse;
-                    myElips = anEllipse.Elips();
+                    myElips = anEllipse.Ellipse;
                     break;
                 case ParabolaCurve3D aParabola when C.GetType() == typeof(ParabolaCurve3D):
                     myTypeCurve = global::Kerf.Geometry.CurveKind.Parabola;
-                    myParab = aParabola.Parab();
+                    myParab = aParabola.Parabola;
                     break;
                 case HyperbolaCurve3D aHyperbola when C.GetType() == typeof(HyperbolaCurve3D):
                     myTypeCurve = global::Kerf.Geometry.CurveKind.Hyperbola;
-                    myHypr = aHyperbola.Hypr();
+                    myHypr = aHyperbola.Hyperbola;
                     break;
                 case BezierCurve3D aBezier when C.GetType() == typeof(BezierCurve3D):
                     myTypeCurve = BezierCurve;
@@ -169,8 +169,8 @@ internal sealed class TestGeomAdaptor_Curve : CurveAdaptorBase
         int Index2;
         NCollection_Array1<double> TK = aBSpl.InternalKnots();
         NCollection_Array1<int> TM = aBSpl.InternalMultiplicities();
-        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(aBSpl.Degree(), TK, TM, U1, aBSpl.IsPeriodic, 1, Nb, out Index1, out double newFirst);
-        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(aBSpl.Degree(), TK, TM, U2, aBSpl.IsPeriodic, 1, Nb, out Index2, out double newLast);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(aBSpl.Degree, TK, TM, U1, aBSpl.IsPeriodic, 1, Nb, out Index1, out double newFirst);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(aBSpl.Degree, TK, TM, U2, aBSpl.IsPeriodic, 1, Nb, out Index2, out double newLast);
         if (Math.Abs(newFirst - TK[Index1 + 1]) < global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             if (Index1 < Nb)
@@ -203,7 +203,7 @@ internal sealed class TestGeomAdaptor_Curve : CurveAdaptorBase
                     MultMax = TM[i];
                 }
             }
-            MultMax = aBSpl.Degree() - MultMax;
+            MultMax = aBSpl.Degree - MultMax;
         }
         if (MultMax <= 0)
         {
@@ -235,7 +235,7 @@ internal sealed class TestGeomAdaptor_Curve : CurveAdaptorBase
         }
         if (myTypeCurve == global::Kerf.Geometry.CurveKind.OffsetCurve)
         {
-            return myCurve!.Continuity(); // test-only simplification
+            return myCurve!.Continuity; // test-only simplification
         }
         else if (myTypeCurve == OtherCurve)
         {
@@ -255,7 +255,7 @@ internal sealed class TestGeomAdaptor_Curve : CurveAdaptorBase
             case C3:
                 return 3;
             case CN:
-                return myBSpline!.Degree();
+                return myBSpline!.Degree;
             default:
                 throw new global::Kerf.Engine.Foundation.DomainErrorException(theWhere);
         }
@@ -270,7 +270,7 @@ internal sealed class TestGeomAdaptor_Curve : CurveAdaptorBase
             {
                 return 1;
             }
-            int aDegree = aBSpl.Degree();
+            int aDegree = aBSpl.Degree;
             int aCont = BSplineContinuityOrder(S, "GeomAdaptor_Curve::NbIntervals()");
             double anEps = Min(Resolution(global::Kerf.Engine.Foundation.Precision.Confusion()), global::Kerf.Engine.Foundation.Precision.PConfusion());
             return global::Kerf.Engine.Geometry.Splines.BSplCLib.Intervals(aBSpl.InternalKnots(), aBSpl.InternalMultiplicities(), aDegree, aBSpl.IsPeriodic,
@@ -290,7 +290,7 @@ internal sealed class TestGeomAdaptor_Curve : CurveAdaptorBase
                 T[T.Lower() + 1] = myLast;
                 return;
             }
-            int aDegree = aBSpl.Degree();
+            int aDegree = aBSpl.Degree;
             int aCont = BSplineContinuityOrder(S, "GeomAdaptor_Curve::Intervals()");
             double anEps = Min(Resolution(global::Kerf.Engine.Foundation.Precision.Confusion()), global::Kerf.Engine.Foundation.Precision.PConfusion());
             global::Kerf.Engine.Geometry.Splines.BSplCLib.Intervals(aBSpl.InternalKnots(), aBSpl.InternalMultiplicities(), aDegree, aBSpl.IsPeriodic, aCont,
@@ -314,7 +314,7 @@ internal sealed class TestGeomAdaptor_Curve : CurveAdaptorBase
             {
                 Point3D Pd = Value(myFirst);
                 Point3D Pf = Value(myLast);
-                return (Pd.Distance(Pf) <= global::Kerf.Engine.Foundation.Precision.Confusion());
+                return (Pd.DistanceTo(Pf) <= global::Kerf.Engine.Foundation.Precision.Confusion());
             }
             return false;
         }
@@ -322,7 +322,7 @@ internal sealed class TestGeomAdaptor_Curve : CurveAdaptorBase
 
     public override bool IsPeriodic => myCurve!.IsPeriodic;
 
-    public override double Period() => myCurve!.LastParameter() - myCurve.FirstParameter();
+    public override double Period() => myCurve!.LastParameter - myCurve.FirstParameter;
 
     private void RebuildCache(double theParameter)
     {
@@ -330,7 +330,7 @@ internal sealed class TestGeomAdaptor_Curve : CurveAdaptorBase
         {
             // Create cache for Bezier
             BezierCurve3D aBezier = myBezier!;
-            int aDeg = aBezier.Degree();
+            int aDeg = aBezier.Degree;
             myBezierFlatKnots ??= NCollection_Array1<double>.From(global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatBezierKnots(aDeg));
             myCache ??= new global::Kerf.Engine.Geometry.Splines.Cache(aDeg, aBezier.IsPeriodic, myBezierFlatKnots, aBezier.InternalPoles(),
                                            aBezier.InternalWeights());
@@ -340,7 +340,7 @@ internal sealed class TestGeomAdaptor_Curve : CurveAdaptorBase
         {
             // Create cache for B-spline
             BSplineCurve3D aBSpl = myBSpline!;
-            myCache ??= new global::Kerf.Engine.Geometry.Splines.Cache(aBSpl.Degree(), aBSpl.IsPeriodic, aBSpl.InternalKnotSequence(),
+            myCache ??= new global::Kerf.Engine.Geometry.Splines.Cache(aBSpl.Degree, aBSpl.IsPeriodic, aBSpl.InternalKnotSequence(),
                                            aBSpl.InternalPoles(), aBSpl.InternalWeights());
             myCache.BuildCache(theParameter, aBSpl.InternalKnotSequence(), aBSpl.InternalPoles(), aBSpl.InternalWeights());
         }
@@ -436,7 +436,7 @@ internal sealed class TestGeomAdaptor_Curve : CurveAdaptorBase
         }
     }
 
-    public override Curve3D.ResD1 EvalD1(double theU)
+    internal override Curve3D.ResD1 EvalD1(double theU)
     {
         double U = theU;
         Curve3D.ResD1 aResult = new();
@@ -495,7 +495,7 @@ internal sealed class TestGeomAdaptor_Curve : CurveAdaptorBase
         }
     }
 
-    public override Curve3D.ResD2 EvalD2(double theU)
+    internal override Curve3D.ResD2 EvalD2(double theU)
     {
         double U = theU;
         Curve3D.ResD2 aResult = new();
@@ -555,7 +555,7 @@ internal sealed class TestGeomAdaptor_Curve : CurveAdaptorBase
         }
     }
 
-    public override Curve3D.ResD3 EvalD3(double theU)
+    internal override Curve3D.ResD3 EvalD3(double theU)
     {
         double U = theU;
         Curve3D.ResD3 aResult = new();
@@ -661,7 +661,7 @@ internal sealed class TestGeomAdaptor_Curve : CurveAdaptorBase
                 return R3D;
             case global::Kerf.Geometry.CurveKind.Circle:
             {
-                double R = myCirc.Radius();
+                double R = myCirc.Radius;
                 if (R > R3D / 2.0)
                 {
                     return 2 * Math.Asin(R3D / (2 * R));
@@ -669,7 +669,7 @@ internal sealed class TestGeomAdaptor_Curve : CurveAdaptorBase
                 return 2 * Math.PI;
             }
             case global::Kerf.Geometry.CurveKind.Ellipse:
-                return R3D / myElips.MajorRadius();
+                return R3D / myElips.MajorRadius;
             case BezierCurve:
             {
                 myBezier!.Resolution(R3D, out double res);
@@ -724,11 +724,11 @@ internal sealed class TestGeomAdaptor_Curve : CurveAdaptorBase
     {
         if (myTypeCurve == BezierCurve)
         {
-            return myBezier!.Degree();
+            return myBezier!.Degree;
         }
         else if (myTypeCurve == BSplineCurve)
         {
-            return myBSpline!.Degree();
+            return myBSpline!.Degree;
         }
         throw new global::Kerf.Engine.Foundation.NoSuchObjectException();
     }
@@ -848,7 +848,7 @@ internal sealed class TestGeom2dAdaptor_Curve : Curve2DAdaptorBase
         {
             throw new global::Kerf.Engine.Foundation.NullObjectException();
         }
-        load(theCurve, theCurve.FirstParameter(), theCurve.LastParameter());
+        load(theCurve, theCurve.FirstParameter, theCurve.LastParameter);
     }
 
     public void Load(Curve2D theCurve, double theUFirst, double theULast)
@@ -882,27 +882,27 @@ internal sealed class TestGeom2dAdaptor_Curve : Curve2DAdaptorBase
             switch (C)
             {
                 case TrimmedCurve2D aTrimmed when C.GetType() == typeof(TrimmedCurve2D):
-                    Load(aTrimmed.BasisCurve(), UFirst, ULast);
+                    Load(aTrimmed.BasisCurve, UFirst, ULast);
                     break;
                 case CircleCurve2D aCircle when C.GetType() == typeof(CircleCurve2D):
                     myTypeCurve = global::Kerf.Geometry.CurveKind.Circle;
-                    myCirc = aCircle.Circ2d();
+                    myCirc = aCircle.Circle;
                     break;
                 case LineCurve2D aLine when C.GetType() == typeof(LineCurve2D):
                     myTypeCurve = global::Kerf.Geometry.CurveKind.Line;
-                    myLin = aLine.Lin2d();
+                    myLin = aLine.Line;
                     break;
                 case EllipseCurve2D anEllipse when C.GetType() == typeof(EllipseCurve2D):
                     myTypeCurve = global::Kerf.Geometry.CurveKind.Ellipse;
-                    myElips = anEllipse.Elips2d();
+                    myElips = anEllipse.Ellipse;
                     break;
                 case ParabolaCurve2D aParabola when C.GetType() == typeof(ParabolaCurve2D):
                     myTypeCurve = global::Kerf.Geometry.CurveKind.Parabola;
-                    myParab = aParabola.Parab2d();
+                    myParab = aParabola.Parabola;
                     break;
                 case HyperbolaCurve2D aHyperbola when C.GetType() == typeof(HyperbolaCurve2D):
                     myTypeCurve = global::Kerf.Geometry.CurveKind.Hyperbola;
-                    myHypr = aHyperbola.Hypr2d();
+                    myHypr = aHyperbola.Hyperbola;
                     break;
                 case BezierCurve2D aBezier when C.GetType() == typeof(BezierCurve2D):
                     myTypeCurve = BezierCurve;
@@ -954,9 +954,9 @@ internal sealed class TestGeom2dAdaptor_Curve : Curve2DAdaptorBase
         int Index2;
         NCollection_Array1<double> TK = aBSpline.InternalKnots();
         NCollection_Array1<int> TM = aBSpline.InternalMultiplicities();
-        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(aBSpline.Degree(), TK, TM, U1, aBSpline.IsPeriodic, 1, Nb, out Index1,
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(aBSpline.Degree, TK, TM, U1, aBSpline.IsPeriodic, 1, Nb, out Index1,
                                  out double newFirst);
-        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(aBSpline.Degree(), TK, TM, U2, aBSpline.IsPeriodic, 1, Nb, out Index2,
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(aBSpline.Degree, TK, TM, U2, aBSpline.IsPeriodic, 1, Nb, out Index2,
                                  out double newLast);
         if (Math.Abs(newFirst - TK[Index1 + 1]) < global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
@@ -990,7 +990,7 @@ internal sealed class TestGeom2dAdaptor_Curve : Curve2DAdaptorBase
                     MultMax = TM[i];
                 }
             }
-            MultMax = aBSpline.Degree() - MultMax;
+            MultMax = aBSpline.Degree - MultMax;
         }
         if (MultMax <= 0)
         {
@@ -1022,7 +1022,7 @@ internal sealed class TestGeom2dAdaptor_Curve : Curve2DAdaptorBase
         }
         else if (myTypeCurve == OffsetCurve)
         {
-            return myCurve!.Continuity(); // test-only simplification
+            return myCurve!.Continuity; // test-only simplification
         }
         else if (myTypeCurve == OtherCurve)
         {
@@ -1045,7 +1045,7 @@ internal sealed class TestGeom2dAdaptor_Curve : Curve2DAdaptorBase
             case C3:
                 return 3;
             case CN:
-                return myBSpline!.Degree();
+                return myBSpline!.Degree;
             default:
                 throw new global::Kerf.Engine.Foundation.DomainErrorException(theWhere);
         }
@@ -1060,7 +1060,7 @@ internal sealed class TestGeom2dAdaptor_Curve : Curve2DAdaptorBase
             {
                 return 1;
             }
-            int aDegree = aBSpline.Degree();
+            int aDegree = aBSpline.Degree;
             int aCont = BSplineContinuityOrder(S, "Geom2dAdaptor_Curve::NbIntervals()");
             double anEps = Min(Resolution(global::Kerf.Engine.Foundation.Precision.Confusion()), global::Kerf.Engine.Foundation.Precision.PConfusion());
             return global::Kerf.Engine.Geometry.Splines.BSplCLib.Intervals(aBSpline.InternalKnots(), aBSpline.InternalMultiplicities(), aDegree,
@@ -1080,7 +1080,7 @@ internal sealed class TestGeom2dAdaptor_Curve : Curve2DAdaptorBase
                 T[T.Lower() + 1] = myLast;
                 return;
             }
-            int aDegree = aBSpline.Degree();
+            int aDegree = aBSpline.Degree;
             int aCont = BSplineContinuityOrder(S, "Geom2dAdaptor_Curve::Intervals()");
             double anEps = Min(Resolution(global::Kerf.Engine.Foundation.Precision.Confusion()), global::Kerf.Engine.Foundation.Precision.PConfusion());
             global::Kerf.Engine.Geometry.Splines.BSplCLib.Intervals(aBSpline.InternalKnots(), aBSpline.InternalMultiplicities(), aDegree, aBSpline.IsPeriodic,
@@ -1104,7 +1104,7 @@ internal sealed class TestGeom2dAdaptor_Curve : Curve2DAdaptorBase
             {
                 Point2D Pd = Value(myFirst);
                 Point2D Pf = Value(myLast);
-                return (Pd.Distance(Pf) <= global::Kerf.Engine.Foundation.Precision.Confusion());
+                return (Pd.DistanceTo(Pf) <= global::Kerf.Engine.Foundation.Precision.Confusion());
             }
             return false;
         }
@@ -1112,7 +1112,7 @@ internal sealed class TestGeom2dAdaptor_Curve : Curve2DAdaptorBase
 
     public override bool IsPeriodic => myCurve!.IsPeriodic;
 
-    public override double Period() => myCurve!.LastParameter() - myCurve.FirstParameter();
+    public override double Period() => myCurve!.LastParameter - myCurve.FirstParameter;
 
     private void RebuildCache(double theParameter)
     {
@@ -1120,7 +1120,7 @@ internal sealed class TestGeom2dAdaptor_Curve : Curve2DAdaptorBase
         {
             // Create cache for Bezier
             BezierCurve2D aBezier = myBezier!;
-            int aDeg = aBezier.Degree();
+            int aDeg = aBezier.Degree;
             myBezierFlatKnots ??= NCollection_Array1<double>.From(global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatBezierKnots(aDeg));
             myCache ??= new global::Kerf.Engine.Geometry.Splines.Cache(aDeg, aBezier.IsPeriodic, myBezierFlatKnots, aBezier.InternalPoles(),
                                            aBezier.InternalWeights());
@@ -1130,7 +1130,7 @@ internal sealed class TestGeom2dAdaptor_Curve : Curve2DAdaptorBase
         {
             // Create cache for B-spline
             BSplineCurve2D aBSpline = myBSpline!;
-            myCache ??= new global::Kerf.Engine.Geometry.Splines.Cache(aBSpline.Degree(), aBSpline.IsPeriodic, aBSpline.InternalKnotSequence(),
+            myCache ??= new global::Kerf.Engine.Geometry.Splines.Cache(aBSpline.Degree, aBSpline.IsPeriodic, aBSpline.InternalKnotSequence(),
                                            aBSpline.InternalPoles(), aBSpline.InternalWeights());
             myCache.BuildCache(theParameter, aBSpline.InternalKnotSequence(), aBSpline.InternalPoles(),
                                aBSpline.InternalWeights());
@@ -1261,7 +1261,7 @@ internal sealed class TestGeom2dAdaptor_Curve : Curve2DAdaptorBase
         }
     }
 
-    public override Curve2D.ResD1 EvalD1(double theU)
+    internal override Curve2D.ResD1 EvalD1(double theU)
     {
         double U = theU;
         Curve2D.ResD1 aResult = new();
@@ -1320,7 +1320,7 @@ internal sealed class TestGeom2dAdaptor_Curve : Curve2DAdaptorBase
         }
     }
 
-    public override Curve2D.ResD2 EvalD2(double theU)
+    internal override Curve2D.ResD2 EvalD2(double theU)
     {
         double U = theU;
         Curve2D.ResD2 aResult = new();
@@ -1380,7 +1380,7 @@ internal sealed class TestGeom2dAdaptor_Curve : Curve2DAdaptorBase
         }
     }
 
-    public override Curve2D.ResD3 EvalD3(double theU)
+    internal override Curve2D.ResD3 EvalD3(double theU)
     {
         double U = theU;
         Curve2D.ResD3 aResult = new();
@@ -1486,7 +1486,7 @@ internal sealed class TestGeom2dAdaptor_Curve : Curve2DAdaptorBase
                 return Ruv;
             case global::Kerf.Geometry.CurveKind.Circle:
             {
-                double R = myCirc.Radius();
+                double R = myCirc.Radius;
                 if (R > Ruv / 2.0)
                 {
                     return 2 * Math.Asin(Ruv / (2 * R));
@@ -1494,7 +1494,7 @@ internal sealed class TestGeom2dAdaptor_Curve : Curve2DAdaptorBase
                 return 2 * Math.PI;
             }
             case global::Kerf.Geometry.CurveKind.Ellipse:
-                return Ruv / myElips.MajorRadius();
+                return Ruv / myElips.MajorRadius;
             case BezierCurve:
             {
                 myBezier!.Resolution(Ruv, out double res);
@@ -1550,11 +1550,11 @@ internal sealed class TestGeom2dAdaptor_Curve : Curve2DAdaptorBase
     {
         if (myTypeCurve == BezierCurve)
         {
-            return myBezier!.Degree();
+            return myBezier!.Degree;
         }
         else if (myTypeCurve == BSplineCurve)
         {
-            return myBSpline!.Degree();
+            return myBSpline!.Degree;
         }
         throw new global::Kerf.Engine.Foundation.NoSuchObjectException();
     }
@@ -1622,7 +1622,7 @@ internal sealed class TestGeom2dAdaptor_Curve : Curve2DAdaptorBase
         else if (theCurve is BSplineCurve2D aBSpline)
         {
             nbs = aBSpline.KnotCount;
-            nbs *= aBSpline.Degree();
+            nbs *= aBSpline.Degree;
             if (nbs < 2.0)
             {
                 nbs = 2;
@@ -1630,11 +1630,11 @@ internal sealed class TestGeom2dAdaptor_Curve : Curve2DAdaptorBase
         }
         else if (theCurve is OffsetCurve2D anOffset)
         {
-            return Max(nbs, nbPoints(anOffset.BasisCurve()));
+            return Max(nbs, nbPoints(anOffset.BasisCurve));
         }
         else if (theCurve is TrimmedCurve2D aTrimmed)
         {
-            return Max(nbs, nbPoints(aTrimmed.BasisCurve()));
+            return Max(nbs, nbPoints(aTrimmed.BasisCurve));
         }
         if (nbs > 300)
         {

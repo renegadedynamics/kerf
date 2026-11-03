@@ -276,18 +276,18 @@ internal static class Outils
                 //             | 1  |2  |  | J |  |I-1| I |I+1|          |NPTS|
                 //             | 1  |2  |  | J |  |I-1|XXX|I+1|          |NPTS|
                 //             | 1  |2  |  | J |  |I-1|I+1|I+2|     |NPTS|
-                if (Points_Confondus(pts[i - 1].Value().X(),
-                                     pts[i - 1].Value().Y(),
-                                     pts[j - 1].Value().X(),
-                                     pts[j - 1].Value().Y()))
+                if (Points_Confondus(pts[i - 1].Value().X,
+                                     pts[i - 1].Value().Y,
+                                     pts[j - 1].Value().X,
+                                     pts[j - 1].Value().Y))
                 {
                     int k;
                     Non_Egalite = false;
                     for (k = i; k < nb_pts; k++)
                     {
                         double xk, yk, uk;
-                        xk = pts[k].Value().X();
-                        yk = pts[k].Value().Y();
+                        xk = pts[k].Value().X;
+                        yk = pts[k].Value().Y;
                         uk = pts[k].ParamOnFirst();
                         pts[k - 1].SetValue(xk, yk, uk);
                     }
@@ -308,8 +308,8 @@ internal static class Outils
         // x1 and y1 are the coordinates in the reference frame associated with Dir1
         // We return these coordinates in the "absolute" reference frame
 
-        dir1.Direction().Coord(out t11, out t21);
-        dir1.Location().Coord(out t13, out t23);
+        dir1.Direction.Coord(out t11, out t21);
+        dir1.Location.Coord(out t13, out t23);
 
         t22 = t11;
         t12 = -t21;

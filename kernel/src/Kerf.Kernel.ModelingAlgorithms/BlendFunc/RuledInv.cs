@@ -127,13 +127,13 @@ public class RuledInv : FuncInv
         Vector3D d1u1, d1v1, d1u2, d1v2;
         if (_first)
         {
-            _surf1.D1(pt2d.X(), pt2d.Y(), out pts1, out d1u1, out d1v1);
+            _surf1.D1(pt2d.X, pt2d.Y, out pts1, out d1u1, out d1v1);
             _surf2.D1(x[3], x[4], out pts2, out d1u2, out d1v2);
         }
         else
         {
             _surf1.D1(x[3], x[4], out pts1, out d1u1, out d1v1);
-            _surf2.D1(pt2d.X(), pt2d.Y(), out pts2, out d1u2, out d1v2);
+            _surf2.D1(pt2d.X, pt2d.Y, out pts2, out d1u2, out d1v2);
         }
 
         Xyz temp = pts2.XYZ() - pts1.XYZ();
@@ -168,7 +168,7 @@ public class RuledInv : FuncInv
     private bool ComputeDerivatives(math_Vector x, math_Vector? f, Matrix d)
     {
         _curv.D2(x[2], out Point3D ptcur, out Vector3D d1cur, out Vector3D d2cur);
-        double normtgcur = d1cur.Magnitude();
+        double normtgcur = d1cur.Magnitude;
         Vector3D nplan = d1cur.Normalized();
         double theD = -(nplan.XYZ().Dot(ptcur.XYZ()));
 
@@ -185,9 +185,9 @@ public class RuledInv : FuncInv
 
         if (_first)
         {
-            _surf1.D2(p2d.X(), p2d.Y(), out pts1, out d1u1, out d1v1, out d2u1, out d2v1, out d2uv1);
+            _surf1.D2(p2d.X, p2d.Y, out pts1, out d1u1, out d1v1, out d2u1, out d2v1, out d2uv1);
             _surf2.D2(x[3], x[4], out pts2, out d1u2, out d1v2, out d2u2, out d2v2, out d2uv2);
-            dpdt = Vector3D.LinearForm(v2d.X(), d1u1, v2d.Y(), d1v1);
+            dpdt = Vector3D.LinearForm(v2d.X, d1u1, v2d.Y, d1v1);
             p1p2 = new Vector3D(pts1, pts2);
             d[1, 1] = dpdt.Dot(nplan);
             d[1, 2] = dnplan.XYZ().Dot(pts1.XYZ() - ptcur.XYZ()) - normtgcur;
@@ -201,8 +201,8 @@ public class RuledInv : FuncInv
         else
         {
             _surf1.D2(x[3], x[4], out pts1, out d1u1, out d1v1, out d2u1, out d2v1, out d2uv1);
-            _surf2.D2(p2d.X(), p2d.Y(), out pts2, out d1u2, out d1v2, out d2u2, out d2v2, out d2uv2);
-            dpdt = Vector3D.LinearForm(v2d.X(), d1u2, v2d.Y(), d1v2);
+            _surf2.D2(p2d.X, p2d.Y, out pts2, out d1u2, out d1v2, out d2u2, out d2v2, out d2uv2);
+            dpdt = Vector3D.LinearForm(v2d.X, d1u2, v2d.Y, d1v2);
             p1p2 = new Vector3D(pts1, pts2);
             d[1, 1] = 0.0;
             d[1, 2] = dnplan.XYZ().Dot(pts1.XYZ() - ptcur.XYZ()) - normtgcur;
@@ -218,8 +218,8 @@ public class RuledInv : FuncInv
         Vector3D ns2 = d1u2.Crossed(d1v2);
         Vector3D ncrossns1 = nplan.Crossed(ns1);
         Vector3D ncrossns2 = nplan.Crossed(ns2);
-        double norm1 = ncrossns1.Magnitude();
-        double norm2 = ncrossns2.Magnitude();
+        double norm1 = ncrossns1.Magnitude;
+        double norm2 = ncrossns2.Magnitude;
 
         double ndotns1 = nplan.Dot(ns1);
         double ndotns2 = nplan.Dot(ns2);
@@ -268,7 +268,7 @@ public class RuledInv : FuncInv
 
         if (_first)
         {
-            resul1 = Vector3D.LinearForm(v2d.X(), resul1, v2d.Y(), resul2);
+            resul1 = Vector3D.LinearForm(v2d.X, resul1, v2d.Y, resul2);
             d[3, 1] = p1p2.Dot(resul1) - (dpdt.Dot(nor1));
         }
         else
@@ -296,7 +296,7 @@ public class RuledInv : FuncInv
         }
         else
         {
-            resul1 = Vector3D.LinearForm(v2d.X(), resul1, v2d.Y(), resul2);
+            resul1 = Vector3D.LinearForm(v2d.X, resul1, v2d.Y, resul2);
             d[4, 1] = p1p2.Dot(resul1) + dpdt.Dot(nor2);
         }
 

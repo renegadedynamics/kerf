@@ -31,8 +31,8 @@ internal static class ComputeDataFilPlnCon
     {
         // calculate the fillet (torus or sphere).
         bool c1sphere = false;
-        CoordinateSystem posPl = pln.Position();
-        Direction3D dpnat = posPl.XDirection().Crossed(posPl.YDirection());
+        CoordinateSystem posPl = pln.Position;
+        Direction3D dpnat = posPl.XDirection.Crossed(posPl.YDirection);
         Direction3D dp = dpnat;
         Direction3D df = dp;
         if (or1 == Reversed)
@@ -43,13 +43,13 @@ internal static class ComputeDataFilPlnCon
         {
             df = df.Reversed();
         }
-        Point3D or = con.Location();
+        Point3D or = con.Location;
         double u, v;
         global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(posPl, or, out u, out v);
         Point2D c2dPln = new(u, v);
         global::Kerf.Engine.Geometry.ElSLib.PlaneD0(u, v, posPl, out or);
         Point3D cPln = or;
-        or = or.WithCoord(or.X() + radius * dp.X(), or.Y() + radius * dp.Y(), or.Z() + radius * dp.Z());
+        or = or.WithCoord(or.X + radius * dp.X, or.Y + radius * dp.Y, or.Z + radius * dp.Z);
         global::Kerf.Engine.Geometry.ElCLib.D1(first, spine, out Point3D ptSp, out Vector3D dSp);
         QuadQuadGeo cInt = new(pln, con, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Point3D pv;
@@ -73,7 +73,7 @@ internal static class ComputeDataFilPlnCon
             dc = dc.Reversed();
         }
         Direction3D dz = dp;
-        Point3D pp = new(pv.X() + dc.X(), pv.Y() + dc.Y(), pv.Z() + dc.Z());
+        Point3D pp = new(pv.X + dc.X, pv.Y + dc.Y, pv.Z + dc.Z);
         global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(posPl, pp, out u, out v);
         global::Kerf.Engine.Geometry.ElSLib.PlaneD0(u, v, posPl, out pp);
         Direction3D ddp = new(new Vector3D(pv, pp));
@@ -84,9 +84,9 @@ internal static class ComputeDataFilPlnCon
         {
             ddc = ddc.Reversed();
         }
-        double ang = ddp.Angle(ddc);
+        double ang = ddp.AngleTo(ddc);
         double rabio = radius / Math.Tan(ang / 2);
-        double maxrad = cPln.Distance(pv);
+        double maxrad = cPln.DistanceTo(pv);
         double rad;
         bool dedans = dx.Dot(dc) <= 0.0;
         if (dedans)
@@ -115,7 +115,7 @@ internal static class ComputeDataFilPlnCon
             rad = maxrad + rabio;
         }
         CoordinateSystem filAx3 = new(or, dz, dx);
-        if (filAx3.YDirection().Dot(dy) <= 0.0)
+        if (filAx3.YDirection.Dot(dy) <= 0.0)
         {
             filAx3 = filAx3.YReversed();
         }
@@ -133,7 +133,7 @@ internal static class ComputeDataFilPlnCon
         // as of the faces.
         Point3D p = new(), PP;
         Vector3D deru, derv;
-        p = p.WithCoord(cPln.X() + rad * dx.X(), cPln.Y() + rad * dx.Y(), cPln.Z() + rad * dx.Z());
+        p = p.WithCoord(cPln.X + rad * dx.X, cPln.Y + rad * dx.Y, cPln.Z + rad * dx.Z);
         if (c1sphere)
         {
             global::Kerf.Engine.Geometry.ElSLib.SphereParameters(filAx3, rad, p, out u, out v);
@@ -165,12 +165,12 @@ internal static class ComputeDataFilPlnCon
         // --------------
         CircleCurve2D? gCirc2dPln = null;
         CircleCurve3D? gCircPln = null;
-        Frame3D circAx2 = filAx3.Ax2();
+        Frame3D circAx2 = filAx3.Frame;
         if (!c1sphere)
         {
             global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(posPl, p, out u, out v);
             Point2D p2dPln = new(u, v);
-            Direction2D d2d = new(dSp.Dot(new Vector3D(posPl.XDirection())), dSp.Dot(new Vector3D(posPl.YDirection())));
+            Direction2D d2d = new(dSp.Dot(new Vector3D(posPl.XDirection)), dSp.Dot(new Vector3D(posPl.YDirection)));
             Frame2D ax2dPln = new(c2dPln, new Direction2D(new Vector2D(c2dPln, p2dPln)), d2d);
             Circle2D circ2dPln = new(ax2dPln, rad);
             gCirc2dPln = new CircleCurve2D(circ2dPln);
@@ -202,7 +202,7 @@ internal static class ComputeDataFilPlnCon
         }
         // The conic face.
         // ----------------
-        p = p.WithCoord(pv.X() + rabio * ddc.X(), pv.Y() + rabio * ddc.Y(), pv.Z() + rabio * ddc.Z());
+        p = p.WithCoord(pv.X + rabio * ddc.X, pv.Y + rabio * ddc.Y, pv.Z + rabio * ddc.Z);
         if (c1sphere)
         {
             global::Kerf.Engine.Geometry.ElSLib.SphereParameters(filAx3, radius, p, out u, out v);
@@ -259,9 +259,9 @@ internal static class ComputeDataFilPlnCon
         Line2D lin2dCon = new(p2dCon, d2dCon);
         LineCurve2D gLin2dCon = new(lin2dCon);
         double scal = new Vector3D(dp).Dot(new Vector3D(pv, p));
-        PP = PP.WithCoord(cPln.X() + scal * dp.X(), cPln.Y() + scal * dp.Y(), cPln.Z() + scal * dp.Z());
+        PP = PP.WithCoord(cPln.X + scal * dp.X, cPln.Y + scal * dp.Y, cPln.Z + scal * dp.Z);
         circAx2 = circAx2.WithLocation(PP);
-        Circle3D circCon = new(circAx2, p.Distance(PP));
+        Circle3D circCon = new(circAx2, p.DistanceTo(PP));
         CircleCurve3D gCircCon = new(circCon);
         toreverse = (norFil.Dot(norCon) <= 0.0);
         if ((toreverse && plandab) || (!toreverse && !plandab))

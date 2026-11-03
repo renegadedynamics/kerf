@@ -263,7 +263,7 @@ public sealed class MiniPath
 
                 if (type1 == typeof(CartesianPoint2) && type2 == typeof(CartesianPoint2))
                 {
-                    DistP1P2_2 = p1.SquareDistance(p2);
+                    DistP1P2_2 = p1.SquareDistanceTo(p2);
                     if (DistP1P2_2 <= DistL1L2_2)
                     {
                         DistL1L2_2 = DistP1P2_2;

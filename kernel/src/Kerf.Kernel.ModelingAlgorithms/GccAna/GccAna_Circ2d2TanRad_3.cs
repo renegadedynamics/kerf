@@ -59,15 +59,15 @@ public sealed partial class AnalyticCirc2d2TanRad
         int                        nbcote = 0;
         NCollection_Array1<double> cote = new(1, 2);
         Line2D                   l1     = qualified1.Qualified();
-        double                     displ1 = l1.Distance(point2);
-        double                     xdir   = (l1.Direction()).X();
-        double                     ydir   = (l1.Direction()).Y();
-        double                     lxloc  = (l1.Location()).X();
-        double                     lyloc  = (l1.Location()).Y();
+        double                     displ1 = l1.DistanceTo(point2);
+        double                     xdir   = (l1.Direction).X;
+        double                     ydir   = (l1.Direction).Y;
+        double                     lxloc  = (l1.Location).X;
+        double                     lyloc  = (l1.Location).Y;
         Point2D origin1 = new(lxloc, lyloc);
         Direction2D normL1 = new(-ydir, xdir);
-        double                     cxloc = point2.X();
-        double                     cyloc = point2.Y();
+        double                     cxloc = point2.X;
+        double                     cyloc = point2.Y;
 
         if (radius < 0.0)
         {
@@ -193,7 +193,7 @@ public sealed partial class AnalyticCirc2d2TanRad
                     {
                         Line2D linint = new(
                             new Point2D(lxloc - cote[jcote] * ydir * radius, lyloc + cote[jcote] * xdir * radius),
-                            l1.Direction());
+                            l1.Direction);
                         AnalyticIntersection intp = new(linint, cirint);
                         if (intp.IsDone)
                         {

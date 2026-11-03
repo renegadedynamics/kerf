@@ -52,7 +52,7 @@ public class Poly_MakeLoopsTest
         public override bool GetFirstTangent(in Link theLink, out Direction3D theDir)
         {
             Vector2D aT = Tangent(theLink);
-            theDir = new Direction3D(aT.X(), aT.Y(), 0);
+            theDir = new Direction3D(aT.X, aT.Y, 0);
             return true;
         }
 

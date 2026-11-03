@@ -184,9 +184,9 @@ public static class ShapeToHlr
         i++;
         Explorer ex1 = new(), ex2 = new();
         TopologyData topDS = s.DataStructure();
-        Orientation orient = fm[i - 1].Orientation();
+        Orientation orient = fm[i - 1].Orientation;
         Face theFace = ShapeCasts.Face(fm[i - 1]);
-        theFace.Orientation(Forward);
+        theFace.Orient(Forward);
         HiddenLineFaceData fd = ds.FDataArray()[i];
 
         int nw = 0;
@@ -225,7 +225,7 @@ public static class ShapeToHlr
                 }
                 ne++;
                 int ie = em.IndexOf(e) + 1;
-                Orientation orientE = e.Orientation();
+                Orientation orientE = e.Orientation;
                 bool Int = topDS.IsIntLFaceEdge(f, e);
                 bool iso = topDS.IsIsoLFaceEdge(f, e);
                 bool Out = topDS.IsOutLFaceEdge(f, e);
@@ -248,7 +248,7 @@ public static class ShapeToHlr
         for (exshell.Init(original, ShapeType.Shell); exshell.More(); exshell.Next())
         { // faces in a shell (open or close)
 
-            bool closed = exshell.Current().Closed();
+            bool closed = exshell.Current().IsClosed;
 
             if (!closed)
             {
@@ -265,7 +265,7 @@ public static class ShapeToHlr
                 {
                     Edge e = ShapeCasts.Edge(exedge.Current());
                     ie = em.IndexOf(e) + 1;
-                    Orientation orient = e.Orientation();
+                    Orientation orient = e.Orientation;
                     if (!Tool.Degenerated(e))
                     {
                         if (orient == Forward)

@@ -11,13 +11,13 @@ using Occt;
 namespace Kerf.Engine.Topology.Brep;
 
 /// <summary>The representation of an edge by a 3D curve.</summary>
-public class Curve3DRepresentation : GCurve
+internal class Curve3DRepresentation : GCurve
 {
     private Curve3D? _curve;
 
     /// <summary>The curve <paramref name="c"/> (frozen here) with location <paramref name="l"/>, over its whole range.</summary>
     public Curve3DRepresentation(Curve3D? c, in Placement l)
-        : base(l, c is null ? RealFirst() : c.FirstParameter(), c is null ? RealLast() : c.LastParameter())
+        : base(l, c is null ? RealFirst() : c.FirstParameter, c is null ? RealLast() : c.LastParameter)
     {
         c?.Freeze(); // OCCT.NET: attached geometry is frozen
         _curve = c;

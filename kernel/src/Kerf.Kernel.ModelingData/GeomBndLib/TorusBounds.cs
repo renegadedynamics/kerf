@@ -14,7 +14,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Computes bounding box for a toroidal surface (Geom_ToroidalSurface) through BndLib; the precise box by
 /// PSO + Powell optimization (GeomBndLib_OtherSurface).
 /// </summary>
-public sealed class TorusBounds : SurfaceBounds.ISurfaceEvaluator
+internal sealed class TorusBounds : SurfaceBounds.ISurfaceEvaluator
 {
     private readonly ToroidalSurface _geom;
 
@@ -29,7 +29,7 @@ public sealed class TorusBounds : SurfaceBounds.ISurfaceEvaluator
     public Box Box(double tol)
     {
         Box box = new();
-        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(_geom.Torus(), tol, ref box);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(_geom.Torus, tol, ref box);
         return box;
     }
 
@@ -37,7 +37,7 @@ public sealed class TorusBounds : SurfaceBounds.ISurfaceEvaluator
     public Box Box(double uMin, double uMax, double vMin, double vMax, double tol)
     {
         Box box = new();
-        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(_geom.Torus(), uMin, uMax, vMin, vMax, tol, ref box);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(_geom.Torus, uMin, uMax, vMin, vMax, tol, ref box);
         return box;
     }
 

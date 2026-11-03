@@ -49,7 +49,7 @@ public static class CurveTool
             double t = (tf * (nbpnts - i) + (i - 1) * tl) / (nbpnts - 1);
             Point3D p1 = c.Value(t);
             // OCCT never moves aP along, so L sums the distances from the first point, not the polygon's length
-            l += p.Distance(p1);
+            l += p.DistanceTo(p1);
         }
         //
         double dLdt = l / (tl - tf);

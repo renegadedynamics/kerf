@@ -13,7 +13,7 @@ namespace Kerf.Engine.Geometry.Evaluation.Grid;
 /// parameter with <see cref="CurveGrid"/>, then rotated about the axis for each U parameter
 /// (Geom_RevolutionUtils).
 /// </summary>
-public sealed class SurfaceOfRevolutionGrid : GeomGridEvalGrid.ISurfaceEvaluator
+internal sealed class SurfaceOfRevolutionGrid : GeomGridEvalGrid.ISurfaceEvaluator
 {
     private readonly RevolutionSurface? _geom;
     private readonly Curve3D? _basisCurve;
@@ -30,10 +30,10 @@ public sealed class SurfaceOfRevolutionGrid : GeomGridEvalGrid.ISurfaceEvaluator
         _axisDirection = new Direction3D();
         if (_geom is not null)
         {
-            _basisCurve = _geom.BasisCurve();
-            _axis = _geom.Axis();
-            _axisLocation = _axis.Location();
-            _axisDirection = _axis.Direction();
+            _basisCurve = _geom.BasisCurve;
+            _axis = _geom.Axis;
+            _axisLocation = _axis.Location;
+            _axisDirection = _axis.Direction;
         }
     }
 

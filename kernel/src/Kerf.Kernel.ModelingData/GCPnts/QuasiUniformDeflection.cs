@@ -162,7 +162,7 @@ public sealed class QuasiUniformDeflection
     {
         Point3D point = new();
         Point2D a2dPoint = c.Value(parameter);
-        point = point.WithCoord(a2dPoint.X(), a2dPoint.Y(), 0.0);
+        point = point.WithCoord(a2dPoint.X, a2dPoint.Y, 0.0);
         return point;
     }
 
@@ -176,8 +176,8 @@ public sealed class QuasiUniformDeflection
         c.D1(parameter, out Point2D a2dPoint, out Vector2D a2dVec);
         p = new Point3D();
         v = new Vector3D();
-        p = p.WithCoord(a2dPoint.X(), a2dPoint.Y(), 0.0);
-        v = v.WithCoord(a2dVec.X(), a2dVec.Y(), 0.0);
+        p = p.WithCoord(a2dPoint.X, a2dPoint.Y, 0.0);
+        v = v.WithCoord(a2dVec.X, a2dVec.Y, 0.0);
     }
 
     // ---- Templates over the curve type (3D instantiation) ----
@@ -222,14 +222,14 @@ public sealed class QuasiUniformDeflection
         }
 
         // square length of chord
-        double norme = new Vector3D(pdeb, pdelta).SquareMagnitude();
+        double norme = new Vector3D(pdeb, pdelta).SquareMagnitude;
         double fleche = 0.0;
         bool isFlecheOk = false;
         if (norme > eps && norme > 16.0 * deflection2)
         {
             // Evaluation of the deflection by interpolation. See IntWalk_IWalking::TestDeflection
-            double n1 = vdeb.SquareMagnitude();
-            double n2 = vdelta.SquareMagnitude();
+            double n1 = vdeb.SquareMagnitude;
+            double n2 = vdelta.SquareMagnitude;
             if (n1 > eps && n2 > eps)
             {
                 // square distance between ends of two normalized vectors [0; 4]
@@ -248,7 +248,7 @@ public sealed class QuasiUniformDeflection
 
         Point3D pmid = new((pdeb.XYZ() + pdelta.XYZ()) * 0.5);
         Point3D pverif = Value(c, udeb + udelta * 0.5);
-        double flecheMidMid = pmid.SquareDistance(pverif);
+        double flecheMidMid = pmid.SquareDistanceTo(pverif);
 
         if (isFlecheOk)
         {
@@ -349,7 +349,7 @@ public sealed class QuasiUniformDeflection
 
         Point3D pmid = new((pdeb.XYZ() + pdelta.XYZ()) * 0.5);
         Point3D pverif = Value(c, udeb + udelta * 0.5);
-        double fleche = pmid.SquareDistance(pverif);
+        double fleche = pmid.SquareDistanceTo(pverif);
         if (fleche < deflection2)
         {
             parameters.Append(udeb + udelta);
@@ -419,7 +419,7 @@ public sealed class QuasiUniformDeflection
                                         double u1,
                                         double u2)
     {
-        double angle = Max(1.0 - (deflection / c.Circle().Radius()), 0.0);
+        double angle = Max(1.0 - (deflection / c.Circle().Radius), 0.0);
         angle = 2.0 * Math.Acos(angle);
         int nbPoints = (int)((u2 - u1) / angle);
         nbPoints += 2;
@@ -664,14 +664,14 @@ public sealed class QuasiUniformDeflection
         }
 
         // square length of chord
-        double norme = new Vector3D(pdeb, pdelta).SquareMagnitude();
+        double norme = new Vector3D(pdeb, pdelta).SquareMagnitude;
         double fleche = 0.0;
         bool isFlecheOk = false;
         if (norme > eps && norme > 16.0 * deflection2)
         {
             // Evaluation of the deflection by interpolation. See IntWalk_IWalking::TestDeflection
-            double n1 = vdeb.SquareMagnitude();
-            double n2 = vdelta.SquareMagnitude();
+            double n1 = vdeb.SquareMagnitude;
+            double n2 = vdelta.SquareMagnitude;
             if (n1 > eps && n2 > eps)
             {
                 // square distance between ends of two normalized vectors [0; 4]
@@ -690,7 +690,7 @@ public sealed class QuasiUniformDeflection
 
         Point3D pmid = new((pdeb.XYZ() + pdelta.XYZ()) * 0.5);
         Point3D pverif = Value(c, udeb + udelta * 0.5);
-        double flecheMidMid = pmid.SquareDistance(pverif);
+        double flecheMidMid = pmid.SquareDistanceTo(pverif);
 
         if (isFlecheOk)
         {
@@ -791,7 +791,7 @@ public sealed class QuasiUniformDeflection
 
         Point3D pmid = new((pdeb.XYZ() + pdelta.XYZ()) * 0.5);
         Point3D pverif = Value(c, udeb + udelta * 0.5);
-        double fleche = pmid.SquareDistance(pverif);
+        double fleche = pmid.SquareDistanceTo(pverif);
         if (fleche < deflection2)
         {
             parameters.Append(udeb + udelta);
@@ -861,7 +861,7 @@ public sealed class QuasiUniformDeflection
                                         double u1,
                                         double u2)
     {
-        double angle = Max(1.0 - (deflection / c.Circle().Radius()), 0.0);
+        double angle = Max(1.0 - (deflection / c.Circle().Radius), 0.0);
         angle = 2.0 * Math.Acos(angle);
         int nbPoints = (int)((u2 - u1) / angle);
         nbPoints += 2;

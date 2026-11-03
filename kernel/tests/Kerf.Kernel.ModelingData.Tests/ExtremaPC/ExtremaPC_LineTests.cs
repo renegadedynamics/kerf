@@ -415,9 +415,9 @@ public class ExtremaPC_LineTest
         // Verify the minimum point (projected point)
         int aMinIdx = aResult.MinIndex();
         Point3D aExpectedPt = new(7.0, 0.0, 0.0);
-        Assert.Equal(aExpectedPt.X(), aResult[aMinIdx].Point.X(), THE_TOL);
-        Assert.Equal(aExpectedPt.Y(), aResult[aMinIdx].Point.Y(), THE_TOL);
-        Assert.Equal(aExpectedPt.Z(), aResult[aMinIdx].Point.Z(), THE_TOL);
+        Assert.Equal(aExpectedPt.X, aResult[aMinIdx].Point.X, THE_TOL);
+        Assert.Equal(aExpectedPt.Y, aResult[aMinIdx].Point.Y, THE_TOL);
+        Assert.Equal(aExpectedPt.Z, aResult[aMinIdx].Point.Z, THE_TOL);
     }
 
     [Fact]
@@ -434,7 +434,7 @@ public class ExtremaPC_LineTest
 
         // Verify distance matches point distance for minimum
         int aMinIdx = aResult.MinIndex();
-        double aComputedDist = aPoint.SquareDistance(aResult[aMinIdx].Point);
+        double aComputedDist = aPoint.SquareDistanceTo(aResult[aMinIdx].Point);
         Assert.Equal(aComputedDist, aResult[aMinIdx].SquareDistance, THE_TOL);
         Assert.Equal(100.0, aResult.MinSquareDistance(), THE_TOL); // 6^2 + 8^2 = 100
     }

@@ -95,9 +95,9 @@ public class PGProps : Properties
     /// <summary>Adds a point of unit mass.</summary>
     public void AddPoint(in Point3D pnt)
     {
-        double x = pnt.X();
-        double y = pnt.Y();
-        double z = pnt.Z();
+        double x = pnt.X;
+        double y = pnt.Y;
+        double z = pnt.Z;
 
         var mp = new Matrix3x3(new Xyz(y * y + z * z, -x * y, -x * z),
                              new Xyz(-x * y, x * x + z * z, -y * z),
@@ -112,9 +112,9 @@ public class PGProps : Properties
         else
         {
             double newMass = _dim + 1.0;
-            double newX = (_g.X() * _dim + x) / newMass;
-            double newY = (_g.Y() * _dim + y) / newMass;
-            double newZ = (_g.Z() * _dim + z) / newMass;
+            double newX = (_g.X * _dim + x) / newMass;
+            double newY = (_g.Y * _dim + y) / newMass;
+            double newZ = (_g.Z * _dim + z) / newMass;
             _g = _g.WithCoord(newX, newY, newZ);
             _dim = newMass;
             _inertia = _inertia + mp;
@@ -130,9 +130,9 @@ public class PGProps : Properties
             throw new DomainErrorException("GProp_PGProps::AddPoint: density must be positive");
         }
 
-        double x = pnt.X();
-        double y = pnt.Y();
-        double z = pnt.Z();
+        double x = pnt.X;
+        double y = pnt.Y;
+        double z = pnt.Z;
 
         var mp = new Matrix3x3(new Xyz(y * y + z * z, -x * y, -x * z),
                              new Xyz(-x * y, x * x + z * z, -y * z),
@@ -147,9 +147,9 @@ public class PGProps : Properties
         else
         {
             double newMass = _dim + density;
-            double newX = (_g.X() * _dim + x * density) / newMass;
-            double newY = (_g.Y() * _dim + y * density) / newMass;
-            double newZ = (_g.Z() * _dim + z * density) / newMass;
+            double newX = (_g.X * _dim + x * density) / newMass;
+            double newY = (_g.Y * _dim + y * density) / newMass;
+            double newZ = (_g.Z * _dim + z * density) / newMass;
             _g = _g.WithCoord(newX, newY, newZ);
             _dim = newMass;
             _inertia = _inertia + mp * density;

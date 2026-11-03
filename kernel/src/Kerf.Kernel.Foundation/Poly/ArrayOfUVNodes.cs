@@ -125,7 +125,7 @@ public class ArrayOfUVNodes : NCollection_AliasedArray
         else
         {
             ref NCollection_Vec2<float> vec2 = ref ChangeValue<NCollection_Vec2<float>>(index);
-            vec2.SetValues((float)value.X(), (float)value.Y());
+            vec2.SetValues((float)value.X, (float)value.Y);
         }
     }
 

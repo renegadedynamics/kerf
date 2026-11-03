@@ -88,7 +88,7 @@ public partial struct SectionPoint : IEquatable<SectionPoint>
                              double param2,
                              double incid)
     {
-        _pnt = new Point3D(Where.X(), Where.Y(), 0.0);
+        _pnt = new Point3D(Where.X, Where.Y, 0.0);
         _dimenObje = dim1;
         _indexO1 = 0;
         _indexO2 = addr1;
@@ -286,5 +286,5 @@ public partial struct SectionPoint : IEquatable<SectionPoint>
     public override readonly string ToString()
         => $"Intf_SectionPoint({_dimenObje} {_indexO1} {_indexO2} {_paramObje.ToString("R", System.Globalization.CultureInfo.InvariantCulture)}, "
            + $"{_dimenTool} {_indexT1} {_indexT2} {_paramTool.ToString("R", System.Globalization.CultureInfo.InvariantCulture)}, "
-           + Constants.Format("at", _pnt.X(), _pnt.Y(), _pnt.Z(), _incide) + ")";
+           + Constants.Format("at", _pnt.X, _pnt.Y, _pnt.Z, _incide) + ")";
 }

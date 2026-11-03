@@ -21,8 +21,8 @@ internal readonly struct LineHasher2D(double theCompTolerance, double theHashTol
         var dirHasher = new DirectionHasher2D(CompTolerance, HashTolerance);
         ReadOnlySpan<ulong> hashes =
         [
-            pointHasher.Hash(line.Position().Location()),
-            dirHasher.Hash(line.Position().Direction())
+            pointHasher.Hash(line.Position.Location),
+            dirHasher.Hash(line.Position.Direction)
         ];
         return HashUtils.HashBytes(hashes);
     }
@@ -32,7 +32,7 @@ internal readonly struct LineHasher2D(double theCompTolerance, double theHashTol
     {
         var pointHasher = new PointHasher2D(CompTolerance, HashTolerance);
         var dirHasher = new DirectionHasher2D(CompTolerance, HashTolerance);
-        return pointHasher.IsEqual(line1.Position().Location(), line2.Position().Location())
-               && dirHasher.IsEqual(line1.Position().Direction(), line2.Position().Direction());
+        return pointHasher.IsEqual(line1.Position.Location, line2.Position.Location)
+               && dirHasher.IsEqual(line1.Position.Direction, line2.Position.Direction);
     }
 }

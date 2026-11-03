@@ -63,9 +63,9 @@ public abstract class Polygo : Polygon2d
         for (int i = 1; i <= nbs; i++)
         {
             Segment(i, out p, out pf);
-            theOut.Write("pnt2d " + num.ToString(CultureInfo.InvariantCulture) + "  " + R(p.X()) + " " + R(p.Y()) + '\n');
+            theOut.Write("pnt2d " + num.ToString(CultureInfo.InvariantCulture) + "  " + R(p.X) + " " + R(p.Y) + '\n');
         }
-        theOut.Write("pnt2d " + num.ToString(CultureInfo.InvariantCulture) + "  " + R(pf.X()) + " " + R(pf.Y()) + '\n');
+        theOut.Write("pnt2d " + num.ToString(CultureInfo.InvariantCulture) + "  " + R(pf.X) + " " + R(pf.Y) + '\n');
     }
 
     private static string R(double value) => StreamUtilities.FormatReal(value, 6);

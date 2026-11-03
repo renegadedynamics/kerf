@@ -20,7 +20,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// PolynomialIntervals = {{2, 5}}, TrueIntervals = {-1, 1}. The batch accessors return copies, where OCCT returns
 /// references to its fields.
 /// </remarks>
-public class CompPolynomialToPoles
+internal class CompPolynomialToPoles
 {
     private NCollection_Array1<double> _flatKnots = new();
     private NCollection_Array1<double> _knots = new();

@@ -254,7 +254,7 @@ internal static partial class Builder_0
         {
             dir2 = dir2.Reversed();
         }
-        angle = Math.Abs(dir1.Angle(dir2));
+        angle = Math.Abs(dir1.AngleTo(dir2));
         return angle;
     }
 

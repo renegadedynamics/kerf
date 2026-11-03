@@ -69,7 +69,7 @@ public sealed class Inter3d
         // Enough for analytic edges, in general case reconstruct the
         // geometry of the edge recalculating the intersection of surfaces.
 
-        ne.Orientation(Forward);
+        ne.Orient(Forward);
         double f, l;
         Tool.Range(e, out f, out l);
         double length = l - f;
@@ -83,7 +83,7 @@ public sealed class Inter3d
         Vertex v2 = new LibraryMakeVertex(ce.Value(l)).InternalVertex();
         b.Add(ne, v1.Oriented(Forward));
         b.Add(ne, v2.Oriented(Reversed));
-        ne.Orientation(e.Orientation());
+        ne.Orient(e.Orientation);
     }
 
     //=================================================================================================
@@ -175,8 +175,8 @@ public sealed class Inter3d
             return;
         }
 
-        bool interPipes = (initF2.ShapeType() == ShapeType.Edge && initF1.ShapeType() == ShapeType.Edge);
-        bool interFaces = (initF1.ShapeType() == ShapeType.Face && initF2.ShapeType() == ShapeType.Face);
+        bool interPipes = (initF2.Type == ShapeType.Edge && initF1.Type == ShapeType.Edge);
+        bool interFaces = (initF1.Type == ShapeType.Face && initF2.Type == ShapeType.Face);
         NCollection_List<Shape> le = new(), lv = new();
         lInt1.Clear();
         lInt2.Clear();
@@ -282,7 +282,7 @@ public sealed class Inter3d
                 return;
             }
             Edge e = ShapeCasts.Edge(exp.Current());
-            NCollection_List<Interval> L = analyse.Type(e);
+            NCollection_List<OffsetInterval> L = analyse.Type(e);
             if (!L.IsEmpty() && L.First().Type() == ot)
             {
                 //-----------------------------------------------------------
@@ -352,7 +352,7 @@ public sealed class Inter3d
 
                             if (!e1.IsSame(e2))
                             {
-                                NCollection_List<Interval> aL = analyse.Type(e2);
+                                NCollection_List<OffsetInterval> aL = analyse.Type(e2);
 
                                 isToSkip =
                                   (mtev.Contains(e2) && (aL.IsEmpty() || (!aL.IsEmpty() && aL.First().Type() != ot)));
@@ -385,7 +385,7 @@ public sealed class Inter3d
                                 // to face containing E2 if they are not tangent
                                 // to the tube or if E2 is not a tangent edge.
                                 //-------------------------------------------------------
-                                NCollection_List<Interval> l = analyse.Type(e2);
+                                NCollection_List<OffsetInterval> l = analyse.Type(e2);
                                 if (!l.IsEmpty() && l.First().Type() == TypeOfConcavity.Tangential)
                                 {
                                     continue;
@@ -503,7 +503,7 @@ public sealed class Inter3d
                     for (Explorer expE = new(fx, ShapeType.Edge); expE.More(); expE.Next())
                     {
                         Shape ex = expE.Current();
-                        if (ex.Orientation() != Forward && ex.Orientation() != Reversed)
+                        if (ex.Orientation != Forward && ex.Orientation != Reversed)
                         {
                             mei.Add(ex);
                         }
@@ -523,7 +523,7 @@ public sealed class Inter3d
                     return;
                 }
                 Shape s = vEmap[i - 1];
-                if (s.ShapeType() != ShapeType.Vertex)
+                if (s.Type != ShapeType.Vertex)
                 {
                     continue;
                 }
@@ -656,13 +656,13 @@ public sealed class Inter3d
             Edge E = new();
             NCollection_List<Shape> lf1 = new(), lf2 = new();
             //
-            bEdge = (s.ShapeType() == ShapeType.Edge);
+            bEdge = (s.Type == ShapeType.Edge);
             if (bEdge)
             {
                 // faces connected by the edge
                 E = ShapeCasts.Edge(s);
                 //
-                NCollection_List<Interval> l = analyse.Type(E);
+                NCollection_List<OffsetInterval> l = analyse.Type(E);
                 if (l.IsEmpty())
                 {
                     continue;
@@ -883,7 +883,7 @@ public sealed class Inter3d
             {
                 Shape s = itLS.Value();
                 ms.Add(s);
-                if (s.ShapeType() == ShapeType.Edge)
+                if (s.Type == ShapeType.Edge)
                 {
                     b.Add(ce, s);
                 }
@@ -1093,7 +1093,7 @@ public sealed class Inter3d
             {
                 Shape s = vEmap[j - 1];
                 //
-                bEdge = (s.ShapeType() == ShapeType.Edge);
+                bEdge = (s.Type == ShapeType.Edge);
                 //
                 Edge E = new();
                 NCollection_List<Shape> anc = new();
@@ -1123,7 +1123,7 @@ public sealed class Inter3d
                                 tol = Tool.Tolerance(E);
                                 ExtentEdge(cf, E, out Edge NE);
                                 Exploration.Vertices(E, out Vertex v1, out Vertex v2);
-                                NE.Orientation(Forward);
+                                NE.Orient(Forward);
                                 _asDes.Add(NE, v1.Oriented(Reversed));
                                 _asDes.Add(NE, v2.Oriented(Forward));
                                 Shape localShape = v1.Oriented(Internal);
@@ -1132,7 +1132,7 @@ public sealed class Inter3d
                                 b.UpdateVertex(ShapeCasts.Vertex(localShape), l, NE, tol);
                                 //            B.UpdateVertex(TopoDS::Vertex(V1.Oriented(TopAbs_INTERNAL)),f,NE,Tol);
                                 //            B.UpdateVertex(TopoDS::Vertex(V2.Oriented(TopAbs_INTERNAL)),l,NE,Tol);
-                                NE.Orientation(E.Orientation());
+                                NE.Orient(E.Orientation);
                                 _asDes.Add(cf, NE);
                                 _newEdges.Add(NE);
                                 mes[E] = NE;
@@ -1140,7 +1140,7 @@ public sealed class Inter3d
                             else
                             {
                                 Shape NE = mes.GetValue(E);
-                                Shape localShape = NE.Oriented(E.Orientation());
+                                Shape localShape = NE.Oriented(E.Orientation);
                                 _asDes.Add(cf, localShape);
                                 //            myAsDes->Add(CF,NE.Oriented(E.Orientation()));
                             }
@@ -1306,7 +1306,7 @@ public sealed class Inter3d
                             tol = Tool.Tolerance(e);
                             ExtentEdge(cf, e, out ne);
                             Exploration.Vertices(e, out Vertex v1, out Vertex v2);
-                            ne.Orientation(Forward);
+                            ne.Orient(Forward);
                             _asDes.Add(ne, v1.Oriented(Reversed));
                             _asDes.Add(ne, v2.Oriented(Forward));
                             Shape localShape = v1.Oriented(Internal);
@@ -1315,14 +1315,14 @@ public sealed class Inter3d
                             b.UpdateVertex(ShapeCasts.Vertex(localShape), l, ne, tol);
                             //            B.UpdateVertex(TopoDS::Vertex(V1.Oriented(TopAbs_INTERNAL)),f,NE,Tol);
                             //            B.UpdateVertex(TopoDS::Vertex(V2.Oriented(TopAbs_INTERNAL)),l,NE,Tol);
-                            ne.Orientation(e.Orientation());
+                            ne.Orient(e.Orientation);
                             _asDes.Add(cf, ne);
                             initOffsetEdge.Bind(e, ne);
                         }
                         else
                         {
                             ne = ShapeCasts.Edge(initOffsetEdge.Image(e).First());
-                            _asDes.Add(cf, ne.Oriented(e.Orientation()));
+                            _asDes.Add(cf, ne.Oriented(e.Orientation));
                         }
                     }
                     continue;
@@ -1364,7 +1364,7 @@ public sealed class Inter3d
                 OffsetTool.OrientSection(oe, cf, of1, out ori1, out ori2);
                 //    if (mySide == TopAbs_OUT);
                 ori1 = global::Kerf.Engine.Topology.TopAbs.Reverse(ori1);
-                lInt1.ChangeFirst().Orientation(ori1);
+                lInt1.ChangeFirst().Orient(ori1);
                 Store(cf, of1, lInt1, lInt2);
 
                 //------------------------------------------------------
@@ -1421,7 +1421,7 @@ public sealed class Inter3d
                             OffsetTool.OrientSection(oe, cf, of1, out o1, out o2);
                             //            if (mySide == TopAbs_OUT);
                             o1 = global::Kerf.Engine.Topology.TopAbs.Reverse(o1);
-                            lInt1.ChangeFirst().Orientation(o1);
+                            lInt1.ChangeFirst().Orient(o1);
                             Store(cf, of1, lInt1, lInt2);
                         }
                     }

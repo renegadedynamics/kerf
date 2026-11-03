@@ -14,7 +14,7 @@ namespace Kerf.Engine.Geometry.Evaluation.Grid;
 /// Efficient batch evaluator for surface of linear extrusion grid points, S(u, v) = C(u) + v * Direction: the
 /// basis curve is evaluated once per U parameter with <see cref="CurveGrid"/> (Geom_ExtrusionUtils).
 /// </summary>
-public sealed class SurfaceOfExtrusionGrid : GeomGridEvalGrid.ISurfaceEvaluator
+internal sealed class SurfaceOfExtrusionGrid : GeomGridEvalGrid.ISurfaceEvaluator
 {
     private readonly ExtrusionSurface? _geom;
     private readonly Curve3D? _basisCurve;
@@ -27,8 +27,8 @@ public sealed class SurfaceOfExtrusionGrid : GeomGridEvalGrid.ISurfaceEvaluator
         _direction = new Direction3D();
         if (_geom is not null)
         {
-            _basisCurve = _geom.BasisCurve();
-            _direction = _geom.Direction();
+            _basisCurve = _geom.BasisCurve;
+            _direction = _geom.Direction;
         }
     }
 

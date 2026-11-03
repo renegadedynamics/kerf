@@ -29,7 +29,7 @@ namespace Kerf.Engine.Topology.Adaptors;
 /// A working object (decision 21) built once for a face; its queries don't change it. OCCT forbids copies (Copy and
 /// the assignment throw Standard_ConstructionError): the port has neither.
 /// </remarks>
-public sealed class FClass2d
+internal sealed class FClass2d
 {
     private readonly NCollection_Sequence<Class2d> _tabClass = new();
     private readonly NCollection_Sequence<int> _tabOrien = new();
@@ -86,7 +86,7 @@ public sealed class FClass2d
              currParam = SafeIncrement(currParam, endParam, parametricStep))
         {
             Point3D currentPoint = curve.Value(currParam);
-            if (startPoint.SquareDistance(currentPoint) > global::Kerf.Engine.Foundation.Precision.Confusion())
+            if (startPoint.SquareDistanceTo(currentPoint) > global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 return false;
             }
@@ -107,7 +107,7 @@ public sealed class FClass2d
 
         //-- dead end on surfaces defined on more than one period
 
-        _face.Orientation(Forward);
+        _face.Orient(Forward);
         var surf = new FaceSurfaceAdaptor();
         surf.Initialize(aFace, false);
         Edge edge;
@@ -147,7 +147,7 @@ public sealed class FClass2d
             {
                 nbEdges--;
                 edge = wireExplorer.Current();
-                or = edge.Orientation();
+                or = edge.Orientation;
                 if (or == Forward || or == Reversed)
                 {
                     double pfbid, plbid;
@@ -224,24 +224,24 @@ public sealed class FClass2d
                     for (int e = firstpoint; e <= nbs; e++)
                     {
                         Point2D P2d = curveAdaptor2D.Value(u);
-                        if (P2d.X() < _umin)
+                        if (P2d.X < _umin)
                         {
-                            _umin = P2d.X();
+                            _umin = P2d.X;
                         }
 
-                        if (P2d.X() > _umax)
+                        if (P2d.X > _umax)
                         {
-                            _umax = P2d.X();
+                            _umax = P2d.X;
                         }
 
-                        if (P2d.Y() < _vmin)
+                        if (P2d.Y < _vmin)
                         {
-                            _vmin = P2d.Y();
+                            _vmin = P2d.Y;
                         }
 
-                        if (P2d.Y() > _vmax)
+                        if (P2d.Y > _vmax)
                         {
-                            _vmax = P2d.Y();
+                            _vmax = P2d.Y;
                         }
 
                         double dist3dptcourant_ancienpnt = 1e+20; // RealLast();
@@ -251,7 +251,7 @@ public sealed class FClass2d
                             p3d = curveAdaptor3D.Value(u);
                             if (nbpnts > 1 && ancienpnt3dinitialise)
                             {
-                                dist3dptcourant_ancienpnt = p3d.Distance(ancienpnt3d);
+                                dist3dptcourant_ancienpnt = p3d.DistanceTo(ancienpnt3d);
                             }
                         }
 
@@ -259,7 +259,7 @@ public sealed class FClass2d
                         if (dist3dptcourant_ancienpnt < global::Kerf.Engine.Foundation.Precision.Confusion())
                         {
                             Point3D midP3d = curveAdaptor3D.Value(u - du / 2.0);
-                            if (p3d.Distance(midP3d) < global::Kerf.Engine.Foundation.Precision.Confusion())
+                            if (p3d.DistanceTo(midP3d) < global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
                                 isRealCurve3d = false;
                             }
@@ -280,14 +280,14 @@ public sealed class FClass2d
                         u += du;
                         int ii = nbpnts;
                         //  Modified by Sergey KHROMOV - Fri Apr 19 09:46:12 2002 Begin
-                        if (ii > (avant + 4) && seqPnt2d[ii - 2].SquareDistance(seqPnt2d[ii]) != 0.0)
+                        if (ii > (avant + 4) && seqPnt2d[ii - 2].SquareDistanceTo(seqPnt2d[ii]) != 0.0)
                         //  Modified by Sergey KHROMOV - Fri Apr 19 09:46:13 2002 End
                         {
                             var lin = new Line2D(seqPnt2d[ii - 2], new Direction2D(new Vector2D(seqPnt2d[ii - 2], seqPnt2d[ii])));
                             double ul = global::Kerf.Engine.Geometry.ElCLib.Parameter(lin, seqPnt2d[ii - 1]);
                             Point2D pp = global::Kerf.Engine.Geometry.ElCLib.Value(ul, lin);
-                            double dU = Math.Abs(pp.X() - seqPnt2d[ii - 1].X());
-                            double dV = Math.Abs(pp.Y() - seqPnt2d[ii - 1].Y());
+                            double dU = Math.Abs(pp.X - seqPnt2d[ii - 1].X);
+                            double dV = Math.Abs(pp.Y - seqPnt2d[ii - 1].Y);
                             if (dU > flecheU)
                             {
                                 flecheU = dU;
@@ -349,7 +349,7 @@ public sealed class FClass2d
                         }
 
                         pClass[ii] = seqPnt2d.Value(ii);
-                        square += (pClass[im0].X() - pClass[im1].X()) * (pClass[im0].Y() + pClass[im1].Y()) * .5;
+                        square += (pClass[im0].X - pClass[im1].X) * (pClass[im0].Y + pClass[im1].Y) * .5;
                         per += (pClass[im0].XY() - pClass[im1].XY()).Modulus();
                     }
 
@@ -369,7 +369,7 @@ public sealed class FClass2d
                              wireExplorer.Next())
                         {
                             edge = wireExplorer.Current();
-                            or = edge.Orientation();
+                            or = edge.Orientation;
                             if (or == Forward || or == Reversed)
                             {
                                 Tool.Range(edge, _face, out double pfbid, out double plbid);
@@ -411,8 +411,8 @@ public sealed class FClass2d
                                     var lin = new Line2D(seqPnt2d[ii - 2], new Direction2D(new Vector2D(seqPnt2d[ii - 2], seqPnt2d[ii])));
                                     double ul = global::Kerf.Engine.Geometry.ElCLib.Parameter(lin, seqPnt2d[ii - 1]);
                                     Point2D pp = global::Kerf.Engine.Geometry.ElCLib.Value(ul, lin);
-                                    double dU = Math.Abs(pp.X() - seqPnt2d[ii - 1].X());
-                                    double dV = Math.Abs(pp.Y() - seqPnt2d[ii - 1].Y());
+                                    double dU = Math.Abs(pp.X - seqPnt2d[ii - 1].X);
+                                    double dV = Math.Abs(pp.Y - seqPnt2d[ii - 1].Y);
                                     if (dU > flecheU)
                                     {
                                         flecheU = dU;
@@ -445,7 +445,7 @@ public sealed class FClass2d
 
                             pClass[ii] = seqPnt2d.Value(ii);
                             square +=
-                                (pClass[im0].X() - pClass[im1].X()) * (pClass[im0].Y() + pClass[im1].Y()) * .5;
+                                (pClass[im0].X - pClass[im1].X) * (pClass[im0].Y + pClass[im1].Y) * .5;
                             per += (pClass[im0].XY() - pClass[im1].XY()).Modulus();
                         }
 
@@ -565,8 +565,8 @@ public sealed class FClass2d
         }
 
         //-- U1 is the First Param and U2 in this case is U1+Period
-        double u = _Puv.X();
-        double v = _Puv.Y();
+        double u = _Puv.X;
+        double v = _Puv.Y;
         double uu = u, vv = v;
 
         var surf = new FaceSurfaceAdaptor();

@@ -18,7 +18,7 @@ namespace Kerf.Engine.Geometry.Evaluation.Grid;
 /// through them where OCCT visits a <c>std::variant</c>, and ported templates over "a grid evaluator"
 /// (ExtremaPC_GridEvaluator::BuildGrid) can take a constrained type parameter.
 /// </remarks>
-public static class GeomGridEvalGrid
+internal static class GeomGridEvalGrid
 {
     /// <summary>A grid evaluator of a 3D curve: what every GeomGridEval_* curve evaluator offers.</summary>
     public interface ICurveEvaluator

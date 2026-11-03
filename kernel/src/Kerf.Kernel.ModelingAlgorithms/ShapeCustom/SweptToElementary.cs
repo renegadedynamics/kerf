@@ -38,11 +38,11 @@ public class SweptToElementary : CustomModification
         }
         if (s is TrimmedSurface rts)
         {
-            stmp = rts.BasisSurface();
+            stmp = rts.BasisSurface;
         }
         else if (s is global::Kerf.Geometry.OffsetSurface os)
         {
-            stmp = os.BasisSurface();
+            stmp = os.BasisSurface;
         }
         if (stmp is null)
         {
@@ -80,10 +80,10 @@ public class SweptToElementary : CustomModification
         // case SurfaceOfRevolution
         if (ss is RevolutionSurface sr)
         {
-            Curve3D bc = sr.BasisCurve();
-            Axis3D ax1 = sr.Axis();
+            Curve3D bc = sr.BasisCurve;
+            Axis3D ax1 = sr.Axis;
             CurveAdaptor hc = new CurveAdaptor();
-            hc.Load(bc, bc.FirstParameter(), bc.LastParameter());
+            hc.Load(bc, bc.FirstParameter, bc.LastParameter);
             RevolutionSurfaceAdaptor AS = new RevolutionSurfaceAdaptor(hc, ax1);
             switch (AS.GetType())
             {
@@ -123,10 +123,10 @@ public class SweptToElementary : CustomModification
         // case SurfaceOfLinearExtrusion
         else if (ss is ExtrusionSurface sle)
         {
-            Curve3D bc = sle.BasisCurve();
-            Direction3D dir = sle.Direction();
+            Curve3D bc = sle.BasisCurve;
+            Direction3D dir = sle.Direction;
             CurveAdaptor hc = new CurveAdaptor();
-            hc.Load(bc, bc.FirstParameter(), bc.LastParameter());
+            hc.Load(bc, bc.FirstParameter, bc.LastParameter);
             SurfaceOfLinearExtrusion AS = new SurfaceOfLinearExtrusion(hc, dir);
             switch (AS.GetType())
             {
@@ -229,23 +229,23 @@ public class SweptToElementary : CustomModification
             Surface? ns = newF.IsNull ? null : Tool.Surface(newF, out L);
             if (ns is ToroidalSurface && ss is RevolutionSurface sr)
             {
-                sr.Bounds(out double u1, out double u2, out double v1, out double v2);
+                sr.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
                 sr.D0(u1, v1, out Point3D p0);
                 SurfaceAnalysis sas = new SurfaceAnalysis(ns);
                 Point2D p2d = sas.ValueOfUV(p0, global::Kerf.Engine.Foundation.Precision.Confusion());
-                Vector2D shift = new Vector2D(p2d.X() - u1, p2d.Y() - v1);
+                Vector2D shift = new Vector2D(p2d.X - u1, p2d.Y - v1);
                 c.Translate(shift);
             }
             if (ns is SphericalSurface sph && ss is RevolutionSurface sr2)
             {
-                sph.Bounds(out double us1, out double us2, out double vs1, out double vs2);
+                sph.ParameterBounds(out double us1, out double us2, out double vs1, out double vs2);
                 sph.D0(us1, vs1, out Point3D ps);
-                sr2.Bounds(out double ur1, out double ur2, out double vr1, out double vr2);
+                sr2.ParameterBounds(out double ur1, out double ur2, out double vr1, out double vr2);
                 sr2.D0(ur1, vr1, out Point3D pr);
-                Point3D p0 = sph.Location();
+                Point3D p0 = sph.Location;
                 Vector3D vs = new Vector3D(p0, ps);
                 Vector3D vr = new Vector3D(p0, pr);
-                double angle = vs.Angle(vr);
+                double angle = vs.AngleTo(vr);
                 Vector2D shift = new Vector2D(0, vs1 - vr1 + angle);
                 c.Translate(shift);
             }

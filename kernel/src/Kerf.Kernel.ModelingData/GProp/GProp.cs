@@ -53,7 +53,7 @@ public static class GProp
         Span<double> p = [x.X(), y.X(), z.X(), x.Y(), y.Y(), z.Y(), x.Z(), y.Z(), z.Z()]; // P[i, k] = axis k's i
         Span<double> l = [m2[0], m2[3], m2[4], m2[3], m2[1], m2[5], m2[4], m2[5], m2[2]];
         Span<double> m1g = stackalloc double[3];
-        Span<double> d = [origin.X() - loc.X(), origin.Y() - loc.Y(), origin.Z() - loc.Z()];
+        Span<double> d = [origin.X - loc.X, origin.Y - loc.Y, origin.Z - loc.Z];
         Span<double> s = stackalloc double[9];
         for (int i = 0; i < 3; i++)
         {

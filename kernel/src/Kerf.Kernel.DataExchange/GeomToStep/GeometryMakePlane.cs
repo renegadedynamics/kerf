@@ -28,7 +28,7 @@ public sealed class GeometryMakePlane : GeometryRoot
         StepPlane plan = new StepPlane();
         StepAxis2Placement3d position;
 
-        Axis2Placement3dMaker mkAxis2 = new Axis2Placement3dMaker(p.Position(), localFactors);
+        Axis2Placement3dMaker mkAxis2 = new Axis2Placement3dMaker(p.Position, localFactors);
         position = mkAxis2.Value();
         plan.SetPosition(position);
         TCollection_HAsciiString name = new TCollection_HAsciiString("");
@@ -53,9 +53,9 @@ public sealed class GeometryMakePlane : GeometryRoot
         StepPlane plan = new StepPlane();
         StepAxis2Placement3d position;
 
-        p = gpln.Pln();
+        p = gpln.Plane;
 
-        Axis2Placement3dMaker mkAxis2 = new Axis2Placement3dMaker(p.Position(), localFactors);
+        Axis2Placement3dMaker mkAxis2 = new Axis2Placement3dMaker(p.Position, localFactors);
         position = mkAxis2.Value();
         plan.SetPosition(position);
         TCollection_HAsciiString name = new TCollection_HAsciiString("");

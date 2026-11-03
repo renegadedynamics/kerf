@@ -222,8 +222,8 @@ public class IntPolyhTests
                                      out double u2, out double v2, out double anAngle);
                 Point3D aP = new(x, y, z);
                 // The points are on the triangulations, within their deflection of the surfaces
-                Assert.True(aS1.Value(u1, v1).Distance(aP) < 0.05, $"line {iL} point {iP} off the first surface");
-                Assert.True(aS2.Value(u2, v2).Distance(aP) < 0.05, $"line {iL} point {iP} off the second surface");
+                Assert.True(aS1.Value(u1, v1).DistanceTo(aP) < 0.05, $"line {iL} point {iP} off the first surface");
+                Assert.True(aS2.Value(u2, v2).DistanceTo(aP) < 0.05, $"line {iL} point {iP} off the second surface");
                 Assert.InRange(Math.Abs(anAngle), 0.0, 1.0 + 1e-12);
                 ++aNbPoints;
             }

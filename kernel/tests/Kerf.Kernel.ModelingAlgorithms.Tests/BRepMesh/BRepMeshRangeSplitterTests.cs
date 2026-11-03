@@ -95,7 +95,7 @@ public class BRepMeshRangeSplitterTests
         {
             foreach (Point2D aNode in theNodes)
             {
-                aBits.Add((BitConverter.DoubleToInt64Bits(aNode.X()), BitConverter.DoubleToInt64Bits(aNode.Y())));
+                aBits.Add((BitConverter.DoubleToInt64Bits(aNode.X), BitConverter.DoubleToInt64Bits(aNode.Y)));
             }
         }
         return aBits;
@@ -107,8 +107,8 @@ public class BRepMeshRangeSplitterTests
         (double first, double second) aV = theSplitter.GetRangeV();
         foreach (Point2D aNode in theNodes)
         {
-            Assert.InRange(aNode.X(), aU.first, aU.second);
-            Assert.InRange(aNode.Y(), aV.first, aV.second);
+            Assert.InRange(aNode.X, aU.first, aU.second);
+            Assert.InRange(aNode.Y, aV.first, aV.second);
         }
     }
 
@@ -178,9 +178,9 @@ public class BRepMeshRangeSplitterTests
         var aRows = new SortedDictionary<double, double>();
         foreach (Point2D aNode in aNodes)
         {
-            if (!aRows.ContainsKey(aNode.Y()))
+            if (!aRows.ContainsKey(aNode.Y))
             {
-                aRows[aNode.Y()] = aNode.X();
+                aRows[aNode.Y] = aNode.X;
             }
         }
         Assert.True(aRows.Count >= 2);
@@ -209,7 +209,7 @@ public class BRepMeshRangeSplitterTests
     public void NURBS_BezierFace()
     {
         NCollection_List<Point2D> aNodes = Check<NurbsRangeSplitter>(BezierFace(), SurfaceKind.BezierSurface, 4, 0.01);
-        Assert.All(aNodes, aNode => Assert.InRange(aNode.X(), 0.0, 1.0));
+        Assert.All(aNodes, aNode => Assert.InRange(aNode.X, 0.0, 1.0));
     }
 
     [Fact]

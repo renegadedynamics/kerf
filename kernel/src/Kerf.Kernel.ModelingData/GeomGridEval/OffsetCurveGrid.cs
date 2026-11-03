@@ -18,7 +18,7 @@ namespace Kerf.Engine.Geometry.Evaluation.Grid;
 /// If the offset can't be computed at one parameter (a zero basis tangent that can't be adjusted), the whole
 /// result is empty, as in OCCT.
 /// </remarks>
-public sealed class OffsetCurveGrid : GeomGridEvalGrid.ICurveEvaluator
+internal sealed class OffsetCurveGrid : GeomGridEvalGrid.ICurveEvaluator
 {
     private readonly OffsetCurve3D? _geom;
     private readonly Curve3D? _basis;
@@ -32,9 +32,9 @@ public sealed class OffsetCurveGrid : GeomGridEvalGrid.ICurveEvaluator
         _offset = 0.0;
         if (_geom is not null)
         {
-            _offset = _geom.Offset();
-            _basis = _geom.BasisCurve();
-            _direction = _geom.Direction();
+            _offset = _geom.Offset;
+            _basis = _geom.BasisCurve;
+            _direction = _geom.Direction;
         }
     }
 
@@ -147,7 +147,7 @@ public sealed class OffsetCurveGrid : GeomGridEvalGrid.ICurveEvaluator
 
             // Check for direction change at singular points
             bool isDirectionChange = false;
-            if (d1.SquareMagnitude() <= Constants.Resolution())
+            if (d1.SquareMagnitude <= Constants.Resolution())
             {
                 Vector3D dummyD4 = new();
                 if (!OffsetCurveUtils3D.AdjustDerivative(_basis,
@@ -211,7 +211,7 @@ public sealed class OffsetCurveGrid : GeomGridEvalGrid.ICurveEvaluator
 
             // Check for direction change at singular points
             bool isDirectionChange = false;
-            if (d1.SquareMagnitude() <= Constants.Resolution())
+            if (d1.SquareMagnitude <= Constants.Resolution())
             {
                 if (!OffsetCurveUtils3D.AdjustDerivative(_basis,
                                                               4,

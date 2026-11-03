@@ -78,16 +78,16 @@ internal readonly struct CurveTraits3d : ICurveTraits<Point3D, Vector3D>
 
     public static void PointToCoords(Span<double> carr, in Point3D pnt, double op)
     {
-        carr[0] = pnt.X() + op;
-        carr[1] = pnt.Y() + op;
-        carr[2] = pnt.Z() + op;
+        carr[0] = pnt.X + op;
+        carr[1] = pnt.Y + op;
+        carr[2] = pnt.Z + op;
     }
 
     public static void PointToCoordsScaled(Span<double> carr, in Point3D pnt, double scale)
     {
-        carr[0] = pnt.X() * scale;
-        carr[1] = pnt.Y() * scale;
-        carr[2] = pnt.Z() * scale;
+        carr[0] = pnt.X * scale;
+        carr[1] = pnt.Y * scale;
+        carr[2] = pnt.Z * scale;
     }
 
     public static void CoordsToPointMultiplied(out Point3D pnt, ReadOnlySpan<double> carr, double factor)
@@ -134,9 +134,9 @@ internal readonly struct CurveTraits3d : ICurveTraits<Point3D, Vector3D>
 
     public static void VectorToCoords(Span<double> carr, in Vector3D vec)
     {
-        carr[0] = vec.X();
-        carr[1] = vec.Y();
-        carr[2] = vec.Z();
+        carr[0] = vec.X;
+        carr[1] = vec.Y;
+        carr[2] = vec.Z;
     }
 
     public static void SetCoord(ref Point3D pnt, int index, double xi) => pnt = pnt.WithCoord(index, xi);
@@ -161,14 +161,14 @@ internal readonly struct CurveTraits2d : ICurveTraits<Point2D, Vector2D>
 
     public static void PointToCoords(Span<double> carr, in Point2D pnt, double op)
     {
-        carr[0] = pnt.X() + op;
-        carr[1] = pnt.Y() + op;
+        carr[0] = pnt.X + op;
+        carr[1] = pnt.Y + op;
     }
 
     public static void PointToCoordsScaled(Span<double> carr, in Point2D pnt, double scale)
     {
-        carr[0] = pnt.X() * scale;
-        carr[1] = pnt.Y() * scale;
+        carr[0] = pnt.X * scale;
+        carr[1] = pnt.Y * scale;
     }
 
     public static void CoordsToPointMultiplied(out Point2D pnt, ReadOnlySpan<double> carr, double factor)
@@ -212,8 +212,8 @@ internal readonly struct CurveTraits2d : ICurveTraits<Point2D, Vector2D>
 
     public static void VectorToCoords(Span<double> carr, in Vector2D vec)
     {
-        carr[0] = vec.X();
-        carr[1] = vec.Y();
+        carr[0] = vec.X;
+        carr[1] = vec.Y;
     }
 
     public static void SetCoord(ref Point2D pnt, int index, double xi) => pnt = pnt.WithCoord(index, xi);

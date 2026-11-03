@@ -158,7 +158,7 @@ public class Geom2dAdaptorOracleTests(ITestOutputHelper output)
             BSplineSpec aSpec = Geom2dOracle.RandomBSpline(anOracle);
             using var aNCurve = Geom2dOracle.ToNative(aSpec);
             BSplineCurve2D aCurve = Geom2dOracle.ToPort(aSpec);
-            double aF = aCurve.FirstParameter(), aL = aCurve.LastParameter();
+            double aF = aCurve.FirstParameter, aL = aCurve.LastParameter;
 
             // The whole curve, a random part of it, and (periodic curves) a range shifted beyond the first period
             for (int r = 0; r < 3; r++)
@@ -291,9 +291,9 @@ public class Geom2dAdaptorOracleTests(ITestOutputHelper output)
                             using var aNLoc = aNL.Location();
                             using var aNDir = aNL.Direction();
                             Line2D aL = aPort.Line();
-                            anOracle.Same(aNLoc, aL.Location(), $"{aWhat} Line location");
-                            anOracle.Same(aNDir.X(), aL.Direction().X(), $"{aWhat} Line direction X");
-                            anOracle.Same(aNDir.Y(), aL.Direction().Y(), $"{aWhat} Line direction Y");
+                            anOracle.Same(aNLoc, aL.Location, $"{aWhat} Line location");
+                            anOracle.Same(aNDir.X(), aL.Direction.X, $"{aWhat} Line direction X");
+                            anOracle.Same(aNDir.Y(), aL.Direction.Y, $"{aWhat} Line direction Y");
                             break;
                         }
                         case 1:
@@ -301,8 +301,8 @@ public class Geom2dAdaptorOracleTests(ITestOutputHelper output)
                             using var aNC = aNative.Circle();
                             using var aNLoc = aNC.Location();
                             Circle2D aC = aPort.Circle();
-                            anOracle.Same(aNLoc, aC.Location(), $"{aWhat} Circle location");
-                            anOracle.Same(aNC.Radius(), aC.Radius(), $"{aWhat} Circle radius");
+                            anOracle.Same(aNLoc, aC.Location, $"{aWhat} Circle location");
+                            anOracle.Same(aNC.Radius(), aC.Radius, $"{aWhat} Circle radius");
                             break;
                         }
                         default:
@@ -310,9 +310,9 @@ public class Geom2dAdaptorOracleTests(ITestOutputHelper output)
                             using var aNE = aNative.Ellipse();
                             using var aNLoc = aNE.Location();
                             Ellipse2D anE = aPort.Ellipse();
-                            anOracle.Same(aNLoc, anE.Location(), $"{aWhat} Ellipse location");
-                            anOracle.Same(aNE.MajorRadius(), anE.MajorRadius(), $"{aWhat} Ellipse major radius");
-                            anOracle.Same(aNE.MinorRadius(), anE.MinorRadius(), $"{aWhat} Ellipse minor radius");
+                            anOracle.Same(aNLoc, anE.Location, $"{aWhat} Ellipse location");
+                            anOracle.Same(aNE.MajorRadius(), anE.MajorRadius, $"{aWhat} Ellipse major radius");
+                            anOracle.Same(aNE.MinorRadius(), anE.MinorRadius, $"{aWhat} Ellipse minor radius");
                             break;
                         }
                     }

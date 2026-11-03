@@ -39,12 +39,12 @@ public class Geom2dEval_ArchimedeanSpiralCurveTest
         ArchimedeanSpiralCurve2D aCurve = new(anAx2d, aA, aB);
 
         // |C(t) - O| = a + b*t
-        Point2D anO = anAx2d.Location();
+        Point2D anO = anAx2d.Location;
         double[] aParams = [0.0, 1.0, 2.0, M_PI, 10.0];
         foreach (double aT in aParams)
         {
             Point2D aP = aCurve.EvalD0(aT);
-            Assert.Equal(aA + aB * aT, anO.Distance(aP), global::Kerf.Engine.Foundation.Precision.Confusion());
+            Assert.Equal(aA + aB * aT, anO.DistanceTo(aP), global::Kerf.Engine.Foundation.Precision.Confusion());
         }
     }
 
@@ -57,8 +57,8 @@ public class Geom2dEval_ArchimedeanSpiralCurveTest
 
         // t=0: C(0) = (a, 0)
         Point2D aP0 = aCurve.EvalD0(0.0);
-        Assert.Equal(aA, aP0.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aP0.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aA, aP0.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aP0.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -73,8 +73,8 @@ public class Geom2dEval_ArchimedeanSpiralCurveTest
         Point2D aP2 = aCurve.EvalD0(aT - global::Kerf.Engine.Foundation.Precision.Confusion());
         Vector2D aFD = new((aP1.XY() - aP2.XY()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
 
-        Assert.Equal(aFD.X(), aD1.D1.X(), THE_FD_TOL);
-        Assert.Equal(aFD.Y(), aD1.D1.Y(), THE_FD_TOL);
+        Assert.Equal(aFD.X, aD1.D1.X, THE_FD_TOL);
+        Assert.Equal(aFD.Y, aD1.D1.Y, THE_FD_TOL);
     }
 
     [Fact]
@@ -89,8 +89,8 @@ public class Geom2dEval_ArchimedeanSpiralCurveTest
         Curve2D.ResD1 aD1m = aCurve.EvalD1(aT - global::Kerf.Engine.Foundation.Precision.Confusion());
         Vector2D aFD = new((aD1p.D1.XY() - aD1m.D1.XY()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
 
-        Assert.Equal(aFD.X(), aD2.D2.X(), THE_FD_TOL);
-        Assert.Equal(aFD.Y(), aD2.D2.Y(), THE_FD_TOL);
+        Assert.Equal(aFD.X, aD2.D2.X, THE_FD_TOL);
+        Assert.Equal(aFD.Y, aD2.D2.Y, THE_FD_TOL);
     }
 
     [Fact]
@@ -105,8 +105,8 @@ public class Geom2dEval_ArchimedeanSpiralCurveTest
         Curve2D.ResD2 aD2m = aCurve.EvalD2(aT - global::Kerf.Engine.Foundation.Precision.Confusion());
         Vector2D aFD = new((aD2p.D2.XY() - aD2m.D2.XY()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
 
-        Assert.Equal(aFD.X(), aD3.D3.X(), THE_FD_TOL);
-        Assert.Equal(aFD.Y(), aD3.D3.Y(), THE_FD_TOL);
+        Assert.Equal(aFD.X, aD3.D3.X, THE_FD_TOL);
+        Assert.Equal(aFD.Y, aD3.D3.Y, THE_FD_TOL);
     }
 
     [Fact]
@@ -122,8 +122,8 @@ public class Geom2dEval_ArchimedeanSpiralCurveTest
         Vector2D aDNm1M = aCurve.EvalDN(aT - global::Kerf.Engine.Foundation.Precision.Confusion(), aN - 1);
         Vector2D aFD = new((aDNm1P.XY() - aDNm1M.XY()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
 
-        Assert.Equal(aFD.X(), aDN.X(), THE_FD_TOL_DN);
-        Assert.Equal(aFD.Y(), aDN.Y(), THE_FD_TOL_DN);
+        Assert.Equal(aFD.X, aDN.X, THE_FD_TOL_DN);
+        Assert.Equal(aFD.Y, aDN.Y, THE_FD_TOL_DN);
     }
 
     [Fact]
@@ -133,9 +133,9 @@ public class Geom2dEval_ArchimedeanSpiralCurveTest
         ArchimedeanSpiralCurve2D aCurve = new(anAx2d, 0.0, 1.0);
         Assert.False(aCurve.IsClosed);
         Assert.False(aCurve.IsPeriodic);
-        Assert.Equal(Continuity.CN, aCurve.Continuity());
-        Assert.Equal(0.0, aCurve.FirstParameter(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.True(global::Kerf.Engine.Foundation.Precision.IsInfinite(aCurve.LastParameter()));
+        Assert.Equal(Continuity.CN, aCurve.Continuity);
+        Assert.Equal(0.0, aCurve.FirstParameter, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(global::Kerf.Engine.Foundation.Precision.IsInfinite(aCurve.LastParameter));
     }
 
     [Fact]

@@ -455,7 +455,7 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
             return null;
         }
         if (!Near(aNV.Mass(), aPV.Mass(), 1.0) || !Near(aNS.Mass(), aPS.Mass(), 1.0)
-            || aNS.CentreOfMass().Distance(aPS.CentreOfMass()) > 1.0e-7 * Math.Sqrt(aScale))
+            || aNS.CentreOfMass().DistanceTo(aPS.CentreOfMass()) > 1.0e-7 * Math.Sqrt(aScale))
         {
             return $"volume {aNV.Mass():R}/{aPV.Mass():R} area {aNS.Mass():R}/{aPS.Mass():R}";
         }
@@ -611,7 +611,7 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
     private static string IndexOf(IndexedSet<Shape> theMap, in Shape theS)
     {
         int anI = theMap.IndexOf(theS) + 1;
-        return anI.ToString(CultureInfo.InvariantCulture) + (anI > 0 && theS.Orientation() == Orientation.Reversed ? "r" : "");
+        return anI.ToString(CultureInfo.InvariantCulture) + (anI > 0 && theS.Orientation == Orientation.Reversed ? "r" : "");
     }
 
     internal static Outcome RunPort(ShapeFixOracleRun theRun, Run theCase, Shape theInput)
@@ -693,7 +693,7 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
             for (int i = 1; i <= anInMap.Count; i++)
             {
                 Shape aS = anInMap[i - 1];
-                if (aS.ShapeType() is not (ShapeType.Vertex or ShapeType.Edge or ShapeType.Face))
+                if (aS.Type is not (ShapeType.Vertex or ShapeType.Edge or ShapeType.Face))
                 {
                     continue;
                 }

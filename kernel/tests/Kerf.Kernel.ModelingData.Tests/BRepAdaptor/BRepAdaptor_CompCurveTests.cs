@@ -113,18 +113,18 @@ public class BRepAdaptor_CompCurveTests
         bool anEndMatchesAnyVertex = false;
         foreach (Point3D aV in aVertices)
         {
-            if (aStartPt.Distance(aV) < 1.0e-7)
+            if (aStartPt.DistanceTo(aV) < 1.0e-7)
             {
                 aStartMatchesAnyVertex = true;
             }
-            if (anEndPt.Distance(aV) < 1.0e-7)
+            if (anEndPt.DistanceTo(aV) < 1.0e-7)
             {
                 anEndMatchesAnyVertex = true;
             }
         }
         Assert.True(aStartMatchesAnyVertex, "Start point does not match any wire vertex");
         Assert.True(anEndMatchesAnyVertex, "End point does not match any wire vertex");
-        Assert.True(aStartPt.Distance(anEndPt) > 1.0e-7, "Start and end points should be different");
+        Assert.True(aStartPt.DistanceTo(anEndPt) > 1.0e-7, "Start and end points should be different");
     }
 
     // Test OCC30869: BRepAdaptor_CompCurve D1 at boundary parameters of a wire with reversed edge.
@@ -152,11 +152,11 @@ public class BRepAdaptor_CompCurveTests
         aBACC.D1(aFirst, out Point3D aPFirst, out Vector3D aVFirst);
         aBACC.D1(aLast, out Point3D aPLast, out Vector3D aVLast);
 
-        if (aVFirst.SquareMagnitude() > Constants.Resolution())
+        if (aVFirst.SquareMagnitude > Constants.Resolution())
         {
             aVFirst = aVFirst.Normalized();
         }
-        if (aVLast.SquareMagnitude() > Constants.Resolution())
+        if (aVLast.SquareMagnitude > Constants.Resolution())
         {
             aVLast = aVLast.Normalized();
         }
@@ -167,31 +167,31 @@ public class BRepAdaptor_CompCurveTests
 
         aCircleRef.D1(t1, out Point3D aRefP1, out Vector3D aRefV1);
         aCircleRef.D1(t2, out Point3D aRefP2, out Vector3D aRefV2);
-        if (aRefV1.SquareMagnitude() > Constants.Resolution())
+        if (aRefV1.SquareMagnitude > Constants.Resolution())
         {
             aRefV1 = aRefV1.Normalized();
         }
-        if (aRefV2.SquareMagnitude() > Constants.Resolution())
+        if (aRefV2.SquareMagnitude > Constants.Resolution())
         {
             aRefV2 = aRefV2.Normalized();
         }
 
         const double aTol = 1.0e-7;
-        Assert.Equal(aRefP1.X(), aPFirst.X(), aTol);
-        Assert.Equal(aRefP1.Y(), aPFirst.Y(), aTol);
-        Assert.Equal(aRefP1.Z(), aPFirst.Z(), aTol);
+        Assert.Equal(aRefP1.X, aPFirst.X, aTol);
+        Assert.Equal(aRefP1.Y, aPFirst.Y, aTol);
+        Assert.Equal(aRefP1.Z, aPFirst.Z, aTol);
 
-        Assert.Equal(aRefV1.X(), aVFirst.X(), aTol);
-        Assert.Equal(aRefV1.Y(), aVFirst.Y(), aTol);
-        Assert.Equal(aRefV1.Z(), aVFirst.Z(), aTol);
+        Assert.Equal(aRefV1.X, aVFirst.X, aTol);
+        Assert.Equal(aRefV1.Y, aVFirst.Y, aTol);
+        Assert.Equal(aRefV1.Z, aVFirst.Z, aTol);
 
-        Assert.Equal(aRefP2.X(), aPLast.X(), aTol);
-        Assert.Equal(aRefP2.Y(), aPLast.Y(), aTol);
-        Assert.Equal(aRefP2.Z(), aPLast.Z(), aTol);
+        Assert.Equal(aRefP2.X, aPLast.X, aTol);
+        Assert.Equal(aRefP2.Y, aPLast.Y, aTol);
+        Assert.Equal(aRefP2.Z, aPLast.Z, aTol);
 
-        Assert.Equal(aRefV2.X(), aVLast.X(), aTol);
-        Assert.Equal(aRefV2.Y(), aVLast.Y(), aTol);
-        Assert.Equal(aRefV2.Z(), aVLast.Z(), aTol);
+        Assert.Equal(aRefV2.X, aVLast.X, aTol);
+        Assert.Equal(aRefV2.Y, aVLast.Y, aTol);
+        Assert.Equal(aRefV2.Z, aVLast.Z, aTol);
     }
 
     // Beyond the GTests
@@ -215,9 +215,9 @@ public class BRepAdaptor_CompCurveTests
         for (int i = 0; i < 4; i++, anExp.Next())
         {
             Point3D aV = Tool.Pnt(anExp.CurrentVertex());
-            Assert.True(aC.Value(i).Distance(aV) < 1e-12, $"knot {i}");
+            Assert.True(aC.Value(i).DistanceTo(aV) < 1e-12, $"knot {i}");
         }
-        Assert.True(aC.Value(0.0).Distance(aC.Value(4.0)) < 1e-12);
+        Assert.True(aC.Value(0.0).DistanceTo(aC.Value(4.0)) < 1e-12);
 
         // the intervals are the knots
         Assert.Equal(4, aC.NbIntervals(C1));
@@ -241,7 +241,7 @@ public class BRepAdaptor_CompCurveTests
         for (double u = 0.1; u < 6.0; u += 0.5)
         {
             aC.D1(u, out _, out Vector3D aD1);
-            Assert.Equal(1.0, aD1.Magnitude(), 1e-12);
+            Assert.Equal(1.0, aD1.Magnitude, 1e-12);
         }
 
         aC.Edge(2.5, out Edge anE, out double aUonE);
@@ -260,7 +260,7 @@ public class BRepAdaptor_CompCurveTests
         Assert.Equal(2.5, aT.LastParameter());
         foreach (double u in new[] { 0.5, 1.0, 1.7, 2.5 })
         {
-            Assert.True(aT.Value(u).Distance(aC.Value(u)) < 1e-12, $"u = {u}");
+            Assert.True(aT.Value(u).DistanceTo(aC.Value(u)) < 1e-12, $"u = {u}");
         }
 
         var aCopy = (WireCurveAdaptor)aC.ShallowCopy();
@@ -285,8 +285,8 @@ public class BRepAdaptor_CompCurveTests
         Assert.Equal(1.0, aC.LastParameter());
         Assert.Equal(CN, aC.Continuity());
         Assert.Equal(Circle, new EdgeCurveAdaptor(aBottom).GetType());
-        Assert.Equal(2.0, aC.Circle().Radius());
-        Assert.True(aC.Value(0.25).Distance(new Point3D(0, 2, 0)) < 1e-12);
+        Assert.Equal(2.0, aC.Circle().Radius);
+        Assert.True(aC.Value(0.25).DistanceTo(new Point3D(0, 2, 0)) < 1e-12);
     }
 
     [Fact]

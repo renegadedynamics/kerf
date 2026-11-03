@@ -43,8 +43,8 @@ public class TopLoc_Location_Test
         {
             if (Volatile.Read(ref anIsRaceDetected) == 0)
             {
-                Point3D aPoint = Constants.Origin().Transformed(aLocVec[i].Transformation());
-                if (aPoint.X() != i)
+                Point3D aPoint = Constants.Origin().Transformed(aLocVec[i].Transformation);
+                if (aPoint.X != i)
                 {
                     Interlocked.Increment(ref anIsRaceDetected);
                 }
@@ -84,14 +84,14 @@ public class TopLoc_LocationSemanticsTests
         Assert.True(aNew.IsIdentity);
         Assert.Equal(aNew, aDefault);
         Assert.Equal(0, aDefault.HashCode());
-        Assert.Equal(new Transform3D(), aDefault.Transformation());
+        Assert.Equal(new Transform3D(), aDefault.Transformation);
         Assert.True(aDefault.NextLocation().IsIdentity);
         Assert.ThrowsAny<NoSuchObjectException>(() => aDefault.FirstDatum());
         Assert.ThrowsAny<NoSuchObjectException>(() => aDefault.FirstPower());
     }
 
     [Fact]
-    public void Equality_is_by_datum_identity()
+    public void Equality_is_by_datum_identity_in_the_engine_and_by_value_in_public()
     {
         Transform3D aT = Rotation(0.7);
         var aL1 = new Placement(aT);
@@ -102,11 +102,12 @@ public class TopLoc_LocationSemanticsTests
         Assert.True(aL1 == aCopy);
         Assert.Equal(aL1.GetHashCode(), aCopy.GetHashCode());
 
-        // Same transformation, different datums
+        // Same transformation, different datums: different to the engine, equal in public (decision 1349, 62)
         Assert.True(aL1.IsDifferent(aL2));
-        Assert.True(aL1 != aL2);
-        Assert.False(aL1.Equals(aL2));
-        Assert.Equal(aL1.Transformation(), aL2.Transformation());
+        Assert.True(aL1 == aL2);
+        Assert.True(aL1.Equals(aL2));
+        Assert.Equal(aL1.GetHashCode(), aL2.GetHashCode());
+        Assert.Equal(aL1.Transformation, aL2.Transformation);
 
         // Same datum, built separately
         var aDatum = new Datum3D(aT);
@@ -154,13 +155,13 @@ public class TopLoc_LocationSemanticsTests
         var aL1 = new Placement(aT1);
         var aL2 = new Placement(aT2);
 
-        AssertSameTrsf(aT1.Multiplied(aT2), (aL1 * aL2).Transformation());
-        AssertSameTrsf(aT1.Multiplied(aT2.Inverted()), (aL1 / aL2).Transformation());
-        AssertSameTrsf(aT2.Inverted().Multiplied(aT1), aL1.Predivided(aL2).Transformation());
-        AssertSameTrsf(aT1.Powered(3), aL1.Powered(3).Transformation());
-        AssertSameTrsf(aT1.Multiplied(aT2).Powered(-2), (aL1 * aL2).Powered(-2).Transformation(), 1e-11);
-        AssertSameTrsf(aT1.Inverted(), aL1.Inverted().Transformation());
-        Assert.Equal(aL1.Transformation(), (Transform3D)aL1);
+        AssertSameTrsf(aT1.Multiplied(aT2), (aL1 * aL2).Transformation);
+        AssertSameTrsf(aT1.Multiplied(aT2.Inverted()), (aL1 / aL2).Transformation);
+        AssertSameTrsf(aT2.Inverted().Multiplied(aT1), aL1.Predivided(aL2).Transformation);
+        AssertSameTrsf(aT1.Powered(3), aL1.Powered(3).Transformation);
+        AssertSameTrsf(aT1.Multiplied(aT2).Powered(-2), (aL1 * aL2).Powered(-2).Transformation, 1e-11);
+        AssertSameTrsf(aT1.Inverted(), aL1.Inverted().Transformation);
+        Assert.Equal(aL1.Transformation, (Transform3D)aL1);
     }
 
     [Fact]
@@ -168,7 +169,8 @@ public class TopLoc_LocationSemanticsTests
     {
         var aL1 = new Placement(Rotation(0.2));
         var aL2 = new Placement(Rotation(0.2));
-        var aMap = new HashSet<Placement>();
+        // The engine's maps of locations compare by identity (decision 1349, 62)
+        var aMap = new HashSet<Placement>(PlacementIdentityComparer.Instance);
         Assert.True(aMap.Add(aL1));
         Assert.False(aMap.Add(aL1 * aL2 * aL2.Inverted()));
         Assert.True(aMap.Add(aL2));
@@ -176,8 +178,11 @@ public class TopLoc_LocationSemanticsTests
         Assert.False(aMap.Add(default));
         Assert.Equal(3, aMap.Count);
 
-        var aSet = new HashSet<Placement> { aL1, aL1.Powered(1), aL2 };
+        var aSet = new HashSet<Placement>(PlacementIdentityComparer.Instance) { aL1, aL1.Powered(1), aL2 };
         Assert.Equal(2, aSet.Count);
+
+        // By value, the two rotations are one key
+        Assert.Single(new HashSet<Placement> { aL1, aL1.Powered(1), aL2 });
     }
 
     [Fact]

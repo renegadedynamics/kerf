@@ -146,7 +146,7 @@ public abstract partial class Shape : IEquatable<Shape>
     {
         var copy = Clone();
         copy.History = history;
-        copy._historyAt = copy._wrapped.Location();
+        copy._historyAt = copy._wrapped.Placement;
         return Result(copy);
     }
 
@@ -219,7 +219,7 @@ public abstract partial class Shape : IEquatable<Shape>
     {
         if (History is null)
             return null;
-        var here = _wrapped.Location();
+        var here = _wrapped.Placement;
         if (_historyAt is not { } at || at.IsEqual(here))
             return History;
         var recorded = _wrapped.Located(at);

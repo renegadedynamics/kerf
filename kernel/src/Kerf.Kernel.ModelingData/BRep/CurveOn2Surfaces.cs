@@ -13,7 +13,7 @@ using Occt;
 namespace Kerf.Engine.Topology.Brep;
 
 /// <summary>The continuity of an edge between two surfaces.</summary>
-public class CurveOn2Surfaces : CurveRepresentation
+internal class CurveOn2Surfaces : CurveRepresentation
 {
     private readonly Surface? _surface;
     private readonly Surface? _surface2;
@@ -41,8 +41,8 @@ public class CurveOn2Surfaces : CurveRepresentation
 
     /// <summary>A curve on two surfaces (continuity), in either order.</summary>
     public override bool IsRegularity(Surface? s1, Surface? s2, in Placement l1, in Placement l2)
-        => (ReferenceEquals(_surface, s1) && ReferenceEquals(_surface2, s2) && _location == l1 && _location2 == l2)
-           || (ReferenceEquals(_surface, s2) && ReferenceEquals(_surface2, s1) && _location == l2 && _location2 == l1);
+        => (ReferenceEquals(_surface, s1) && ReferenceEquals(_surface2, s2) && _location.IsEqual(l1) && _location2.IsEqual(l2))
+           || (ReferenceEquals(_surface, s2) && ReferenceEquals(_surface2, s1) && _location.IsEqual(l2) && _location2.IsEqual(l1));
 
     /// <summary>Throws: a continuity has no points.</summary>
     /// <exception cref="NullObjectException">Always.</exception>

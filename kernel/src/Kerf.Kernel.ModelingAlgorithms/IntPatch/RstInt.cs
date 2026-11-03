@@ -137,8 +137,8 @@ public static class RstInt
             HVertex vtx1 = domain.Vertex();
             double prm = HInterTool.Parameter(vtx1, a);
             Point2D p2d = a.Value(prm);
-            Point3D point = surf.Value(p2d.X(), p2d.Y());
-            double dist = point.Distance(ptsommet);
+            Point3D point = surf.Value(p2d.X, p2d.Y);
+            double dist = point.DistanceTo(ptsommet);
             double tol = Max(tolarc, Tol3d(vtx1, domain));
 
             if (dist <= tol && dist <= distmin)
@@ -153,7 +153,7 @@ public static class RstInt
 
     private static void VerifyTgline(WLine wlin, int param, double tol, ref Vector3D tgl)
     {
-        if (Math.Abs(tgl.X()) < tol && Math.Abs(tgl.Y()) < tol && Math.Abs(tgl.Z()) < tol)
+        if (Math.Abs(tgl.X) < tol && Math.Abs(tgl.Y) < tol && Math.Abs(tgl.Z) < tol)
         {
             //-- On construit une tangente plus grande
             //-- (Eviter des points tres proches ds Walking)
@@ -166,7 +166,7 @@ public static class RstInt
                     for (i = param + 1; i <= nbpt; i++)
                     {
                         Vector3D t = new(wlin.Point(param).Value(), wlin.Point(i).Value());
-                        if (Math.Abs(t.X()) >= tol || Math.Abs(t.Y()) >= tol || Math.Abs(t.Z()) >= tol)
+                        if (Math.Abs(t.X) >= tol || Math.Abs(t.Y) >= tol || Math.Abs(t.Z) >= tol)
                         {
                             tgl = t;
                             return;
@@ -178,7 +178,7 @@ public static class RstInt
                     for (i = param - 1; i >= 1; i--)
                     {
                         Vector3D t = new(wlin.Point(i).Value(), wlin.Point(param).Value());
-                        if (Math.Abs(t.X()) >= tol || Math.Abs(t.Y()) >= tol || Math.Abs(t.Z()) >= tol)
+                        if (Math.Abs(t.X) >= tol || Math.Abs(t.Y) >= tol || Math.Abs(t.Z) >= tol)
                         {
                             tgl = t;
                             return;
@@ -278,12 +278,12 @@ public static class RstInt
             {
                 return (false);
             }
-            otherSurf.D1(p2d.X(), p2d.Y(), out Point3D ptbid, out Vector3D d1u, out Vector3D d1v);
-            if (ptbid.SquareDistance(ptsom) > tol2)
+            otherSurf.D1(p2d.X, p2d.Y, out Point3D ptbid, out Vector3D d1u, out Vector3D d1v);
+            if (ptbid.SquareDistanceTo(ptsom) > tol2)
             {
                 return false;
             }
-            tgl = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+            tgl = Vector3D.LinearForm(d2d.X, d1u, d2d.Y, d1v);
             return (true);
         }
 
@@ -331,7 +331,7 @@ public static class RstInt
                 Point3D p1, p2;
                 p1 = wlin.Point(inf[@is]).Value();
                 v1 = new Vector3D(ptsom, p1);
-                norm1 = v1.SquareMagnitude();
+                norm1 = v1.SquareMagnitude;
                 double normmin = tol2;
                 int ibest = 0;
                 if (norm1 <= normmin)
@@ -343,7 +343,7 @@ public static class RstInt
                 {
                     p2 = wlin.Point(i).Value();
                     v2 = new Vector3D(ptsom, p2);
-                    norm2 = v2.SquareMagnitude();
+                    norm2 = v2.SquareMagnitude;
                     if (v1.Dot(v2) < 0.0)
                     {
                         param = (double)(i - 1) + 1.0 / (1.0 + Math.Sqrt(norm2 / norm1));
@@ -545,23 +545,23 @@ public static class RstInt
 
                     bpLin.Get(out double aXmin, out double aYmin, out double aXmax, out double aYmax);
                     Line2D lin = arc.Line();
-                    Point2D loc = lin.Location();
-                    Direction2D dir = lin.Direction();
+                    Point2D loc = lin.Location;
+                    Direction2D dir = lin.Direction;
 
                     // Here, we consider rectangular axis-aligned domain only.
-                    bool isAlongU = (Math.Abs(dir.X()) > Math.Abs(dir.Y()));
+                    bool isAlongU = (Math.Abs(dir.X) > Math.Abs(dir.Y));
 
                     if (surfaceIsPeriodic && !isAlongU)
                     {
                         // Shift along U-direction
-                        double newLocation = global::Kerf.Engine.Geometry.ElCLib.InPeriod(loc.X(), aXmin, aXmin + M_PI + M_PI);
-                        offsetU = newLocation - loc.X();
+                        double newLocation = global::Kerf.Engine.Geometry.ElCLib.InPeriod(loc.X, aXmin, aXmin + M_PI + M_PI);
+                        offsetU = newLocation - loc.X;
                     }
                     else if (surfaceIsBiPeriodic && isAlongU)
                     {
                         // Shift along V-direction
-                        double newLocation = global::Kerf.Engine.Geometry.ElCLib.InPeriod(loc.Y(), aYmin, aYmin + M_PI + M_PI);
-                        offsetV = newLocation - loc.Y();
+                        double newLocation = global::Kerf.Engine.Geometry.ElCLib.InPeriod(loc.Y, aYmin, aYmin + M_PI + M_PI);
+                        offsetV = newLocation - loc.Y;
                     }
                 }
                 break;
@@ -700,7 +700,7 @@ public static class RstInt
                             // if (anOldPnt.SquareDistance(aNewPnt) < Precision::SquareConfusion())
                             double tolConf = Max(global::Kerf.Engine.Foundation.Precision.Confusion(), edgeTol);
 
-                            if (oldPnt.SquareDistance(newPnt) < tolConf * tolConf)
+                            if (oldPnt.SquareDistanceTo(newPnt) < tolConf * tolConf)
                             {
                                 u2 = u;
                                 v2 = v;
@@ -714,7 +714,7 @@ public static class RstInt
                             duplicate = false;
                             for (j = 1; j <= locpt.Length(); j++)
                             {
-                                if (ptsommet.Distance(locpt.Value(j)) <= edgeTol)
+                                if (ptsommet.DistanceTo(locpt.Value(j)) <= edgeTol)
                                 {
                                     if (possiblyClosed)
                                     {
@@ -735,8 +735,8 @@ public static class RstInt
                                 int paramApproxOnLine = (int)w1 + 1;
 
                                 arc.D1(paramarc, out p2d, out d2d);
-                                u1 = p2d.X();
-                                v1 = p2d.Y();
+                                u1 = p2d.X;
+                                v1 = p2d.Y;
                                 if (typL == PatchLineType.Walking && surfaceIsPeriodic)
                                 {
                                     if (onFirst)
@@ -845,7 +845,7 @@ public static class RstInt
                                                 }
                                             }
                                         }
-                                        double dist = ptsommet.Distance(rptline.Value());
+                                        double dist = ptsommet.DistanceTo(rptline.Value());
                                         double dt = Max(vtxTol, rptline.Tolerance());
                                         if (dist < dmin)
                                         {
@@ -895,10 +895,10 @@ public static class RstInt
                                 }
 
                                 surf.D1(u1, v1, out _, out Vector3D d1u, out Vector3D d1v);
-                                tgrst = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+                                tgrst = Vector3D.LinearForm(d2d.X, d1u, d2d.Y, d1v);
 
                                 normsurf = d1u.Crossed(d1v);
-                                if (normsurf.Magnitude() < Constants.Resolution())
+                                if (normsurf.Magnitude < Constants.Resolution())
                                 {
                                     transline.SetValue(true, WalkingTypeTrans.Undecided);
                                     transarc.SetValue(true, WalkingTypeTrans.Undecided);

@@ -343,7 +343,7 @@ public class ExtremaPC_SearchModeTest
             Assert.True(aExtremum.Parameter <= M_PI / 2.0 + THE_TOL);
             // Point should be on the curve
             Point3D aCurvePnt = anAdaptor.Value(aExtremum.Parameter);
-            Assert.Equal(0.0, aCurvePnt.Distance(aExtremum.Point), THE_TOL);
+            Assert.Equal(0.0, aCurvePnt.DistanceTo(aExtremum.Point), THE_TOL);
         }
     }
 
@@ -502,7 +502,7 @@ public class ExtremaPC_SearchModeTest
             Assert.True(aExtremum.Parameter >= -20.0 - THE_TOL);
             Assert.True(aExtremum.Parameter <= 20.0 + THE_TOL);
             Point3D aCurvePnt = anAdaptor.Value(aExtremum.Parameter);
-            Assert.Equal(0.0, aCurvePnt.Distance(aExtremum.Point), THE_TOL);
+            Assert.Equal(0.0, aCurvePnt.DistanceTo(aExtremum.Point), THE_TOL);
         }
     }
 
@@ -580,7 +580,7 @@ public class ExtremaPC_SearchModeTest
             Assert.True(aExtremum.Parameter >= -2.0 - THE_TOL);
             Assert.True(aExtremum.Parameter <= 2.0 + THE_TOL);
             Point3D aCurvePnt = anAdaptor.Value(aExtremum.Parameter);
-            Assert.Equal(0.0, aCurvePnt.Distance(aExtremum.Point), THE_TOL);
+            Assert.Equal(0.0, aCurvePnt.DistanceTo(aExtremum.Point), THE_TOL);
         }
     }
 
@@ -661,7 +661,7 @@ public class ExtremaPC_SearchModeTest
             Assert.True(aExtremum.Parameter >= 0.0 - THE_TOL);
             Assert.True(aExtremum.Parameter <= 1.0 + THE_TOL);
             Point3D aCurvePnt = anAdaptor.Value(aExtremum.Parameter);
-            Assert.Equal(0.0, aCurvePnt.Distance(aExtremum.Point), 0.01);
+            Assert.Equal(0.0, aCurvePnt.DistanceTo(aExtremum.Point), 0.01);
         }
     }
 
@@ -701,7 +701,7 @@ public class ExtremaPC_SearchModeTest
             Assert.True(aExtremum.Parameter >= 0.0 - THE_TOL);
             Assert.True(aExtremum.Parameter <= 1.0 + THE_TOL);
             Point3D aCurvePnt = anAdaptor.Value(aExtremum.Parameter);
-            Assert.Equal(0.0, aCurvePnt.Distance(aExtremum.Point), 0.01);
+            Assert.Equal(0.0, aCurvePnt.DistanceTo(aExtremum.Point), 0.01);
         }
 
         // Compare minimum with old implementation
@@ -828,7 +828,7 @@ public class ExtremaPC_SearchModeTest
         {
             var aExtremum = aNewResult[aNewResult.MaxIndex()];
             Point3D aCurvePnt = anAdaptor.Value(aExtremum.Parameter);
-            Assert.Equal(0.0, aCurvePnt.Distance(aExtremum.Point), 0.01);
+            Assert.Equal(0.0, aCurvePnt.DistanceTo(aExtremum.Point), 0.01);
 
             // The max distance should be around 40 (25 + 15)
             double aNewMaxDist = Math.Sqrt(aNewResult.MaxSquareDistance());

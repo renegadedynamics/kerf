@@ -196,19 +196,19 @@ public class Builder
         // but aShape will be frozen when the Exception is raised
         if (aShape.Free())
         {
-            uint iC = (uint)aComponent.ShapeType();
-            uint iS = (uint)aShape.ShapeType();
+            uint iC = (uint)aComponent.Type;
+            uint iS = (uint)aShape.Type;
             if ((ATb[iC] & (1u << (int)iS)) != 0)
             {
                 Shape child = aComponent;
                 // compute the relative Orientation
-                if (aShape.Orientation() == Reversed)
+                if (aShape.Orientation == Reversed)
                 {
                     child.Reverse();
                 }
 
                 // and the Relative Location
-                Placement loc = aShape.Location();
+                Placement loc = aShape.Placement;
                 if (!loc.IsIdentity)
                 {
                     child.Move(loc.Inverted(), false);
@@ -268,12 +268,12 @@ public class Builder
 
         // compute the relative Orientation and Location of aComponent
         Shape s = aComponent;
-        if (aShape.Orientation() == Reversed)
+        if (aShape.Orientation == Reversed)
         {
             s.Reverse();
         }
 
-        s.Location(s.Location().Predivided(aShape.Location()), false);
+        s.Location(s.Placement.Predivided(aShape.Placement), false);
 
         // Kerf: a frozen shape loses the child in the working overlay's copy of it, if one is open
         TShape tShape = aShape.TShape()!;
@@ -302,6 +302,6 @@ public class Builder
     {
         s.TShape(t);
         s.Location(new Placement());
-        s.Orientation(Forward);
+        s.Orient(Forward);
     }
 }

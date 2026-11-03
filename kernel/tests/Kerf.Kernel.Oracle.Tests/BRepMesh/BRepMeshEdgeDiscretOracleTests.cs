@@ -310,7 +310,7 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
                             Point3D aPoint = aCurve.GetPoint(k - 1);
                             if (!aLoc.IsIdentity)
                             {
-                                Transform3D aTrsf = aLoc.Transformation();
+                                Transform3D aTrsf = aLoc.Transformation;
                                 aTrsf = aTrsf.Inverted();
                                 aPoint = aPoint.Transformed(aTrsf);
                             }

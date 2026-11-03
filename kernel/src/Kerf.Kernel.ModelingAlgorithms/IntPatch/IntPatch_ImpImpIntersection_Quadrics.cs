@@ -69,7 +69,7 @@ public sealed partial class ImpImpIntersection
                     ptsol = aligold.Vertex(k);
                     if (!procf)
                     {
-                        d = ptf.Distance(ptsol.Value());
+                        d = ptf.DistanceTo(ptsol.Value());
                         if (d <= tol)
                         {
                             ptsol.SetTolerance(tol);
@@ -91,7 +91,7 @@ public sealed partial class ImpImpIntersection
                     }
                     if (!procl)
                     {
-                        if (ptl.Distance(ptsol.Value()) <= tol)
+                        if (ptl.DistanceTo(ptsol.Value()) <= tol)
                         {
                             ptsol.SetTolerance(tol);
                             if (!ptsol.IsMultiple)
@@ -137,7 +137,7 @@ public sealed partial class ImpImpIntersection
             ptsol.SetValue(ptf, tol, false);
             ptsol.SetParameters(u1, v1, u2, v2);
             ptsol.SetParameter(first);
-            if (ptf.Distance(ptl) <= tol)
+            if (ptf.DistanceTo(ptl) <= tol)
             {
                 ptsol.SetMultiple(true); // a voir
                 multpoint = true;        // a voir de meme
@@ -252,7 +252,7 @@ public sealed partial class ImpImpIntersection
 
                 if (nbSol == 1)
                 {
-                    Vector3D testCurvature = new(ptref, sp.Location());
+                    Vector3D testCurvature = new(ptref, sp.Location);
                     Vector3D normsp, normcyl;
                     if (!reversed)
                     {
@@ -698,7 +698,7 @@ public sealed partial class ImpImpIntersection
                                      NCollection_List<Curve> lc)
     {
         double sqTol = tol * tol;
-        Point3D papx = co.Apex();
+        Point3D papx = co.Apex;
 
         crv.Domain(out double t1, out double t2);
 
@@ -729,7 +729,7 @@ public sealed partial class ImpImpIntersection
             }
 
             Point3D p = crv.Value(prm);
-            double sqD = p.SquareDistance(papx);
+            double sqD = p.SquareDistanceTo(papx);
             if (sqD < sqTol)
             {
                 Curve c1 = crv;
@@ -814,8 +814,8 @@ public sealed partial class ImpImpIntersection
                 PatchPoint aPtsol = new();
                 GLine glig;
                 //
-                pApex1 = co1.Apex();
-                pApex2 = co2.Apex();
+                pApex1 = co1.Apex;
+                pApex2 = co2.Apex;
                 //
                 if (nbSol == 1)
                 {
@@ -842,11 +842,11 @@ public sealed partial class ImpImpIntersection
                     else
                     {
                         double r1, r2;
-                        Line3D lAx1 = new(pApex1, co1.Axis().Direction());
-                        Line3D lAx2 = new(pApex2, co2.Axis().Direction());
+                        Line3D lAx1 = new(pApex1, co1.Axis.Direction);
+                        Line3D lAx2 = new(pApex2, co2.Axis.Direction);
                         //
-                        r1 = lAx1.Distance(ptbid);
-                        r2 = lAx2.Distance(ptbid);
+                        r1 = lAx1.DistanceTo(ptbid);
+                        r2 = lAx2.DistanceTo(ptbid);
                         //
                         situC1 = WalkingSituation.Inside;
                         situC2 = WalkingSituation.Outside;
@@ -864,7 +864,7 @@ public sealed partial class ImpImpIntersection
                     glig.SetFirstPoint(1);
                     slin.Append(glig);
                     // 2
-                    linsol = linsol.WithDirection(linsol.Direction().Reversed());
+                    linsol = linsol.WithDirection(linsol.Direction.Reversed());
                     para = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol, pApex1);
                     aPtsol.SetParameter(para);
 
@@ -888,7 +888,7 @@ public sealed partial class ImpImpIntersection
                         trans1 = WalkingTypeTrans.In;
                         trans2 = WalkingTypeTrans.Out;
                         // gp_Dir::DotCross: the normals are converted to (normalised) directions, as in C++.
-                        if (linsol.Direction().DotCross(new Direction3D(quad2.Normale(ptbid)), new Direction3D(quad1.Normale(ptbid))) > 0.0)
+                        if (linsol.Direction.DotCross(new Direction3D(quad2.Normale(ptbid)), new Direction3D(quad1.Normale(ptbid))) > 0.0)
                         {
                             trans1 = WalkingTypeTrans.Out;
                             trans2 = WalkingTypeTrans.In;
@@ -906,7 +906,7 @@ public sealed partial class ImpImpIntersection
                         glig.SetFirstPoint(1);
                         slin.Append(glig);
                         // 2,4
-                        linsol = linsol.WithDirection(linsol.Direction().Reversed());
+                        linsol = linsol.WithDirection(linsol.Direction.Reversed());
                         para = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol, pApex1);
                         aPtsol.SetParameter(para);
                         glig = new GLine(linsol, false, trans1, trans2);
@@ -923,21 +923,21 @@ public sealed partial class ImpImpIntersection
             case global::Kerf.Engine.Intersection.ResultType.Point:
             {
                 Point3D ptcontact;
-                Point3D apex1 = co1.Apex();
-                Point3D apex2 = co2.Apex();
+                Point3D apex1 = co1.Apex;
+                Point3D apex2 = co2.Apex;
                 double param1, param2;
-                double paramapex1 = global::Kerf.Engine.Geometry.ElCLib.LineParameter(co1.Axis(), apex1);
-                double paramapex2 = global::Kerf.Engine.Geometry.ElCLib.LineParameter(co2.Axis(), apex2);
+                double paramapex1 = global::Kerf.Engine.Geometry.ElCLib.LineParameter(co1.Axis, apex1);
+                double paramapex2 = global::Kerf.Engine.Geometry.ElCLib.LineParameter(co2.Axis, apex2);
                 for (i = 1; i <= nbSol; i++)
                 {
                     ptcontact = inter.Point(i);
-                    param1 = global::Kerf.Engine.Geometry.ElCLib.LineParameter(co1.Axis(), ptcontact);
-                    param2 = global::Kerf.Engine.Geometry.ElCLib.LineParameter(co2.Axis(), ptcontact);
+                    param1 = global::Kerf.Engine.Geometry.ElCLib.LineParameter(co1.Axis, ptcontact);
+                    param2 = global::Kerf.Engine.Geometry.ElCLib.LineParameter(co2.Axis, ptcontact);
 
                     quad1.Parameters(ptcontact, ref u1, ref v1);
                     quad2.Parameters(ptcontact, ref u2, ref v2);
 
-                    if (apex1.Distance(ptcontact) <= tol && apex2.Distance(ptcontact) <= tol)
+                    if (apex1.DistanceTo(ptcontact) <= tol && apex2.DistanceTo(ptcontact) <= tol)
                     {
                         PatchPoint ptsol = new();
                         ptsol.SetValue(ptcontact, tol, false);
@@ -1077,9 +1077,9 @@ public sealed partial class ImpImpIntersection
                 PatchPoint aPtsol = new();
                 Parabola3D parabsol = inter.Parabola(1);
 
-                Vector3D tgtorig = new(parabsol.YAxis().Direction());
+                Vector3D tgtorig = new(parabsol.YAxis.Direction);
                 double ptran =
-                    tgtorig.DotCross(quad2.Normale(parabsol.Location()), quad1.Normale(parabsol.Location()));
+                    tgtorig.DotCross(quad2.Normale(parabsol.Location), quad1.Normale(parabsol.Location));
                 if (ptran > 0.00000001)
                 {
                     trans1 = WalkingTypeTrans.Out;
@@ -1171,7 +1171,7 @@ public sealed partial class ImpImpIntersection
                         {
                             para = (1.123 * first + para) / 2.123;
                             tgfound = curvsol.D1u(para, out ptvalid, out tgvalid);
-                            if (tgvalid.SquareMagnitude() < 1e-14)
+                            if (tgvalid.SquareMagnitude < 1e-14)
                             {
                                 //-- on se trouve ds un cas ou les normales n'auront pas de sens
                                 tgfound = false;
@@ -1246,8 +1246,8 @@ public sealed partial class ImpImpIntersection
             double para;
             PatchPoint aPtsol = new();
             Point3D pApex1, pApex2;
-            pApex1 = co1.Apex();
-            pApex2 = co2.Apex();
+            pApex1 = co1.Apex;
+            pApex2 = co2.Apex;
             // common generatrix of cones
             MakeLin mkLin = new(pApex1, pApex2);
             Line3D linsol = mkLin.Value();
@@ -1320,17 +1320,17 @@ public sealed partial class ImpImpIntersection
             case global::Kerf.Engine.Intersection.ResultType.Point:
             {
                 Point3D ptcontact;
-                Point3D apex = co.Apex();
+                Point3D apex = co.Apex;
                 double param;
-                double paramapex = global::Kerf.Engine.Geometry.ElCLib.LineParameter(co.Axis(), apex);
+                double paramapex = global::Kerf.Engine.Geometry.ElCLib.LineParameter(co.Axis, apex);
                 for (i = 1; i <= nbSol; i++)
                 {
                     ptcontact = inter.Point(i);
-                    param = global::Kerf.Engine.Geometry.ElCLib.LineParameter(co.Axis(), ptcontact);
+                    param = global::Kerf.Engine.Geometry.ElCLib.LineParameter(co.Axis, ptcontact);
                     quad1.Parameters(ptcontact, ref u1, ref v1);
                     quad2.Parameters(ptcontact, ref u2, ref v2);
 
-                    if (apex.Distance(ptcontact) <= tol)
+                    if (apex.DistanceTo(ptcontact) <= tol)
                     {
                         PatchPoint ptsol = new();
                         ptsol.SetValue(ptcontact, tol, false);
@@ -1385,9 +1385,9 @@ public sealed partial class ImpImpIntersection
 
             case PointAndCircle:
             {
-                Point3D apex = co.Apex();
+                Point3D apex = co.Apex;
                 double param;
-                double paramapex = global::Kerf.Engine.Geometry.ElCLib.LineParameter(co.Axis(), apex);
+                double paramapex = global::Kerf.Engine.Geometry.ElCLib.LineParameter(co.Axis, apex);
 
                 // le point est necessairement l apex
                 quad1.Parameters(apex, ref u1, ref v1);
@@ -1398,7 +1398,7 @@ public sealed partial class ImpImpIntersection
                 spnt.Append(ptsol);
 
                 Circle3D cirsol = inter.Circle(1);
-                param = global::Kerf.Engine.Geometry.ElCLib.LineParameter(co.Axis(), cirsol.Location());
+                param = global::Kerf.Engine.Geometry.ElCLib.LineParameter(co.Axis, cirsol.Location);
                 global::Kerf.Engine.Geometry.ElCLib.D1(0.0, cirsol, out Point3D ptref, out Vector3D tgt);
                 double qwe = tgt.DotCross(quad2.Normale(ptref), quad1.Normale(ptref));
 
@@ -1510,7 +1510,7 @@ public sealed partial class ImpImpIntersection
                         if (kount <= 5)
                         {
                             // para is computed and never read, as in OCCT.
-                            para = global::Kerf.Engine.Geometry.ElCLib.LineParameter(co.Axis(), ptvalid);
+                            para = global::Kerf.Engine.Geometry.ElCLib.LineParameter(co.Axis, ptvalid);
                             double qwe = tgvalid.DotCross(quad2.Normale(ptvalid), quad1.Normale(ptvalid));
                             if (qwe > 0.000000001)
                             {
@@ -1532,7 +1532,7 @@ public sealed partial class ImpImpIntersection
                         else
                         {
                             ptvalid = curvsol.Value(para);
-                            para = global::Kerf.Engine.Geometry.ElCLib.LineParameter(co.Axis(), ptvalid);
+                            para = global::Kerf.Engine.Geometry.ElCLib.LineParameter(co.Axis, ptvalid);
                             alig = new ALine(curvsol, false);
                             kept = true;
                             //-- cout << "Transition indeterminee" << endl;

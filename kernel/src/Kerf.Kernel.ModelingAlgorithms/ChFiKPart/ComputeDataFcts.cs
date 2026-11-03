@@ -114,11 +114,11 @@ internal static class ComputeDataFcts
                     if (bspProjc.IsRational)
                     {
                         pcurv = new BSplineCurve2D(tp, bspProjc.InternalWeightsArray(), tk, tm,
-                                                        bspProjc.Degree());
+                                                        bspProjc.Degree);
                     }
                     else
                     {
-                        pcurv = new BSplineCurve2D(tp, tk, tm, bspProjc.Degree());
+                        pcurv = new BSplineCurve2D(tp, tk, tm, bspProjc.Degree);
                     }
                 }
                     break;

@@ -140,7 +140,7 @@ public class BRepMeshShellTests
     private static void FanMesh(in Face theFace)
     {
         Face aFwd = ShapeCasts.Face(theFace.Oriented(Forward));
-        Plane3D aPln = ((PlaneSurface)Tool.Surface(aFwd)!).Pln();
+        Plane3D aPln = ((PlaneSurface)Tool.Surface(aFwd)!).Plane;
         var aVertices = new List<Vertex>();
         for (var anExp = new Explorer(aFwd, ShapeType.Edge); anExp.More(); anExp.Next())
         {
@@ -152,7 +152,7 @@ public class BRepMeshShellTests
         var aTri = new Triangulation(n, n - 2, true);
         for (int i = 0; i < n; i++)
         {
-            Point3D aP = Tool.Pnt(aVertices[i]).Transformed(theFace.Location().Transformation());
+            Point3D aP = Tool.Pnt(aVertices[i]).Transformed(theFace.Placement.Transformation);
             aTri.SetNode(i + 1, aP);
             global::Kerf.Engine.Geometry.ElSLib.Parameters(aPln, Tool.Pnt(aVertices[i]), out double u, out double v);
             aTri.SetUVNode(i + 1, new Point2D(u, v));
@@ -170,7 +170,7 @@ public class BRepMeshShellTests
             var aNodes = new NCollection_Array1<int>(1, 2);
             aNodes[1] = aVertices.FindIndex(v => v.IsSame(aV1)) + 1;
             aNodes[2] = aVertices.FindIndex(v => v.IsSame(aV2)) + 1;
-            ShapeTool.UpdateEdge(anE, new PolygonOnTriangulation(aNodes), aTri, theFace.Location());
+            ShapeTool.UpdateEdge(anE, new PolygonOnTriangulation(aNodes), aTri, theFace.Placement);
         }
     }
 
@@ -243,7 +243,7 @@ public class BRepMeshShellTests
             Assert.Throws<ImmutableObjectException>(() => aTri.Deflection(1.0));
             for (var anExp = new Explorer(aF, ShapeType.Edge); anExp.More(); anExp.Next())
             {
-                PolygonOnTriangulation aPoly = Tool.PolygonOnTriangulation(ShapeCasts.Edge(anExp.Current()), aTri, aF.Location())!;
+                PolygonOnTriangulation aPoly = Tool.PolygonOnTriangulation(ShapeCasts.Edge(anExp.Current()), aTri, aF.Placement)!;
                 Assert.True(aPoly.IsFrozen);
             }
         }
@@ -310,7 +310,7 @@ public class BRepMeshShellTests
             Assert.True(aTri.IsFrozen);
             for (var anExp = new Explorer(aF, ShapeType.Edge); anExp.More(); anExp.Next())
             {
-                Assert.True(Tool.PolygonOnTriangulation(ShapeCasts.Edge(anExp.Current()), aTri, aF.Location())!.IsFrozen);
+                Assert.True(Tool.PolygonOnTriangulation(ShapeCasts.Edge(anExp.Current()), aTri, aF.Placement)!.IsFrozen);
             }
         }
     }
@@ -486,16 +486,16 @@ public class BRepMeshShellTests
         new ShapeExplorer(aCompound).Accept(aVisitor);
 
         // the free edge first, at the identity location
-        Assert.Equal(ShapeType.Edge, aVisitor.Visited[0].ShapeType());
+        Assert.Equal(ShapeType.Edge, aVisitor.Visited[0].Type);
         Assert.True(aVisitor.Visited[0].IsSame(aFree));
-        Assert.True(aVisitor.Visited[0].Location().IsIdentity);
+        Assert.True(aVisitor.Visited[0].Placement.IsIdentity);
 
         // then each face once (the reversed copy of a box face is the same face), forward, after its edges
-        List<Shape> aFaces = aVisitor.Visited.Where(s => s.ShapeType() == ShapeType.Face).ToList();
+        List<Shape> aFaces = aVisitor.Visited.Where(s => s.Type == ShapeType.Face).ToList();
         Assert.Equal(6, aFaces.Count);
-        Assert.All(aFaces, f => Assert.Equal(Forward, f.Orientation()));
+        Assert.All(aFaces, f => Assert.Equal(Forward, f.Orientation));
         Assert.Equal(1 + 6 * 4 + 6, aVisitor.Visited.Count);
-        int aFirstFace = aVisitor.Visited.FindIndex(s => s.ShapeType() == ShapeType.Face);
+        int aFirstFace = aVisitor.Visited.FindIndex(s => s.Type == ShapeType.Face);
         Assert.Equal(5, aFirstFace); // the free edge and the first face's four edges
     }
 
@@ -557,7 +557,7 @@ public class BRepMeshShellTests
         Edge aBoxEdge = ShapeCasts.Edge(new Explorer(aFace, ShapeType.Edge).Current());
         var aDFace = new FaceData(aFace);
         var aDEdge = new EdgeData(aBoxEdge);
-        PCurveModel aPCurve = aDEdge.AddPCurve(aDFace, aBoxEdge.Orientation());
+        PCurveModel aPCurve = aDEdge.AddPCurve(aDFace, aBoxEdge.Orientation);
         bool aSameRange = aDEdge.GetSameRange();
         ShapeTool.CheckAndUpdateFlags(aDEdge, aPCurve);
         Assert.Equal(aSameRange, aDEdge.GetSameRange());
@@ -657,9 +657,9 @@ public class BRepMeshShellTests
         Assert.True(aTri.IsFrozen); // shared with the frozen input
 
         Edge anEdge = ShapeCasts.Edge(new Explorer(aFace, ShapeType.Edge).Current());
-        Assert.NotNull(Tool.PolygonOnTriangulation(anEdge, aTri, aFace.Location()));
-        ShapeTool.NullifyEdge(anEdge, aTri, aFace.Location());
-        Assert.Null(Tool.PolygonOnTriangulation(anEdge, aTri, aFace.Location()));
+        Assert.NotNull(Tool.PolygonOnTriangulation(anEdge, aTri, aFace.Placement));
+        ShapeTool.NullifyEdge(anEdge, aTri, aFace.Placement);
+        Assert.Null(Tool.PolygonOnTriangulation(anEdge, aTri, aFace.Placement));
         ShapeTool.NullifyFace(aFace);
         Assert.Null(Triangulation(aFace));
 

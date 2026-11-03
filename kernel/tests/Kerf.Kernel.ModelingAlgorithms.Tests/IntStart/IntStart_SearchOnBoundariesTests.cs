@@ -76,8 +76,8 @@ public class IntStart_SearchOnBoundariesTests
     private static void OnBoth(Search theSearch, in ThePathPointOfTheSOnBounds theP, double theTol)
     {
         Point2D aUV = theP.Arc().Value(theP.Parameter());
-        Point3D anOnSurf = theSearch.Surface.Value(aUV.X(), aUV.Y());
-        Assert.True(anOnSurf.Distance(theP.Value()) <= theTol, $"{theP} is not at its arc parameter");
+        Point3D anOnSurf = theSearch.Surface.Value(aUV.X, aUV.Y);
+        Assert.True(anOnSurf.DistanceTo(theP.Value()) <= theTol, $"{theP} is not at its arc parameter");
         Assert.True(Math.Abs(theSearch.Quadric.Distance(theP.Value())) <= theTol, $"{theP} is not on the plane");
     }
 
@@ -86,12 +86,12 @@ public class IntStart_SearchOnBoundariesTests
                                                                                 in ThePathPointOfTheSOnBounds theP)
     {
         theP.Arc().D1(theP.Parameter(), out Point2D aUV, out Vector2D aD2d);
-        theSearch.Surface.D1(aUV.X(), aUV.Y(), out _, out Vector3D aD1u, out Vector3D aD1v);
+        theSearch.Surface.D1(aUV.X, aUV.Y, out _, out Vector3D aD1u, out Vector3D aD1v);
 
         TheSurfFunction aFunc = new(theSearch.Surface, theSearch.Quadric);
         math_Vector aX = new(1, 2);
-        aX[1] = aUV.X();
-        aX[2] = aUV.Y();
+        aX[1] = aUV.X;
+        aX[2] = aUV.Y;
         math_Vector aF = new(1, 1);
         Matrix aD = new(1, 1, 1, 2);
         aFunc.Values(aX, aF, aD);
@@ -99,7 +99,7 @@ public class IntStart_SearchOnBoundariesTests
         Vector3D aTgLine = aFunc.Direction3d();
 
         Vector3D aTgRst = new();
-        aTgRst = Vector3D.LinearForm(aD2d.X(), aD1u, aD2d.Y(), aD1v);
+        aTgRst = Vector3D.LinearForm(aD2d.X, aD1u, aD2d.Y, aD1v);
         Direction3D aNormal = new(aD1u.Crossed(aD1v));
         global::Kerf.Engine.Intersection.Walking.WalkingTransition aTLine = new(), aTArc = new();
         global::Kerf.Engine.Intersection.Walking.IntSurf.MakeTransition(aTgLine, aTgRst, aNormal, ref aTLine, ref aTArc);
@@ -186,7 +186,7 @@ public class IntStart_SearchOnBoundariesTests
             Assert.Same(aS.Arcs[2 * i - 1], aSeg.Curve()); // the seams, arcs 2 and 4
             Assert.Equal(0.0, aSeg.FirstPoint().Parameter());
             Assert.Equal(2.0, aSeg.LastPoint().Parameter());
-            Assert.Equal(0.0, new Point3D(1, 0, 2).Distance(aSeg.LastPoint().Value()), 1e-15);
+            Assert.Equal(0.0, new Point3D(1, 0, 2).DistanceTo(aSeg.LastPoint().Value()), 1e-15);
         }
     }
 
@@ -275,16 +275,16 @@ public class IntStart_SearchInsideTests
         {
             global::Kerf.Engine.Intersection.Walking.InteriorPoint aP = aSearch.Value(i);
             Point3D aPnt = aP.Value();
-            Assert.Equal(1.0, aPnt.Z(), 1e-9);
-            Assert.Equal(1.0, Math.Sqrt(aPnt.X() * aPnt.X() + aPnt.Y() * aPnt.Y()), 1e-9);
+            Assert.Equal(1.0, aPnt.Z, 1e-9);
+            Assert.Equal(1.0, Math.Sqrt(aPnt.X * aPnt.X + aPnt.Y * aPnt.Y), 1e-9);
             Assert.True(aP.UParameter() > 0 && aP.UParameter() < 2 * Math.PI && Math.Abs(aP.VParameter() - 1) < 1e-9);
             // the tangent of the circle: horizontal, perpendicular to the radius; in (u, v), along u
-            Assert.Equal(0.0, aP.Direction().Z(), 1e-12);
-            Assert.Equal(0.0, aP.Direction().Dot(new Vector3D(aPnt.X(), aPnt.Y(), 0)), 1e-12);
-            Assert.Equal(0.0, aP.Direction2d().Y(), 1e-12);
+            Assert.Equal(0.0, aP.Direction().Z, 1e-12);
+            Assert.Equal(0.0, aP.Direction().Dot(new Vector3D(aPnt.X, aPnt.Y, 0)), 1e-12);
+            Assert.Equal(0.0, aP.Direction2d().Y, 1e-12);
             for (int j = 1; j < i; j++)
             {
-                Assert.True(aSearch.Value(j).Value().Distance(aPnt) > 1e-6, "a point found twice");
+                Assert.True(aSearch.Value(j).Value().DistanceTo(aPnt) > 1e-6, "a point found twice");
             }
         }
 
@@ -339,17 +339,17 @@ public class IntStart_SearchInsideTests
         Assert.False(anInt.IsEmpty);
         Assert.False(anInt.IsTangent);
         Point3D aP = anInt.Point().Value();
-        Assert.Equal(1.0, aP.Z(), 1e-9);
-        Assert.Equal(1.0, Math.Sqrt(aP.X() * aP.X() + aP.Y() * aP.Y()), 1e-9);
+        Assert.Equal(1.0, aP.Z, 1e-9);
+        Assert.Equal(1.0, Math.Sqrt(aP.X * aP.X + aP.Y * aP.Y), 1e-9);
         anInt.Point().Parameters(out double u1, out double v1, out double u2, out double v2);
-        Assert.Equal(aP.X(), u1, 1e-9);
-        Assert.Equal(aP.Y(), v1, 1e-9);
-        Assert.Equal(Math.Atan2(aP.Y(), aP.X()), u2, 1e-9);
+        Assert.Equal(aP.X, u1, 1e-9);
+        Assert.Equal(aP.Y, v1, 1e-9);
+        Assert.Equal(Math.Atan2(aP.Y, aP.X), u2, 1e-9);
         Assert.Equal(1.0, v2, 1e-9);
         Direction3D aT = anInt.Direction();
-        Assert.Equal(0.0, aT.Z(), 1e-9);
-        Assert.Equal(0.0, aT.X() * aP.X() + aT.Y() * aP.Y(), 1e-9);
-        Assert.Equal(0.0, anInt.DirectionOnS2().Y(), 1e-9);
+        Assert.Equal(0.0, aT.Z, 1e-9);
+        Assert.Equal(0.0, aT.X * aP.X + aT.Y * aP.Y, 1e-9);
+        Assert.Equal(0.0, anInt.DirectionOnS2().Y, 1e-9);
 
         ref global::Kerf.Engine.Intersection.Walking.PntOn2S aChange = ref anInt.ChangePoint();
         aChange.SetValue(new Point3D(9, 9, 9));
@@ -358,7 +358,7 @@ public class IntStart_SearchInsideTests
         // the constructor that searches at once
         Int2S<SurfaceAdaptorBase, TheHSurfaceTool> anAtOnce = new(aParam, aPln, aCyl, 1e-6);
         Assert.False(anAtOnce.IsEmpty);
-        Assert.Equal(0.0, aP.Distance(anAtOnce.Point().Value()), 1e-9);
+        Assert.Equal(0.0, aP.DistanceTo(anAtOnce.Point().Value()), 1e-9);
     }
 
     [Fact]
@@ -392,7 +392,7 @@ public class IntStart_SearchInsideTests
         anInt.ParameterOnSurface(out double u, out double v);
         Assert.Equal(Math.Cos(0.3), u, 1e-9);
         Assert.Equal(Math.Sin(0.3), v, 1e-9);
-        Assert.Equal(0.0, anInt.Point().Distance(new Point3D(Math.Cos(0.3), Math.Sin(0.3), 1)), 1e-9);
+        Assert.Equal(0.0, anInt.Point().DistanceTo(new Point3D(Math.Cos(0.3), Math.Sin(0.3), 1)), 1e-9);
         Assert.Same(aFunc, anInt.Function());
     }
 }

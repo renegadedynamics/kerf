@@ -24,7 +24,7 @@ public class HelixBRep_BuilderHelix_IntegrationTests
     private static void ValidateHelixWire(in Wire theWire, double theExpectedLength, double theTolerance = 0.05)
     {
         Assert.False(theWire.IsNull);
-        Assert.Equal(ShapeType.Wire, theWire.ShapeType());
+        Assert.Equal(ShapeType.Wire, theWire.Type);
         // Check that wire has edges
         int aNbEdges = HelixBRep_BuilderHelixTests.CountShapes(theWire, ShapeType.Edge);
         Assert.True(aNbEdges > 0);
@@ -54,7 +54,7 @@ public class HelixBRep_BuilderHelix_IntegrationTests
         Assert.Equal(0, aBuilder.ErrorStatus());
         Shape aHelixWire = aBuilder.Shape();
         Assert.False(aHelixWire.IsNull);
-        Assert.Equal(ShapeType.Wire, aHelixWire.ShapeType());
+        Assert.Equal(ShapeType.Wire, aHelixWire.Type);
         // Calculate expected helix length
         double aCircumference = M_PI * 100.0; // D1 = 100
         double aTurns = 100.0 / 20.0;         // Height/Pitch for number of turns mode (20 = 100/5)
@@ -293,7 +293,7 @@ public class HelixBRep_BuilderHelix_IntegrationTests
         Assert.Equal(0, aBuilder.ErrorStatus());
         Shape aHelixWire = aBuilder.Shape();
         Assert.False(aHelixWire.IsNull);
-        Assert.Equal(ShapeType.Wire, aHelixWire.ShapeType());
+        Assert.Equal(ShapeType.Wire, aHelixWire.Type);
         // Check that wire has multiple edges
         int aNbEdges = HelixBRep_BuilderHelixTests.CountShapes(aHelixWire, ShapeType.Edge);
         Assert.True(aNbEdges > 1); // Should have multiple edges for multiple parts

@@ -19,7 +19,7 @@ public sealed class MakeRotation
     public MakeRotation(in Line3D line, double angle)
     {
         _theRotation = new GeometryTransformation();
-        _theRotation.SetRotation(new Axis3D(line.Location(), line.Direction()), angle);
+        _theRotation.SetRotation(new Axis3D(line.Location, line.Direction), angle);
     }
 
     /// <summary>The rotation of angle Angle about the axis Axis.</summary>

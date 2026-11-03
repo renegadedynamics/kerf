@@ -142,22 +142,22 @@ public sealed class OStream
     /// <summary>Writes a 3D point.</summary>
     public static OStream operator <<(OStream os, in Point3D value)
     {
-        os.PutReals(value.X(), value.Y(), value.Z());
+        os.PutReals(value.X, value.Y, value.Z);
         return os;
     }
 
     /// <summary>Writes a 3D direction.</summary>
     public static OStream operator <<(OStream os, in Direction3D value)
     {
-        os.PutReals(value.X(), value.Y(), value.Z());
+        os.PutReals(value.X, value.Y, value.Z);
         return os;
     }
 
     /// <summary>Writes a 2D point.</summary>
     public static OStream operator <<(OStream os, in Point2D value)
     {
-        BinaryPrimitives.WriteDoubleLittleEndian(os._buf, value.X());
-        BinaryPrimitives.WriteDoubleLittleEndian(os._buf.AsSpan(8), value.Y());
+        BinaryPrimitives.WriteDoubleLittleEndian(os._buf, value.X);
+        BinaryPrimitives.WriteDoubleLittleEndian(os._buf.AsSpan(8), value.Y);
         os._stream.Write(os._buf, 0, sizeof(double) * 2);
         os._position += sizeof(double) * 2;
         return os;
@@ -166,8 +166,8 @@ public sealed class OStream
     /// <summary>Writes a 2D direction.</summary>
     public static OStream operator <<(OStream os, in Direction2D value)
     {
-        BinaryPrimitives.WriteDoubleLittleEndian(os._buf, value.X());
-        BinaryPrimitives.WriteDoubleLittleEndian(os._buf.AsSpan(8), value.Y());
+        BinaryPrimitives.WriteDoubleLittleEndian(os._buf, value.X);
+        BinaryPrimitives.WriteDoubleLittleEndian(os._buf.AsSpan(8), value.Y);
         os._stream.Write(os._buf, 0, sizeof(double) * 2);
         os._position += sizeof(double) * 2;
         return os;
@@ -176,8 +176,8 @@ public sealed class OStream
     /// <summary>Writes a transformation: three rows of the matrix, each followed by its translation component.</summary>
     public static OStream operator <<(OStream os, in Transform3D value)
     {
-        Xyz tr = value.TranslationPart();
-        Matrix3x3 mat = value.VectorialPart();
+        Xyz tr = value.TranslationXyz();
+        Matrix3x3 mat = value.VectorialPart;
         Span<byte> buf = os._buf;
         BinaryPrimitives.WriteDoubleLittleEndian(buf, mat[1, 1]);
         BinaryPrimitives.WriteDoubleLittleEndian(buf[8..], mat[1, 2]);

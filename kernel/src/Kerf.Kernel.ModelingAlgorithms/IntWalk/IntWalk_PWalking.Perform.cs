@@ -163,16 +163,16 @@ public partial class PWalking
             switch (choixIso)
             {
                 case ConstIsoparametric.UIsoparametricOnCaro1:
-                    f = Math.Abs(_previousd1.X());
+                    f = Math.Abs(_previousd1.X);
                     break;
                 case ConstIsoparametric.VIsoparametricOnCaro1:
-                    f = Math.Abs(_previousd1.Y());
+                    f = Math.Abs(_previousd1.Y);
                     break;
                 case ConstIsoparametric.UIsoparametricOnCaro2:
-                    f = Math.Abs(_previousd2.X());
+                    f = Math.Abs(_previousd2.X);
                     break;
                 case ConstIsoparametric.VIsoparametricOnCaro2:
-                    f = Math.Abs(_previousd2.Y());
+                    f = Math.Abs(_previousd2.Y);
                     break;
                 default:
                     break;
@@ -188,10 +188,10 @@ public partial class PWalking
             //--ofv.begin
             double incKey, eps, dP1, dP2, dP3, dP4;
             //
-            dP1 = _sensCheminement * _pasuv[0] * _previousd1.X() / f;
-            dP2 = _sensCheminement * _pasuv[1] * _previousd1.Y() / f;
-            dP3 = _sensCheminement * _pasuv[2] * _previousd2.X() / f;
-            dP4 = _sensCheminement * _pasuv[3] * _previousd2.Y() / f;
+            dP1 = _sensCheminement * _pasuv[0] * _previousd1.X / f;
+            dP2 = _sensCheminement * _pasuv[1] * _previousd1.Y / f;
+            dP3 = _sensCheminement * _pasuv[2] * _previousd2.X / f;
+            dP4 = _sensCheminement * _pasuv[3] * _previousd2.Y / f;
             //
             incKey = 5.0 * (double)IncKey;
             eps = 1.0e-7;
@@ -645,7 +645,7 @@ public partial class PWalking
                                             pl = _previousPoint.Value();
                                             if (bTestFirstPoint)
                                             {
-                                                if (pf.SquareDistance(pl) < sqDistMax)
+                                                if (pf.SquareDistanceTo(pl) < sqDistMax)
                                                 {
                                                     IncKey++;
                                                     if (IncKey == 5000)
@@ -667,7 +667,7 @@ public partial class PWalking
                                             // intersection curve is closed in 3D. This catches cases where the
                                             // UV-based closure check in TestArret fails (e.g., near-tangent surfaces
                                             // with shared edges).
-                                            else if (pf.SquareDistance(pl) < sqDistMax)
+                                            else if (pf.SquareDistanceTo(pl) < sqDistMax)
                                             {
                                                 _close = true;
                                                 arrive = true;
@@ -758,7 +758,7 @@ public partial class PWalking
 
                                                 if (bTestFirstPoint)
                                                 {
-                                                    if (pf.SquareDistance(pl) < sqDistMax)
+                                                    if (pf.SquareDistanceTo(pl) < sqDistMax)
                                                     {
                                                         IncKey++;
                                                         if (IncKey == 5000)
@@ -874,7 +874,7 @@ public partial class PWalking
 
                                                     if (bTestFirstPoint)
                                                     {
-                                                        if (pf.SquareDistance(pl) < sqDistMax)
+                                                        if (pf.SquareDistanceTo(pl) < sqDistMax)
                                                         {
                                                             IncKey++;
 
@@ -911,10 +911,10 @@ public partial class PWalking
                                                         Vector2D prevToCurOnS2 = new(prevPntOnS2, curPntOnS2);
                                                         double maxAngle = 3 * M_PI / 4;
                                                         double angleS1 = 0.0, angleS2 = 0.0;
-                                                        double sqmParS1 = prevToParamOnS1.SquareMagnitude();
-                                                        double sqmParS2 = prevToParamOnS2.SquareMagnitude();
-                                                        double sqmCurS1 = prevToCurOnS1.SquareMagnitude();
-                                                        double sqmCurS2 = prevToCurOnS2.SquareMagnitude();
+                                                        double sqmParS1 = prevToParamOnS1.SquareMagnitude;
+                                                        double sqmParS2 = prevToParamOnS2.SquareMagnitude;
+                                                        double sqmCurS1 = prevToCurOnS1.SquareMagnitude;
+                                                        double sqmCurS2 = prevToCurOnS2.SquareMagnitude;
 
                                                         if (sqmCurS1 < Constants.Resolution())
                                                         {
@@ -931,7 +931,7 @@ public partial class PWalking
                                                         }
                                                         else
                                                         {
-                                                            angleS1 = Math.Abs(prevToParamOnS1.Angle(prevToCurOnS1));
+                                                            angleS1 = Math.Abs(prevToParamOnS1.AngleTo(prevToCurOnS1));
                                                         }
 
                                                         if (sqmCurS2 < Constants.Resolution())
@@ -949,7 +949,7 @@ public partial class PWalking
                                                         }
                                                         else
                                                         {
-                                                            angleS2 = Math.Abs(prevToParamOnS2.Angle(prevToCurOnS2));
+                                                            angleS2 = Math.Abs(prevToParamOnS2.AngleTo(prevToCurOnS2));
                                                         }
 
                                                         if ((angleS1 > maxAngle) && (angleS2 > maxAngle))
@@ -972,22 +972,22 @@ public partial class PWalking
                                                                      dirS2 = new(prevPntOnS2, curPntOnS2);
 
                                                             _intersectionOn2S.Function().AuxillarSurface1().D1(
-                                                                curPntOnS1.X(), curPntOnS1.Y(), out Point3D ptemp,
+                                                                curPntOnS1.X, curPntOnS1.Y, out Point3D ptemp,
                                                                 out Vector3D duS1, out Vector3D dvS1);
                                                             _intersectionOn2S.Function().AuxillarSurface2().D1(
-                                                                curPntOnS2.X(), curPntOnS2.Y(), out ptemp,
+                                                                curPntOnS2.X, curPntOnS2.Y, out ptemp,
                                                                 out Vector3D duS2, out Vector3D dvS2);
 
                                                             // Derivative WLine along (it is vector-function indeed)
                                                             // directions chosen
                                                             // F1 - on the 1st surface, F2 - on the 2nd surface.
                                                             // x, y, z - coordinates of derivative vector.
-                                                            double f1x = duS1.X() * dirS1.X() + dvS1.X() * dirS1.Y();
-                                                            double f1y = duS1.Y() * dirS1.X() + dvS1.Y() * dirS1.Y();
-                                                            double f1z = duS1.Z() * dirS1.X() + dvS1.Z() * dirS1.Y();
-                                                            double f2x = duS2.X() * dirS2.X() + dvS2.X() * dirS2.Y();
-                                                            double f2y = duS2.Y() * dirS2.X() + dvS2.Y() * dirS2.Y();
-                                                            double f2z = duS2.Z() * dirS2.X() + dvS2.Z() * dirS2.Y();
+                                                            double f1x = duS1.X * dirS1.X + dvS1.X * dirS1.Y;
+                                                            double f1y = duS1.Y * dirS1.X + dvS1.Y * dirS1.Y;
+                                                            double f1z = duS1.Z * dirS1.X + dvS1.Z * dirS1.Y;
+                                                            double f2x = duS2.X * dirS2.X + dvS2.X * dirS2.Y;
+                                                            double f2y = duS2.Y * dirS2.X + dvS2.Y * dirS2.Y;
+                                                            double f2z = duS2.Z * dirS2.X + dvS2.Z * dirS2.Y;
 
                                                             double f1 = f1x * f1x + f1y * f1y + f1z * f1z;
                                                             double f2 = f2x * f2x + f2y * f2y + f2z * f2z;

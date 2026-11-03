@@ -70,7 +70,7 @@ public class ShapeFix_FixSmallSolidTests(ITestOutputHelper output)
         }
         Point3D aG = aProps.CentreOfMass();
         Matrix3x3 aM = aProps.MatrixOfInertia();
-        return [aG.X(), aG.Y(), aG.Z(),
+        return [aG.X, aG.Y, aG.Z,
                 aM.Value(1, 1), aM.Value(1, 2), aM.Value(1, 3),
                 aM.Value(2, 1), aM.Value(2, 2), aM.Value(2, 3),
                 aM.Value(3, 1), aM.Value(3, 2), aM.Value(3, 3)];
@@ -218,7 +218,7 @@ public class ShapeFix_FixSmallSolidTests(ITestOutputHelper output)
         {
             var aProps = new Properties();
             MassPropertiesBuilder.SurfaceProperties(anExp.Current(), aProps);
-            if (Math.Abs(aProps.CentreOfMass().X() - 10) < 1e-9)
+            if (Math.Abs(aProps.CentreOfMass().X - 10) < 1e-9)
             {
                 aBigFace = ShapeCasts.Face(anExp.Current());
             }
@@ -227,7 +227,7 @@ public class ShapeFix_FixSmallSolidTests(ITestOutputHelper output)
         {
             var aProps = new Properties();
             MassPropertiesBuilder.SurfaceProperties(anExp.Current(), aProps);
-            if (Math.Abs(aProps.CentreOfMass().X() - 10) < 1e-9)
+            if (Math.Abs(aProps.CentreOfMass().X - 10) < 1e-9)
             {
                 aSmallFace = ShapeCasts.Face(anExp.Current());
             }

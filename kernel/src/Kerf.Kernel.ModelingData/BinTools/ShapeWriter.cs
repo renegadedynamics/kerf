@@ -24,7 +24,7 @@ public class ShapeWriter : ShapeSetBase
 {
     // positions of the objects already stored
     private readonly Dictionary<Shape, ulong> _shapePos = new(ShapeHasher.Instance);
-    private readonly Dictionary<Placement, ulong> _locationPos = new();
+    private readonly Dictionary<Placement, ulong> _locationPos = new(PlacementIdentityComparer.Instance);
     private readonly Dictionary<Curve3D, ulong> _curvePos = new(ReferenceEqualityComparer.Instance);
     private readonly Dictionary<Curve2D, ulong> _curve2dPos = new(ReferenceEqualityComparer.Instance);
     private readonly Dictionary<Surface, ulong> _surfacePos = new(ReferenceEqualityComparer.Instance);
@@ -83,7 +83,7 @@ public class ShapeWriter : ShapeSetBase
             bool elementary = (isSimple && power == 1);
             if (elementary)
             {
-                stream = stream << ObjectType.ObjectType_SimpleLocation << location.Transformation();
+                stream = stream << ObjectType.ObjectType_SimpleLocation << location.Transformation;
             }
             else
             {
@@ -127,15 +127,15 @@ public class ShapeWriter : ShapeSetBase
         {
             // shape is already there, so, write reference to it
             stream.WriteReference(existing);
-            WriteLocation(stream, shape.Location());
-            stream = stream << (byte)shape.Orientation();
+            WriteLocation(stream, shape.Placement);
+            stream = stream << (byte)shape.Orientation;
             return;
         }
 
         ulong newPos = stream.Position();
         _shapePos[aShape] = newPos;
-        stream.WriteShape(aShape.ShapeType(), aShape.Orientation());
-        WriteLocation(stream, shape.Location());
+        stream.WriteShape(aShape.Type, aShape.Orientation);
+        WriteLocation(stream, shape.Placement);
 
         // OCCT.NET: the geometry is written by a separate method (a smaller frame for the recursion)
         WriteShapeGeometry(stream, aShape);
@@ -143,10 +143,10 @@ public class ShapeWriter : ShapeSetBase
         stream.PutBools(aShape.Free(),
                            aShape.Modified(),
                            aShape.Checked(),
-                           aShape.Orientable(),
-                           aShape.Closed(),
-                           aShape.Infinite(),
-                           aShape.Convex());
+                           aShape.IsOrientable,
+                           aShape.IsClosed,
+                           aShape.IsInfinite,
+                           aShape.IsConvex);
 
         // process sub-shapes
         for (var sub = new Iterator(aShape, false, false); sub.More(); sub.Next())
@@ -162,7 +162,7 @@ public class ShapeWriter : ShapeSetBase
     {
         try
         {
-            switch (aShape.ShapeType())
+            switch (aShape.Type)
             {
                 case ShapeType.Vertex:
                 {

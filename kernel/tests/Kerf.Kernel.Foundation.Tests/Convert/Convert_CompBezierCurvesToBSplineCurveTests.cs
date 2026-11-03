@@ -28,8 +28,8 @@ public class Convert_CompBezierCurvesToBSplineCurveTest
 
         NCollection_Array1<Point3D> aResPoles = new(1, aConv.PoleCount);
         aConv.Poles(aResPoles);
-        Assert.Equal(0.0, aResPoles[1].X(), 1.0e-15);
-        Assert.Equal(1.0, aResPoles[2].X(), 1.0e-15);
+        Assert.Equal(0.0, aResPoles[1].X, 1.0e-15);
+        Assert.Equal(1.0, aResPoles[2].X, 1.0e-15);
     }
 
     [Fact]
@@ -162,8 +162,8 @@ public class Convert_CompBezierCurves2dToBSplineCurve2dTest
 
         NCollection_Array1<Point2D> aResPoles = new(1, aConv.PoleCount);
         aConv.Poles(aResPoles);
-        Assert.Equal(0.0, aResPoles[1].X(), 1.0e-15);
-        Assert.Equal(1.0, aResPoles[2].X(), 1.0e-15);
+        Assert.Equal(0.0, aResPoles[1].X, 1.0e-15);
+        Assert.Equal(1.0, aResPoles[2].X, 1.0e-15);
     }
 
     [Fact]

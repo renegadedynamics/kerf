@@ -194,7 +194,7 @@ public sealed class MakePrism : Form
 
         if (!_skface.IsNull || _slface.Count != 0)
         {
-            if (_lShape.ShapeType() == ShapeType.Wire)
+            if (_lShape.Type == ShapeType.Wire)
             {
                 Explorer ex1 = new(vraiPrism, ShapeType.Face);
                 for (; ex1.More(); ex1.Next())
@@ -700,7 +700,7 @@ public sealed class MakePrism : Form
                 Surface s = Tool.Surface(fFrom)!;
                 if (s.GetType() == typeof(TrimmedSurface))
                 {
-                    s = ((TrimmedSurface)s).BasisSurface();
+                    s = ((TrimmedSurface)s).BasisSurface;
                 }
                 LibraryMakeFace fac = new(s, global::Kerf.Engine.Foundation.Precision.Confusion());
                 _sFrom = fac.InternalFace();
@@ -1086,12 +1086,12 @@ public sealed class MakePrism : Form
 
         if (s1.GetType() == typeof(TrimmedSurface))
         {
-            s1 = ((TrimmedSurface)s1).BasisSurface();
+            s1 = ((TrimmedSurface)s1).BasisSurface;
         }
 
         if (s2.GetType() == typeof(TrimmedSurface))
         {
-            s2 = ((TrimmedSurface)s2).BasisSurface();
+            s2 = ((TrimmedSurface)s2).BasisSurface;
         }
 
         if (s1.GetType() != s2.GetType())
@@ -1102,20 +1102,20 @@ public sealed class MakePrism : Form
         bool valRet = false;
         if (s1.GetType() == typeof(PlaneSurface))
         {
-            Plane3D pl1 = ((PlaneSurface)s1).Pln();
-            Plane3D pl2 = ((PlaneSurface)s2).Pln();
+            Plane3D pl1 = ((PlaneSurface)s1).Plane;
+            Plane3D pl2 = ((PlaneSurface)s2).Plane;
 
             // apply locations
             if (!loc1.IsIdentity)
             {
-                pl1 = pl1.Transformed(loc1.Transformation());
+                pl1 = pl1.Transformed(loc1.Transformation);
             }
             if (!loc2.IsIdentity)
             {
-                pl2 = pl2.Transformed(loc2.Transformation());
+                pl2 = pl2.Transformed(loc2.Transformation);
             }
 
-            if (pl1.Position().IsCoplanar(pl2.Position(), tollin, tolang))
+            if (pl1.Position.IsCoplanar(pl2.Position, tollin, tolang))
             {
                 valRet = true;
             }

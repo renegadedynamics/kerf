@@ -201,7 +201,7 @@ public partial class PWalking
         //=========  D e t e c t    c o n f u s e d    P o in t s       ===========
         //==================================================================================
 
-        double sqDist = _previousPoint.Value().SquareDistance(currentPoint.Value());
+        double sqDist = _previousPoint.Value().SquareDistanceTo(currentPoint.Value());
 
         if (sqDist < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
@@ -248,7 +248,7 @@ public partial class PWalking
                     default:
                         break;
                 }
-                double refDist = curPnt.Distance(offsetPnt);
+                double refDist = curPnt.DistanceTo(offsetPnt);
                 double localResol = 0.0;
                 if (refDist > Constants.Resolution())
                 {
@@ -301,8 +301,8 @@ public partial class PWalking
 
         double cosi1, cosRef1, ang1, angRef1, resoUV1, duv1, d1, tolCoeff1;
         double cosi2, cosRef2, ang2, angRef2, resoUV2, duv2, d2, tolCoeff2;
-        cosi1 = du1 * _previousd1.X() + dv1 * _previousd1.Y();
-        cosi2 = du2 * _previousd2.X() + dv2 * _previousd2.Y();
+        cosi1 = du1 * _previousd1.X + dv1 * _previousd1.Y;
+        cosi2 = du2 * _previousd2.X + dv2 * _previousd2.Y;
         duv1 = du1 * du1 + dv1 * dv1;
         duv2 = du2 * du2 + dv2 * dv2;
         resoUV1 = _resoU1 * _resoU1 + _resoV1 * _resoV1;
@@ -361,10 +361,10 @@ public partial class PWalking
             }
             Direction2D tg2dcourante1 = _intersectionOn2S.DirectionOnS1();
             Direction2D tg2dcourante2 = _intersectionOn2S.DirectionOnS2();
-            cosi1 = du1 * tg2dcourante1.X() + dv1 * tg2dcourante1.Y();
-            cosi2 = du2 * tg2dcourante2.X() + dv2 * tg2dcourante2.Y();
-            ang1 = Math.Abs(_previousd1.Angle(tg2dcourante1));
-            ang2 = Math.Abs(_previousd2.Angle(tg2dcourante2));
+            cosi1 = du1 * tg2dcourante1.X + dv1 * tg2dcourante1.Y;
+            cosi2 = du2 * tg2dcourante2.X + dv2 * tg2dcourante2.Y;
+            ang1 = Math.Abs(_previousd1.AngleTo(tg2dcourante1));
+            ang2 = Math.Abs(_previousd2.AngleTo(tg2dcourante2));
             angRef1 = AngRef2D * tolCoeff1;
             angRef2 = AngRef2D * tolCoeff2;
             //-------------------------------------------------------

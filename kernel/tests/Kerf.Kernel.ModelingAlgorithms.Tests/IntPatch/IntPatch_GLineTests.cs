@@ -48,17 +48,17 @@ public class IntPatch_GLineTests
         Assert.True(aLinLine.IsTangent);
         Assert.Equal(WalkingTypeTrans.Touch, aLinLine.TransitionOnS1());
         Assert.Equal(WalkingSituation.Outside, aLinLine.SituationS2());
-        Assert.True(aLinLine.Line().Location().IsEqual(aLin.Location(), 0.0));
-        Assert.True(aLinLine.Line().Direction().IsEqual(aLin.Direction(), 0.0));
+        Assert.True(aLinLine.Line().Location.IsEqual(aLin.Location, 0.0));
+        Assert.True(aLinLine.Line().Direction.IsEqual(aLin.Direction, 0.0));
 
         Ellipse3D anElips = new(new Frame3D(), 3.0, 2.0);
         GLine anElLine = new(anElips, false);
         Assert.Equal(WalkingTypeTrans.Undecided, anElLine.TransitionOnS1());
-        Assert.Equal(3.0, anElLine.Ellipse().MajorRadius());
-        Assert.Equal(2.0, anElLine.Ellipse().MinorRadius());
+        Assert.Equal(3.0, anElLine.Ellipse().MajorRadius);
+        Assert.Equal(2.0, anElLine.Ellipse().MinorRadius);
 
-        Assert.Equal(0.5, new GLine(new Parabola3D(new Frame3D(), 0.5), false).Parabola().Focal());
-        Assert.Equal(2.0, new GLine(new Hyperbola3D(new Frame3D(), 4.0, 2.0), false).Hyperbola().MinorRadius());
+        Assert.Equal(0.5, new GLine(new Parabola3D(new Frame3D(), 0.5), false).Parabola().Focal);
+        Assert.Equal(2.0, new GLine(new Hyperbola3D(new Frame3D(), 4.0, 2.0), false).Hyperbola().MinorRadius);
         Assert.False(aCircLine.HasFirstPoint);
         Assert.Throws<DomainErrorException>(() => aCircLine.FirstPoint());
     }

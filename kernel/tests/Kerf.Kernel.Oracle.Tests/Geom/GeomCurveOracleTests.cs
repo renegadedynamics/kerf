@@ -98,7 +98,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
             {
                 _ = FromNative(aNV2);
                 _ = FromNative(aNV3);
-                if (((OffsetCurve3D)theP).BasisCurve().DN(theU, 1).Magnitude() > 1e-6)
+                if (((OffsetCurve3D)theP).BasisCurve.DN(theU, 1).Magnitude > 1e-6)
                 {
                     // (beside a cusp of the basis the two are as ill-conditioned as OCCT's)
                     theO.Same(aD2V2.XYZ(), aV2.XYZ(), $"{theWhat} D3({theU}) V2 against D2's", theTol);
@@ -136,17 +136,17 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
     /// <summary>Bounds, closure, periodicity, continuity.</summary>
     private static void SameProperties(Oracle theO, N.Geom_Curve theN, Curve3D theP, string theWhat)
     {
-        theO.Same(theN.FirstParameter(), theP.FirstParameter(), $"{theWhat} FirstParameter");
-        theO.Same(theN.LastParameter(), theP.LastParameter(), $"{theWhat} LastParameter");
+        theO.Same(theN.FirstParameter(), theP.FirstParameter, $"{theWhat} FirstParameter");
+        theO.Same(theN.LastParameter(), theP.LastParameter, $"{theWhat} LastParameter");
         theO.Same(theN.IsClosed(), theP.IsClosed, $"{theWhat} IsClosed");
         theO.Same(theN.IsPeriodic(), theP.IsPeriodic, $"{theWhat} IsPeriodic");
-        Assert.Equal((int)theN.Continuity(), (int)theP.Continuity());
+        Assert.Equal((int)theN.Continuity(), (int)theP.Continuity);
         for (int k = 0; k <= 5; k++)
         {
             theO.Same(theN.IsCN(k), theP.IsCN(k), $"{theWhat} IsCN({k})");
         }
         double aNPer = 0, aPPer = 0;
-        if (SameOutcome(Catch(() => aNPer = theN.Period()), Catch(() => aPPer = theP.Period()), $"{theWhat} Period"))
+        if (SameOutcome(Catch(() => aNPer = theN.Period()), Catch(() => aPPer = theP.Period), $"{theWhat} Period"))
         {
             theO.Same(aNPer, aPPer, $"{theWhat} Period");
         }
@@ -155,7 +155,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
     /// <summary>Parameters to evaluate at: random ones inside the bounds (or theFallback), a few outside, and the bounds.</summary>
     private static List<double> Params(Oracle theO, Curve3D theP, double theFallbackMin, double theFallbackMax, bool theOutside = true)
     {
-        double aF = theP.FirstParameter(), aL = theP.LastParameter();
+        double aF = theP.FirstParameter, aL = theP.LastParameter;
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aF) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aL))
         {
             aF = theFallbackMin;
@@ -295,9 +295,9 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                     using var aNXX = aNX.XYZ();
                     using var aNZ = aNPos.Direction();
                     using var aNZX = aNZ.XYZ();
-                    theO.Same(Oracle.FromNative(aNLoc).XYZ(), aCn.Position().Location().XYZ(), $"{theWhat} transformed Location");
-                    theO.Same(Oracle.FromNative(aNXX), aCn.Position().XDirection().XYZ(), $"{theWhat} transformed XDirection");
-                    theO.Same(Oracle.FromNative(aNZX), aCn.Position().Direction().XYZ(), $"{theWhat} transformed Direction");
+                    theO.Same(Oracle.FromNative(aNLoc).XYZ(), aCn.Position.Location.XYZ(), $"{theWhat} transformed Location");
+                    theO.Same(Oracle.FromNative(aNXX), aCn.Position.XDirection.XYZ(), $"{theWhat} transformed XDirection");
+                    theO.Same(Oracle.FromNative(aNZX), aCn.Position.Direction.XYZ(), $"{theWhat} transformed Direction");
                     break;
                 }
             }
@@ -467,7 +467,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                 {
                     using var aNConic = N.Geom_Conic.DownCast(aN)!;
                     double aNE = 0, aPE = 0;
-                    if (SameOutcome(Catch(() => aNE = aNConic.Eccentricity()), Catch(() => aPE = aConic.Eccentricity()), $"{aKind} Eccentricity"))
+                    if (SameOutcome(Catch(() => aNE = aNConic.Eccentricity()), Catch(() => aPE = aConic.Eccentricity), $"{aKind} Eccentricity"))
                     {
                         anOracle.Same(aNE, aPE, $"{aKind} Eccentricity");
                     }
@@ -479,27 +479,27 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                         using var aNE = N.Geom_Ellipse.DownCast(aN)!;
                         using var aF1 = aNE.Focus1();
                         using var aF2 = aNE.Focus2();
-                        anOracle.Same(Oracle.FromNative(aF1).XYZ(), anE.Focus1().XYZ(), "ellipse Focus1");
-                        anOracle.Same(Oracle.FromNative(aF2).XYZ(), anE.Focus2().XYZ(), "ellipse Focus2");
-                        anOracle.Same(aNE.Focal(), anE.Focal(), "ellipse Focal");
-                        anOracle.Same(aNE.Parameter(), anE.Parameter(), "ellipse Parameter");
+                        anOracle.Same(Oracle.FromNative(aF1).XYZ(), anE.Focus1.XYZ(), "ellipse Focus1");
+                        anOracle.Same(Oracle.FromNative(aF2).XYZ(), anE.Focus2.XYZ(), "ellipse Focus2");
+                        anOracle.Same(aNE.Focal(), anE.Focal, "ellipse Focal");
+                        anOracle.Same(aNE.Parameter(), anE.Parameter, "ellipse Parameter");
                         break;
                     }
                     case HyperbolaCurve3D aH:
                     {
                         using var aNH = N.Geom_Hyperbola.DownCast(aN)!;
                         using var aF1 = aNH.Focus1();
-                        anOracle.Same(Oracle.FromNative(aF1).XYZ(), aH.Focus1().XYZ(), "hyperbola Focus1");
-                        anOracle.Same(aNH.Focal(), aH.Focal(), "hyperbola Focal");
-                        anOracle.Same(aNH.Parameter(), aH.Parameter(), "hyperbola Parameter");
+                        anOracle.Same(Oracle.FromNative(aF1).XYZ(), aH.Focus1.XYZ(), "hyperbola Focus1");
+                        anOracle.Same(aNH.Focal(), aH.Focal, "hyperbola Focal");
+                        anOracle.Same(aNH.Parameter(), aH.Parameter, "hyperbola Parameter");
                         break;
                     }
                     case ParabolaCurve3D aPb:
                     {
                         using var aNPb = N.Geom_Parabola.DownCast(aN)!;
                         using var aF = aNPb.Focus();
-                        anOracle.Same(Oracle.FromNative(aF).XYZ(), aPb.Focus().XYZ(), "parabola Focus");
-                        anOracle.Same(aNPb.Parameter(), aPb.Parameter(), "parabola Parameter");
+                        anOracle.Same(Oracle.FromNative(aF).XYZ(), aPb.Focus.XYZ(), "parabola Focus");
+                        anOracle.Same(aNPb.Parameter(), aPb.Parameter, "parabola Parameter");
                         break;
                     }
                 }
@@ -532,7 +532,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
 
             using (aNB)
             {
-                double aF = aPB.FirstParameter(), aL = aPB.LastParameter();
+                double aF = aPB.FirstParameter, aL = aPB.LastParameter;
                 double aU1, aU2;
                 if (aPB.IsPeriodic)
                 {
@@ -558,8 +558,8 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                 using (var aNS = aNT.StartPoint())
                 using (var aNE = aNT.EndPoint())
                 {
-                    anOracle.Same(Oracle.FromNative(aNS).XYZ(), aPT.StartPoint().XYZ(), "trimmed StartPoint");
-                    anOracle.Same(Oracle.FromNative(aNE).XYZ(), aPT.EndPoint().XYZ(), "trimmed EndPoint");
+                    anOracle.Same(Oracle.FromNative(aNS).XYZ(), aPT.StartPoint.XYZ(), "trimmed StartPoint");
+                    anOracle.Same(Oracle.FromNative(aNE).XYZ(), aPT.EndPoint.XYZ(), "trimmed EndPoint");
                 }
                 List<double> aParams = Params(anOracle, aPT, 0, 0, theOutside: false);
                 foreach (double u in aParams)
@@ -569,8 +569,8 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                 SameReversedAndTransformed(anOracle, aNT, aPT, aParams, 3, "trimmed");
 
                 // SetTrim on the trimmed curve, through WithTrim
-                double aV1 = anOracle.Real(aPT.FirstParameter(), aPT.LastParameter());
-                double aV2 = anOracle.Real(aPT.FirstParameter(), aPT.LastParameter());
+                double aV1 = anOracle.Real(aPT.FirstParameter, aPT.LastParameter);
+                double aV2 = anOracle.Real(aPT.FirstParameter, aPT.LastParameter);
                 TrimmedCurve3D? aPT2 = null;
                 if (SameOutcome(Catch(() => aNT.SetTrim(aV1, aV2, aSense, anAdjust)),
                                 Catch(() => aPT2 = aPT.WithTrim(aV1, aV2, aSense, anAdjust)), "SetTrim"))
@@ -602,7 +602,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                 List<double> aParams = Params(anOracle, aP, 0, 1);
                 foreach (double u in aParams)
                 {
-                    SameEval(aDirect, aN, aP, u, aP.Degree() + 1, "Bezier");
+                    SameEval(aDirect, aN, aP, u, aP.Degree + 1, "Bezier");
                 }
                 SameReversedAndTransformed(anOracle, aN, aP, aParams, 3, "Bezier");
 
@@ -625,7 +625,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
         {
             using var aN1 = theN.Value(theN.FirstParameter());
             using var aN2 = theN.Value(theN.LastParameter());
-            throw new Xunit.Sdk.XunitException($"{theWhat} IsClosed {Kerf.Engine.Foundation.OcctTypeNames.Of(theP.GetType())} {((object)theP as OffsetCurve3D)?.BasisCurve().GetType().Name}: native {Oracle.FromNative(aN1).SquareDistance(Oracle.FromNative(aN2)):R} port {theP.Value(theP.FirstParameter()).SquareDistance(theP.Value(theP.LastParameter())):R} np1 {Oracle.FromNative(aN1)} pp1 {theP.Value(theP.FirstParameter())} np2 {Oracle.FromNative(aN2)} pp2 {theP.Value(theP.LastParameter())}");
+            throw new Xunit.Sdk.XunitException($"{theWhat} IsClosed {Kerf.Engine.Foundation.OcctTypeNames.Of(theP.GetType())} {((object)theP as OffsetCurve3D)?.BasisCurve.GetType().Name}: native {Oracle.FromNative(aN1).SquareDistanceTo(Oracle.FromNative(aN2)):R} port {theP.Value(theP.FirstParameter).SquareDistanceTo(theP.Value(theP.LastParameter)):R} np1 {Oracle.FromNative(aN1)} pp1 {theP.Value(theP.FirstParameter)} np2 {Oracle.FromNative(aN2)} pp2 {theP.Value(theP.LastParameter)}");
         }
         theO.Same(theN.IsClosed(), theP.IsClosed, $"{theWhat} IsClosed");
         for (int i = 1; i <= theP.PoleCount; i++)
@@ -659,7 +659,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                     {
                         case 0:
                         {
-                            int aDeg = Math.Min(BezierCurve3D.MaxDegree(), aP.Degree() + anOracle.Int(0, 3));
+                            int aDeg = Math.Min(BezierCurve3D.MaxDegree, aP.Degree + anOracle.Int(0, 3));
                             aWhat = $"Increase({aDeg})";
                             aNE = Catch(() => aN.Increase(aDeg));
                             aPE = Catch(() => aNext = aP.Increased(aDeg));
@@ -757,12 +757,12 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
 
     private static void SameBSpline(Oracle theO, N.Geom_BSplineCurve theN, BSplineCurve3D theP, string theWhat)
     {
-        Assert.Equal(theN.Degree(), theP.Degree());
+        Assert.Equal(theN.Degree(), theP.Degree);
         Assert.Equal(theN.NbPoles(), theP.PoleCount);
         Assert.Equal(theN.NbKnots(), theP.KnotCount);
         theO.Same(theN.IsRational(), theP.IsRational, $"{theWhat} IsRational");
         theO.Same(theN.IsPeriodic(), theP.IsPeriodic, $"{theWhat} IsPeriodic");
-        Assert.Equal((int)theN.KnotDistribution(), (int)theP.KnotDistribution());
+        Assert.Equal((int)theN.KnotDistribution(), (int)theP.KnotDistribution);
         Assert.Equal(theN.FirstUKnotIndex(), theP.FirstUKnotIndex());
         Assert.Equal(theN.LastUKnotIndex(), theP.LastUKnotIndex());
         for (int i = 1; i <= theP.PoleCount; i++)
@@ -779,7 +779,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
         using (var aNSeq = theN.KnotSequence())
         {
             double[] aNS = aNSeq.ToArray();
-            ReadOnlySpan<double> aPS = theP.KnotSequence().ToArray();
+            ReadOnlySpan<double> aPS = theP.KnotSequence.ToArray();
             Assert.Equal(aNS.Length, aPS.Length);
             for (int i = 0; i < aNS.Length; i++)
             {
@@ -799,8 +799,8 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
         }
         if (theP.IsPeriodic)
         {
-            double aPer = theP.Period();
-            aParams.Add(theO.Real(theP.FirstParameter() - 3 * aPer, theP.LastParameter() + 3 * aPer));
+            double aPer = theP.Period;
+            aParams.Add(theO.Real(theP.FirstParameter - 3 * aPer, theP.LastParameter + 3 * aPer));
         }
         return aParams;
     }
@@ -819,14 +819,14 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
             using (var aNS = aN.StartPoint())
             using (var aNE = aN.EndPoint())
             {
-                anOracle.Same(Oracle.FromNative(aNS).XYZ(), aP.StartPoint().XYZ(), "BSpline StartPoint");
-                anOracle.Same(Oracle.FromNative(aNE).XYZ(), aP.EndPoint().XYZ(), "BSpline EndPoint");
+                anOracle.Same(Oracle.FromNative(aNS).XYZ(), aP.StartPoint.XYZ(), "BSpline StartPoint");
+                anOracle.Same(Oracle.FromNative(aNE).XYZ(), aP.EndPoint.XYZ(), "BSpline EndPoint");
             }
 
             List<double> aParams = BSplineParams(anOracle, aP);
             foreach (double u in aParams)
             {
-                SameEval(aDirect, aN, aP, u, aP.Degree() + 1, "BSpline");
+                SameEval(aDirect, aN, aP, u, aP.Degree + 1, "BSpline");
 
                 double aNU = u, aPU = u;
                 aN.PeriodicNormalization(ref aNU);
@@ -857,7 +857,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                 anOracle.Same(FromNative(aNV1), aV1.XYZ(), "LocalD3 V1");
                 anOracle.Same(FromNative(aNV2), aV2.XYZ(), "LocalD3 V2");
                 anOracle.Same(FromNative(aNV3), aV3.XYZ(), "LocalD3 V3");
-                int aN4 = Math.Min(4, aP.Degree() + 1);
+                int aN4 = Math.Min(4, aP.Degree + 1);
                 using var aNVN = aN.LocalDN(u, k, k + 1, aN4);
                 anOracle.Same(FromNative(aNVN), aP.LocalDN(u, k, k + 1, aN4).XYZ(), "LocalDN");
             }
@@ -867,8 +867,8 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
             aP.Resolution(0.01, out double aPTol);
             anOracle.Same(aNTol, aPTol, "BSpline Resolution");
 
-            double aTf = anOracle.Real(aP.FirstParameter(), aP.LastParameter());
-            double aTl = anOracle.Real(aTf, aP.LastParameter());
+            double aTf = anOracle.Real(aP.FirstParameter, aP.LastParameter);
+            double aTl = anOracle.Real(aTf, aP.LastParameter);
             anOracle.Same(aN.IsG1(aTf, aTl, 0.1), aP.IsG1(aTf, aTl, 0.1), "IsG1");
 
             SameReversedAndTransformed(anOracle, aN, aP, aParams, 3, "BSpline");
@@ -893,8 +893,8 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                 BSplineCurve3D? aNext = null;
                 string aWhat;
                 Exception? aNE, aPE;
-                double aF = aP.FirstParameter(), aL = aP.LastParameter();
-                int aNbKnots = aP.KnotCount, aNbPoles = aP.PoleCount, aDeg = aP.Degree();
+                double aF = aP.FirstParameter, aL = aP.LastParameter;
+                int aNbKnots = aP.KnotCount, aNbPoles = aP.PoleCount, aDeg = aP.Degree;
                 switch (anOracle.Int(0, 12))
                 {
                     case 0:
@@ -940,7 +940,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                     }
                     case 3:
                     {
-                        int aNewDeg = Math.Min(BSplineCurve3D.MaxDegree(), aDeg + anOracle.Int(0, 3));
+                        int aNewDeg = Math.Min(BSplineCurve3D.MaxDegree, aDeg + anOracle.Int(0, 3));
                         aWhat = $"IncreaseDegree({aNewDeg})";
                         aNE = Catch(() => aN.IncreaseDegree(aNewDeg));
                         aPE = Catch(() => aNext = aP.DegreeIncreased(aNewDeg));
@@ -952,8 +952,8 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                         double aU1 = Math.Min(u1, u2), aU2 = Math.Max(u1, u2);
                         if (aP.IsPeriodic && anOracle.Int(0, 1) == 0)
                         {
-                            aU1 += aP.Period() * anOracle.Int(-2, 2);
-                            aU2 = aU1 + anOracle.Real(0.1, 1) * aP.Period();
+                            aU1 += aP.Period * anOracle.Int(-2, 2);
+                            aU2 = aU1 + anOracle.Real(0.1, 1) * aP.Period;
                         }
                         aWhat = $"Segment({aU1}, {aU2})";
                         aNE = Catch(() => aN.Segment(aU1, aU2));
@@ -1051,7 +1051,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                                 }
                                 default:
                                 {
-                                    double u = anOracle.Real(aF - aP.Period(), aL + aP.Period());
+                                    double u = anOracle.Real(aF - aP.Period, aL + aP.Period);
                                     aWhat = $"SetOrigin({u}, 1e-7)";
                                     aNE = Catch(() => aN.SetOrigin(u, 1e-7));
                                     aPE = Catch(() => aNext = aP.WithOrigin(u, 1e-7));
@@ -1162,10 +1162,10 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                 N.Geom_Curve aNBasis = aNB;
                 Curve3D aPBasis = aPB;
                 N.Geom_TrimmedCurve? aNTrim = null;
-                if (anOracle.Int(0, 3) == 0 && !global::Kerf.Engine.Foundation.Precision.IsInfinite(aPB.FirstParameter()))
+                if (anOracle.Int(0, 3) == 0 && !global::Kerf.Engine.Foundation.Precision.IsInfinite(aPB.FirstParameter))
                 {
                     // offset of a trimmed curve: the trimmed curve is kept around a copy of its basis
-                    double aF = aPB.FirstParameter(), aL = aPB.LastParameter();
+                    double aF = aPB.FirstParameter, aL = aPB.LastParameter;
                     double aU1 = anOracle.Real(aF, aF + 0.4 * (aL - aF)), aU2 = anOracle.Real(aF + 0.6 * (aL - aF), aL);
                     aNTrim = new N.Geom_TrimmedCurve(aNB, aU1, aU2);
                     aNBasis = aNTrim;
@@ -1187,11 +1187,11 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
 
                     foreach ((N.Geom_OffsetCurve aN, OffsetCurve3D aP, string aWhat) in new[] { (aNO, aPO, "offset"), (aNO2, aPO2, "offset of offset") })
                     {
-                        anOracle.Same(aN.Offset(), aP.Offset(), $"{aWhat} Offset");
+                        anOracle.Same(aN.Offset(), aP.Offset, $"{aWhat} Offset");
                         using (var aND = aN.Direction())
                         using (var aNDXYZ = aND.XYZ())
                         {
-                            anOracle.Same(Oracle.FromNative(aNDXYZ), aP.Direction().XYZ(), $"{aWhat} Direction");
+                            anOracle.Same(Oracle.FromNative(aNDXYZ), aP.Direction.XYZ(), $"{aWhat} Direction");
                         }
                         Assert.Equal((int)aN.GetBasisCurveContinuity(), (int)aP.GetBasisCurveContinuity());
                         SameProperties(anOracle, aN, aP, aWhat);

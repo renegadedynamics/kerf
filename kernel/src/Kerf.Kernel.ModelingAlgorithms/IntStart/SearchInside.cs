@@ -158,8 +158,8 @@ public class SearchInside<ThePSurface, ThePSurfaceTool, TheFunction>
             if (i <= nbsample)
             {
                 t.SamplePoint(i, out s2d, out _);
-                uVap[1] = s2d.X();
-                uVap[2] = s2d.Y();
+                uVap[1] = s2d.X;
+                uVap[2] = s2d.Y;
 
                 double u1, v1, u2, v2;
                 u1 = binf[1] = Max(umin, uVap[1] - du);
@@ -172,7 +172,7 @@ public class SearchInside<ThePSurface, ThePSurfaceTool, TheFunction>
                 Point3D pextrm2 = ThePSurfaceTool.Value(ps, u2, v2);
                 func.Value(uVap, valf);
                 double rvalf = valf[1];
-                double distPP = pextrm1.SquareDistance(pextrm2);
+                double distPP = pextrm1.SquareDistanceTo(pextrm2);
                 if (rvalf * rvalf > 3.0 * distPP)
                 {
                     nepastester = true;
@@ -231,8 +231,8 @@ public class SearchInside<ThePSurface, ThePSurfaceTool, TheFunction>
                     s2d = s2d.WithCoord(umax - du * 0.005, vmax - dv * 0.005);
                 }
 
-                uVap[1] = s2d.X();
-                uVap[2] = s2d.Y();
+                uVap[1] = s2d.X;
+                uVap[2] = s2d.Y;
 
                 binf[1] = Max(umin, uVap[1] - du);
                 binf[2] = Max(vmin, uVap[2] - dv);
@@ -260,8 +260,8 @@ public class SearchInside<ThePSurface, ThePSurfaceTool, TheFunction>
                             {
                                 ref InteriorPoint iPj = ref _list[j];
                                 Point3D pj = iPj.Value();
-                                if ((Math.Abs(pj.X() - psol.X()) <= epsilon) && (Math.Abs(pj.Y() - psol.Y()) <= epsilon)
-                                    && (Math.Abs(pj.Z() - psol.Z()) <= epsilon)
+                                if ((Math.Abs(pj.X - psol.X) <= epsilon) && (Math.Abs(pj.Y - psol.Y) <= epsilon)
+                                    && (Math.Abs(pj.Z - psol.Z) <= epsilon)
                                     && (Math.Abs(uVap[1] - iPj.UParameter()) <= toler1)
                                     && (Math.Abs(uVap[2] - iPj.VParameter()) <= toler2))
                                 {

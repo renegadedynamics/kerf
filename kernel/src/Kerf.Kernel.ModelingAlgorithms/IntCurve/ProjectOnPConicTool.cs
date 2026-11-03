@@ -38,7 +38,7 @@ public readonly struct ProjectOnPConicTool : IProjectOnPCurveTool<PConic>
         switch (thePConic.TypeCurve())
         {
             case Line:
-                param = global::Kerf.Engine.Geometry.ElCLib.LineParameter(thePConic.Axis2().XAxis(), p);
+                param = global::Kerf.Engine.Geometry.ElCLib.LineParameter(thePConic.Axis2().XAxis, p);
                 break;
 
             case Circle:
@@ -94,7 +94,7 @@ public readonly struct ProjectOnPConicTool : IProjectOnPCurveTool<PConic>
         switch (thePConic.TypeCurve())
         {
             case Line:
-                param = global::Kerf.Engine.Geometry.ElCLib.LineParameter(thePConic.Axis2().XAxis(), p);
+                param = global::Kerf.Engine.Geometry.ElCLib.LineParameter(thePConic.Axis2().XAxis, p);
                 break;
 
             case Circle:

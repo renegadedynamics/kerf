@@ -36,13 +36,13 @@ public sealed class Matrix
     {
         // A similarity is copied through its gp_Trsf, which keeps OCCT's record of its form and scale; a
         // general affine transform, which Trsf() refuses, from its matrix and translation
-        if (source.Form() != TransformForm.Other)
+        if (source.Form != TransformForm.Other)
         {
-            var trsf = source.Trsf();
+            var trsf = source.ToTransform();
             return new GeneralTransform3D(trsf);
         }
-        var linear = source.VectorialPart();
-        var translation = source.TranslationPart();
+        var linear = source.VectorialPart;
+        var translation = source.TranslationXyz();
         return new GeneralTransform3D(linear, translation);
     }
 

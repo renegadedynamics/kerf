@@ -23,7 +23,7 @@ namespace Kerf.Engine.Geometry.Evaluation.Grid;
 /// OCCT's <c>std::variant</c> of evaluators is a <see cref="GeomGridEvalGrid.ISurfaceEvaluator"/> field, null for
 /// <c>std::monostate</c> (decision 236).
 /// </remarks>
-public sealed class SurfaceGrid : GeomGridEvalGrid.ISurfaceEvaluator
+internal sealed class SurfaceGrid : GeomGridEvalGrid.ISurfaceEvaluator
 {
     private GeomGridEvalGrid.ISurfaceEvaluator? _evaluator;
     private SurfaceKind _surfaceType;
@@ -61,7 +61,7 @@ public sealed class SurfaceGrid : GeomGridEvalGrid.ISurfaceEvaluator
         Surface result = surface;
         while (result is TrimmedSurface trimmed)
         {
-            result = trimmed.BasisSurface();
+            result = trimmed.BasisSurface;
         }
         return result;
     }
@@ -135,7 +135,7 @@ public sealed class SurfaceGrid : GeomGridEvalGrid.ISurfaceEvaluator
             Transform3D trsf = transformed.Trsf();
 
             // Only store transformation if it's not identity
-            if (trsf.Form() != Identity)
+            if (trsf.Form != Identity)
             {
                 _trsf = trsf;
             }

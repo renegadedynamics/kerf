@@ -30,7 +30,7 @@ public class BRepTools_WireExplorerTests
                 Assert.True(aFirst.IsSame(aPrevLast), $"edge {aCount}: connected");
             }
             // the current vertex is the FORWARD vertex of a FORWARD edge, the REVERSED one of a REVERSED edge
-            Assert.Equal(anE.Orientation() == Reversed ? Reversed : Forward, theExp.Orientation());
+            Assert.Equal(anE.Orientation == Reversed ? Reversed : Forward, theExp.Orientation());
             aPrevLast = Exploration.LastVertex(anE, true);
         }
         return aCount;
@@ -69,7 +69,7 @@ public class BRepTools_WireExplorerTests
         anExp.Next();
         anExp.Next();
         Assert.True(anExp.Current().IsSame(e32));
-        Assert.Equal(Reversed, anExp.Current().Orientation());
+        Assert.Equal(Reversed, anExp.Current().Orientation);
         Assert.True(anExp.CurrentVertex().IsSame(aV[2]));
 
         anExp.Clear();
@@ -115,6 +115,6 @@ public class BRepTools_WireExplorerTests
         Assert.Equal(4, anOrder.Count);
         // bottom, seam FORWARD, top REVERSED, seam REVERSED: each seam once in each orientation
         Assert.True(anOrder[1].IsSame(anOrder[3]));
-        Assert.NotEqual(anOrder[1].Orientation(), anOrder[3].Orientation());
+        Assert.NotEqual(anOrder[1].Orientation, anOrder[3].Orientation);
     }
 }

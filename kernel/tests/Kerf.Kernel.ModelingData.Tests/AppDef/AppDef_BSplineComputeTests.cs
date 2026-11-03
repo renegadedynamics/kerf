@@ -51,7 +51,7 @@ public class AppDef_BSplineComputeTests
         for (int i = thePoints.Lower(); i <= thePoints.Upper(); i++)
         {
             aC.Value(1, aPar[i], out Point3D aP);
-            aMax = Math.Max(aMax, aP.Distance(thePoints[i]));
+            aMax = Math.Max(aMax, aP.DistanceTo(thePoints[i]));
         }
         return aMax;
     }
@@ -83,8 +83,8 @@ public class AppDef_BSplineComputeTests
         MultiBSpCurve aC = aComputer.Value();
         aC.Value(1, 0.0, out Point3D aFirst);
         aC.Value(1, 1.0, out Point3D aLast);
-        Assert.True(aFirst.Distance(aPnts[1]) < 1.0e-9);
-        Assert.True(aLast.Distance(aPnts[25]) < 1.0e-9);
+        Assert.True(aFirst.DistanceTo(aPnts[1]) < 1.0e-9);
+        Assert.True(aLast.DistanceTo(aPnts[25]) < 1.0e-9);
     }
 
     [Theory]
@@ -153,7 +153,7 @@ public class AppDef_BSplineComputeTests
         for (int i = 1; i <= 30; i++)
         {
             aC.Value(1, aPar[i], out Point2D aP);
-            Assert.True(aP.Distance(aPnts[i]) <= 1.0e-5);
+            Assert.True(aP.DistanceTo(aPnts[i]) <= 1.0e-5);
         }
     }
 
@@ -174,10 +174,10 @@ public class AppDef_BSplineComputeTests
         MultiBSpCurve aC = aComputer.Value();
         Assert.Equal(2, aC.NbCurves());
         aC.Value(2, 0.5, out Point2D aMid);
-        Assert.Equal(0.5, aMid.X(), 1e-9);
-        Assert.Equal(0.25, aMid.Y(), 1e-9);
+        Assert.Equal(0.5, aMid.X, 1e-9);
+        Assert.Equal(0.25, aMid.Y, 1e-9);
         aC.Value(1, 0.5, out Point3D aMid3d);
-        Assert.True(aMid3d.Distance(Cubic(0.5)) < 1e-9);
+        Assert.True(aMid3d.DistanceTo(Cubic(0.5)) < 1e-9);
     }
 
     [Fact]
@@ -204,8 +204,8 @@ public class AppDef_BSplineComputeTests
         MultiBSpCurve aC = aComputer.Value();
         aC.D1(1, 0.0, out Point3D aP0, out Vector3D aV0);
         aC.D1(1, 1.0, out Point3D aP1, out Vector3D aV1);
-        Assert.True(aP0.Distance(Circle(0.0)) < 1e-9);
-        Assert.True(aP1.Distance(Circle(1.0)) < 1e-9);
+        Assert.True(aP0.DistanceTo(Circle(0.0)) < 1e-9);
+        Assert.True(aP1.DistanceTo(Circle(1.0)) < 1e-9);
         Assert.True(aV0.IsParallel(new Vector3D(0.0, 1.0, 0.0), 1e-9));
         Assert.True(aV1.IsParallel(new Vector3D(-Math.Sin(3.0), Math.Cos(3.0), 0.0), 1e-9));
 
@@ -277,7 +277,7 @@ public class AppDef_BSplineComputeTests
         MultiBSpCurve aC = aComputer.Value();
         Assert.Equal(4, aC.NbPoles());
         aC.Value(1, 0.3, out Point3D aP);
-        Assert.True(aP.Distance(Cubic(0.3)) < 1e-12);
+        Assert.True(aP.DistanceTo(Cubic(0.3)) < 1e-12);
     }
 
     [Fact]

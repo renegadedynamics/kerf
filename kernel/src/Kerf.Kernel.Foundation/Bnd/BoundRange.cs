@@ -18,7 +18,7 @@ namespace Kerf.Engine.Geometry.Bounds;
 /// because the range's own <c>Min()</c> and <c>Max()</c> hide them.
 /// </para>
 /// </remarks>
-public partial struct BoundRange : IEquatable<BoundRange>
+internal partial struct BoundRange : IEquatable<BoundRange>
 {
     /// <summary>The range bounds (Min, Max).</summary>
     public readonly record struct Bounds(double Min, double Max);

@@ -63,7 +63,7 @@ public sealed class ConstructCurve
             Vector3D avec = new(p1, p2);
             Direction3D adir = new(avec);
             Line3D alin = new(p1, adir);
-            double theParam = global::Kerf.Engine.Geometry.ElCLib.Parameter(alin, l3D.Lin().Location());
+            double theParam = global::Kerf.Engine.Geometry.ElCLib.Parameter(alin, l3D.Line.Location);
             alin = alin.WithLocation(global::Kerf.Engine.Geometry.ElCLib.Value(theParam, alin));
             l3D.SetLin(alin);
             return true;
@@ -86,8 +86,8 @@ public sealed class ConstructCurve
             {
                 return false;
             }
-            double uu1 = Max(u1, bspl.FirstParameter());
-            double uu2 = Min(u2, bspl.LastParameter());
+            double uu1 = Max(u1, bspl.FirstParameter);
+            double uu2 = Min(u2, bspl.LastParameter);
             bspl.Segment(uu1, uu2);
             bspl.SetPole(1, p1);
             bspl.SetPole(bspl.PoleCount, p2);
@@ -101,7 +101,7 @@ public sealed class ConstructCurve
             Vector3D avec = new(p1, p2);
             Direction3D adir = new(avec);
             Line3D alin = new(p1, adir);
-            double theParam = global::Kerf.Engine.Geometry.ElCLib.Parameter(alin, l3D.Lin().Location());
+            double theParam = global::Kerf.Engine.Geometry.ElCLib.Parameter(alin, l3D.Line.Location);
             alin = alin.WithLocation(global::Kerf.Engine.Geometry.ElCLib.Value(theParam, alin));
             l3D.SetLin(alin);
             return true;
@@ -137,7 +137,7 @@ public sealed class ConstructCurve
             Vector2D avec = new(p1, p2);
             Direction2D adir = new(avec);
             Line2D alin = new(p1, adir);
-            double theParam = global::Kerf.Engine.Geometry.ElCLib.Parameter(alin, l2D.Lin2d().Location());
+            double theParam = global::Kerf.Engine.Geometry.ElCLib.Parameter(alin, l2D.Line.Location);
             alin = alin.WithLocation(global::Kerf.Engine.Geometry.ElCLib.Value(theParam, alin));
             l2D.SetLin2d(alin);
             return true;
@@ -186,7 +186,7 @@ public sealed class ConstructCurve
         if (bspl is not null)
         {
             // take segment if trim and range differ
-            double fbsp = bspl.FirstParameter(), lbsp = bspl.LastParameter();
+            double fbsp = bspl.FirstParameter, lbsp = bspl.LastParameter;
             bool segment = false;
             if (first > fbsp + global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
@@ -269,7 +269,7 @@ public sealed class ConstructCurve
         if (bspl is not null)
         {
             // take segment if trim and range differ
-            double fbsp = bspl.FirstParameter(), lbsp = bspl.LastParameter();
+            double fbsp = bspl.FirstParameter, lbsp = bspl.LastParameter;
             bool segment = false;
             if (first > fbsp + global::Kerf.Engine.Foundation.Precision.PConfusion())
             {

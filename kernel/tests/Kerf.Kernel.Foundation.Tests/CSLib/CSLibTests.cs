@@ -13,17 +13,17 @@ internal static class CSLibTestHelpers
     // Helper function for comparing directions with tolerance
     public static void checkDirEqual(in Direction3D theDir1, in Direction3D theDir2, double theTolerance = 1e-10)
     {
-        Assert.Equal(theDir2.X(), theDir1.X(), theTolerance);
-        Assert.Equal(theDir2.Y(), theDir1.Y(), theTolerance);
-        Assert.Equal(theDir2.Z(), theDir1.Z(), theTolerance);
+        Assert.Equal(theDir2.X, theDir1.X, theTolerance);
+        Assert.Equal(theDir2.Y, theDir1.Y, theTolerance);
+        Assert.Equal(theDir2.Z, theDir1.Z, theTolerance);
     }
 
     // Helper function for comparing vectors with tolerance
     public static void checkVecEqual(in Vector3D theVec1, in Vector3D theVec2, double theTolerance = 1e-10)
     {
-        Assert.Equal(theVec2.X(), theVec1.X(), theTolerance);
-        Assert.Equal(theVec2.Y(), theVec1.Y(), theTolerance);
-        Assert.Equal(theVec2.Z(), theVec1.Z(), theTolerance);
+        Assert.Equal(theVec2.X, theVec1.X, theTolerance);
+        Assert.Equal(theVec2.Y, theVec1.Y, theTolerance);
+        Assert.Equal(theVec2.Z, theVec1.Z, theTolerance);
     }
 
     public static NCollection_Array1<Point2D> UnitSquare()

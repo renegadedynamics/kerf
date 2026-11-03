@@ -31,10 +31,10 @@ public class AxisPlacement2 : Geometry2D
     public Axis2D Ax2d() => _axis;
 
     /// <summary>The direction.</summary>
-    public Direction2D Direction() => _axis.Direction();
+    public Direction2D Direction() => _axis.Direction;
 
     /// <summary>The origin.</summary>
-    public Point2D Location() => _axis.Location();
+    public Point2D Location() => _axis.Location;
 
     /// <summary>Reverses the direction in place.</summary>
     internal void Reverse()
@@ -78,7 +78,7 @@ public class AxisPlacement2 : Geometry2D
     }
 
     /// <summary>The angle, in [-PI, PI], between the directions of this axis and Other.</summary>
-    public double Angle(AxisPlacement2 other) => _axis.Angle(other.Ax2d());
+    public double Angle(AxisPlacement2 other) => _axis.AngleTo(other.Ax2d());
 
     // Non-mutating twins of the Set methods (OCCT.NET)
 

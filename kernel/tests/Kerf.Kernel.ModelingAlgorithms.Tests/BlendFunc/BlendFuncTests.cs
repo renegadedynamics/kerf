@@ -80,9 +80,9 @@ public class BlendFuncTests
                                                                     2.0));
         Vector3D N = new(), DNu = new(), DNv = new();
         Assert.True(global::Kerf.Engine.Fillets.BlendFunctions.BlendFunc.ComputeNormal(aSphere, new Point2D(0.3, Math.PI / 2.0), ref N));
-        Assert.Equal(1.0, Math.Abs(N.Z()), 1.0e-12);
+        Assert.Equal(1.0, Math.Abs(N.Z), 1.0e-12);
         Assert.True(global::Kerf.Engine.Fillets.BlendFunctions.BlendFunc.ComputeDNormal(aSphere, new Point2D(0.3, Math.PI / 2.0), ref N, ref DNu, ref DNv));
-        Assert.Equal(1.0, Math.Abs(N.Z()), 1.0e-12);
+        Assert.Equal(1.0, Math.Abs(N.Z), 1.0e-12);
 
     }
 

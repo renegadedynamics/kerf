@@ -48,16 +48,16 @@ public class Geom2dGcc_Circ2d2TanRadTests
         for (int i = 1; i <= aGccCirc2d.SolutionCount; i++)
         {
             Circle2D aCirc2d = aGccCirc2d.ThisSolution(i);
-            Point2D  aCenter = aCirc2d.Location();
-            double    aR      = aCirc2d.Radius();
+            Point2D  aCenter = aCirc2d.Location;
+            double    aR      = aCirc2d.Radius;
 
             aGccCirc2d.Tangency1(i, out _, out _, out Point2D aPntSol1);
             aGccCirc2d.Tangency2(i, out _, out _, out Point2D aPntSol2);
 
-            double aDelta1 = Math.Abs(aPntSol1.Distance(aCenter) - aR) / aR * 100.0;
+            double aDelta1 = Math.Abs(aPntSol1.DistanceTo(aCenter) - aR) / aR * 100.0;
             Assert.True(aDelta1 <= aMaxDeltaPercent, $"Solution {i}: tangency1 distance error {aDelta1}% exceeds 1%");
 
-            double aDelta2 = Math.Abs(aPntSol2.Distance(aCenter) - aR) / aR * 100.0;
+            double aDelta2 = Math.Abs(aPntSol2.DistanceTo(aCenter) - aR) / aR * 100.0;
             Assert.True(aDelta2 <= aMaxDeltaPercent, $"Solution {i}: tangency2 distance error {aDelta2}% exceeds 1%");
         }
     }
@@ -132,10 +132,10 @@ public class Geom2dGcc_Circ2d2TanRadTests
     private static void AssertTangent(Curve2DAdaptorBase theCurve, in Circle2D theCirc, double theParArg, in Point2D thePnt)
     {
         theCurve.D1(theParArg, out Point2D aP, out Vector2D aV);
-        Assert.True(aP.Distance(thePnt) < 1e-6);
-        Assert.Equal(theCirc.Radius(), thePnt.Distance(theCirc.Location()), 1e-6);
+        Assert.True(aP.DistanceTo(thePnt) < 1e-6);
+        Assert.Equal(theCirc.Radius, thePnt.DistanceTo(theCirc.Location), 1e-6);
         // The radius at the tangency point is normal to the curve.
-        Vector2D aRad = new(theCirc.Location(), thePnt);
+        Vector2D aRad = new(theCirc.Location, thePnt);
         Assert.True(Math.Abs(aRad.Normalized().Dot(aV.Normalized())) < 1e-5);
     }
 
@@ -151,11 +151,11 @@ public class Geom2dGcc_Circ2d2TanRadTests
         for (int i = 1; i <= aCirc.SolutionCount; i++)
         {
             Circle2D aSol = aCirc.ThisSolution(i);
-            Assert.Equal(1.0, aSol.Radius());
+            Assert.Equal(1.0, aSol.Radius);
             aCirc.Tangency2(i, out _, out double a2, out Point2D t2);
             AssertTangent(anEll, aSol, a2, t2);
             aCirc.Tangency1(i, out _, out _, out Point2D t1);
-            Assert.Equal(1.0, t1.Distance(c1.Location()), 1e-6);
+            Assert.Equal(1.0, t1.DistanceTo(c1.Location), 1e-6);
             aCirc.WhichQualifier(i, out _, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ2);
             Assert.Equal(global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, aQ2);
         }
@@ -187,8 +187,8 @@ public class Geom2dGcc_Circ2d2TanRadTests
             aCirc.Tangency1(i, out _, out double a1, out Point2D t1);
             AssertTangent(aBS, aSol, a1, t1);
             aCirc.Tangency2(i, out _, out _, out Point2D t2);
-            Assert.Equal(2.0, Math.Abs(aSol.Location().Y()), 1e-9);
-            Assert.Equal(0.0, t2.Y(), 1e-9);
+            Assert.Equal(2.0, Math.Abs(aSol.Location.Y), 1e-9);
+            Assert.Equal(0.0, t2.Y, 1e-9);
         }
     }
 

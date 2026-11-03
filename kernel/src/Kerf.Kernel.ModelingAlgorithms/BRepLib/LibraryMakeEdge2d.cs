@@ -34,14 +34,14 @@ public class LibraryMakeEdge2d : LibraryMakeShape
     // make a 3d point on the current plane
     private static Point3D Point(in Point2D p)
     {
-        return BrepLibrary.Plane().Value(p.X(), p.Y());
+        return BrepLibrary.Plane().Value(p.X, p.Y);
     }
 
     // project a vertex on the current plane
     private static Point2D Project(in Vertex ve)
     {
         Point3D p = Tool.Pnt(ve);
-        global::Kerf.Engine.Geometry.ElSLib.Parameters(BrepLibrary.Plane().Pln(), p, out double u, out double v);
+        global::Kerf.Engine.Geometry.ElSLib.Parameters(BrepLibrary.Plane().Plane, p, out double u, out double v);
         return new Point2D(u, v);
     }
 
@@ -54,11 +54,11 @@ public class LibraryMakeEdge2d : LibraryMakeShape
         var ac = new CurveAdaptor2D(c);
         if (ac.GetType() == Line)
         {
-            p = global::Kerf.Engine.Geometry.ElCLib.LineParameter(ac.Line().Position(), P);
+            p = global::Kerf.Engine.Geometry.ElCLib.LineParameter(ac.Line().Position, P);
         }
         else if (ac.GetType() == Circle)
         {
-            p = global::Kerf.Engine.Geometry.ElCLib.CircleParameter(ac.Circle().Position(), P);
+            p = global::Kerf.Engine.Geometry.ElCLib.CircleParameter(ac.Circle().Position, P);
         }
         else
         {
@@ -92,7 +92,7 @@ public class LibraryMakeEdge2d : LibraryMakeShape
     {
         Point2D p1 = Project(v1);
         Point2D p2 = Project(v2);
-        double l = p1.Distance(p2);
+        double l = p1.DistanceTo(p2);
         if (l <= Constants.Resolution())
         {
             _error = LibraryEdgeError.LineThroughIdenticPoints;
@@ -105,7 +105,7 @@ public class LibraryMakeEdge2d : LibraryMakeShape
 
     public LibraryMakeEdge2d(in Point2D p1, in Point2D p2)
     {
-        double l = p1.Distance(p2);
+        double l = p1.DistanceTo(p2);
         if (l <= Constants.Resolution())
         {
             _error = LibraryEdgeError.LineThroughIdenticPoints;
@@ -171,7 +171,7 @@ public class LibraryMakeEdge2d : LibraryMakeShape
 
     public void Init(Curve2D c)
     {
-        Init(c, c.FirstParameter(), c.LastParameter());
+        Init(c, c.FirstParameter, c.LastParameter);
     }
 
     public void Init(Curve2D c, double p1, double p2)
@@ -185,7 +185,7 @@ public class LibraryMakeEdge2d : LibraryMakeShape
         var b = new BrepBuilder();
         Vertex v1 = new(), v2 = new();
         b.MakeVertex(ref v1, Point(p1), global::Kerf.Engine.Foundation.Precision.Confusion());
-        if (p1.Distance(p2) < global::Kerf.Engine.Foundation.Precision.Confusion())
+        if (p1.DistanceTo(p2) < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             v2 = v1;
         }
@@ -204,7 +204,7 @@ public class LibraryMakeEdge2d : LibraryMakeShape
 
         if (v1.IsNull)
         {
-            p1 = c.FirstParameter();
+            p1 = c.FirstParameter;
         }
         else if (!Project(c, v1, out p1))
         {
@@ -213,7 +213,7 @@ public class LibraryMakeEdge2d : LibraryMakeShape
         }
         if (v2.IsNull)
         {
-            p2 = c.LastParameter();
+            p2 = c.LastParameter;
         }
         else if (!Project(c, v2, out p2))
         {
@@ -230,7 +230,7 @@ public class LibraryMakeEdge2d : LibraryMakeShape
 
         Vertex v1 = new(), v2 = new();
         b.MakeVertex(ref v1, Point(P1), global::Kerf.Engine.Foundation.Precision.Confusion());
-        if (P1.Distance(P2) < global::Kerf.Engine.Foundation.Precision.Confusion())
+        if (P1.DistanceTo(P2) < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             v2 = v1;
         }
@@ -250,15 +250,15 @@ public class LibraryMakeEdge2d : LibraryMakeShape
         TrimmedCurve2D? ct = c as TrimmedCurve2D;
         while (ct is not null)
         {
-            c = ct.BasisCurve();
+            c = ct.BasisCurve;
             ct = c as TrimmedCurve2D;
         }
 
         // check parameters
         double p1 = pp1;
         double p2 = pp2;
-        double cf = c.FirstParameter();
-        double cl = c.LastParameter();
+        double cf = c.FirstParameter;
+        double cl = c.LastParameter;
         double epsilon = global::Kerf.Engine.Foundation.Precision.Confusion();
         bool periodic = c.IsPeriodic;
 
@@ -315,7 +315,7 @@ public class LibraryMakeEdge2d : LibraryMakeShape
         bool closed = false;
         if (!p1inf && !p2inf)
         {
-            closed = (P1.Distance(P2) <= preci);
+            closed = (P1.DistanceTo(P2) <= preci);
         }
 
         // check if the vertices are on the curve
@@ -341,7 +341,7 @@ public class LibraryMakeEdge2d : LibraryMakeShape
                     _error = LibraryEdgeError.DifferentPointsOnClosedCurve;
                     return;
                 }
-                else if (Point(P1).Distance(Tool.Pnt(v1)) > preci)
+                else if (Point(P1).DistanceTo(Tool.Pnt(v1)) > preci)
                 {
                     _error = LibraryEdgeError.DifferentPointsOnClosedCurve;
                     return;
@@ -387,8 +387,8 @@ public class LibraryMakeEdge2d : LibraryMakeShape
             }
         }
 
-        v1.Orientation(Forward);
-        v2.Orientation(Reversed);
+        v1.Orient(Forward);
+        v2.Orient(Reversed);
         _vertex1 = v1;
         _vertex2 = v2;
 

@@ -94,8 +94,8 @@ public class PolyArc : Polygo
             pas = (pfin - pdeb) / (nbSample - 1);
             _param[1] = pdeb;
             line.D0(pdeb, out p2d);
-            xs = p2d.X();
-            ys = p2d.Y();
+            xs = p2d.X;
+            ys = p2d.Y;
             _brise[1] = _brise[1].WithCoord(xs, ys);
 
             _box.SetVoid();
@@ -107,8 +107,8 @@ public class PolyArc : Polygo
             {
                 _param[i] = pdeb + (i - 1) * pas;
                 line.D0(_param[i], out p2d);
-                x = p2d.X();
-                y = p2d.Y();
+                x = p2d.X;
+                y = p2d.Y;
                 _brise[i] = _brise[i].WithCoord(x, y);
                 xXs = 0.5 * (xs + x);
                 yYs = 0.5 * (ys + y);
@@ -148,8 +148,8 @@ public class PolyArc : Polygo
 
                 _box.Add(_brise[i]);
                 line.D0(_param[i] - pas * 0.5, out p2d);
-                xm = p2d.X() - xXs;
-                ym = p2d.Y() - yYs;
+                xm = p2d.X - xXs;
+                ym = p2d.Y - yYs;
                 xm = Math.Sqrt(xm * xm + ym * ym);
                 _error = Max(_error, xm);
                 xs = x;
@@ -189,7 +189,7 @@ public class PolyArc : Polygo
         }
         _box.Enlarge(_error);
 
-        _ferme = (line.Value(aPdeb).Distance(line.Value(aPfin)) <= 1e-7);
+        _ferme = (line.Value(aPdeb).DistanceTo(line.Value(aPfin)) <= 1e-7);
     }
 
     public override bool Closed() => _ferme;
@@ -204,7 +204,7 @@ public class PolyArc : Polygo
             return (_brise[index]);
         }
         Point2D p = _brise[index];
-        return (new Point2D(p.X() + _offsetx, p.Y() + _offsety));
+        return (new Point2D(p.X + _offsetx, p.Y + _offsety));
     }
 
     /// <summary>The parameter on the arc of the point of range <paramref name="index"/>.</summary>

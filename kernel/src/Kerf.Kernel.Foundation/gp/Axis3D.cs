@@ -48,9 +48,9 @@ public readonly partial struct Axis3D : IEquatable<Axis3D>
 
     // Queries
 
-    public readonly Direction3D Direction() => _vdir;
+    public readonly Direction3D Direction => _vdir;
 
-    public readonly Point3D Location() => _loc;
+    public readonly Point3D Location => _loc;
 
     public readonly bool IsCoaxial(in Axis3D other, double angularTolerance, double linearTolerance)
     {
@@ -71,7 +71,7 @@ public readonly partial struct Axis3D : IEquatable<Axis3D>
 
     public readonly bool IsParallel(in Axis3D other, double angularTolerance) => _vdir.IsParallel(other._vdir, angularTolerance);
 
-    public readonly double Angle(in Axis3D other) => _vdir.Angle(other._vdir);
+    public readonly double AngleTo(in Axis3D other) => _vdir.AngleTo(other._vdir);
 
     public readonly Axis3D Reversed() => new(_loc, _vdir.Reversed());
 

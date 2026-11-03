@@ -21,7 +21,7 @@ namespace Kerf.Engine.Topology.Tools;
 /// A working object (decision 21). <see cref="Copy"/> hands out the shapes built here, so it freezes them
 /// (docs/phase3-design.md, section 4.2); ported code that keeps building on them reads <see cref="InternalCopy"/>.
 /// </remarks>
-public sealed class Substitution
+internal sealed class Substitution
 {
     private readonly Dictionary<Shape, NCollection_List<Shape>> _map = new(ShapeHasher.Instance);
 
@@ -83,7 +83,7 @@ public sealed class Substitution
             //------------------------------------------
             newS.EmptyCopy();
 
-            if (newS.ShapeType() == ShapeType.Edge)
+            if (newS.Type == ShapeType.Edge)
             {
                 Tool.Range(ShapeCasts.Edge(s), out double f, out double l);
                 b.Range(ShapeCasts.Edge(newS), f, l);
@@ -95,7 +95,7 @@ public sealed class Substitution
             //------------------------------------------
             for (; iteS.More(); iteS.Next())
             {
-                Orientation os = iteS.Value().Orientation();
+                Orientation os = iteS.Value().Orientation;
                 var L = new NCollection_List<Shape>(_map.GetValue(iteS.Value()));
                 var iteL = new NCollection_List<Shape>.Iterator(L);
 
@@ -108,7 +108,7 @@ public sealed class Substitution
                     Build(nss);
 
                     NCollection_List<Shape> nl = _map.GetValue(nss);
-                    Orientation newOr = global::Kerf.Engine.Topology.TopAbs.Compose(os, nss.Orientation());
+                    Orientation newOr = global::Kerf.Engine.Topology.TopAbs.Compose(os, nss.Orientation);
                     var iteNL = new NCollection_List<Shape>.Iterator(nl);
 
                     for (; iteNL.More(); iteNL.Next())
@@ -120,8 +120,8 @@ public sealed class Substitution
             }
             if (!hasSubShape)
             {
-                if (newS.ShapeType() == ShapeType.Wire || newS.ShapeType() == ShapeType.Shell
-                    || newS.ShapeType() == ShapeType.Solid || newS.ShapeType() == ShapeType.Compound)
+                if (newS.Type == ShapeType.Wire || newS.Type == ShapeType.Shell
+                    || newS.Type == ShapeType.Solid || newS.Type == ShapeType.Compound)
                 {
                     //-----------------------------------------------------------------
                     // Wire,Solid,Shell,Compound must have subshape else they disappear

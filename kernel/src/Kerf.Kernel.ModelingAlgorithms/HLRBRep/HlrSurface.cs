@@ -158,7 +158,7 @@ public sealed class HlrSurface
         PEquation pl = new(p, tol);
         if (pl.IsPlanar)
         {
-            result = Abs(pl.Plane().Axis().Direction().Z()) < 0.0001;
+            result = Abs(pl.Plane().Axis.Direction.Z) < 0.0001;
         }
 
         return result;
@@ -174,18 +174,18 @@ public sealed class HlrSurface
         if (_type == global::Kerf.Geometry.SurfaceKind.Plane)
         {
             Plane3D pl = Plane();
-            Axis3D a = pl.Axis();
-            pt = a.Location();
-            d = new Vector3D(a.Direction());
+            Axis3D a = pl.Axis;
+            pt = a.Location;
+            d = new Vector3D(a.Direction);
             pt = pt.Transformed(Proj().Transformation());
             d = d.Transformed(Proj().Transformation());
             if (Proj().Perspective())
             {
-                r = d.Z() * Proj().Focus() - (d.X() * pt.X() + d.Y() * pt.Y() + d.Z() * pt.Z());
+                r = d.Z * Proj().Focus() - (d.X * pt.X + d.Y * pt.Y + d.Z * pt.Z);
             }
             else
             {
-                r = d.Z();
+                r = d.Z;
             }
             return Abs(r) < toler;
         }
@@ -196,10 +196,10 @@ public sealed class HlrSurface
                 return false;
             }
             Cylinder cyl = BSurfaceTool.Cylinder(_surf);
-            Axis3D a = cyl.Axis();
-            d = new Vector3D(a.Direction());
+            Axis3D a = cyl.Axis;
+            d = new Vector3D(a.Direction);
             d = d.Transformed(Proj().Transformation());
-            r = Sqrt(d.X() * d.X() + d.Y() * d.Y());
+            r = Sqrt(d.X * d.X + d.Y * d.Y);
             return r < toler;
         }
         else if (_type == global::Kerf.Geometry.SurfaceKind.Cone)
@@ -209,7 +209,7 @@ public sealed class HlrSurface
                 return false;
             }
             Cone con = BSurfaceTool.Cone(_surf);
-            pt = con.Apex();
+            pt = con.Apex;
             pt = pt.Transformed(Proj().Transformation());
             double tol = 0.001;
             return pt.IsEqual(new Point3D(0, 0, Proj().Focus()), tol);

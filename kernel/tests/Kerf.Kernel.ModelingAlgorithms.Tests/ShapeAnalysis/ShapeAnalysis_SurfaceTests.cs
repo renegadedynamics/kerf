@@ -20,8 +20,8 @@ public class ShapeAnalysis_SurfaceTests
 
     private static void AssertUV(double theU, double theV, Point2D theUV, double theTol = 1e-9)
     {
-        Assert.Equal(theU, theUV.X(), theTol);
-        Assert.Equal(theV, theUV.Y(), theTol);
+        Assert.Equal(theU, theUV.X, theTol);
+        Assert.Equal(theV, theUV.Y, theTol);
     }
 
     private static NCollection_Array1<T> Array<T>(params T[] theValues)
@@ -125,18 +125,18 @@ public class ShapeAnalysis_SurfaceTests
         bool aUIso = true;
         Assert.True(aSAS.Singularity(1, ref aPreci, ref aP, ref aF, ref aL, ref aFirstPar, ref aLastPar, ref aUIso));
         Assert.Equal(0.0, aPreci);
-        Assert.True(aP.IsEqual(aCone.Apex(), 1e-15));
+        Assert.True(aP.IsEqual(aCone.Apex, 1e-15));
         Assert.False(aUIso);
-        Assert.Equal(-1 / Math.Sin(M_PI / 6), aF.Y());
-        Assert.Equal(0.0, aF.X());
-        Assert.Equal(2 * M_PI, aL.X());
+        Assert.Equal(-1 / Math.Sin(M_PI / 6), aF.Y);
+        Assert.Equal(0.0, aF.X);
+        Assert.Equal(2 * M_PI, aL.X);
 
-        Assert.True(aSAS.IsDegenerated(aCone.Apex(), Preci));
+        Assert.True(aSAS.IsDegenerated(aCone.Apex, Preci));
         Assert.False(aSAS.IsDegenerated(new Point3D(1, 0, 0), Preci));
 
         // ProjectDegenerated sets U from the neighbour
         var aResult = new Point2D(0, -2);
-        Assert.True(aSAS.ProjectDegenerated(aCone.Apex(), Preci, new Point2D(1.25, -1.5), ref aResult));
+        Assert.True(aSAS.ProjectDegenerated(aCone.Apex, Preci, new Point2D(1.25, -1.5), ref aResult));
         AssertUV(1.25, -2, aResult, 0);
 
         // the straight pcurve along the apex is degenerated
@@ -162,7 +162,7 @@ public class ShapeAnalysis_SurfaceTests
         Point2D aF = new Point2D(), aL = new Point2D();
         bool aUIso = true;
         Assert.True(aSAS.Singularity(1, ref aPreci, ref aP, ref aF, ref aL, ref aFirstPar, ref aLastPar, ref aUIso));
-        Assert.Equal(1.0, aP.Z(), 1e-15); // the northern pole first
+        Assert.Equal(1.0, aP.Z, 1e-15); // the northern pole first
         AssertUV(2 * M_PI, M_PI / 2, aF, 0);
         AssertUV(0, M_PI / 2, aL, 0);
 
@@ -200,7 +200,7 @@ public class ShapeAnalysis_SurfaceTests
         }
 
         Assert.True(aSAS.ProjectDegenerated(3, aPoints, aUVs, Preci, true));
-        Assert.Equal(1.0, aUVs[2].X(), 1e-15);
+        Assert.Equal(1.0, aUVs[2].X, 1e-15);
     }
 
     [Fact]
@@ -278,7 +278,7 @@ public class ShapeAnalysis_SurfaceTests
         Assert.True(aSAS.Gap() < 1e-8);
         // a point off the surface near a corner
         Point2D aUV = aSAS.ValueOfUV(new Point3D(-0.1, -0.1, 0), Preci);
-        Assert.Equal(aSaddle.Value(aUV.X(), aUV.Y()).Distance(new Point3D(-0.1, -0.1, 0)), aSAS.Gap(), 1e-12);
+        Assert.Equal(aSaddle.Value(aUV.X, aUV.Y).DistanceTo(new Point3D(-0.1, -0.1, 0)), aSAS.Gap(), 1e-12);
         Assert.False(aSAS.IsUClosed());
         Assert.False(aSAS.IsVClosed());
         Assert.Equal(4, aSAS.NbSingularities(1e10));
@@ -316,11 +316,11 @@ public class ShapeAnalysis_SurfaceTests
 
         // projecting the apex: ValueOfUV finds U = 0, any V
         Point2D aUV = aSAS.ValueOfUV(new Point3D(0, 0, 1), Preci);
-        Assert.Equal(0.0, aUV.X(), 1e-7);
+        Assert.Equal(0.0, aUV.X, 1e-7);
         Assert.True(aSAS.Gap() < 1e-7);
         var aResult = aUV;
         Assert.True(aSAS.ProjectDegenerated(new Point3D(0, 0, 1), Preci, new Point2D(0.3, 0.7), ref aResult));
-        Assert.Equal(0.7, aResult.Y());
+        Assert.Equal(0.7, aResult.Y);
 
         AssertUV(0.4, 0.3, aSAS.ValueOfUV(aBS.Value(0.4, 0.3), Preci), 1e-8);
         AssertUV(0.45, 0.35, aSAS.NextValueOfUV(new Point2D(0.4, 0.3), aBS.Value(0.45, 0.35), Preci), 1e-9);

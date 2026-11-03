@@ -82,8 +82,8 @@ public class PrmPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
 
         if (_myHasBeenComputed)
         {
-            if ((_myParOnS1.X() == u1) && (_myParOnS1.Y() == v1) && (_myParOnS2.X() == u2)
-                && (_myParOnS2.Y() == v2))
+            if ((_myParOnS1.X == u1) && (_myParOnS1.Y == v1) && (_myParOnS2.X == u2)
+                && (_myParOnS2.Y == v2))
             {
                 return (_myIsTangent); // OCCT: a cached result leaves the outputs as given
             }
@@ -101,8 +101,8 @@ public class PrmPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
         }
         if (_myHasBeenComputedbis)
         {
-            if ((_myParOnS1bis.X() == u1) && (_myParOnS1bis.Y() == v1) && (_myParOnS2bis.X() == u2)
-                && (_myParOnS2bis.Y() == v2))
+            if ((_myParOnS1bis.X == u1) && (_myParOnS1bis.Y == v1) && (_myParOnS2bis.X == u2)
+                && (_myParOnS2bis.Y == v2))
             {
                 // C# forbids a nested local named as a later outer one (TV): OCCT's TV is TV0 here
                 Vector3D tv0 = _myTg;

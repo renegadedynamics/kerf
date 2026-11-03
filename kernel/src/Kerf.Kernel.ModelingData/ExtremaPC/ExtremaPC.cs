@@ -313,8 +313,8 @@ public static partial class ExtremaPC
         Point3D ptMin = eval.Value(theUMin);
         Point3D ptMax = eval.Value(theUMax);
 
-        double sqDistMin = p.SquareDistance(ptMin);
-        double sqDistMax = p.SquareDistance(ptMax);
+        double sqDistMin = p.SquareDistanceTo(ptMin);
+        double sqDistMax = p.SquareDistanceTo(ptMax);
 
         // Sample step for neighbor point evaluation
         double step = (theUMax - theUMin) * THE_NEIGHBOR_STEP_RATIO;
@@ -325,18 +325,18 @@ public static partial class ExtremaPC
 
         // Check if UMin is a local extremum by comparing to neighbor
         Point3D neighborMin = eval.Value(theUMin + step);
-        double neighborDistMin = p.SquareDistance(neighborMin);
+        double neighborDistMin = p.SquareDistanceTo(neighborMin);
         bool isMinAtUMin = (sqDistMin <= neighborDistMin);
         bool isMaxAtUMin = (sqDistMin >= neighborDistMin);
 
         // Check if UMax is a local extremum by comparing to neighbor
         Point3D neighborMax = eval.Value(theUMax - step);
-        double neighborDistMax = p.SquareDistance(neighborMax);
+        double neighborDistMax = p.SquareDistanceTo(neighborMax);
         bool isMinAtUMax = (sqDistMax <= neighborDistMax);
         bool isMaxAtUMax = (sqDistMax >= neighborDistMax);
 
         // Also check if endpoints themselves are duplicates (for periodic curves)
-        bool endpointsAreSame = ptMin.SquareDistance(ptMax) < tol * tol;
+        bool endpointsAreSame = ptMin.SquareDistanceTo(ptMax) < tol * tol;
 
         // For periodic/closed curves, there are no true endpoints to consider
         if (endpointsAreSame)
@@ -405,7 +405,7 @@ public static partial class ExtremaPC
                 return true;
             }
             // Check point proximity (handles periodic curves where different params map to same point)
-            double sqDist = result._extrema[i].Point.SquareDistance(pt);
+            double sqDist = result._extrema[i].Point.SquareDistanceTo(pt);
             if (sqDist < tol * tol)
             {
                 return true;

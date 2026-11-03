@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Topology;
 
 /// <summary>A topological part of a curve in 2D or 3D, bounded by a set of oriented vertices. BRep_TEdge adds its geometry.</summary>
-public class TEdge : TShape
+internal class TEdge : TShape
 {
     /// <summary>An empty TEdge.</summary>
     protected TEdge() : base(global::Kerf.Topology.ShapeType.Edge)

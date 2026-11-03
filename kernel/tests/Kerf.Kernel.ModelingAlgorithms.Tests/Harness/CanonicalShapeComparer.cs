@@ -168,14 +168,14 @@ internal sealed class CanonicalKeys
             return aKey;
         }
         string aDescription;
-        string aText = theShape.ShapeType() switch
+        string aText = theShape.Type switch
         {
             ShapeType.Vertex => VertexText(ShapeCasts.Vertex(theShape), out aDescription),
             ShapeType.Edge => EdgeText(ShapeCasts.Edge(theShape), out aDescription),
             ShapeType.Face => FaceText(ShapeCasts.Face(theShape), out aDescription),
             _ => ContainerText(theShape, out aDescription),
         };
-        aKey = theShape.ShapeType() == ShapeType.Vertex && aText.StartsWith('#') ? aText[1..] : Hash(aText);
+        aKey = theShape.Type == ShapeType.Vertex && aText.StartsWith('#') ? aText[1..] : Hash(aText);
         myKeys[theShape] = aKey;
         myDescriptions.TryAdd(aKey, aDescription);
         return aKey;
@@ -186,12 +186,12 @@ internal sealed class CanonicalKeys
 
     /// <summary>The exact vertex key of a point (the bits of its coordinates).</summary>
     public static string PointKey(in Point3D theP) =>
-        "V" + Bits(theP.X()) + Bits(theP.Y()) + Bits(theP.Z());
+        "V" + Bits(theP.X) + Bits(theP.Y) + Bits(theP.Z);
 
     private string VertexText(Vertex theV, out string theDescription)
     {
         Point3D aP = Tool.Pnt(theV);
-        theDescription = string.Create(CultureInfo.InvariantCulture, $"vertex ({aP.X():R} {aP.Y():R} {aP.Z():R})");
+        theDescription = string.Create(CultureInfo.InvariantCulture, $"vertex ({aP.X:R} {aP.Y:R} {aP.Z:R})");
         // '#' marks a ready key, not hashed: overriding keys are other vertices' keys
         return "#" + (myVertexKeyOverride?.Invoke(theV) ?? PointKey(aP));
     }
@@ -214,7 +214,7 @@ internal sealed class CanonicalKeys
         }
         else
         {
-            Curve3D aGlobal = aLoc.IsIdentity ? aCurve : (Curve3D)aCurve.Transformed(aLoc.Transformation());
+            Curve3D aGlobal = aLoc.IsIdentity ? aCurve : (Curve3D)aCurve.Transformed(aLoc.Transformation);
             using var aWriter = new StringWriter(CultureInfo.InvariantCulture);
             CurveSet.PrintCurve(aGlobal, aWriter, true);
             aText.Append(aWriter.ToString());
@@ -232,7 +232,7 @@ internal sealed class CanonicalKeys
         Surface? aSurface = Tool.Surface(theF, out Placement aLoc);
         if (aSurface is not null)
         {
-            Surface aGlobal = aLoc.IsIdentity ? aSurface : (Surface)aSurface.Transformed(aLoc.Transformation());
+            Surface aGlobal = aLoc.IsIdentity ? aSurface : (Surface)aSurface.Transformed(aLoc.Transformation);
             using var aWriter = new StringWriter(CultureInfo.InvariantCulture);
             SurfaceSet.PrintSurface(aGlobal, aWriter, true);
             aText.Append(aWriter.ToString());
@@ -264,8 +264,8 @@ internal sealed class CanonicalKeys
         {
             ++aNb;
         }
-        theDescription = $"{Kerf.Engine.Foundation.OcctTypeNames.Of(theS.ShapeType())} of {aNb} children";
-        return Kerf.Engine.Foundation.OcctTypeNames.Of(theS.ShapeType()) + " " + aChildren;
+        theDescription = $"{Kerf.Engine.Foundation.OcctTypeNames.Of(theS.Type)} of {aNb} children";
+        return Kerf.Engine.Foundation.OcctTypeNames.Of(theS.Type) + " " + aChildren;
     }
 
     // The sorted keys of the direct children (of the given type), with their orientations if asked.
@@ -275,12 +275,12 @@ internal sealed class CanonicalKeys
         for (var anIt = new Iterator(theS); anIt.More(); anIt.Next())
         {
             Shape aChild = anIt.Value();
-            if (theType is not null && aChild.ShapeType() != theType)
+            if (theType is not null && aChild.Type != theType)
             {
                 continue;
             }
             string aKey = Key(aChild);
-            aKeys.Add(theWithOrientation ? aKey + ":" + (int)aChild.Orientation() : aKey);
+            aKeys.Add(theWithOrientation ? aKey + ":" + (int)aChild.Orientation : aKey);
         }
         aKeys.Sort(StringComparer.Ordinal);
         return string.Join(",", aKeys);
@@ -338,9 +338,9 @@ internal static class CanonicalShapeComparer
         }
 
         if (anOptions.CheckOrientation && !theNative.IsNull && !thePort.IsNull
-            && theNative.Orientation() != thePort.Orientation())
+            && theNative.Orientation != thePort.Orientation)
         {
-            aResult.OrientationDifference = $"top-level orientation: native {theNative.Orientation()}, port {thePort.Orientation()}";
+            aResult.OrientationDifference = $"top-level orientation: native {theNative.Orientation}, port {thePort.Orientation}";
         }
 
         if (anOptions.CheckProperties && !theNative.IsNull && !thePort.IsNull)
@@ -398,8 +398,8 @@ internal static class CanonicalShapeComparer
     // The tolerance (bits) and flags of a sub-shape, but not Free, Modified, Checked or Locked.
     private static string Attributes(Shape theShape)
     {
-        string aFlags = $"closed={B(theShape.Closed())} orientable={B(theShape.Orientable())} convex={B(theShape.Convex())} infinite={B(theShape.Infinite())}";
-        return theShape.ShapeType() switch
+        string aFlags = $"closed={B(theShape.IsClosed)} orientable={B(theShape.IsOrientable)} convex={B(theShape.IsConvex)} infinite={B(theShape.IsInfinite)}";
+        return theShape.Type switch
         {
             ShapeType.Vertex => $"tol={R(Tool.Tolerance(ShapeCasts.Vertex(theShape)))} {aFlags}",
             ShapeType.Edge => $"tol={R(Tool.Tolerance(ShapeCasts.Edge(theShape)))} degenerated={B(Tool.Degenerated(ShapeCasts.Edge(theShape)))} sameparameter={B(Tool.SameParameter(ShapeCasts.Edge(theShape)))} samerange={B(Tool.SameRange(ShapeCasts.Edge(theShape)))} {aFlags}",
@@ -436,7 +436,7 @@ internal static class CanonicalShapeComparer
             double aBestDistance = theTolerance;
             for (int i = 0; i < aNative.Count; ++i)
             {
-                double aDistance = aNative[i].Point.Distance(aP);
+                double aDistance = aNative[i].Point.DistanceTo(aP);
                 if (!aUsed.Contains(i) && aDistance <= aBestDistance)
                 {
                     aBest = i;
@@ -472,11 +472,11 @@ internal static class CanonicalShapeComparer
         if (Math.Abs(aNativeArea.Mass()) > 0.0)
         {
             double aScale = Math.Max(Math.Sqrt(Math.Abs(aNativeArea.Mass())), aNativeCentre.XYZ().Modulus());
-            double aDistance = aNativeCentre.Distance(aPortCentre);
+            double aDistance = aNativeCentre.DistanceTo(aPortCentre);
             if (aDistance > theRelTol * aScale)
             {
                 theResult.PropertyDifferences.Add(string.Create(CultureInfo.InvariantCulture,
-                    $"centroid: native ({aNativeCentre.X():R} {aNativeCentre.Y():R} {aNativeCentre.Z():R}), port ({aPortCentre.X():R} {aPortCentre.Y():R} {aPortCentre.Z():R}), distance {aDistance:R}"));
+                    $"centroid: native ({aNativeCentre.X:R} {aNativeCentre.Y:R} {aNativeCentre.Z:R}), port ({aPortCentre.X:R} {aPortCentre.Y:R} {aPortCentre.Z:R}), distance {aDistance:R}"));
             }
         }
 

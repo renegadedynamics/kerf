@@ -16,7 +16,7 @@ public class GccAna_Lin2dTanParTests
     private static Circle2D Circ(double x, double y, double r) => new(new Axis2D(new Point2D(x, y), DX), r);
 
     private static double Side(in Line2D theL, in Point2D theP) =>
-        new Vector2D(theL.Direction()).Crossed(new Vector2D(theL.Location(), theP));
+        new Vector2D(theL.Direction).Crossed(new Vector2D(theL.Location, theP));
 
     [Fact]
     public void ThroughPoint_OneParallel()
@@ -27,8 +27,8 @@ public class GccAna_Lin2dTanParTests
         Assert.True(anAlgo.IsDone);
         Assert.Equal(1, anAlgo.SolutionCount);
         Line2D aSol = anAlgo.ThisSolution(1);
-        Assert.True(aSol.Direction().IsEqual(aL.Direction(), 1.0e-12));
-        Assert.True(aSol.Distance(aP) < Tol);
+        Assert.True(aSol.Direction.IsEqual(aL.Direction, 1.0e-12));
+        Assert.True(aSol.DistanceTo(aP) < Tol);
         anAlgo.Tangency1(1, out double aPs, out double aPa, out Point2D aT);
         Assert.Equal(aP, aT);
         Assert.Equal(0.0, aPs);
@@ -47,14 +47,14 @@ public class GccAna_Lin2dTanParTests
         for (int i = 1; i <= 2; i++)
         {
             Line2D aSol = anAlgo.ThisSolution(i);
-            Assert.True(aSol.Direction().IsEqual(aL.Direction(), 1.0e-12));
-            Assert.Equal(aC.Radius(), aSol.Distance(aC.Location()), Tol);
+            Assert.True(aSol.Direction.IsEqual(aL.Direction, 1.0e-12));
+            Assert.Equal(aC.Radius, aSol.DistanceTo(aC.Location), Tol);
             anAlgo.Tangency1(i, out double aPs, out double aPa, out Point2D aT);
-            Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPs, aSol).Distance(aT) < Tol);
-            Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPa, aC).Distance(aT) < Tol);
+            Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPs, aSol).DistanceTo(aT) < Tol);
+            Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPa, aC).DistanceTo(aT) < Tol);
             anAlgo.WhichQualifier(i, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ);
             // enclosing: the circle on the left (inside) of the solution
-            Assert.Equal(aQ == global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing, Side(aSol, aC.Location()) > 0.0);
+            Assert.Equal(aQ == global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing, Side(aSol, aC.Location) > 0.0);
         }
         anAlgo.WhichQualifier(1, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ1);
         anAlgo.WhichQualifier(2, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ2);
@@ -71,8 +71,8 @@ public class GccAna_Lin2dTanParTests
         Lin2dTanPar anOut = new(global::Kerf.Engine.Construction.Constraints.GccEnt.Outside(aC), aL);
         Assert.Equal(1, anEnc.SolutionCount);
         Assert.Equal(1, anOut.SolutionCount);
-        Assert.Equal(2.0, anEnc.ThisSolution(1).Location().Y(), Tol);
-        Assert.Equal(4.0, anOut.ThisSolution(1).Location().Y(), Tol);
+        Assert.Equal(2.0, anEnc.ThisSolution(1).Location.Y, Tol);
+        Assert.Equal(4.0, anOut.ThisSolution(1).Location.Y, Tol);
     }
 
     [Fact]

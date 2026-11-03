@@ -22,6 +22,7 @@ implementation) build. It follows phase10-plan.md 2.1, 2.2, 2.5 and 2.6 and [des
 | [classification.tsv](classification.tsv) | Every public type today: public API, engine or removed, with its new name |
 | [classification-rules.txt](classification-rules.txt) | The rules that table comes from: by package, with exceptions by type |
 | [kerf.map](kerf.map) | The name map unit 10E applied, in kerf-rename's format (decision 1349 settled the draft) |
+| [kerf-10l1.map](kerf-10l1.map) | The maps unit 10L1 applied: the public types' getters as properties, and its renames (section 10) |
 | [modeling-uses.txt](modeling-uses.txt) | The kernel types the modelling layer uses today |
 
 ## 1. The split
@@ -361,3 +362,37 @@ Bento's 3D models extension uses only the modelling layer. What it needs from th
     Bento uses it. Add one (2D drawings from 3D) later, as its own review?
 65. **New namespaces** beyond question 46's: `Kerf.Fillets`, `Kerf.Offsets`, `Kerf.Features`, `Kerf.Healing` and
     `Kerf.Measurement` (not `Kerf.Properties`, which collides with project `Properties` folders). Agree?
+
+## 10. Implemented: unit 10L1, and what is left for 10L2
+
+*Unit 10L1, 3 November 2026: decisions 1514 to 1521; the maps it applied are [kerf-10l1.map](kerf-10l1.map).*
+
+**Public now:** the shared types (sections 2 to 6: `Interval`, `Tolerances`, `BoundingBox`, the derivative and
+curve/surface point records, `Grid<T>`, `ShapeHistory`, `Built<T>`), the gp values in their reshaped form, the curves
+and surfaces of `Kerf.Geometry` (sealed; evaluation, ranges, kinds, 0-based poles and knots, constructors from spans and
+grids), and topology (`Shape`, the typed shapes, `IShape<T>`, casts, traversal, raw assembly, `Placement` compared by
+value, `ShapeComparer`, `ShapeGraph`, `EdgeCurve`, `FaceSurface`). Nothing in their public signatures is an engine type
+(decision 1519), and `Kerf.Kernel.PublicApi.Tests`, which has no `InternalsVisibleTo`, calls them as a user does.
+
+Where the implementation departs from sections 4 to 6 and geometry.md/topology.md:
+- `Direction3D.UnitX`, `UnitY`, `UnitZ` (and `Vector3D`'s), not `Direction3D.X`: `X` is the component.
+- Poles, knots and weights are `IReadOnlyList<T>` (10G) and the surfaces' `Grid<T>`, not spans: callers use LINQ on them.
+- `Explore<T>()` is an instance method of each shape type; the other traversal members are C# 14 extension members.
+- Shapes keep comparing placements by identity (`IsSame`, `==`, `ShapeComparer`); only `Placement` itself compares by
+  value (decision 1518).
+- `EdgeCurve` and `FaceSurface` cache, so they are one per thread.
+
+**Left for 10L2** (each with its area, as none is half-public now):
+- **Geometry's operations** (geometry.md's extension members): `TrimmedCurve3D.ArcThrough`/`Arc`/`Segment`,
+  `BSplineCurve3D.Interpolate`/`Approximate`/`Join`, `BSplineSurface.Approximate`, `ToBSpline`, `ToCurve2D`/`ToCurve3D`,
+  `Project`/`TryProjectNearest`, `Intersect`, `Tangents2D`, `Surface.TryGetPlane`; the options records they take; and
+  0-based `WithPole`/`WithWeight`/`WithKnot` copies of the splines (OCCT's 1-based ones are internal).
+- **Topology's remainder:** `WireCurve`, `Face.TryGetMesh`/`Face.FromMesh` (with meshing's `ShapeMesh`), `EdgeCurve`'s
+  `Length`, `ParameterAtLength` and `Discretize` and `FaceSurface`'s `Curvature`, `Parameters` and `Classify` (with
+  measurement and healing).
+- **`OrientedBox`** and the bounding boxes of shapes (measurement).
+- **The other areas' operations** on `EngineOperation.Run` (decision 1515): construction, Booleans, fillets, offsets
+  and features, healing, measurement, meshing, exchange, and the images of decision 1349 (64).
+- **The rest of the engine internal:** the 79 geometry and topology engine types still shown by other areas' public
+  engine types or by the modelling layer's API (decision 1520), and the other areas' engine types, as each area's public
+  API replaces them. The modelling layer reaches the engine through `InternalsVisibleTo` until 10M.

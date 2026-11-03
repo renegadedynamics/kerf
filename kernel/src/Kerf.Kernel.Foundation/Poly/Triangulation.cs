@@ -251,7 +251,7 @@ public class Triangulation : Transient
 
     /// <summary>Sets the normal at a node index in [1, NbNodes()], rounded to single precision.</summary>
     public void SetNormal(int index, in Direction3D normal)
-        => SetNormal(index, new NCollection_Vec3<float>((float)normal.X(), (float)normal.Y(), (float)normal.Z()));
+        => SetNormal(index, new NCollection_Vec3<float>((float)normal.X, (float)normal.Y, (float)normal.Z));
 
     /// <summary>The mesh purpose bits.</summary>
     public MeshPurpose MeshPurpose() => _purpose;
@@ -307,9 +307,9 @@ public class Triangulation : Transient
         bool usedCache = false;
         StrongBox<Box>? cachedBox = Volatile.Read(ref _cachedMinMax);
         if (cachedBox is not null
-            && (!HasGeometry || !isAccurate || trsf.Form() == Identity
-                || trsf.Form() == Translation || trsf.Form() == PntMirror
-                || trsf.Form() == Scale))
+            && (!HasGeometry || !isAccurate || trsf.Form == Identity
+                || trsf.Form == Translation || trsf.Form == PntMirror
+                || trsf.Form == Scale))
         {
             aBox = cachedBox.Value.Transformed(trsf);
             usedCache = true;
@@ -735,7 +735,7 @@ public class Triangulation : Transient
     protected virtual Box ComputeBoundingBox(in Transform3D trsf)
     {
         var box = new Box();
-        if (trsf.Form() == Identity)
+        if (trsf.Form == Identity)
         {
             for (int nodeIdx = 0; nodeIdx < NodeCount; nodeIdx++)
             {

@@ -188,7 +188,7 @@ public class BOPAlgo_ArgumentAnalyzerTests
             anAnalyzer.SetRunParallel(theParallel);
             anAnalyzer.Perform();
             return string.Join("\n", anAnalyzer.GetCheckResult().Select(r =>
-                $"{r.GetCheckStatus()} {string.Join(",", r.GetFaultyShapes1().Select(s => s.ShapeType()))} {string.Join(",", r.GetFaultyShapes2().Select(s => s.ShapeType()))}"));
+                $"{r.GetCheckStatus()} {string.Join(",", r.GetFaultyShapes1().Select(s => s.Type))} {string.Join(",", r.GetFaultyShapes2().Select(s => s.Type))}"));
         }
         Assert.Equal(Run(false), DeterminismHarness.AssertSerialEqualsParallel(() => Run(true), 2));
     }

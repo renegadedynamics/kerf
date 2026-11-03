@@ -19,10 +19,10 @@ internal readonly struct RectangularTrimmedSurfaceHasher(double theCompTolerance
     {
         double factor = 1.0 / HashTolerance;
         var surfaceHasher = new SurfaceHasher(CompTolerance, HashTolerance);
-        surface.Bounds(out double u1, out double u2, out double v1, out double v2);
+        surface.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
         ReadOnlySpan<ulong> hashes =
         [
-            surfaceHasher.Hash(surface.BasisSurface()),
+            surfaceHasher.Hash(surface.BasisSurface),
             HashUtils.Hash((long)HashUtils.Round(u1 * factor)),
             HashUtils.Hash((long)HashUtils.Round(u2 * factor)),
             HashUtils.Hash((long)HashUtils.Round(v1 * factor)),
@@ -37,14 +37,14 @@ internal readonly struct RectangularTrimmedSurfaceHasher(double theCompTolerance
         var surfaceHasher = new SurfaceHasher(CompTolerance, HashTolerance);
 
         // Compare basis surfaces
-        if (!surfaceHasher.Equals(surface1.BasisSurface(), surface2.BasisSurface()))
+        if (!surfaceHasher.Equals(surface1.BasisSurface, surface2.BasisSurface))
         {
             return false;
         }
 
         // Compare trim bounds
-        surface1.Bounds(out double u1_1, out double u2_1, out double v1_1, out double v2_1);
-        surface2.Bounds(out double u1_2, out double u2_2, out double v1_2, out double v2_2);
+        surface1.ParameterBounds(out double u1_1, out double u2_1, out double v1_1, out double v2_1);
+        surface2.ParameterBounds(out double u1_2, out double u2_2, out double v1_2, out double v2_2);
         return Math.Abs(u1_1 - u1_2) <= CompTolerance && Math.Abs(u2_1 - u2_2) <= CompTolerance
                && Math.Abs(v1_1 - v1_2) <= CompTolerance && Math.Abs(v2_1 - v2_2) <= CompTolerance;
     }

@@ -48,16 +48,16 @@ public sealed class GeomToStepTests
         Assert.True(C.IsDone);
         var aBack = global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeCurve(C.Value(), Inches) as CircleCurve3D;
         Assert.NotNull(aBack);
-        Assert.Equal(7.5, aBack.Radius(), 1e-12);
-        Assert.True(aBack.Location().Distance(Tilted.Location()) < 1e-12);
+        Assert.Equal(7.5, aBack.Radius, 1e-12);
+        Assert.True(aBack.Location.DistanceTo(Tilted.Location) < 1e-12);
 
         var aTorus = new ToroidalSurface(new CoordinateSystem(Tilted), 6, 1.5);
         var S = new MakeSurface(aTorus);
         Assert.True(S.IsDone);
         var aTorusBack = global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeSurface(S.Value()) as ToroidalSurface;
         Assert.NotNull(aTorusBack);
-        Assert.Equal(6, aTorusBack.MajorRadius());
-        Assert.Equal(1.5, aTorusBack.MinorRadius());
+        Assert.Equal(6, aTorusBack.MajorRadius);
+        Assert.Equal(1.5, aTorusBack.MinorRadius);
     }
 
     [Fact]
@@ -79,7 +79,7 @@ public sealed class GeomToStepTests
             StepRectangularTrimmedSurface aWritten = new MakeRectangularTrimmedSurface(aTrimmed, aFactors).Value();
             TrimmedSurface? aBack = global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeRectangularTrimmedSurface(aWritten, aFactors);
             Assert.NotNull(aBack);
-            aBack.Bounds(out double u1, out double u2, out double v1, out double v2);
+            aBack.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
             Assert.Equal(0.0, u1, 1e-12);
             Assert.Equal(M_PI / 2, u2, 1e-12);
             Assert.Equal((-25.4, 50.8), (Math.Round(v1, 9), Math.Round(v2, 9)));
@@ -91,7 +91,7 @@ public sealed class GeomToStepTests
         {
             var aWrittenCone = new GeometryMakeConicalSurface(aCone, aFactors).Value();
             Assert.Equal(aFactors.PlaneAngleFactor() == 1.0 ? 0.3 : 0.3 * 180.0 / M_PI, aWrittenCone.SemiAngle(), 1e-12);
-            Assert.Equal(0.3, global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeConicalSurface(aWrittenCone, aFactors)!.SemiAngle(), 1e-12);
+            Assert.Equal(0.3, global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeConicalSurface(aWrittenCone, aFactors)!.SemiAngle, 1e-12);
         }
     }
 
@@ -112,7 +112,7 @@ public sealed class GeomToStepTests
         var anArc2d = new TrimmedCurve2D(new CircleCurve2D(new Axis2D(new Point2D(1, 1), new Direction2D(1, 0)), 2), 0.5, 2);
         var aCircleBack = global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeCurve2d(new MakeCurve(anArc2d).Value()) as CircleCurve2D;
         Assert.NotNull(aCircleBack);
-        Assert.Equal(2.0, aCircleBack.Radius(), 1e-12);
+        Assert.Equal(2.0, aCircleBack.Radius, 1e-12);
     }
 
     [Fact]
@@ -127,8 +127,8 @@ public sealed class GeomToStepTests
         Assert.NotNull(aBack);
         foreach (double t in new[] { 0.0, 0.25, 0.6, 1.0 })
         {
-            double u = aBack.FirstParameter() + t * (aBack.LastParameter() - aBack.FirstParameter());
-            Assert.True(aBezier.Value(t).Distance(aBack.Value(u)) < 1e-12, $"at {t}");
+            double u = aBack.FirstParameter + t * (aBack.LastParameter - aBack.FirstParameter);
+            Assert.True(aBezier.Value(t).DistanceTo(aBack.Value(u)) < 1e-12, $"at {t}");
         }
     }
 
@@ -174,6 +174,6 @@ public sealed class GeomToStepTests
         Transform3D aBack = new Transform3D();
         Assert.True(global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeTransformation3d(anOperator, ref aBack));
         Point3D P = new Point3D(0.25, 4, -1);
-        Assert.True(P.Transformed(T).Distance(P.Transformed(aBack)) < 1e-12);
+        Assert.True(P.Transformed(T).DistanceTo(P.Transformed(aBack)) < 1e-12);
     }
 }

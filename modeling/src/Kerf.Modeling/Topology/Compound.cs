@@ -39,7 +39,7 @@ public partial class Compound : Shape3D
     public Compound WithAssemblyChildren(IEnumerable<Shape> children)
     {
         var list = children.ToList();
-        var location = TopoShape.Location();
+        var location = TopoShape.Placement;
         var rebuilt = TopoUtil.MakeCompound(list.Select(c => c.TopoShape)).Located(location);
         var copy = (Compound)Rewrapped(rebuilt);
         copy.AssemblyChildren = list;
@@ -111,7 +111,7 @@ public partial class Compound : Shape3D
             for (; it.More(); it.Next())
             {
                 var child = it.Value();
-                if (child.ShapeType() == type)
+                if (child.Type == type)
                     results.Add((T)Cast(TopoUtil.Downcast(child)));
             }
         }

@@ -16,7 +16,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Computes bounding box for a cylindrical surface (Geom_CylindricalSurface) from the boundary circle arcs, opened
 /// along the axis for infinite V.
 /// </summary>
-public sealed class CylinderBounds : SurfaceBounds.ISurfaceEvaluator
+internal sealed class CylinderBounds : SurfaceBounds.ISurfaceEvaluator
 {
     private readonly CylindricalSurface _geom;
 
@@ -30,7 +30,7 @@ public sealed class CylinderBounds : SurfaceBounds.ISurfaceEvaluator
     /// <summary>Compute bounding box for full cylinder.</summary>
     public Box Box(double tol)
     {
-        _geom.Bounds(out double u1, out double u2, out double v1, out double v2);
+        _geom.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
         return Box(u1, u2, v1, v2, tol);
     }
 
@@ -50,11 +50,11 @@ public sealed class CylinderBounds : SurfaceBounds.ISurfaceEvaluator
                                         ref Box box)
     {
         // Add circle at VMin.
-        Circle3D c = global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(cyl.Position(), cyl.Radius(), vMin);
+        Circle3D c = global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(cyl.Position, cyl.Radius, vMin);
         box.Add(CircleBounds.Box(c, uMin, uMax, 0.0));
 
         // Add circle at VMax by translating.
-        Vector3D t = (vMax - vMin) * new Vector3D(cyl.Axis().Direction());
+        Vector3D t = (vMax - vMin) * new Vector3D(cyl.Axis.Direction);
         c = c.Translated(t);
         box.Add(CircleBounds.Box(c, uMin, uMax, 0.0));
     }
@@ -63,8 +63,8 @@ public sealed class CylinderBounds : SurfaceBounds.ISurfaceEvaluator
     public Box Box(double uMin, double uMax, double vMin, double vMax, double tol)
     {
         Box box = new();
-        Cylinder cyl = _geom.Cylinder();
-        Direction3D dir = cyl.Axis().Direction();
+        Cylinder cyl = _geom.Cylinder;
+        Direction3D dir = cyl.Axis.Direction;
 
         if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(vMin))
         {
@@ -75,7 +75,7 @@ public sealed class CylinderBounds : SurfaceBounds.ISurfaceEvaluator
             else if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(vMax))
             {
                 // Fully infinite V: add the arc at V=0 to give the box finite radial extent.
-                Circle3D c = global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(cyl.Position(), cyl.Radius(), 0.0);
+                Circle3D c = global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(cyl.Position, cyl.Radius, 0.0);
                 box.Add(CircleBounds.Box(c, uMin, uMax, 0.0));
                 InfiniteHelpers.OpenMinMax(dir, ref box);
             }
@@ -90,7 +90,7 @@ public sealed class CylinderBounds : SurfaceBounds.ISurfaceEvaluator
             if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(vMax))
             {
                 // Reversed infinite V: add the arc at V=0 to give the box finite radial extent.
-                Circle3D c = global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(cyl.Position(), cyl.Radius(), 0.0);
+                Circle3D c = global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(cyl.Position, cyl.Radius, 0.0);
                 box.Add(CircleBounds.Box(c, uMin, uMax, 0.0));
                 InfiniteHelpers.OpenMinMax(dir, ref box);
             }

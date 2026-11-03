@@ -29,7 +29,7 @@ public class Geom2dGcc_Lin2d2TanTests
         Frame3D       anAx2  = TestAx2();
         EllipseCurve3D anEll  = new(anAx2, 150, 100);
         PlaneSurface   aPlane = new(new CoordinateSystem(anAx2));
-        Plane3D       aPln   = aPlane.Pln();
+        Plane3D       aPln   = aPlane.Plane;
 
         // Project ellipse onto the plane and build 2D qualified curve
         Curve2D             aCurve2d = Projections.To2d(anEll, aPln)!;
@@ -54,7 +54,7 @@ public class Geom2dGcc_Lin2d2TanTests
                                   50);
         EllipseCurve3D  anEll  = new(anAx2, 150, 100);
         PlaneSurface    aPlane = new(new CoordinateSystem(anAx2));
-        Plane3D        aPln   = aPlane.Pln();
+        Plane3D        aPln   = aPlane.Plane;
 
         // Project both curves onto the plane and build qualified curves
         Curve2D             aCurve2d     = Projections.To2d(anEll, aPln)!;
@@ -100,9 +100,9 @@ public class Geom2dGcc_Lin2d2TanTests
                                       double theTol)
     {
         theC.D1(theParArg, out Point2D aP, out Vector2D aV);
-        Assert.True(aP.Distance(thePnt) < theTol, $"{aP} != {thePnt}");
-        Assert.True(theLin.Distance(thePnt) < theTol);
-        Assert.True(Math.Abs(theLin.Direction().Crossed(new Direction2D(aV))) < theTol);
+        Assert.True(aP.DistanceTo(thePnt) < theTol, $"{aP} != {thePnt}");
+        Assert.True(theLin.DistanceTo(thePnt) < theTol);
+        Assert.True(Math.Abs(theLin.Direction.Crossed(new Direction2D(aV))) < theTol);
     }
 
     [Fact]
@@ -142,7 +142,7 @@ public class Geom2dGcc_Lin2d2TanTests
             Line2D aSol = aThrough.ThisSolution(i);
             aThrough.Tangency1(i, out _, out double a1, out Point2D t1);
             CheckTangent(aSol, anEll, a1, t1, 1e-6);
-            Assert.True(aSol.Distance(new Point2D(0, 5)) < 1e-9);
+            Assert.True(aSol.DistanceTo(new Point2D(0, 5)) < 1e-9);
             aThrough.WhichQualifier(i, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ1, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ2);
             Assert.Equal((global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified, global::Kerf.Engine.Construction.Constraints.Qualifier.Noqualifier), (aQ1, aQ2));
         }

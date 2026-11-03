@@ -289,12 +289,12 @@ internal static partial class BRepTestFeatureCommands
             Surface Su = Tool.Surface(fac)!;
             if (Su.GetType() == typeof(TrimmedSurface))
             {
-                Su = ((TrimmedSurface)Su).BasisSurface();
+                Su = ((TrimmedSurface)Su).BasisSurface;
             }
             if (Su.GetType() == typeof(PlaneSurface))
             {
-                Plane3D pl = ((PlaneSurface)Su).Pln();
-                if (pl.Contains(new Line3D(pl.Location(), new Direction3D(V)), global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.Angular()))
+                Plane3D pl = ((PlaneSurface)Su).Plane;
+                if (pl.Contains(new Line3D(pl.Location, new Direction3D(V)), global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     FEIF.Set(ToPrism, fac);
                     for (FEIF.Init(); FEIF.More(); FEIF.Next())
@@ -305,8 +305,8 @@ internal static partial class BRepTestFeatureCommands
             }
             else if (Su.GetType() == typeof(CylindricalSurface))
             {
-                Cylinder cy = ((CylindricalSurface)Su).Cylinder();
-                if (V.IsParallel(new Vector3D(cy.Axis().Direction()), global::Kerf.Engine.Foundation.Precision.Angular()))
+                Cylinder cy = ((CylindricalSurface)Su).Cylinder;
+                if (V.IsParallel(new Vector3D(cy.Axis.Direction), global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     FEIF.Set(ToPrism, fac);
                     for (FEIF.Init(); FEIF.More(); FEIF.Next())
@@ -419,7 +419,7 @@ internal static partial class BRepTestFeatureCommands
             V = V.WithCoord(theDI.Atof(a[4]), theDI.Atof(a[5]), theDI.Atof(a[6]));
             borne = 7;
         }
-        double Length = V.Magnitude();
+        double Length = V.Magnitude;
         if (Length < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             return 1;
@@ -545,7 +545,7 @@ internal static partial class BRepTestFeatureCommands
             borne = 7;
             V = V.WithCoord(theDI.Atof(a[4]), theDI.Atof(a[5]), theDI.Atof(a[6]));
         }
-        double Length = V.Magnitude();
+        double Length = V.Magnitude;
         if (Length < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             return 1;
@@ -654,13 +654,13 @@ internal static partial class BRepTestFeatureCommands
                 theDI.Output.WriteLine("Invalid input shape " + a[i]);
                 return 1;
             }
-            if (aSh.ShapeType() == ShapeType.Face)
+            if (aSh.Type == ShapeType.Face)
             {
                 EF = global::Kerf.Engine.Topology.ShapeCasts.Face(aSh);
             }
             else
             {
-                if (aSh.ShapeType() == ShapeType.Compound || aSh.ShapeType() == ShapeType.Wire || aSh.ShapeType() == ShapeType.Edge)
+                if (aSh.Type == ShapeType.Compound || aSh.Type == ShapeType.Wire || aSh.Type == ShapeType.Edge)
                 {
                     global::Kerf.Engine.Topology.Explorer aExpE = new(aSh, ShapeType.Edge, ShapeType.Face);
                     for (; aExpE.More(); aExpE.Next())
@@ -675,7 +675,7 @@ internal static partial class BRepTestFeatureCommands
         i++;
         while (i < newnarg)
         {
-            if (!isSplittingEdges && !EF.IsNull && EF.ShapeType() == ShapeType.Face)
+            if (!isSplittingEdges && !EF.IsNull && EF.Type == ShapeType.Face)
             {
                 // face wire/edge ...
 
@@ -702,7 +702,7 @@ internal static partial class BRepTestFeatureCommands
                     {
                         return 1; // on n`a rien recupere
                     }
-                    ShapeType wtyp = W.ShapeType();
+                    ShapeType wtyp = W.Type;
                     if (wtyp != ShapeType.Wire && wtyp != ShapeType.Edge && wtyp != ShapeType.Compound)
                     {
                         EF = theDI.GetShape(a[i]);
@@ -828,12 +828,12 @@ internal static partial class BRepTestFeatureCommands
             Surface Su = Tool.Surface(fac)!;
             if (Su.GetType() == typeof(TrimmedSurface))
             {
-                Su = ((TrimmedSurface)Su).BasisSurface();
+                Su = ((TrimmedSurface)Su).BasisSurface;
             }
             if (Su.GetType() == typeof(PlaneSurface))
             {
-                Plane3D pl = ((PlaneSurface)Su).Pln();
-                if (pl.Axis().IsParallel(theAxis, global::Kerf.Engine.Foundation.Precision.Angular()))
+                Plane3D pl = ((PlaneSurface)Su).Plane;
+                if (pl.Axis.IsParallel(theAxis, global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     FEIF.Set(ToRotate, fac);
                     for (FEIF.Init(); FEIF.More(); FEIF.Next())
@@ -844,8 +844,8 @@ internal static partial class BRepTestFeatureCommands
             }
             else if (Su.GetType() == typeof(CylindricalSurface))
             {
-                Cylinder cy = ((CylindricalSurface)Su).Cylinder();
-                if (cy.Axis().IsCoaxial(theAxis, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion()))
+                Cylinder cy = ((CylindricalSurface)Su).Cylinder;
+                if (cy.Axis.IsCoaxial(theAxis, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion()))
                 {
                     FEIF.Set(ToRotate, fac);
                     for (FEIF.Init(); FEIF.More(); FEIF.Next())
@@ -1107,7 +1107,7 @@ internal static partial class BRepTestFeatureCommands
             {
                 return 1;
             }
-            ShapeType sht = Fne.ShapeType();
+            ShapeType sht = Fne.Type;
             if (first && sht != ShapeType.Face)
             {
                 return 1;
@@ -1118,7 +1118,7 @@ internal static partial class BRepTestFeatureCommands
             {
                 return 1;
             }
-            if (Fba.ShapeType() != sht)
+            if (Fba.Type != sht)
             {
                 return 1;
             }
@@ -1281,7 +1281,7 @@ internal static partial class BRepTestFeatureCommands
         {
             if (EqualsNoCase(a0, "FEATDPRISM"))
             {
-                if (Pbase.ShapeType() != ShapeType.Face)
+                if (Pbase.Type != ShapeType.Face)
                 {
                     theCommands.Append("Invalid DPrism base");
                     return 1;

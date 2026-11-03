@@ -86,7 +86,7 @@ internal static class BOPTestClassifyCommands
             theResult.Append(" Null Shape is not allowed here\n");
             return 1;
         }
-        else if (aS.ShapeType() != ShapeType.Face)
+        else if (aS.Type != ShapeType.Face)
         {
             theResult.Append(" Shape type must be FACE\n");
             return 1;
@@ -119,7 +119,7 @@ internal static class BOPTestClassifyCommands
             theResult.Append(" Null Shape is not allowed\n");
             return 1;
         }
-        else if (aS.ShapeType() != ShapeType.Solid)
+        else if (aS.Type != ShapeType.Solid)
         {
             theResult.Append(" Shape type must be SOLID\n");
             return 1;

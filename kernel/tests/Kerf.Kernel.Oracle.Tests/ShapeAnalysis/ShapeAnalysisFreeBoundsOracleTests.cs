@@ -249,12 +249,12 @@ public class ShapeAnalysisFreeBoundsOracleTests(ITestOutputHelper output) : IDis
                 for (int i = 1; i <= Math.Min(aNW.Length(), aPW!.Length()); i++)
                 {
                     SameShape(aNW.Value(i), aPW.Value(i), w + $", ConnectEdgesToWires wire {i}");
-                    SameValue(B(aNW.Value(i).Closed()), B(aPW.Value(i).Closed()), w + $", ConnectEdgesToWires wire {i} closed");
+                    SameValue(B(aNW.Value(i).Closed()), B(aPW.Value(i).IsClosed), w + $", ConnectEdgesToWires wire {i} closed");
                 }
                 for (int i = 1; i <= aNSeq.Length(); i++)
                 {
                     // the edges it reversed, reversed in the caller's sequence
-                    SameValue((int)aNSeq.Value(i).Orientation(), (int)aPSeq.Value(i).Orientation(), w + $", edge {i} orientation after");
+                    SameValue((int)aNSeq.Value(i).Orientation(), (int)aPSeq.Value(i).Orientation, w + $", edge {i} orientation after");
                 }
             }
         }

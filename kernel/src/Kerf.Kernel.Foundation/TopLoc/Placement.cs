@@ -18,11 +18,11 @@ namespace Kerf.Topology;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Locations are compared by the <b>identity</b> of their datums, not by their transformations: two locations
-/// built separately from the same <see cref="Transform3D"/> are different, while a location and a copy of it, or
-/// <c>L * L.Inverted()</c> and the identity, are equal. <see cref="Equals(Placement)"/>,
-/// <see cref="GetHashCode"/>, <c>==</c> and <c>!=</c> follow OCCT's <see cref="IsEqual"/> and <see cref="HashCode"/>,
-/// so locations work as keys of NCollection and .NET maps as they do in OCCT.
+/// <see cref="Equals(Placement)"/>, <see cref="GetHashCode"/>, <c>==</c> and <c>!=</c> compare the transformations, exactly
+/// (decision 1349, question 62; unit 10L1). The engine compares locations as OCCT does, by the <b>identity</b> of their
+/// datums (<see cref="IsEqual"/>, <see cref="HashCode"/>, <see cref="PlacementIdentityComparer"/>): two locations built
+/// separately from the same <see cref="Transform3D"/> are different there, and whether two shapes are the same
+/// (<c>Shape.IsSame</c>) depends on it.
 /// </para>
 /// <para>
 /// A struct holding one reference to a shared, immutable list, as OCCT's class is. <c>default(TopLoc_Location)</c>
@@ -48,7 +48,7 @@ public readonly partial struct Placement : IEquatable<Placement>
     }
 
     /// <summary>The location of the datum D.</summary>
-    public Placement(Datum3D d)
+    internal Placement(Datum3D d)
     {
         _items = new SListOfItemLocation();
         _items.Construct(new ItemLocation(d, 1));
@@ -62,32 +62,35 @@ public readonly partial struct Placement : IEquatable<Placement>
 
     /// <summary>The first elementary datum. Use <see cref="NextLocation"/> to reach the others.</summary>
     /// <exception cref="NoSuchObjectException">This location is the identity.</exception>
-    public readonly Datum3D FirstDatum() => _items.Value()._datum;
+    internal readonly Datum3D FirstDatum() => _items.Value()._datum;
 
     /// <summary>The power of the first elementary datum.</summary>
     /// <exception cref="NoSuchObjectException">This location is the identity.</exception>
-    public readonly int FirstPower() => _items.Value()._power;
+    internal readonly int FirstPower() => _items.Value()._power;
 
     /// <summary>This location without its first datum: <c>this = NextLocation() * FirstDatum() ^ FirstPower()</c>.</summary>
     /// <remarks>OCCT documents a Standard_NoSuchObject for the identity, but returns the identity, as the port does.</remarks>
-    public readonly Placement NextLocation() => new Placement(_items.Tail());
+    internal readonly Placement NextLocation() => new Placement(_items.Tail());
 
     /// <summary>The transformation of this location.</summary>
-    public readonly Transform3D Transformation()
+    public readonly Transform3D Transformation
     {
-        if (IsIdentity)
+        get
         {
-            return THE_IDENTITY_TRSF;
-        }
-        else
-        {
-            return _items.Value()._trsf;
+            if (IsIdentity)
+            {
+                return THE_IDENTITY_TRSF;
+            }
+            else
+            {
+                return _items.Value()._trsf;
+            }
         }
     }
 
     /// <summary>The transformation of the location, as OCCT's conversion operator to gp_Trsf.</summary>
     /// <remarks>Explicit: the port has no implicit conversions.</remarks>
-    public static explicit operator Transform3D(in Placement location) => location.Transformation();
+    public static explicit operator Transform3D(in Placement location) => location.Transformation;
 
     /// <summary>The inverse of this location: the datums in reverse order with opposite powers.</summary>
     public readonly Placement Inverted()
@@ -173,7 +176,7 @@ public readonly partial struct Placement : IEquatable<Placement>
             return other.Inverted();
         }
 
-        if (this == other)
+        if (this.IsEqual(other))
         {
             return new Placement();
         }
@@ -223,7 +226,7 @@ public readonly partial struct Placement : IEquatable<Placement>
     /// datums' runtime hash codes and the powers in the same order with <see cref="System.HashCode"/>. Both values
     /// depend on the process, so only the structure is kept.
     /// </remarks>
-    public readonly int HashCode()
+    internal readonly int HashCode()
     {
         if (_items.IsEmpty)
         {
@@ -247,7 +250,7 @@ public readonly partial struct Placement : IEquatable<Placement>
     /// True if both locations have the same series of datums (by identity) and powers. Locations with equal
     /// transformations built from different datums are not equal.
     /// </summary>
-    public readonly bool IsEqual(in Placement other)
+    internal readonly bool IsEqual(in Placement other)
     {
         if (ReferenceEquals(_items._node, other._items._node))
         {
@@ -280,10 +283,10 @@ public readonly partial struct Placement : IEquatable<Placement>
     }
 
     /// <summary>The negation of <see cref="IsEqual"/>.</summary>
-    public readonly bool IsDifferent(in Placement other) => !IsEqual(other);
+    internal readonly bool IsDifferent(in Placement other) => !IsEqual(other);
 
     /// <summary>Writes the powers and datums of this location to S.</summary>
-    public readonly void ShallowDump(TextWriter s)
+    internal readonly void ShallowDump(TextWriter s)
     {
         s.Write("TopLoc_Location : ");
         SListOfItemLocation items = _items;
@@ -304,20 +307,38 @@ public readonly partial struct Placement : IEquatable<Placement>
     }
 
     /// <summary>The precision of scale factors, 1e-14.</summary>
-    public static double ScalePrec() => 1.0e-14;
+    internal static double ScalePrec() => 1.0e-14;
 
-    // Equality follows OCCT's IsEqual: datums by identity, then powers.
+    // Public equality is by value (decision 1349, 62): the transformations, exactly. The engine uses IsEqual (identity)
 
-    public readonly bool Equals(Placement other) => IsEqual(other);
+    /// <summary>True if both placements have exactly the same transformation, however they were built.</summary>
+    public readonly bool Equals(Placement other) => IsEqual(other) || Transformation == other.Transformation;
 
-    public override readonly bool Equals(object? obj) => obj is Placement other && IsEqual(other);
+    /// <inheritdoc cref="Equals(Placement)"/>
+    public override readonly bool Equals(object? obj) => obj is Placement other && Equals(other);
 
-    public override readonly int GetHashCode() => HashCode();
+    /// <summary>A hash of the transformation, consistent with <see cref="Equals(Placement)"/>.</summary>
+    public override readonly int GetHashCode() => IsIdentity ? 0 : Transformation.GetHashCode();
 
-    public static bool operator ==(in Placement left, in Placement right) => left.IsEqual(right);
+    /// <summary>True if both placements have exactly the same transformation.</summary>
+    public static bool operator ==(in Placement left, in Placement right) => left.Equals(right);
 
-    public static bool operator !=(in Placement left, in Placement right) => left.IsDifferent(right);
+    /// <summary>True unless both placements have exactly the same transformation.</summary>
+    public static bool operator !=(in Placement left, in Placement right) => !left.Equals(right);
 
     public override readonly string ToString()
-        => IsIdentity ? "TopLoc_Location(Identity)" : $"TopLoc_Location({Transformation()})";
+        => IsIdentity ? "TopLoc_Location(Identity)" : $"TopLoc_Location({Transformation})";
+}
+
+/// <summary>
+/// Compares placements as OCCT does, by the identity of their datums (<see cref="Placement.IsEqual"/>): the engine's
+/// maps of locations (the BREP writers' location tables) keep OCCT's behaviour with it.
+/// </summary>
+internal sealed class PlacementIdentityComparer : IEqualityComparer<Placement>
+{
+    public static PlacementIdentityComparer Instance { get; } = new();
+
+    public bool Equals(Placement x, Placement y) => x.IsEqual(y);
+
+    public int GetHashCode(Placement obj) => obj.HashCode();
 }

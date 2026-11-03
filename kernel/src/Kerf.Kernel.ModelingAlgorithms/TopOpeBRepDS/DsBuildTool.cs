@@ -138,7 +138,7 @@ public sealed class DsBuildTool
         Curve3D? c = Tool.Curve(e, out Placement _, out double f, out double _);
         if (c is not null && c.IsPeriodic)
         {
-            double per = c.Period();
+            double per = c.Period;
 
             Orientation oV = Forward;
 
@@ -148,7 +148,7 @@ public sealed class DsBuildTool
                 Vertex vofe = ShapeCasts.Vertex(exV.Current());
                 if (vofe.IsSame(v))
                 {
-                    oV = vofe.Orientation();
+                    oV = vofe.Orientation;
                     break;
                 }
             }

@@ -15,7 +15,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Computes bounding box for a 3D offset curve (Geom_OffsetCurve): exactly for offsets of lines and of circles
 /// offset in their plane, otherwise the basis curve's box enlarged per coordinate by the offset.
 /// </summary>
-public sealed class OffsetCurveBounds : CurveBounds.ICurveEvaluator
+internal sealed class OffsetCurveBounds : CurveBounds.ICurveEvaluator
 {
     private readonly OffsetCurve3D _geom;
 
@@ -29,10 +29,10 @@ public sealed class OffsetCurveBounds : CurveBounds.ICurveEvaluator
     Curve3D? CurveBounds.ICurveEvaluator.CurveGeometry() => _geom;
 
     /// <summary>Compute bounding box for full curve.</summary>
-    public Box Box(double tol) => Box(_geom.FirstParameter(), _geom.LastParameter(), tol);
+    public Box Box(double tol) => Box(_geom.FirstParameter, _geom.LastParameter, tol);
 
     /// <summary>Compute precise bounding box for full curve.</summary>
-    public Box BoxOptimal(double tol) => BoxOptimal(_geom.FirstParameter(), _geom.LastParameter(), tol);
+    public Box BoxOptimal(double tol) => BoxOptimal(_geom.FirstParameter, _geom.LastParameter, tol);
 
     /// <summary>Try the exact line fast path. Returns a non-void box on success.</summary>
     private static Box TryOffsetLine(Curve3D basis, OffsetCurve3D off, double u1, double u2, double tol)
@@ -42,18 +42,18 @@ public sealed class OffsetCurveBounds : CurveBounds.ICurveEvaluator
             return new Box();
         }
 
-        Direction3D dir = off.Direction();
-        Line3D basisLin = line.Lin();
-        Vector3D shift = new Vector3D(basisLin.Direction()).Crossed(new Vector3D(dir));
-        if (shift.SquareMagnitude() <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+        Direction3D dir = off.Direction;
+        Line3D basisLin = line.Line;
+        Vector3D shift = new Vector3D(basisLin.Direction).Crossed(new Vector3D(dir));
+        if (shift.SquareMagnitude <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             return new Box();
         }
 
         shift = shift.Normalized();
-        shift *= off.Offset();
-        Point3D loc = basisLin.Location().Translated(shift);
-        Box box = LineBounds.Box(new Line3D(loc, basisLin.Direction()), u1, u2, 0.0);
+        shift *= off.Offset;
+        Point3D loc = basisLin.Location.Translated(shift);
+        Box box = LineBounds.Box(new Line3D(loc, basisLin.Direction), u1, u2, 0.0);
         box.Enlarge(tol);
         return box;
     }
@@ -66,9 +66,9 @@ public sealed class OffsetCurveBounds : CurveBounds.ICurveEvaluator
             return new Box();
         }
 
-        Direction3D dir = off.Direction();
-        Circle3D basisCirc = circle.Circ();
-        double dotAxis = Math.Abs(basisCirc.Axis().Direction().Dot(dir));
+        Direction3D dir = off.Direction;
+        Circle3D basisCirc = circle.Circle;
+        double dotAxis = Math.Abs(basisCirc.Axis.Direction.Dot(dir));
         if (Math.Abs(1.0 - dotAxis) > global::Kerf.Engine.Foundation.Precision.Angular())
         {
             return new Box();
@@ -76,20 +76,20 @@ public sealed class OffsetCurveBounds : CurveBounds.ICurveEvaluator
 
         double uMid = 0.5 * (u1 + u2);
         global::Kerf.Engine.Geometry.ElCLib.D1(uMid, basisCirc, out Point3D p, out Vector3D v1);
-        if (v1.SquareMagnitude() <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+        if (v1.SquareMagnitude <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             return new Box();
         }
 
         Vector3D normal = v1.Crossed(new Vector3D(dir));
-        if (normal.SquareMagnitude() <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+        if (normal.SquareMagnitude <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             return new Box();
         }
         normal = normal.Normalized();
 
-        Vector3D radial = new(basisCirc.Location(), p);
-        if (radial.SquareMagnitude() <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+        Vector3D radial = new(basisCirc.Location, p);
+        if (radial.SquareMagnitude <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             return new Box();
         }
@@ -101,7 +101,7 @@ public sealed class OffsetCurveBounds : CurveBounds.ICurveEvaluator
             return new Box();
         }
 
-        double newRadius = basisCirc.Radius() + off.Offset() * sign;
+        double newRadius = basisCirc.Radius + off.Offset * sign;
         Box box = new();
         if (newRadius > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
@@ -111,7 +111,7 @@ public sealed class OffsetCurveBounds : CurveBounds.ICurveEvaluator
         }
         else if (Math.Abs(newRadius) <= global::Kerf.Engine.Foundation.Precision.Confusion())
         {
-            box.Add(basisCirc.Location());
+            box.Add(basisCirc.Location);
         }
         else
         {
@@ -126,7 +126,7 @@ public sealed class OffsetCurveBounds : CurveBounds.ICurveEvaluator
     public Box Box(double u1, double u2, double tol)
     {
         // Specialized fast paths for line and axis-aligned circle.
-        Curve3D basis = _geom.BasisCurve();
+        Curve3D basis = _geom.BasisCurve;
 
         Box box = TryOffsetLine(basis, _geom, u1, u2, tol);
         if (!box.IsVoid)
@@ -142,8 +142,8 @@ public sealed class OffsetCurveBounds : CurveBounds.ICurveEvaluator
 
         // Generic fallback: enlarge basis curve box per coordinate.
         // The offset displacement magnitude per coordinate k is bounded by |d| * sqrt(1 - Vk^2).
-        double offset = Math.Abs(_geom.Offset());
-        Direction3D dir = _geom.Direction();
+        double offset = Math.Abs(_geom.Offset);
+        Direction3D dir = _geom.Direction;
 
         CurveBounds curveEval = new(basis);
         box = curveEval.Box(u1, u2, 0.0);
@@ -152,9 +152,9 @@ public sealed class OffsetCurveBounds : CurveBounds.ICurveEvaluator
             return box;
         }
 
-        double dx = dir.X();
-        double dy = dir.Y();
-        double dz = dir.Z();
+        double dx = dir.X;
+        double dy = dir.Y;
+        double dz = dir.Z;
         double enlargeX = offset * Math.Sqrt(Max(0.0, 1.0 - dx * dx));
         double enlargeY = offset * Math.Sqrt(Max(0.0, 1.0 - dy * dy));
         double enlargeZ = offset * Math.Sqrt(Max(0.0, 1.0 - dz * dz));
@@ -210,7 +210,7 @@ public sealed class OffsetCurveBounds : CurveBounds.ICurveEvaluator
     public Box BoxOptimal(double u1, double u2, double tol)
     {
         // Reuse exact fast paths.
-        Curve3D basis = _geom.BasisCurve();
+        Curve3D basis = _geom.BasisCurve;
 
         Box box = TryOffsetLine(basis, _geom, u1, u2, tol);
         if (!box.IsVoid)

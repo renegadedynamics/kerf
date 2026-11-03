@@ -31,7 +31,7 @@ public class SplitCurve3d : SplitCurve
     /// <summary>Initializes with the curve over its whole range.</summary>
     public void Init(Curve3D c)
     {
-        Init(c, c.FirstParameter(), c.LastParameter());
+        Init(c, c.FirstParameter, c.LastParameter);
     }
 
     /// <summary>Initializes with a copy of the curve, bounded by the parameters (clipped to a non-periodic curve's domain).</summary>
@@ -46,13 +46,13 @@ public class SplitCurve3d : SplitCurve
         Curve3D curve = _curve;
         if (curve is TrimmedCurve3D trimmed)
         {
-            curve = trimmed.BasisCurve();
+            curve = trimmed.BasisCurve;
         }
         // 15.11.2002 PTV OCC966
         if (!CurveAnalysis.IsPeriodic(c))
         {
-            double fP = curve.FirstParameter();
-            double lP = curve.LastParameter();
+            double fP = curve.FirstParameter;
+            double lP = curve.LastParameter;
             if (Math.Abs(firstPar - fP) < precision)
             {
                 firstPar = fP;
@@ -97,7 +97,7 @@ public class SplitCurve3d : SplitCurve
         }
         if (_curve is TrimmedCurve3D tmp)
         {
-            Curve3D basCurve = tmp.BasisCurve();
+            Curve3D basCurve = tmp.BasisCurve;
             var spc = new SplitCurve3d();
             spc.Init(basCurve, first, last);
             spc.SetSplitValues(_splitValues);
@@ -119,9 +119,9 @@ public class SplitCurve3d : SplitCurve
         }
         else if (_curve is OffsetCurve3D tmpOffset)
         {
-            Curve3D basCurve = tmpOffset.BasisCurve();
-            double offset = tmpOffset.Offset();
-            Direction3D direct = tmpOffset.Direction();
+            Curve3D basCurve = tmpOffset.BasisCurve;
+            double offset = tmpOffset.Offset;
+            Direction3D direct = tmpOffset.Direction;
             var spc = new SplitCurve3d();
             spc.Init(basCurve, first, last);
             spc.SetSplitValues(_splitValues);
@@ -143,8 +143,8 @@ public class SplitCurve3d : SplitCurve
         {
             // pdn exceptons only on non periodic curves
             double precision = Kerf.Engine.Foundation.Precision.PConfusion();
-            double firstPar = _curve!.FirstParameter();
-            double lastPar = _curve.LastParameter();
+            double firstPar = _curve!.FirstParameter;
+            double lastPar = _curve.LastParameter;
             if (Math.Abs(first - firstPar) < precision)
             {
                 first = firstPar;
@@ -172,8 +172,8 @@ public class SplitCurve3d : SplitCurve
         if (_nbCurves == 1)
         {
             bool filled = true;
-            if (Math.Abs(_curve!.FirstParameter() - first) < Kerf.Engine.Foundation.Precision.PConfusion()
-                && Math.Abs(_curve.LastParameter() - last) < Kerf.Engine.Foundation.Precision.PConfusion())
+            if (Math.Abs(_curve!.FirstParameter - first) < Kerf.Engine.Foundation.Precision.PConfusion()
+                && Math.Abs(_curve.LastParameter - last) < Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 _resultingCurves.SetValue(1, _curve);
             }

@@ -266,7 +266,7 @@ internal static class BRepTestOtherCommands
             aB.MakeVertex(ref aV, curp, 0);
             aB.Add(aComp, aV);
             nbpi++;
-            di.Append("Point ").Append(nbpi).Append(" : ").Append(curp.X()).Append(" ").Append(curp.Y()).Append(" ").Append(curp.Z()).Append("\n");
+            di.Append("Point ").Append(nbpi).Append(" : ").Append(curp.X).Append(" ").Append(curp.Y).Append(" ").Append(curp.Z).Append("\n");
             DrawTrSurf.Set(theDI, $"brics_{nbpi}", curp);
         }
 
@@ -328,7 +328,7 @@ internal static class BRepTestOtherCommands
             di.Append(" null shapes is not allowed here\n");
             return 0;
         }
-        if (aS.ShapeType() != ShapeType.Face)
+        if (aS.Type != ShapeType.Face)
         {
             di.Append(" shape").Append(a[1]).Append(" must be a face\n"); // OCCT: no space before the name
             return 0;
@@ -364,7 +364,7 @@ internal static class BRepTestOtherCommands
             return 0;
         }
 
-        if (aS.ShapeType() != ShapeType.Solid)
+        if (aS.Type != ShapeType.Solid)
         {
             aDI.Append(" Shape type must be SOLID\n");
             return 0;

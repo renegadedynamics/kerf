@@ -17,7 +17,7 @@ public readonly partial struct Vector2D : IEquatable<Vector2D>
 
     public Vector2D(in Direction2D v) => _coord = v.XY();
 
-    public Vector2D(in Xy coord) => _coord = coord;
+    internal Vector2D(in Xy coord) => _coord = coord;
 
     public Vector2D(double xv, double yv) => _coord = new Xy(xv, yv);
 
@@ -58,45 +58,45 @@ public readonly partial struct Vector2D : IEquatable<Vector2D>
         return new Vector2D(coord);
     }
 
-    public readonly Vector2D WithCoord(int index, double xi)
+    internal readonly Vector2D WithCoord(int index, double xi)
     {
         Xy coord = _coord;
         coord.SetCoord(index, xi);
         return new Vector2D(coord);
     }
 
-    public readonly Vector2D WithCoord(double xv, double yv) => new(xv, yv);
+    internal readonly Vector2D WithCoord(double xv, double yv) => new(xv, yv);
 
     public readonly Vector2D WithX(double x) => new(x, _coord.Y());
 
     public readonly Vector2D WithY(double y) => new(_coord.X(), y);
 
-    public readonly Vector2D WithXY(in Xy coord) => new(coord);
+    internal readonly Vector2D WithXY(in Xy coord) => new(coord);
 
     // Queries
 
-    public readonly double Coord(int index) => _coord.Coord(index);
+    internal readonly double Coord(int index) => _coord.Coord(index);
 
-    public readonly void Coord(out double xv, out double yv) => _coord.Coord(out xv, out yv);
+    internal readonly void Coord(out double xv, out double yv) => _coord.Coord(out xv, out yv);
 
-    public readonly double X() => _coord.X();
+    public readonly double X => _coord.X();
 
-    public readonly double Y() => _coord.Y();
+    public readonly double Y => _coord.Y();
 
-    public readonly Xy XY() => _coord;
+    internal readonly Xy XY() => _coord;
 
     /// <summary>True when the lengths differ by at most the linear tolerance and, if both are longer than it, the angle is at most the angular tolerance.</summary>
     public readonly bool IsEqual(in Vector2D other, double linearTolerance, double angularTolerance)
     {
-        double norm = Magnitude();
-        double otherNorm = other.Magnitude();
+        double norm = Magnitude;
+        double otherNorm = other.Magnitude;
         double val = Math.Abs(norm - otherNorm);
 
         bool isEqualLength = (val <= linearTolerance);
 
         if (norm > linearTolerance && otherNorm > linearTolerance)
         {
-            double ang = Math.Abs(Angle(other));
+            double ang = Math.Abs(AngleTo(other));
             return isEqualLength && (ang <= angularTolerance);
         }
 
@@ -105,28 +105,28 @@ public readonly partial struct Vector2D : IEquatable<Vector2D>
 
     public readonly bool IsNormal(in Vector2D other, double angularTolerance)
     {
-        double ang = Math.Abs(M_PI_2 - Math.Abs(Angle(other)));
+        double ang = Math.Abs(M_PI_2 - Math.Abs(AngleTo(other)));
         return !(ang > angularTolerance);
     }
 
     public readonly bool IsOpposite(in Vector2D other, double angularTolerance)
     {
-        double ang = Math.Abs(Angle(other));
+        double ang = Math.Abs(AngleTo(other));
         return M_PI - ang <= angularTolerance;
     }
 
     public readonly bool IsParallel(in Vector2D other, double angularTolerance)
     {
-        double ang = Math.Abs(Angle(other));
+        double ang = Math.Abs(AngleTo(other));
         return ang <= angularTolerance || M_PI - ang <= angularTolerance;
     }
 
     /// <summary>The signed angle from this vector to <paramref name="other"/>, in ]-PI, PI].</summary>
     /// <exception cref="NullVectorException">Either vector's magnitude is at most <see cref="Constants.Resolution"/>.</exception>
-    public readonly double Angle(in Vector2D other)
+    public readonly double AngleTo(in Vector2D other)
     {
-        double norm = Magnitude();
-        double otherNorm = other.Magnitude();
+        double norm = Magnitude;
+        double otherNorm = other.Magnitude;
         if (norm <= Constants.Resolution() || otherNorm <= Constants.Resolution())
         {
             throw new NullVectorException();
@@ -155,9 +155,9 @@ public readonly partial struct Vector2D : IEquatable<Vector2D>
         }
     }
 
-    public readonly double Magnitude() => _coord.Modulus();
+    public readonly double Magnitude => _coord.Modulus();
 
-    public readonly double SquareMagnitude() => _coord.SquareModulus();
+    public readonly double SquareMagnitude => _coord.SquareModulus();
 
     public readonly Vector2D Added(in Vector2D other)
     {
@@ -183,7 +183,7 @@ public readonly partial struct Vector2D : IEquatable<Vector2D>
     public readonly double Dot(in Vector2D other) => _coord.Dot(other._coord);
 
     /// <summary>The vector (Y, -X): this vector turned by -PI/2.</summary>
-    public readonly Vector2D GetNormal() => new(this.Y(), (-1) * this.X());
+    public readonly Vector2D GetNormal() => new(this.Y, (-1) * this.X);
 
     public readonly Vector2D Multiplied(double scalar)
     {
@@ -241,7 +241,7 @@ public readonly partial struct Vector2D : IEquatable<Vector2D>
     public readonly Vector2D Mirrored(in Axis2D a1)
     {
         Xy coord = _coord;
-        Xy directionXY = a1.Direction().XY();
+        Xy directionXY = a1.Direction.XY();
         double origX = coord.X();
         double origY = coord.Y();
         double dirX = directionXY.X();
@@ -260,7 +260,7 @@ public readonly partial struct Vector2D : IEquatable<Vector2D>
     {
         Xy coord = _coord;
         Transform2D t = new Transform2D().WithRotation(new Point2D(0.0, 0.0), ang);
-        coord.Multiply(t.VectorialPart());
+        coord.Multiply(t.VectorialPart);
         return new Vector2D(coord);
     }
 
@@ -274,7 +274,7 @@ public readonly partial struct Vector2D : IEquatable<Vector2D>
     public readonly Vector2D Transformed(in Transform2D t)
     {
         Xy coord = _coord;
-        switch (t.Form())
+        switch (t.Form)
         {
             case Identity:
             case Translation:
@@ -283,10 +283,10 @@ public readonly partial struct Vector2D : IEquatable<Vector2D>
                 coord.Reverse();
                 break;
             case global::Kerf.Geometry.TransformForm.Scale:
-                coord.Multiply(t.ScaleFactor());
+                coord.Multiply(t.ScaleFactor);
                 break;
             default:
-                coord.Multiply(t.VectorialPart());
+                coord.Multiply(t.VectorialPart);
                 break;
         }
         return new Vector2D(coord);

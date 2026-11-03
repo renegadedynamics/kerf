@@ -44,9 +44,9 @@ public class BuilderFace : BuilderArea
     /// <summary>Sets the face generatrix (kept forward; its orientation is <see cref="Orientation"/>).</summary>
     public void SetFace(in Face face)
     {
-        _orientation = face.Orientation();
+        _orientation = face.Orientation;
         _face = face;
-        _face.Orientation(Forward);
+        _face.Orient(Forward);
     }
 
     /// <summary>The face generatrix.</summary>
@@ -154,7 +154,7 @@ public class BuilderFace : BuilderArea
                     {
                         continue;
                     }
-                    if (v.Orientation() == Internal)
+                    if (v.Orientation == Internal)
                     {
                         continue;
                     }
@@ -753,7 +753,7 @@ public class BuilderFace : BuilderArea
             // make a new shell
             Wire w = new();
             bb.MakeWire(ref w);
-            ee.Orientation(Internal);
+            ee.Orient(Internal);
             bb.Add(w, ee);
             //
             Iterator itAdded = new(w);
@@ -772,7 +772,7 @@ public class BuilderFace : BuilderArea
                         Shape el = itE.Value();
                         if (addedMap.Add(el))
                         {
-                            el.Orientation(Internal);
+                            el.Orient(Internal);
                             bb.Add(w, el);
                         }
                     }

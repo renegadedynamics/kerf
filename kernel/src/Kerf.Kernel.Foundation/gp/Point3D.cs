@@ -15,20 +15,20 @@ public readonly partial struct Point3D : IEquatable<Point3D>
 {
     private readonly Xyz _coord;
 
-    public Point3D(in Xyz coord) => _coord = coord;
+    internal Point3D(in Xyz coord) => _coord = coord;
 
     public Point3D(double xp, double yp, double zp) => _coord = new Xyz(xp, yp, zp);
 
     // Copies
 
-    public readonly Point3D WithCoord(int index, double xi)
+    internal readonly Point3D WithCoord(int index, double xi)
     {
         Xyz coord = _coord;
         coord.SetCoord(index, xi);
         return new Point3D(coord);
     }
 
-    public readonly Point3D WithCoord(double xp, double yp, double zp) => new(xp, yp, zp);
+    internal readonly Point3D WithCoord(double xp, double yp, double zp) => new(xp, yp, zp);
 
     public readonly Point3D WithX(double x) => new(x, _coord.Y(), _coord.Z());
 
@@ -36,7 +36,7 @@ public readonly partial struct Point3D : IEquatable<Point3D>
 
     public readonly Point3D WithZ(double z) => new(_coord.X(), _coord.Y(), z);
 
-    public readonly Point3D WithXYZ(in Xyz coord) => new(coord);
+    internal readonly Point3D WithXYZ(in Xyz coord) => new(coord);
 
     /// <summary>The barycentre of this point with weight <paramref name="alpha"/> and <paramref name="p"/> with weight <paramref name="beta"/>.</summary>
     public readonly Point3D BaryCentered(double alpha, in Point3D p, double beta)
@@ -49,25 +49,25 @@ public readonly partial struct Point3D : IEquatable<Point3D>
 
     // Queries
 
-    public readonly double Coord(int index) => _coord.Coord(index);
+    internal readonly double Coord(int index) => _coord.Coord(index);
 
-    public readonly void Coord(out double xp, out double yp, out double zp) => _coord.Coord(out xp, out yp, out zp);
+    internal readonly void Coord(out double xp, out double yp, out double zp) => _coord.Coord(out xp, out yp, out zp);
 
-    public readonly double X() => _coord.X();
+    public readonly double X => _coord.X();
 
-    public readonly double Y() => _coord.Y();
+    public readonly double Y => _coord.Y();
 
-    public readonly double Z() => _coord.Z();
+    public readonly double Z => _coord.Z();
 
-    public readonly Xyz XYZ() => _coord;
+    internal readonly Xyz XYZ() => _coord;
 
-    public readonly Xyz Coord() => _coord;
+    internal readonly Xyz Coord() => _coord;
 
-    public readonly bool IsEqual(in Point3D other, double linearTolerance) => Distance(other) <= linearTolerance;
+    public readonly bool IsEqual(in Point3D other, double linearTolerance) => DistanceTo(other) <= linearTolerance;
 
-    public readonly double Distance(in Point3D other) => Math.Sqrt(SquareDistance(other));
+    public readonly double DistanceTo(in Point3D other) => Math.Sqrt(SquareDistanceTo(other));
 
-    public readonly double SquareDistance(in Point3D other)
+    public readonly double SquareDistanceTo(in Point3D other)
     {
         Xyz xyz = other._coord;
         double dx = _coord.X() - xyz.X();
@@ -123,22 +123,22 @@ public readonly partial struct Point3D : IEquatable<Point3D>
     public readonly Point3D Transformed(in Transform3D t)
     {
         Xyz coord = _coord;
-        if (t.Form() == Identity)
+        if (t.Form == Identity)
         {
         }
-        else if (t.Form() == Translation)
+        else if (t.Form == Translation)
         {
-            coord.Add(t.TranslationPart());
+            coord.Add(t.TranslationXyz());
         }
-        else if (t.Form() == global::Kerf.Geometry.TransformForm.Scale)
+        else if (t.Form == global::Kerf.Geometry.TransformForm.Scale)
         {
-            coord.Multiply(t.ScaleFactor());
-            coord.Add(t.TranslationPart());
+            coord.Multiply(t.ScaleFactor);
+            coord.Add(t.TranslationXyz());
         }
-        else if (t.Form() == PntMirror)
+        else if (t.Form == PntMirror)
         {
             coord.Reverse();
-            coord.Add(t.TranslationPart());
+            coord.Add(t.TranslationXyz());
         }
         else
         {

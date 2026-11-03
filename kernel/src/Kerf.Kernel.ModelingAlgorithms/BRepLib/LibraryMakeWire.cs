@@ -248,7 +248,7 @@ public class LibraryMakeWire : LibraryMakeShape
 
         else
         {
-            init = _shape.Closed(); // If it is closed no control
+            init = _shape.IsClosed; // If it is closed no control
             Shape localShape = e.Oriented(Forward);
             Edge ee = ShapeCasts.Edge(localShape);
 
@@ -289,7 +289,7 @@ public class LibraryMakeWire : LibraryMakeShape
                         {
                             if (_vf.IsSame(ve))
                             {
-                                if (ve.Orientation() == Forward)
+                                if (ve.Orientation == Forward)
                                 {
                                     reverse = true;
                                 }
@@ -300,7 +300,7 @@ public class LibraryMakeWire : LibraryMakeShape
                             }
                             else if (_vl.IsSame(ve))
                             {
-                                if (ve.Orientation() == Reversed)
+                                if (ve.Orientation == Reversed)
                                 {
                                     reverse = true;
                                 }
@@ -325,7 +325,7 @@ public class LibraryMakeWire : LibraryMakeShape
                     {
                         Vertex vw = ShapeCasts.Vertex(_vertices[i]);
                         Point3D pw = Tool.Pnt(vw);
-                        double l = pe.Distance(pw);
+                        double l = pe.DistanceTo(pw);
 
                         if ((l < Tool.Tolerance(ve)) || (l < Tool.Tolerance(vw)))
                         {
@@ -345,7 +345,7 @@ public class LibraryMakeWire : LibraryMakeShape
                                 {
                                     if (_vf.IsSame(vw))
                                     {
-                                        if (ve.Orientation() == Forward)
+                                        if (ve.Orientation == Forward)
                                         {
                                             reverse = true;
                                         }
@@ -356,7 +356,7 @@ public class LibraryMakeWire : LibraryMakeShape
                                     }
                                     else if (_vl.IsSame(vw))
                                     {
-                                        if (ve.Orientation() == Reversed)
+                                        if (ve.Orientation == Reversed)
                                         {
                                             reverse = true;
                                         }
@@ -413,7 +413,7 @@ public class LibraryMakeWire : LibraryMakeShape
                         {
                             Vertex vw = ShapeCasts.Vertex(_vertices[i]);
                             Point3D pw = Tool.Pnt(vw);
-                            double l = pe.Distance(pw), tolE, tolW;
+                            double l = pe.DistanceTo(pw), tolE, tolW;
                             tolW = Tool.Tolerance(vw);
                             tolE = Tool.Tolerance(ve);
 
@@ -425,7 +425,7 @@ public class LibraryMakeWire : LibraryMakeShape
 
                                 newvertex = true;
                                 _vertex = vw;
-                                _vertex.Orientation(ve.Orientation());
+                                _vertex.Orient(ve.Orientation);
                                 b.Add(_edge, _vertex);
                                 b.Transfert(ee, _edge, ve, _vertex);
                                 break;
@@ -446,7 +446,7 @@ public class LibraryMakeWire : LibraryMakeShape
             // reverse and forward are false as nothing has been decided :
             //       closed wire, internal vertex ...
             // reverse and forward are true : closed or degenerated edge
-            if (((forward == reverse) && (e.Orientation() == Reversed)) || (reverse && !forward))
+            if (((forward == reverse) && (e.Orientation == Reversed)) || (reverse && !forward))
             {
                 _edge.Reverse();
             }
@@ -542,9 +542,9 @@ public class LibraryMakeWire : LibraryMakeShape
             cE = 0.0;
         }
 
-        pc = new Point3D(cW * pw.X() + cE * pe.X(),
-                        cW * pw.Y() + cE * pe.Y(),
-                        cW * pw.Z() + cE * pe.Z());
+        pc = new Point3D(cW * pw.X + cE * pe.X,
+                        cW * pw.Y + cE * pe.Y,
+                        cW * pw.Z + cE * pe.Z);
     }
 
     /// <summary>
@@ -698,7 +698,7 @@ public class LibraryMakeWire : LibraryMakeShape
 
             double tolV = Tool.Tolerance(v);
 
-            double l = _p.SquareDistance(vPnt);
+            double l = _p.SquareDistanceTo(vPnt);
             double sTol = tolV + _tolP;
             sTol *= sTol;
 
@@ -924,7 +924,7 @@ public class LibraryMakeWire : LibraryMakeShape
                 {
                     isNewEdge = true;
                     // append the new vertex
-                    vList.Append(ShapeCasts.Vertex(o2NV.GetValue(val).Oriented(val.Orientation())));
+                    vList.Append(ShapeCasts.Vertex(o2NV.GetValue(val).Oriented(val.Orientation)));
                 }
                 else
                 {

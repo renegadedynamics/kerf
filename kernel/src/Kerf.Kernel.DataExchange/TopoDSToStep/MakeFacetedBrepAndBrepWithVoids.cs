@@ -49,7 +49,7 @@ public sealed class MakeFacetedBrepAndBrepWithVoids : ExportRoot
             int nbshapes = 0;
             for (it.Initialize(aSolid); it.More(); it.Next())
             {
-                if (it.Value().ShapeType() == ShapeType.Shell)
+                if (it.Value().Type == ShapeType.Shell)
                 {
                     nbshapes++;
                 }
@@ -58,11 +58,11 @@ public sealed class MakeFacetedBrepAndBrepWithVoids : ExportRoot
             using var ps = new ProgressScope(progress, null, nbshapes);
             for (it.Initialize(aSolid); it.More() && ps.More(); it.Next())
             {
-                if (it.Value().ShapeType() == ShapeType.Shell)
+                if (it.Value().Type == ShapeType.Shell)
                 {
                     ProgressRange range = ps.Next();
                     Shell currentShell = ShapeCasts.Shell(it.Value());
-                    if (it.Value().Closed())
+                    if (it.Value().IsClosed)
                     {
                         tool.Init(map, false, stepModel.InternalParameters.WriteSurfaceCurMode ? 1 : 0);
                         stepB.Init(currentShell, tool, fp, 0 /* OCCT: false */, localFactors, range);

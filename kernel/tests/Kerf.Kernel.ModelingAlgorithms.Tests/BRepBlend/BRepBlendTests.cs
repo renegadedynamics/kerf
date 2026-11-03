@@ -27,7 +27,7 @@ public class BRepBlendTests
     private static Curve2DAdaptorBase Segment(double x0, double y0, double x1, double y1)
     {
         Vector2D V = new(new Point2D(x0, y0), new Point2D(x1, y1));
-        return new CurveAdaptor2D(new LineCurve2D(new Point2D(x0, y0), new Direction2D(V)), 0.0, V.Magnitude());
+        return new CurveAdaptor2D(new LineCurve2D(new Point2D(x0, y0), new Direction2D(V)), 0.0, V.Magnitude);
     }
 
     [Fact]

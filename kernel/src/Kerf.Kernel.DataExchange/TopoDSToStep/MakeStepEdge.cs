@@ -119,7 +119,7 @@ public sealed class MakeStepEdge : ExportRoot
             }
         }
 
-        if (aEdge.Orientation() == Internal || aEdge.Orientation() == External)
+        if (aEdge.Orientation == Internal || aEdge.Orientation == External)
         {
             var errShape = new ShapeMapper(aEdge);
             fp.AddWarning(errShape, " Edge(internal/external) from Non Manifold Topology");
@@ -187,7 +187,7 @@ public sealed class MakeStepEdge : ExportRoot
                 double dpar = ca.LastParameter() - ca.FirstParameter();
                 if (dpar <= 0)
                 {
-                    dpar += (Math.Ceiling(Math.Abs(dpar) / c.Period()) * c.Period());
+                    dpar += (Math.Ceiling(Math.Abs(dpar) / c.Period) * c.Period);
                 }
 
                 // if range obtained from projection of vertices contradicts with range
@@ -201,11 +201,11 @@ public sealed class MakeStepEdge : ExportRoot
                 double dU = u2 - u1;
                 if (dU <= 0)
                 {
-                    dU += (Math.Ceiling(Math.Abs(dU) / c.Period()) * c.Period());
+                    dU += (Math.Ceiling(Math.Abs(dU) / c.Period) * c.Period);
                 }
 
-                if ((dU > global::Kerf.Engine.Foundation.Precision.PConfusion() && dU <= 0.1 * c.Period() && dpar > 0.5 * c.Period())
-                    || (dpar > global::Kerf.Engine.Foundation.Precision.PConfusion() && dpar <= 0.1 * c.Period() && dU > 0.5 * c.Period()))
+                if ((dU > global::Kerf.Engine.Foundation.Precision.PConfusion() && dU <= 0.1 * c.Period && dpar > 0.5 * c.Period)
+                    || (dpar > global::Kerf.Engine.Foundation.Precision.PConfusion() && dpar <= 0.1 * c.Period && dU > 0.5 * c.Period))
                 {
                     (v1, v2) = (v2, v1);
                 }
@@ -220,13 +220,13 @@ public sealed class MakeStepEdge : ExportRoot
                     Point3D p11 = ca.Value(ca.FirstParameter());
                     Point3D p12 = ca.Value(ca.LastParameter());
                     Point3D pm = ca.Value((ca.FirstParameter() + ca.LastParameter()) * 0.5);
-                    double dist11 = p11.Distance(p12);
-                    double dist1m = p11.Distance(pm);
-                    double dist2m = p12.Distance(pm);
+                    double dist11 = p11.DistanceTo(p12);
+                    double dist1m = p11.DistanceTo(pm);
+                    double dist2m = p12.DistanceTo(pm);
                     double distMax = Max(Max(dist1m, dist2m), dist11);
                     bool isSmallCurve = (distMax <= tolV1 || distMax <= tolV2);
                     if (BrepTools.Compare(vfirst, vlast) && isSmallCurve && dpar > global::Kerf.Engine.Foundation.Precision.PConfusion()
-                        && dpar <= 0.1 * c.Period())
+                        && dpar <= 0.1 * c.Period)
                     {
                         BSplineCurve3D bspl1 = (BSplineCurve3D)c.Copy();
                         bspl1.Segment(ca.FirstParameter(), ca.LastParameter());

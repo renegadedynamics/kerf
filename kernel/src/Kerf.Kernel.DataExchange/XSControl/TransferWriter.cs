@@ -231,7 +231,7 @@ public class TransferWriter : Transient
         {
             PrintStats(_transferMode);
             sout.Append("******        Transferring Shape, ShapeType = ");
-            sout.Append((int)aShape.ShapeType()); // the enumeration's value, as C++ streams it
+            sout.Append((int)aShape.Type); // the enumeration's value, as C++ streams it
             sout.Append("                      ******");
             sout.Append('\n');
             status = _controller.TransferWriteShape(aShape, _transferWriter, model, _transferMode, progress);

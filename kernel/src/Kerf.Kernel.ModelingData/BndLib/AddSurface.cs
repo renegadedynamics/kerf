@@ -14,7 +14,7 @@ namespace Kerf.Engine.Geometry.Bounds;
 /// Adds the bounding box of a surface to a box (through <see cref="SurfaceBounds"/>). The box is enlarged by
 /// the tolerance; an infinite surface opens it.
 /// </summary>
-public static class AddSurface
+internal static class AddSurface
 {
     /// <summary>Adds the bounding box of the surface S, over its own bounds, enlarged by Tol, to B.</summary>
     public static void Add(SurfaceAdaptorBase s, double tol, ref Box b)

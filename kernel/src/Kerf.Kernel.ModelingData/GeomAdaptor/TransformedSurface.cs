@@ -97,7 +97,7 @@ public class TransformedSurface : SurfaceAdaptorBase
     }
 
     /// <summary>True if the transformation is not the identity.</summary>
-    public bool HasTrsf => _trsf.Form() != Identity;
+    public bool HasTrsf => _trsf.Form != Identity;
 
     /// <summary>The transformation.</summary>
     public Transform3D Trsf() => _trsf;
@@ -118,7 +118,7 @@ public class TransformedSurface : SurfaceAdaptorBase
     /// <summary>The transformed Geom surface (the original one for the identity).</summary>
     public Surface? GeomSurfaceTransformed()
     {
-        if (_trsf.Form() == Identity)
+        if (_trsf.Form == Identity)
         {
             return _surf.Surface();
         }
@@ -179,7 +179,7 @@ public class TransformedSurface : SurfaceAdaptorBase
     /// <summary>Point evaluation. Applies transformation after evaluation.</summary>
     public sealed override Point3D EvalD0(double u, double v)
     {
-        if (_trsf.Form() == Identity)
+        if (_trsf.Form == Identity)
         {
             return _surf.EvalD0(u, v);
         }
@@ -187,9 +187,9 @@ public class TransformedSurface : SurfaceAdaptorBase
     }
 
     /// <summary>D1 evaluation. Applies transformation after evaluation.</summary>
-    public sealed override global::Kerf.Geometry.Surface.ResD1 EvalD1(double u, double v)
+    internal sealed override global::Kerf.Geometry.Surface.ResD1 EvalD1(double u, double v)
     {
-        if (_trsf.Form() == Identity)
+        if (_trsf.Form == Identity)
         {
             return _surf.EvalD1(u, v);
         }
@@ -201,9 +201,9 @@ public class TransformedSurface : SurfaceAdaptorBase
     }
 
     /// <summary>D2 evaluation. Applies transformation after evaluation.</summary>
-    public sealed override global::Kerf.Geometry.Surface.ResD2 EvalD2(double u, double v)
+    internal sealed override global::Kerf.Geometry.Surface.ResD2 EvalD2(double u, double v)
     {
-        if (_trsf.Form() == Identity)
+        if (_trsf.Form == Identity)
         {
             return _surf.EvalD2(u, v);
         }
@@ -218,9 +218,9 @@ public class TransformedSurface : SurfaceAdaptorBase
     }
 
     /// <summary>D3 evaluation. Applies transformation after evaluation.</summary>
-    public sealed override global::Kerf.Geometry.Surface.ResD3 EvalD3(double u, double v)
+    internal sealed override global::Kerf.Geometry.Surface.ResD3 EvalD3(double u, double v)
     {
-        if (_trsf.Form() == Identity)
+        if (_trsf.Form == Identity)
         {
             return _surf.EvalD3(u, v);
         }
@@ -241,7 +241,7 @@ public class TransformedSurface : SurfaceAdaptorBase
     /// <summary>DN evaluation. Applies transformation after evaluation.</summary>
     public sealed override Vector3D EvalDN(double u, double v, int nu, int nv)
     {
-        if (_trsf.Form() == Identity)
+        if (_trsf.Form == Identity)
         {
             return _surf.EvalDN(u, v, nu, nv);
         }
@@ -301,7 +301,7 @@ public class TransformedSurface : SurfaceAdaptorBase
 
     protected void EnsureTransformedCache()
     {
-        if (_trsf.Form() == Identity || _transformedAdaptor is not null)
+        if (_trsf.Form == Identity || _transformedAdaptor is not null)
         {
             return;
         }
@@ -315,7 +315,7 @@ public class TransformedSurface : SurfaceAdaptorBase
             _transformedAdaptor = new SurfaceAdaptor();
             return;
         }
-        bool isIdentity = _trsf.Form() == Identity;
+        bool isIdentity = _trsf.Form == Identity;
         Transform3D trsf = _trsf;
         Surface surface;
         switch (_surf.GetType())
@@ -354,7 +354,7 @@ public class TransformedSurface : SurfaceAdaptorBase
 
     protected SurfaceAdaptor TransformedAdaptor()
     {
-        if (_trsf.Form() == Identity)
+        if (_trsf.Form == Identity)
         {
             return _surf;
         }

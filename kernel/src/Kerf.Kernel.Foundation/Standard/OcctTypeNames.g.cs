@@ -4199,7 +4199,6 @@ Kerf.Engine.Offsets.BuildOffsetFaces BRepOffset_BuildOffsetFaces
 Kerf.Engine.Offsets.Error BRepOffset_Error
 Kerf.Engine.Offsets.Inter2d BRepOffset_Inter2d
 Kerf.Engine.Offsets.Inter3d BRepOffset_Inter3d
-Kerf.Engine.Offsets.Interval BRepOffset_Interval
 Kerf.Engine.Offsets.MakeOffset BRepOffset_MakeOffset
 Kerf.Engine.Offsets.MakeSimpleOffset BRepOffset_MakeSimpleOffset
 Kerf.Engine.Offsets.MedialAxis.BiInt MAT2d_BiInt
@@ -4225,6 +4224,7 @@ Kerf.Engine.Offsets.MedialAxis.MedialZone MAT_Zone
 Kerf.Engine.Offsets.MedialAxis.MiniPath MAT2d_MiniPath
 Kerf.Engine.Offsets.MedialAxis.Tool2d MAT2d_Tool2d
 Kerf.Engine.Offsets.Offset BRepOffset_Offset
+Kerf.Engine.Offsets.OffsetInterval BRepOffset_Interval
 Kerf.Engine.Offsets.OffsetMakeLoops BRepOffset_MakeLoops
 Kerf.Engine.Offsets.OffsetMode BRepOffset_Mode
 Kerf.Engine.Offsets.OffsetStatus BRepOffset_Status

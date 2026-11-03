@@ -15,7 +15,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Computes bounding box for a plane (Geom_Plane). Handles infinite parameters by opening box sides based on the
 /// plane normal direction.
 /// </summary>
-public sealed class PlaneBounds : SurfaceBounds.ISurfaceEvaluator
+internal sealed class PlaneBounds : SurfaceBounds.ISurfaceEvaluator
 {
     private readonly PlaneSurface _geom;
 
@@ -29,14 +29,14 @@ public sealed class PlaneBounds : SurfaceBounds.ISurfaceEvaluator
     /// <summary>Compute bounding box for full plane (infinite).</summary>
     public Box Box(double tol)
     {
-        _geom.Bounds(out double u1, out double u2, out double v1, out double v2);
+        _geom.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
         return Box(u1, u2, v1, v2, tol);
     }
 
     /// <summary>Compute bounding box for plane patch [theUMin, theUMax] x [theVMin, theVMax].</summary>
     public Box Box(double uMin, double uMax, double vMin, double vMax, double tol)
     {
-        Plane3D pln = _geom.Pln();
+        Plane3D pln = _geom.Plane;
         Box box = new();
 
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(vMin) || global::Kerf.Engine.Foundation.Precision.IsInfinite(vMax)
@@ -100,7 +100,7 @@ public sealed class PlaneBounds : SurfaceBounds.ISurfaceEvaluator
                                            double tol,
                                            ref Box box)
     {
-        Direction3D norm = plane.Axis().Direction();
+        Direction3D norm = plane.Axis.Direction;
         double angularTol = RealEpsilon();
 
         Point3D location = BaryCenter(plane, uMin, uMax, vMin, vMax);

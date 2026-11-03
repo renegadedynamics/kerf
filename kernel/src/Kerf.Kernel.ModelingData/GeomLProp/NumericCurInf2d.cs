@@ -24,7 +24,7 @@ internal sealed class NumericCurInf2d
     /// <summary>The extrema of curvature over the whole parameter range.</summary>
     internal void PerformCurExt(Curve2D curve, CurAndInf result)
     {
-        PerformCurExt(curve, curve.FirstParameter(), curve.LastParameter(), result);
+        PerformCurExt(curve, curve.FirstParameter, curve.LastParameter, result);
     }
 
     /// <summary>
@@ -67,7 +67,7 @@ internal sealed class NumericCurInf2d
     /// <summary>The inflection points over the whole parameter range.</summary>
     internal void PerformInf(Curve2D curve, CurAndInf result)
     {
-        PerformInf(curve, curve.FirstParameter(), curve.LastParameter(), result);
+        PerformInf(curve, curve.FirstParameter, curve.LastParameter, result);
     }
 
     /// <summary>The inflection points in [theUMin, theUMax]: the roots of the normalized curvature.</summary>

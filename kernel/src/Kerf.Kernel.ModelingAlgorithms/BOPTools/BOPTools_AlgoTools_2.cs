@@ -34,7 +34,7 @@ public static partial class AlgoTools
         tolVF = Tool.Tolerance(aVF);
         tolNewVertex = Tool.Tolerance(aNewVertex);
 
-        dist = pvf.Distance(pNewVertex);
+        dist = pvf.DistanceTo(pNewVertex);
         newTol = dist + tolNewVertex;
 
         if (newTol > tolVF)
@@ -58,7 +58,7 @@ public static partial class AlgoTools
 
         CurveAdaptor ca = new(Tool.Curve(aE, out _, out _)!);
         ca.D0(aT, out pc);
-        dist = pv.Distance(pc);
+        dist = pv.DistanceTo(pc);
         if (dist > tolV)
         {
             BrepBuilder bb = new();
@@ -80,7 +80,7 @@ public static partial class AlgoTools
 
         CurveAdaptor ca = new(aC.Curve()!);
         ca.D0(aT, out pc);
-        dist = pv.Distance(pc);
+        dist = pv.DistanceTo(pc);
         if (dist > tolV)
         {
             BrepBuilder bb = new();
@@ -117,7 +117,7 @@ public static partial class AlgoTools
         {
             new BrepBuilder().Add(newEdge, it.Value());
         }
-        newEdge.Orientation(edge.Orientation());
+        newEdge.Orient(edge.Orientation);
         return newEdge;
     }
 
@@ -165,7 +165,7 @@ public static partial class AlgoTools
         }
 
         aNewEdge = e;
-        aNewEdge.Orientation(aE.Orientation());
+        aNewEdge.Orient(aE.Orientation);
     }
 
     /// <summary>
@@ -181,7 +181,7 @@ public static partial class AlgoTools
 
         double maxTol, dist;
 
-        dist = pnt1.Distance(pnt2);
+        dist = pnt1.DistanceTo(pnt2);
         maxTol = (tol1 > tol2) ? tol1 : tol2;
         maxTol = maxTol + 0.5 * dist;
 
@@ -217,7 +217,7 @@ public static partial class AlgoTools
         tol1 = Tool.Tolerance(aE1);
         tol2 = Tool.Tolerance(aE2);
 
-        dist = pnt1.Distance(pnt2);
+        dist = pnt1.DistanceTo(pnt2);
         maxTol = (tol1 > tol2) ? tol1 : tol2;
         maxTol = maxTol + 0.5 * dist;
 
@@ -302,7 +302,7 @@ public static partial class AlgoTools
                     bc.D1(tl, out p, out der);
                 }
                 //
-                double mgn = der.Magnitude();
+                double mgn = der.Magnitude;
 
                 if (mgn > 1.0e-12)
                 {
@@ -375,7 +375,7 @@ public static partial class AlgoTools
                     bc.D1(tl, out p, out der);
                 }
                 //
-                double mgn = der.Magnitude();
+                double mgn = der.Magnitude;
 
                 if (mgn > 1.0e-12)
                 {
@@ -410,7 +410,7 @@ public static partial class AlgoTools
     // The dimension of an elementary shape (-1 for compounds).
     private static int DimensionCore(in Shape s)
     {
-        switch (s.ShapeType())
+        switch (s.Type)
         {
             case ShapeType.Vertex:
                 return 0;
@@ -479,7 +479,7 @@ public static partial class AlgoTools
     /// </summary>
     public static void TreatCompound(in Shape s, NCollection_List<Shape> ls, HashSet<Shape>? mFence = null)
     {
-        ShapeType type = s.ShapeType();
+        ShapeType type = s.Type;
         if (type != ShapeType.Compound)
         {
             if (mFence is null || mFence.Add(s))

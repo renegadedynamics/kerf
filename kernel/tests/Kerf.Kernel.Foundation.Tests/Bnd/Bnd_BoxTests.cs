@@ -173,13 +173,13 @@ public class Bnd_BoxTest
         Point3D aCornerMin = aBox.CornerMin();
         Point3D aCornerMax = aBox.CornerMax();
 
-        GTest.ExpectDoubleEq(0.9, aCornerMin.X());
-        GTest.ExpectDoubleEq(1.9, aCornerMin.Y());
-        GTest.ExpectDoubleEq(2.9, aCornerMin.Z());
+        GTest.ExpectDoubleEq(0.9, aCornerMin.X);
+        GTest.ExpectDoubleEq(1.9, aCornerMin.Y);
+        GTest.ExpectDoubleEq(2.9, aCornerMin.Z);
 
-        GTest.ExpectDoubleEq(4.1, aCornerMax.X());
-        GTest.ExpectDoubleEq(5.1, aCornerMax.Y());
-        GTest.ExpectDoubleEq(6.1, aCornerMax.Z());
+        GTest.ExpectDoubleEq(4.1, aCornerMax.X);
+        GTest.ExpectDoubleEq(5.1, aCornerMax.Y);
+        GTest.ExpectDoubleEq(6.1, aCornerMax.Z);
     }
 
     [Fact]
@@ -202,8 +202,8 @@ public class Bnd_BoxTest
         Point3D aCornerMin = aBox.CornerMin();
         Point3D aCornerMax = aBox.CornerMax();
 
-        GTest.ExpectDoubleEq(-1e100, aCornerMin.Y());
-        GTest.ExpectDoubleEq(1e100, aCornerMax.X());
+        GTest.ExpectDoubleEq(-1e100, aCornerMin.Y);
+        GTest.ExpectDoubleEq(1e100, aCornerMax.X);
     }
 
     [Fact]
@@ -805,9 +805,9 @@ public class Bnd_BoxTest
         Box aBox = new(new Point3D(0, 0, 0), new Point3D(10, 20, 30));
         var    aCenter = aBox.Center();
         Assert.True(aCenter.HasValue);
-        GTest.ExpectDoubleEq(aCenter.Value.X(), 5.0);
-        GTest.ExpectDoubleEq(aCenter.Value.Y(), 10.0);
-        GTest.ExpectDoubleEq(aCenter.Value.Z(), 15.0);
+        GTest.ExpectDoubleEq(aCenter.Value.X, 5.0);
+        GTest.ExpectDoubleEq(aCenter.Value.Y, 10.0);
+        GTest.ExpectDoubleEq(aCenter.Value.Z, 15.0);
     }
 
     [Fact]

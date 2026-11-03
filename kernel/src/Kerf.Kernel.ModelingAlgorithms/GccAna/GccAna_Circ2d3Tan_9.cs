@@ -56,9 +56,9 @@ public sealed partial class AnalyticCirc2d3Tan
         //   Processing.                                                          +
         //=========================================================================
 
-        double dist1 = point1.Distance(point2);
-        double dist2 = point1.Distance(point3);
-        double dist3 = point2.Distance(point3);
+        double dist1 = point1.DistanceTo(point2);
+        double dist2 = point1.DistanceTo(point3);
+        double dist3 = point2.DistanceTo(point3);
 
         _qualifier1[1] = Qualifier.Noqualifier;
         _qualifier2[1] = Qualifier.Noqualifier;
@@ -90,24 +90,24 @@ public sealed partial class AnalyticCirc2d3Tan
             if (dist1 >= tolerance)
             {
                 l1 = new Line2D(new Point2D((point1.XY() + point2.XY()) / 2.0),
-                              new Direction2D(point1.Y() - point2.Y(), point2.X() - point1.X()));
+                              new Direction2D(point1.Y - point2.Y, point2.X - point1.X));
             }
             if (dist2 >= tolerance)
             {
                 l2 = new Line2D(new Point2D((point1.XY() + point3.XY()) / 2.0),
-                              new Direction2D(point1.Y() - point3.Y(), point3.X() - point1.X()));
+                              new Direction2D(point1.Y - point3.Y, point3.X - point1.X));
             }
             if (dist2 <= tolerance)
             {
-                l2 = new Line2D(point1, new Direction2D(point1.Y() - point2.Y(), point2.X() - point1.X()));
+                l2 = new Line2D(point1, new Direction2D(point1.Y - point2.Y, point2.X - point1.X));
             }
             else if (dist1 <= tolerance)
             {
-                l1 = new Line2D(point1, new Direction2D(point1.Y() - point3.Y(), point3.X() - point1.X()));
+                l1 = new Line2D(point1, new Direction2D(point1.Y - point3.Y, point3.X - point1.X));
             }
             else if (dist3 <= tolerance)
             {
-                l2 = new Line2D(point1, new Direction2D(point1.Y() - point2.Y(), point2.X() - point1.X()));
+                l2 = new Line2D(point1, new Direction2D(point1.Y - point2.Y, point2.X - point1.X));
             }
             AnalyticIntersection intp = new(l1, l2);
             if (intp.IsDone)
@@ -120,7 +120,7 @@ public sealed partial class AnalyticCirc2d3Tan
                         _cirsol[_nbrSol] =
                           new Circle2D(new Axis2D(intp.Point(i).Value(), dirx),
                                     //         ===============================================================
-                                    point1.Distance(intp.Point(i).Value()));
+                                    point1.DistanceTo(intp.Point(i).Value()));
                         //                                    =======================================
 
                         _theSame1[_nbrSol] = 0;

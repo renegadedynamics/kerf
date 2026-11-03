@@ -32,10 +32,10 @@ public class ProjLib_CompProjectedCurveTests
     // The 2D point is the foot of the perpendicular from C(t): S(P) - C(t) is normal to the surface.
     private static void AssertOrthogonal(SurfaceAdaptorBase theS, CurveAdaptorBase theC, double theT, in Point2D theP)
     {
-        theS.D1(theP.X(), theP.Y(), out Point3D aS, out Vector3D aDU, out Vector3D aDV);
+        theS.D1(theP.X, theP.Y, out Point3D aS, out Vector3D aDU, out Vector3D aDV);
         Vector3D aV = new(theC.Value(theT), aS);
-        Assert.Equal(0.0, aV * aDU / aDU.Magnitude(), 1.0e-6);
-        Assert.Equal(0.0, aV * aDV / aDV.Magnitude(), 1.0e-6);
+        Assert.Equal(0.0, aV * aDU / aDU.Magnitude, 1.0e-6);
+        Assert.Equal(0.0, aV * aDV / aDV.Magnitude, 1.0e-6);
     }
 
     [Fact]
@@ -58,14 +58,14 @@ public class ProjLib_CompProjectedCurveTests
         {
             double t = 2 * M_PI * i / 20;
             Point2D aP = aProj.Value(t);
-            Assert.Equal(2 * Math.Cos(t), aP.X(), 1.0e-6);
-            Assert.Equal(2 * Math.Sin(t), aP.Y(), 1.0e-6);
+            Assert.Equal(2 * Math.Cos(t), aP.X, 1.0e-6);
+            Assert.Equal(2 * Math.Sin(t), aP.Y, 1.0e-6);
             aProj.D1(t, out _, out Vector2D aD1);
-            Assert.Equal(-2 * Math.Sin(t), aD1.X(), 1.0e-6);
-            Assert.Equal(2 * Math.Cos(t), aD1.Y(), 1.0e-6);
+            Assert.Equal(-2 * Math.Sin(t), aD1.X, 1.0e-6);
+            Assert.Equal(2 * Math.Cos(t), aD1.Y, 1.0e-6);
             aProj.D2(t, out _, out _, out Vector2D aD2);
-            Assert.Equal(-2 * Math.Cos(t), aD2.X(), 1.0e-6);
-            Assert.Equal(-2 * Math.Sin(t), aD2.Y(), 1.0e-6);
+            Assert.Equal(-2 * Math.Cos(t), aD2.X, 1.0e-6);
+            Assert.Equal(-2 * Math.Sin(t), aD2.Y, 1.0e-6);
         }
         Assert.Equal(CurveKind.OtherCurve, aProj.GetType());
     }
@@ -93,11 +93,11 @@ public class ProjLib_CompProjectedCurveTests
         Assert.Same(aC2d, aProj.GetResult2dC(1));
         Assert.IsType<TrimmedCurve2D>(aC2d);
         // The line (UIso, 0) along Y, trimmed to the V range.
-        Assert.Equal(0.0, aC2d.FirstParameter(), 1.0e-6);
-        Assert.Equal(5.0, aC2d.LastParameter(), 1.0e-6);
+        Assert.Equal(0.0, aC2d.FirstParameter, 1.0e-6);
+        Assert.Equal(5.0, aC2d.LastParameter, 1.0e-6);
         Point2D aP = aC2d.Value(2.5);
-        Assert.Equal(M_PI / 2, aP.X(), 1.0e-6);
-        Assert.Equal(2.5, aP.Y(), 1.0e-6);
+        Assert.Equal(M_PI / 2, aP.X, 1.0e-6);
+        Assert.Equal(2.5, aP.Y, 1.0e-6);
     }
 
     [Fact]
@@ -116,25 +116,25 @@ public class ProjLib_CompProjectedCurveTests
         {
             double t = 0.5 + 2.0 * i / 10;
             Point2D aP = aProj.Value(t);
-            Assert.Equal(t, aP.X(), 1.0e-6);
-            Assert.Equal(2.0, aP.Y(), 1.0e-6);
+            Assert.Equal(t, aP.X, 1.0e-6);
+            Assert.Equal(2.0, aP.Y, 1.0e-6);
         }
 
         aProj.SetProj3d(true);
         aProj.Perform();
         Curve2D? aC2d = aProj.GetResult2dC(1);
         Assert.NotNull(aC2d);
-        Assert.Equal(1.0, aC2d.Value(1.0).X(), 1.0e-6); // the V-iso line (0, V) along X
+        Assert.Equal(1.0, aC2d.Value(1.0).X, 1.0e-6); // the V-iso line (0, V) along X
         Curve3D? aC3d = aProj.GetResult3dC(1);
         Assert.NotNull(aC3d);
         Assert.True(aC3d.IsFrozen);
         Assert.Same(aC3d, aProj.GetResult3dC(1));
         for (int i = 0; i <= 10; i++)
         {
-            double t = aC3d.FirstParameter() + (aC3d.LastParameter() - aC3d.FirstParameter()) * i / 10;
+            double t = aC3d.FirstParameter + (aC3d.LastParameter - aC3d.FirstParameter) * i / 10;
             Point3D aP = aC3d.Value(t);
-            Assert.Equal(1.0, Math.Sqrt(aP.X() * aP.X() + aP.Y() * aP.Y()), 1.0e-5);
-            Assert.Equal(2.0, aP.Z(), 1.0e-5);
+            Assert.Equal(1.0, Math.Sqrt(aP.X * aP.X + aP.Y * aP.Y), 1.0e-5);
+            Assert.Equal(2.0, aP.Z, 1.0e-5);
         }
     }
 
@@ -153,7 +153,7 @@ public class ProjLib_CompProjectedCurveTests
         {
             double t = 0.5 + 2.0 * i / 10;
             Point2D aP = aProj.Value(t);
-            Assert.Equal(t, aP.X(), 1.0e-6);
+            Assert.Equal(t, aP.X, 1.0e-6);
             AssertOrthogonal(aS, aC, t, aP);
         }
     }
@@ -213,7 +213,7 @@ public class ProjLib_CompProjectedCurveTests
         for (int i = 0; i <= 20; i++)
         {
             double t = i / 20.0;
-            Assert.True(aC2d.Value(t).Distance(aProj.Value(t)) < 1.0e-4);
+            Assert.True(aC2d.Value(t).DistanceTo(aProj.Value(t)) < 1.0e-4);
         }
     }
 
@@ -227,16 +227,16 @@ public class ProjLib_CompProjectedCurveTests
         CompProjectedCurve aProj = new(aS, aC, Tol, Tol);
         Assert.Equal(1, aProj.CurveCount);
         Assert.True(aProj.IsSinglePnt(1, out Point2D aP));
-        Assert.Equal(0.3, aP.X(), 1.0e-9);
-        Assert.Equal(0.4, aP.Y(), 1.0e-9);
+        Assert.Equal(0.3, aP.X, 1.0e-9);
+        Assert.Equal(0.4, aP.Y, 1.0e-9);
         Assert.False(aProj.IsUIso(1, out _));
         Assert.False(aProj.IsVIso(1, out _));
 
         aProj.SetProj3d(true);
         aProj.Perform();
         Assert.True(aProj.ResultIsPoint(1));
-        Assert.Equal(0.3, aProj.GetResult2dP(1).X(), 1.0e-9);
-        Assert.Equal(0.4, aProj.GetResult3dP(1).Y(), 1.0e-9);
+        Assert.Equal(0.3, aProj.GetResult2dP(1).X, 1.0e-9);
+        Assert.Equal(0.4, aProj.GetResult3dP(1).Y, 1.0e-9);
         Assert.Null(aProj.GetResult2dC(1));
         Assert.Null(aProj.GetResult3dC(1));
     }
@@ -262,7 +262,7 @@ public class ProjLib_CompProjectedCurveTests
             foreach (double t in new[] { aF, aL })
             {
                 Point2D aP = aProj.Value(t);
-                double aDist = Min(Min(Math.Abs(aP.X()), Math.Abs(aP.X() - 1)), Min(Math.Abs(aP.Y()), Math.Abs(aP.Y() - 1)));
+                double aDist = Min(Min(Math.Abs(aP.X), Math.Abs(aP.X - 1)), Min(Math.Abs(aP.Y), Math.Abs(aP.Y - 1)));
                 Assert.True(aDist < 1.0e-5, $"part {i}, t = {t}: {aP}");
             }
         }
@@ -295,9 +295,9 @@ public class ProjLib_CompProjectedCurveTests
             Assert.True(aProj.GetResult3dApproxError(i) < 1.0e-5);
             for (int k = 0; k <= 10; k++)
             {
-                Point3D aP = aC3d.Value(aC3d.FirstParameter() + (aC3d.LastParameter() - aC3d.FirstParameter()) * k / 10);
-                Assert.Equal(0.0, aP.Z(), 1.0e-6);
-                Assert.Equal(0.6, aP.Distance(new Point3D(0.5, 0.5, 0)), 1.0e-5);
+                Point3D aP = aC3d.Value(aC3d.FirstParameter + (aC3d.LastParameter - aC3d.FirstParameter) * k / 10);
+                Assert.Equal(0.0, aP.Z, 1.0e-6);
+                Assert.Equal(0.6, aP.DistanceTo(new Point3D(0.5, 0.5, 0)), 1.0e-5);
             }
         }
     }
@@ -341,8 +341,8 @@ public class ProjLib_CompProjectedCurveTests
             Point3D aP = aC.Value(t);
             Point2D aUV = aFree.Value(t);
             // the unit square is the plane z = 0 with (u, v) = (x, y)
-            Assert.Equal(aP.X(), aUV.X(), 1.0e-6);
-            Assert.Equal(aP.Y(), aUV.Y(), 1.0e-6);
+            Assert.Equal(aP.X, aUV.X, 1.0e-6);
+            Assert.Equal(aP.Y, aUV.Y, 1.0e-6);
         }
     }
 
@@ -358,13 +358,13 @@ public class ProjLib_CompProjectedCurveTests
         Assert.Equal(1, aCopy.CurveCount);
         Assert.NotSame(aS, aCopy.GetSurface());
         Assert.NotSame(aC, aCopy.GetCurve());
-        Assert.Equal(aProj.Value(1.0).X(), aCopy.Value(1.0).X(), 1.0e-12);
+        Assert.Equal(aProj.Value(1.0).X, aCopy.Value(1.0).X, 1.0e-12);
 
         CompProjectedCurve aTrim = Assert.IsType<CompProjectedCurve>(aProj.Trim(1.0, 2.0, 1.0e-9));
         Assert.Equal(1.0, aTrim.FirstParameter());
         Assert.Equal(2.0, aTrim.LastParameter());
         Assert.Same(aS, aTrim.GetSurface());
-        Assert.Equal(aProj.Value(1.5).Y(), aTrim.Value(1.5).Y(), 1.0e-12);
+        Assert.Equal(aProj.Value(1.5).Y, aTrim.Value(1.5).Y, 1.0e-12);
         Assert.Equal(0.0, aProj.FirstParameter());
     }
 
@@ -375,8 +375,8 @@ public class ProjLib_CompProjectedCurveTests
         NCollection_HSequence<NCollection_HSequence<Point3D>> aSeq = aProj.GetSequence();
         Assert.Equal(1, aSeq.Length());
         aProj.Bounds(1, out double aF, out double aL);
-        Assert.Equal(aF, aSeq.Value(1).First().X());
-        Assert.Equal(aL, aSeq.Value(1).Last().X());
+        Assert.Equal(aF, aSeq.Value(1).First().X);
+        Assert.Equal(aL, aSeq.Value(1).Last().X);
         aSeq.Value(1).Clear();
         aSeq.Clear();
         aProj.Bounds(1, out double aF2, out double aL2);
@@ -425,8 +425,8 @@ public class ProjLib_CompProjectedCurveTests
         PrjResolve aSolver = new(aC, aS, 1);
         aSolver.Perform(0.0, 0.5, 0.5, new Point2D(Tol, Tol), new Point2D(0, 0), new Point2D(1, 1), 1.0e-10);
         Assert.True(aSolver.IsDone);
-        Assert.Equal(0.8, aSolver.Solution().X(), 1.0e-9);
-        Assert.Equal(0.5, aSolver.Solution().Y(), 1.0e-9);
+        Assert.Equal(0.8, aSolver.Solution().X, 1.0e-9);
+        Assert.Equal(0.5, aSolver.Solution().Y, 1.0e-9);
 
         // Outside the bounds: not done.
         aSolver.Perform(0.0, 0.5, 0.5, new Point2D(Tol, Tol), new Point2D(0, 0), new Point2D(0.6, 1), 1.0e-10);

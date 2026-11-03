@@ -37,9 +37,9 @@ public sealed class MakeCirc : Root
         //
         resolution = Constants.Resolution();
         //
-        dist1 = p1.Distance(p2);
-        dist2 = p1.Distance(p3);
-        dist3 = p2.Distance(p3);
+        dist1 = p1.DistanceTo(p2);
+        dist2 = p1.DistanceTo(p3);
+        dist3 = p2.DistanceTo(p3);
         //
         if ((dist1 < resolution) && (dist2 < resolution) && (dist3 < resolution))
         {
@@ -64,7 +64,7 @@ public sealed class MakeCirc : Root
         //
         Axis3D ax1 = new(p1, dir1);
         Line3D l12 = new(ax1);
-        if (l12.Distance(p3) < resolution)
+        if (l12.DistanceTo(p3) < resolution)
         {
             _theError = ColinearPoints;
             return;
@@ -72,7 +72,7 @@ public sealed class MakeCirc : Root
         //
         Vector3D vDir1 = new(dir1);
         Vector3D vDir3 = vDir1.Crossed(vDir2);
-        if (vDir3.SquareMagnitude() < resolution)
+        if (vDir3.SquareMagnitude < resolution)
         {
             _theError = ColinearPoints;
             return;
@@ -127,9 +127,9 @@ public sealed class MakeCirc : Root
                 // modified by NIZNHY-PKV Thu Mar  3 11:30:34 2005f
                 // Dir2.Cross(Dir1);
                 // modified by NIZNHY-PKV Thu Mar  3 11:30:37 2005t
-                dist1 = p1.Distance(pInt);
-                dist2 = p2.Distance(pInt);
-                dist3 = p3.Distance(pInt);
+                dist1 = p1.DistanceTo(pInt);
+                dist2 = p2.DistanceTo(pInt);
+                dist3 = p3.DistanceTo(pInt);
                 pInt.Coord(out x3, out y3, out z3);
                 if (dist1 < resolution)
                 {
@@ -166,7 +166,7 @@ public sealed class MakeCirc : Root
     /// <summary>A circle from its center, the plane it lies in and its radius.</summary>
     public MakeCirc(in Point3D center, in Plane3D plane, double radius)
     {
-        MakeCirc c = new(center, plane.Position().Direction(), radius);
+        MakeCirc c = new(center, plane.Position.Direction, radius);
         // OCCT calls C.Value(), whose check its release build (No_Exception) compiles out: a negative radius gives
         // the status gce_NegativeRadius there, and the port's always-on check would throw instead.
         _theCirc = c._theCirc;
@@ -182,9 +182,9 @@ public sealed class MakeCirc : Root
         }
         else
         {
-            double a = norm.X();
-            double b = norm.Y();
-            double c = norm.Z();
+            double a = norm.X;
+            double b = norm.Y;
+            double c = norm.Z;
             double aabs = Math.Abs(a);
             double babs = Math.Abs(b);
             double cabs = Math.Abs(c);
@@ -242,15 +242,15 @@ public sealed class MakeCirc : Root
         }
         else
         {
-            if (center.Distance(ptaxis) <= Constants.Resolution())
+            if (center.DistanceTo(ptaxis) <= Constants.Resolution())
             {
                 _theError = NullAxis;
             }
             else
             {
-                double a = ptaxis.X() - center.X();
-                double b = ptaxis.Y() - center.Y();
-                double c = ptaxis.Z() - center.Z();
+                double a = ptaxis.X - center.X;
+                double b = ptaxis.Y - center.Y;
+                double c = ptaxis.Z - center.Z;
                 double aabs = Math.Abs(a);
                 double babs = Math.Abs(b);
                 double cabs = Math.Abs(c);
@@ -308,11 +308,11 @@ public sealed class MakeCirc : Root
         }
         else
         {
-            Direction3D norm = axis.Direction();
-            Point3D center = axis.Location();
-            double a = norm.X();
-            double b = norm.Y();
-            double c = norm.Z();
+            Direction3D norm = axis.Direction;
+            Point3D center = axis.Location;
+            double a = norm.X;
+            double b = norm.Y;
+            double c = norm.Z;
             double aabs = Math.Abs(a);
             double babs = Math.Abs(b);
             double cabs = Math.Abs(c);
@@ -365,14 +365,14 @@ public sealed class MakeCirc : Root
     /// </summary>
     public MakeCirc(in Circle3D circ, double dist)
     {
-        double rad = circ.Radius() + dist;
+        double rad = circ.Radius + dist;
         if (rad < 0.0)
         {
             _theError = NegativeRadius;
         }
         else
         {
-            _theCirc = new Circle3D(circ.Position(), rad);
+            _theCirc = new Circle3D(circ.Position, rad);
             _theError = Done;
         }
     }
@@ -380,8 +380,8 @@ public sealed class MakeCirc : Root
     /// <summary>A circle coaxial to Circ through the point P.</summary>
     public MakeCirc(in Circle3D circ, in Point3D p)
     {
-        double rad = new Line3D(circ.Axis()).Distance(p);
-        _theCirc = new Circle3D(circ.Position(), rad);
+        double rad = new Line3D(circ.Axis).DistanceTo(p);
+        _theCirc = new Circle3D(circ.Position, rad);
         _theError = Done;
     }
 

@@ -181,11 +181,11 @@ public partial class PaveFiller
         }
         else if (surface is global::Kerf.Geometry.OffsetSurface offsetSurface)
         {
-            return offsetSurface.BasisSurface() is PlaneSurface;
+            return offsetSurface.BasisSurface is PlaneSurface;
         }
         else if (surface is TrimmedSurface trimmedSurface)
         {
-            return trimmedSurface.BasisSurface() is PlaneSurface;
+            return trimmedSurface.BasisSurface is PlaneSurface;
         }
 
         return false;
@@ -202,7 +202,7 @@ public partial class PaveFiller
         if (!isPlane)
         {
             // Check surface
-            Placement aLocation = location.Predivided(edge.Location());
+            Placement aLocation = location.Predivided(edge.Placement);
 
             // find the representation
             BrepTEdge tEdge = (BrepTEdge)edge.TShape()!;
@@ -403,7 +403,7 @@ public partial class PaveFiller
                                         Point3D p2 =
                                             projPC2.NbPoints() > 0 ? projPC2.NearestPoint() : vertexPoint;
 
-                                        double shiftDist = p1.Distance(p2);
+                                        double shiftDist = p1.DistanceTo(p2);
                                         if (shiftDist > Tool.Tolerance(vertex))
                                         {
                                             // Move one of the faces to the point of exact intersection of edges
@@ -1175,7 +1175,7 @@ public partial class PaveFiller
             Shape s = mscpb.KeyAt(0);
             CoupleOfPaveBlocks cpb = mscpb.ValueAt(0);
             //
-            type = s.ShapeType();
+            type = s.Type;
             if (type == ShapeType.Vertex)
             {
                 si.SetShapeType(type);
@@ -1280,7 +1280,7 @@ public partial class PaveFiller
             Point3D p1 = Tool.Pnt(verts[0]);
             Point3D p2 = Tool.Pnt(verts[1]);
             //
-            double dist = p1.Distance(p2);
+            double dist = p1.DistanceTo(p2);
             double tolV1 = Tool.Tolerance(verts[0]);
             double tolV2 = Tool.Tolerance(verts[1]);
             //
@@ -1340,7 +1340,7 @@ public partial class PaveFiller
         for (; itLS.More(); itLS.Next())
         {
             Shape sx = itLS.Value();
-            if (sx.ShapeType() == ShapeType.Compound)
+            if (sx.Type == ShapeType.Compound)
             {
                 for (Iterator itC = new(sx); itC.More(); itC.Next())
                 {
@@ -2012,7 +2012,7 @@ public partial class PaveFiller
         Curve3D c3d = ic.Curve()!;
         c3d.D1(tm, out Point3D pm, out Vector3D vTgt1);
         boxPm.Add(pm);
-        bool isVtgt1Valid = vTgt1.SquareMagnitude() > Constants.Resolution();
+        bool isVtgt1Valid = vTgt1.SquareMagnitude > Constants.Resolution();
         if (isVtgt1Valid)
         {
             vTgt1 = vTgt1.Normalized();
@@ -2103,7 +2103,7 @@ public partial class PaveFiller
                             if (peStatus == 0)
                             {
                                 bac2.D1(tldp, out Point3D pm2, out Vector3D vTgt2);
-                                if (vTgt2.SquareMagnitude() > Constants.Resolution())
+                                if (vTgt2.SquareMagnitude > Constants.Resolution())
                                 {
                                     // The angle should be close to zero
                                     double cos = vTgt1.Dot(vTgt2.Normalized());
@@ -2370,8 +2370,8 @@ public partial class PaveFiller
                 double par = pave.Parameter();
                 gac.D1(par, out Point3D ponC, out Vector3D d1);
                 Vector3D projVec = new(pv, ponC);
-                double sqDist = projVec.SquareMagnitude();
-                double sqD1Mod = d1.SquareMagnitude();
+                double sqDist = projVec.SquareMagnitude;
+                double sqD1Mod = d1.SquareMagnitude;
                 double sin = projVec.CrossSquareMagnitude(d1);
                 if (sqDist > eps && sqD1Mod > eps)
                 {
@@ -2495,8 +2495,8 @@ public partial class PaveFiller
                         comPrt.Range1(out t11, out t12);
                         AlgoTools.PointOnEdge(e1, t11, out p11);
                         AlgoTools.PointOnEdge(e1, t12, out p12);
-                        d1 = pv.Distance(p11);
-                        d2 = pv.Distance(p12);
+                        d1 = pv.DistanceTo(p11);
+                        d2 = pv.DistanceTo(p12);
                         d = (d1 > d2) ? d1 : d2;
                         if (d > aTolVExt)
                         {
@@ -2557,11 +2557,11 @@ public partial class PaveFiller
                             proj.LowerDistanceParameters(out u1, out v1);
                             if (nF == nF1)
                             {
-                                pnt.SetValue(p2d.X(), p2d.Y(), u1, v1);
+                                pnt.SetValue(p2d.X, p2d.Y, u1, v1);
                             }
                             else
                             {
-                                pnt.SetValue(u1, v1, p2d.X(), p2d.Y());
+                                pnt.SetValue(u1, v1, p2d.X, p2d.Y);
                             }
                             aListOfPnts.Append(pnt);
                         }
@@ -2704,7 +2704,7 @@ public partial class PaveFiller
                     {
                         continue;
                     }
-                    d2 = pc[m].SquareDistance(pv);
+                    d2 = pc[m].SquareDistanceTo(pv);
                     if (d2 > dt2)
                     { // no rich
                         continue;
@@ -2876,7 +2876,7 @@ public partial class PaveFiller
                 {
                     Point3D pOnC = new();
                     ic.D0(t, ref pOnC);
-                    tolV = pOnC.Distance(Tool.Pnt(v));
+                    tolV = pOnC.DistanceTo(Tool.Pnt(v));
                 }
             }
         }
@@ -2939,7 +2939,7 @@ public partial class PaveFiller
                 Point3D p1 = gac.Value(t);
                 tolV = Tool.Tolerance(v);
                 Point3D p2 = Tool.Pnt(v);
-                double dist = p1.Distance(p2);
+                double dist = p1.DistanceTo(p2);
                 if (tolV < dist + dTol)
                 {
                     // OCCT writes the vertex in place, also an argument vertex shared by both faces (theMVCommon of
@@ -3281,8 +3281,8 @@ public partial class PaveFiller
                                         Point3D p1 = Tool.Pnt(v1);
                                         Point3D p2 = Tool.Pnt(v2);
                                         //
-                                        double dist1 = p.SquareDistance(p1);
-                                        double dist2 = p.SquareDistance(p2);
+                                        double dist1 = p.SquareDistanceTo(p1);
+                                        double dist2 = p.SquareDistanceTo(p2);
                                         //
                                         pave[i].SetParameter(dist1 < dist2 ? pb2.Pave1().Parameter()
                                                                               : pb2.Pave2().Parameter());
@@ -3443,7 +3443,7 @@ public partial class PaveFiller
         double tolP = Max(aNC.Tolerance(), aNC.TangentialTolerance());
         tolP += global::Kerf.Engine.Foundation.Precision.Confusion();
 
-        double distVP = pv.Distance(pOp);
+        double distVP = pv.DistanceTo(pOp);
         if (distVP > tolV + tolP)
         {
             // Curve is not closed
@@ -4118,7 +4118,7 @@ public partial class PaveFiller
                     }
                     //
                     Point3D ponE = c.Value(pave.Parameter());
-                    double dist = p.Distance(ponE);
+                    double dist = p.DistanceTo(ponE);
                     dist += Tool.Tolerance(e);
                     if (dist > maxTol)
                     {
@@ -4190,7 +4190,7 @@ public partial class PaveFiller
             Shape si = mscpb.KeyAt(i);
             CoupleOfPaveBlocks cpb = mscpb.ValueAt(i);
 
-            if (si.ShapeType() != ShapeType.Edge)
+            if (si.Type != ShapeType.Edge)
             {
                 // Not an edge
                 sepbMap.Add(si, cpb);

@@ -22,7 +22,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// Converts a 2D ellipse into a rational B-spline curve. The ellipse's parametrisation is
 /// P(U) = Loc + MajorRadius * cos(U) * XDir + MinorRadius * sin(U) * YDir, U in [0, 2 Pi].
 /// </summary>
-public class EllipseToBSplineCurve : ConicToBSplineCurve
+internal class EllipseToBSplineCurve : ConicToBSplineCurve
 {
     /// <summary>
     /// The periodic B-spline curve equivalent to the whole ellipse, with its orientation. Parameterisations other
@@ -37,8 +37,8 @@ public class EllipseToBSplineCurve : ConicToBSplineCurve
         double R, r, value;
         NCollection_Array1<double> cosNumerator, sinNumerator;
 
-        R = e.MajorRadius();
-        r = e.MinorRadius();
+        R = e.MajorRadius;
+        r = e.MinorRadius;
 
         if (parameterisation != TgtThetaOver2 && parameterisation != RationalC1)
         {
@@ -69,10 +69,10 @@ public class EllipseToBSplineCurve : ConicToBSplineCurve
 
         _poles = new NCollection_Array1<Point2D>(1, cosNumerator.Length());
 
-        Direction2D ox = e.XAxis().Direction();
-        Direction2D oy = e.YAxis().Direction();
-        Transform2D trsf = new Transform2D().WithTransformation(e.XAxis(), Constants.OX2d());
-        if (ox.X() * oy.Y() - ox.Y() * oy.X() > 0.0e0)
+        Direction2D ox = e.XAxis.Direction;
+        Direction2D oy = e.YAxis.Direction;
+        Transform2D trsf = new Transform2D().WithTransformation(e.XAxis, Constants.OX2d());
+        if (ox.X * oy.Y - ox.Y * oy.X > 0.0e0)
         {
             value = r;
         }
@@ -111,8 +111,8 @@ public class EllipseToBSplineCurve : ConicToBSplineCurve
         double R, r, value;
         NCollection_Array1<double> cosNumerator, sinNumerator;
 
-        R = e.MajorRadius();
-        r = e.MinorRadius();
+        R = e.MajorRadius;
+        r = e.MinorRadius;
 
         _isPeriodic = false;
         BuildCosAndSin(parameterisation,
@@ -127,10 +127,10 @@ public class EllipseToBSplineCurve : ConicToBSplineCurve
 
         _poles = new NCollection_Array1<Point2D>(1, cosNumerator.Length());
 
-        Direction2D ox = e.XAxis().Direction();
-        Direction2D oy = e.YAxis().Direction();
-        Transform2D trsf = new Transform2D().WithTransformation(e.XAxis(), Constants.OX2d());
-        if (ox.X() * oy.Y() - ox.Y() * oy.X() > 0.0e0)
+        Direction2D ox = e.XAxis.Direction;
+        Direction2D oy = e.YAxis.Direction;
+        Transform2D trsf = new Transform2D().WithTransformation(e.XAxis, Constants.OX2d());
+        if (ox.X * oy.Y - ox.Y * oy.X > 0.0e0)
         {
             value = r;
         }

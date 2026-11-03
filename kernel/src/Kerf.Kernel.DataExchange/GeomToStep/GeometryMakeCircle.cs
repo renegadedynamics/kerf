@@ -43,7 +43,7 @@ public sealed class GeometryMakeCircle : GeometryRoot
     public GeometryMakeCircle(CircleCurve3D cer, in Factors localFactors)
     {
         Circle3D c;
-        c = cer.Circ();
+        c = cer.Circle;
         Make(c, localFactors);
     }
 
@@ -61,16 +61,16 @@ public sealed class GeometryMakeCircle : GeometryRoot
     public GeometryMakeCircle(CircleCurve2D cer, in Factors localFactors)
     {
         Circle2D c2d;
-        c2d = cer.Circ2d();
+        c2d = cer.Circle;
 
         StepCircle cStep = new StepCircle();
         StepAxis2Placement ax2 = new StepAxis2Placement();
         StepAxis2Placement2d ax2Step;
         double rayon;
 
-        MakeAxis2Placement2d mkAxis2 = new MakeAxis2Placement2d(c2d.Position(), localFactors);
+        MakeAxis2Placement2d mkAxis2 = new MakeAxis2Placement2d(c2d.Position, localFactors);
         ax2Step = mkAxis2.Value();
-        rayon = c2d.Radius();
+        rayon = c2d.Radius;
         ax2.SetValue(ax2Step);
         TCollection_HAsciiString name = new TCollection_HAsciiString("");
         cStep.Init(name, ax2, rayon);
@@ -91,9 +91,9 @@ public sealed class GeometryMakeCircle : GeometryRoot
         StepAxis2Placement3d ax2Step;
         double rayon;
 
-        Axis2Placement3dMaker mkAxis2 = new Axis2Placement3dMaker(c.Position(), localFactors);
+        Axis2Placement3dMaker mkAxis2 = new Axis2Placement3dMaker(c.Position, localFactors);
         ax2Step = mkAxis2.Value();
-        rayon = c.Radius();
+        rayon = c.Radius;
         ax2.SetValue(ax2Step);
         TCollection_HAsciiString name = new TCollection_HAsciiString("");
         cStep.Init(name, ax2, rayon / localFactors.LengthFactor());

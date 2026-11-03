@@ -67,13 +67,13 @@ public class Law_BSplineTests
 
     private static void AssertSameFunction(BSpline theLaw, BSplineCurve2D theCurve, string theWhat)
     {
-        Assert.Equal(theCurve.FirstParameter(), theLaw.FirstParameter(), Tol);
-        Assert.Equal(theCurve.LastParameter(), theLaw.LastParameter(), Tol);
+        Assert.Equal(theCurve.FirstParameter, theLaw.FirstParameter(), Tol);
+        Assert.Equal(theCurve.LastParameter, theLaw.LastParameter(), Tol);
         double aF = theLaw.FirstParameter(), aL = theLaw.LastParameter();
         for (int k = 0; k <= 20; k++)
         {
             double u = aF + (aL - aF) * k / 20.0;
-            Assert.True(Math.Abs(theCurve.Value(u).Y() - theLaw.Value(u)) < 1.0e-9, $"{theWhat}: value at {u}: {theCurve.Value(u).Y()} vs {theLaw.Value(u)}");
+            Assert.True(Math.Abs(theCurve.Value(u).Y - theLaw.Value(u)) < 1.0e-9, $"{theWhat}: value at {u}: {theCurve.Value(u).Y} vs {theLaw.Value(u)}");
         }
     }
 
@@ -84,11 +84,11 @@ public class Law_BSplineTests
         for (int aCase = 0; aCase < 300; aCase++)
         {
             Pair p = RandomPair(aRnd);
-            Assert.Equal(p.Curve.Degree(), p.Law.Degree());
+            Assert.Equal(p.Curve.Degree, p.Law.Degree());
             Assert.Equal(p.Curve.PoleCount, p.Law.PoleCount);
-            Assert.Equal(p.Curve.Continuity(), p.Law.Continuity());
+            Assert.Equal(p.Curve.Continuity, p.Law.Continuity());
             Assert.Equal(p.Curve.IsRational, p.Law.IsRational);
-            Assert.Equal(p.Curve.KnotDistribution(), p.Law.KnotDistribution());
+            Assert.Equal(p.Curve.KnotDistribution, p.Law.KnotDistribution());
             for (int n = 0; n <= 4; n++)
             {
                 Assert.Equal(p.Curve.IsCN(n), p.Law.IsCN(n));
@@ -99,10 +99,10 @@ public class Law_BSplineTests
                 double u = aF + (aL - aF) * k / 10.0;
                 Curve2D.ResD3 r = p.Curve.EvalD3(u);
                 p.Law.D3(u, out double P, out double V1, out double V2, out double V3);
-                Assert.Equal(r.Point.Y(), P, Tol);
-                Assert.Equal(r.D1.Y(), V1, 1.0e-8);
-                Assert.Equal(r.D2.Y(), V2, 1.0e-6);
-                Assert.Equal(r.D3.Y(), V3, 1.0e-4 * Math.Max(1.0, Math.Abs(V3)));
+                Assert.Equal(r.Point.Y, P, Tol);
+                Assert.Equal(r.D1.Y, V1, 1.0e-8);
+                Assert.Equal(r.D2.Y, V2, 1.0e-6);
+                Assert.Equal(r.D3.Y, V3, 1.0e-4 * Math.Max(1.0, Math.Abs(V3)));
                 // D0 to D3 run different BSplCLib paths, equal to rounding
                 Assert.Equal(P, p.Law.Value(u), Tol);
                 p.Law.D1(u, out double P1, out double D1);
@@ -112,11 +112,11 @@ public class Law_BSplineTests
                 Assert.Equal(V1, D1, 1.0e-8);
                 Assert.Equal(V1, E1, 1.0e-8);
                 Assert.Equal(V2, E2, 1.0e-6);
-                Assert.Equal(p.Curve.EvalDN(u, 1).Y(), p.Law.DN(u, 1), 1.0e-8);
-                Assert.Equal(p.Curve.EvalDN(u, 2).Y(), p.Law.DN(u, 2), 1.0e-6);
+                Assert.Equal(p.Curve.EvalDN(u, 1).Y, p.Law.DN(u, 1), 1.0e-8);
+                Assert.Equal(p.Curve.EvalDN(u, 2).Y, p.Law.DN(u, 2), 1.0e-6);
             }
-            Assert.Equal(p.Curve.StartPoint().Y(), p.Law.StartPoint(), Tol);
-            Assert.Equal(p.Curve.EndPoint().Y(), p.Law.EndPoint(), Tol);
+            Assert.Equal(p.Curve.StartPoint.Y, p.Law.StartPoint(), Tol);
+            Assert.Equal(p.Curve.EndPoint.Y, p.Law.EndPoint(), Tol);
         }
     }
 
@@ -134,10 +134,10 @@ public class Law_BSplineTests
                 double u = p.Law.Knot(k + 1);
                 p.Curve.LocalD3(u, k, k + 1, out Point2D P, out Vector2D V1, out Vector2D V2, out Vector2D V3);
                 p.Law.LocalD3(u, k, k + 1, out double LP, out double LV1, out double LV2, out double LV3);
-                Assert.Equal(P.Y(), LP, Tol);
-                Assert.Equal(V1.Y(), LV1, 1.0e-8);
-                Assert.Equal(V2.Y(), LV2, 1.0e-6);
-                Assert.Equal(V3.Y(), LV3, 1.0e-4 * Math.Max(1.0, Math.Abs(LV3)));
+                Assert.Equal(P.Y, LP, Tol);
+                Assert.Equal(V1.Y, LV1, 1.0e-8);
+                Assert.Equal(V2.Y, LV2, 1.0e-6);
+                Assert.Equal(V3.Y, LV3, 1.0e-4 * Math.Max(1.0, Math.Abs(LV3)));
                 Assert.Equal(LP, p.Law.LocalValue(u, k, k + 1), Tol);
                 p.Law.LocalD0(u, k, k + 1, out double LP0);
                 p.Law.LocalD1(u, k, k + 1, out double LP1, out double LW1);
@@ -181,7 +181,7 @@ public class Law_BSplineTests
             // the same poles as Geom2d's degree elevation
             for (int k = 1; k <= anInc.PoleCount; k++)
             {
-                Assert.Equal(aCInc.Pole(k).Y(), anInc.Pole(k), 1.0e-9);
+                Assert.Equal(aCInc.Pole(k).Y, anInc.Pole(k), 1.0e-9);
             }
             if (!aLaw.IsPeriodic)
             {

@@ -106,9 +106,9 @@ public sealed class ObjTreeWriter
             {
                 continue;
             }
-            Transform3D trsf = item.Location.Transformation();
+            Transform3D trsf = item.Location.Transformation;
             bool isIdentity = item.Location.IsIdentity;
-            bool isMirrored = trsf.VectorialPart().Determinant() < 0.0;
+            bool isMirrored = trsf.VectorialPart.Determinant < 0.0;
             anObj.Append("o ").Append(ObjName(item)).Append('\n');
             ColorWithAlpha? nodeColor = item.Style.SurfaceColor ?? item.Style.CurveColor;
             foreach (ProductMesh.Group aGroup in mesh.Groups)
@@ -120,7 +120,7 @@ public sealed class ObjTreeWriter
                     {
                         p = p.Transformed(trsf);
                     }
-                    double x = p.X(), y = p.Y(), z = p.Z();
+                    double x = p.X, y = p.Y, z = p.Z;
                     converter.Map(ref x, ref y, ref z);
                     anObj.Append("v ").Append(Num(x)).Append(' ').Append(Num(y)).Append(' ').Append(Num(z)).Append('\n');
                 }
@@ -134,7 +134,7 @@ public sealed class ObjTreeWriter
                         {
                             n = n.Transformed(trsf);
                         }
-                        double x = n.X(), y = n.Y(), z = n.Z();
+                        double x = n.X, y = n.Y, z = n.Z;
                         converter.Map(ref x, ref y, ref z, true);
                         anObj.Append("vn ").Append(Num((float)x)).Append(' ').Append(Num((float)y)).Append(' ').Append(Num((float)z)).Append('\n');
                     }

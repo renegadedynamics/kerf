@@ -114,7 +114,7 @@ public class DrawCheapGapsCommandsTests
         DrawInterpreter i = New();
         i.Eval("circle c 0 0 0 10");
         Assert.Equal("ext_1  parameter 1 = 0\next_2  parameter 2 = 3.1415926535897931\n", i.Eval("proj c 20 0 0"));
-        Assert.Equal(10, Geometry<TrimmedCurve3D>(i, "ext_1").LastParameter(), 1e-12);
+        Assert.Equal(10, Geometry<TrimmedCurve3D>(i, "ext_1").LastParameter, 1e-12);
         Assert.Equal("ext_1  Point on curve  parameter 1 = 0\next_2  parameter 2 = 3.1415926535897931\n", i.Eval("proj c 10 0 0"));
         Assert.Equal(new Point3D(10, 0, 0), Geometry<Point3D>(i, "ext_1"));
 
@@ -129,14 +129,14 @@ public class DrawCheapGapsCommandsTests
     {
         DrawInterpreter i = New();
         i.Eval("circle c 1 2 0 10; to2d c2 c; to3d c3 c2");
-        Assert.Equal(new Point2D(1, 2), Geometry<CircleCurve2D>(i, "c2").Location());
-        Assert.Equal(new Point3D(1, 2, 0), Geometry<CircleCurve3D>(i, "c3").Location());
+        Assert.Equal(new Point2D(1, 2), Geometry<CircleCurve2D>(i, "c2").Location);
+        Assert.Equal(new Point3D(1, 2, 0), Geometry<CircleCurve3D>(i, "c3").Location);
         i.Eval("cylinder cy 10");
         Assert.Equal("", Error(i, "to2d x c cy"));
 
         // a circle on a cylinder projects on a line of the cylinder's parameters
         i.Eval("circle cc 0 0 3 10; project lp cc cy");
-        Assert.Equal(new Point2D(0, 3), Geometry<LineCurve2D>(i, "lp").Location());
+        Assert.Equal(new Point2D(0, 3), Geometry<LineCurve2D>(i, "lp").Location);
         string aVerif = i.Eval("project lp cc cy -v 3");
         Assert.Equal(5, Regex.Matches(aVerif, @" Parameter = \S+\tDistance = 0\n").Count);
         Assert.EndsWith(" **** Distance Maximale : 0\n", aVerif, StringComparison.Ordinal);
@@ -144,7 +144,7 @@ public class DrawCheapGapsCommandsTests
         Assert.StartsWith("project result2d c3d surf", i.Eval("project"), StringComparison.Ordinal);
 
         i.Eval("plane p 0 0 0 0 0 1; circle cz 0 0 4 0 1 0 2; projonplane pp cz p 0");
-        Assert.Equal(0, Geometry<Curve3D>(i, "pp").Value(0.3).Z(), 1e-12);
+        Assert.Equal(0, Geometry<Curve3D>(i, "pp").Value(0.3).Z, 1e-12);
         Assert.Equal(" The surface must be a plane\n", Error(i, "projonplane pp cz cy"));
     }
 
@@ -155,7 +155,7 @@ public class DrawCheapGapsCommandsTests
         i.Eval("bsplinecurve bs 3 2 0 4 1 4 0 0 0 1 1 0 0 1 2 1 0 1 3 0 0 1");
         Assert.Equal("Nb points : 11\nMax defl: 0.009478998464963197 0 0.125 1\n", i.Eval("crvpoints r bs 0.01"));
         BSplineCurve3D aPolyline = Geometry<BSplineCurve3D>(i, "r");
-        Assert.Equal(1, aPolyline.Degree());
+        Assert.Equal(1, aPolyline.Degree);
         Assert.Equal(11, aPolyline.PoleCount);
         Assert.StartsWith("Nb points : 19\nMax defl: ", i.Eval("crvtpoints r bs 0.01 0.1"), StringComparison.Ordinal);
 
@@ -191,7 +191,7 @@ public class DrawCheapGapsCommandsTests
         Assert.Matches(@"^dist 1: \S+  ext_1\ndist 2: \S+  ext_2\n$", anExtrema);
         Assert.Equal("Syntax error: wrong number of arguments", Error(i, "2dextrema ca"));
         Assert.Equal("ext_1 ext_2 ", i.Eval("2dproj ca 2 0"));
-        Assert.Equal([1.0, 3.0], new[] { "ext_1", "ext_2" }.Select(e => Math.Round(Geometry<TrimmedCurve2D>(i, e).LastParameter(), 12)).Order());
+        Assert.Equal([1.0, 3.0], new[] { "ext_1", "ext_2" }.Select(e => Math.Round(Geometry<TrimmedCurve2D>(i, e).LastParameter, 12)).Order());
         Assert.Equal("Syntax error: 'no' is NULL", Error(i, "2dproj no 2 0"));
     }
 
@@ -201,8 +201,8 @@ public class DrawCheapGapsCommandsTests
         DrawInterpreter i = New();
         i.Eval("beziercurve bz 3 0 0 0 1 1 0 2 0 0; copy bz keep");
         i.Eval("incdeg bz 4");
-        Assert.Equal(4, Geometry<BezierCurve3D>(i, "bz").Degree());
-        Assert.Equal(2, Geometry<BezierCurve3D>(i, "keep").Degree());
+        Assert.Equal(4, Geometry<BezierCurve3D>(i, "bz").Degree);
+        Assert.Equal(2, Geometry<BezierCurve3D>(i, "keep").Degree);
         i.Eval("insertpole bz 1 0.5 0.5 0");
         Assert.Equal(new Point3D(0.5, 0.5, 0), Geometry<BezierCurve3D>(i, "bz").Pole(2));
         i.Eval("setweight bz 2 2");
@@ -221,7 +221,7 @@ public class DrawCheapGapsCommandsTests
 
         i.Eval("sphere s 5; convert ss s; segsur ss 0 1 0 0.5");
         BSplineSurface aSegment = Geometry<BSplineSurface>(i, "ss");
-        aSegment.Bounds(out double u1, out double u2, out double v1, out double v2);
+        aSegment.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
         Assert.Equal((0.0, 1.0, 0.0, 0.5), (u1, u2, v1, v2));
         i.Eval("setweight ss 1 1 3");
         Assert.Equal(3, Geometry<BSplineSurface>(i, "ss").Weight(1, 1));

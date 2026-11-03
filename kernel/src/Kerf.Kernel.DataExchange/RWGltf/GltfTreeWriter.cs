@@ -475,7 +475,7 @@ public sealed class GltfTreeWriter
             var node = new Node
             {
                 Name = instance.DisplayName,
-                Matrix = instance.Location.IsIdentity ? null : converter.MapMatrix(instance.Location.Transformation()),
+                Matrix = instance.Location.IsIdentity ? null : converter.MapMatrix(instance.Location.Transformation),
             };
             model.Nodes.Add(node);
             int index = model.Nodes.Count - 1;

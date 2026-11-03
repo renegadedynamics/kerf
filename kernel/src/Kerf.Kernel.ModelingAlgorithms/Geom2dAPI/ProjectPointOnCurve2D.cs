@@ -19,7 +19,7 @@ namespace Kerf.Engine.Geometry.Api;
 /// the object it builds (decision 224). OCCT's implicit conversions to int, gp_Pnt2d and double are explicit
 /// operators (decision 327).
 /// </remarks>
-public class ProjectPointOnCurve2D
+internal class ProjectPointOnCurve2D
 {
     private bool _isDone;
     private int _index;
@@ -51,7 +51,7 @@ public class ProjectPointOnCurve2D
     /// <summary>Computes the projections of <paramref name="p"/> on <paramref name="curve"/>.</summary>
     public void Init(in Point2D p, Curve2D curve)
     {
-        Init(p, curve, curve.FirstParameter(), curve.LastParameter());
+        Init(p, curve, curve.FirstParameter, curve.LastParameter);
     }
 
     /// <summary>

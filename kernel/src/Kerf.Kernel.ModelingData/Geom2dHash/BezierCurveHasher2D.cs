@@ -19,7 +19,7 @@ internal readonly struct BezierCurveHasher2D(double theCompTolerance, double the
     {
         ReadOnlySpan<ulong> hashes =
         [
-            HashUtils.Hash(curve.Degree()),
+            HashUtils.Hash(curve.Degree),
             HashUtils.Hash(curve.PoleCount),
             HashUtils.Hash(curve.IsRational ? 1 : 0)
         ];
@@ -30,7 +30,7 @@ internal readonly struct BezierCurveHasher2D(double theCompTolerance, double the
     public bool IsEqual(BezierCurve2D curve1, BezierCurve2D curve2)
     {
         // Compare degrees
-        if (curve1.Degree() != curve2.Degree())
+        if (curve1.Degree != curve2.Degree)
         {
             return false;
         }

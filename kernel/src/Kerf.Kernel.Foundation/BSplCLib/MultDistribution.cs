@@ -11,7 +11,7 @@ namespace Kerf.Engine.Geometry.Splines;
 /// last) or non-constant.
 /// </summary>
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.BSplCLib_MultDistribution;</c>.</remarks>
-public enum MultDistribution
+internal enum MultDistribution
 {
     NonConstant,
     Constant,

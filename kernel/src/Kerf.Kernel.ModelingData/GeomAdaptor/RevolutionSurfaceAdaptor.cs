@@ -110,13 +110,13 @@ public class RevolutionSurfaceAdaptor : SurfaceAdaptor
 
         // Eval myAxeRev : axe of revolution ( Determination de Ox).
         Point3D p, q;
-        Point3D o = _axis.Location();
+        Point3D o = _axis.Location;
         Direction3D ox;
-        Direction3D oz = _axis.Direction();
+        Direction3D oz = _axis.Direction;
         bool yrev = false;
         if (_basisCurve!.GetType() == Line)
         {
-            if ((_basisCurve.Line().Direction()).Dot(oz) < 0.0)
+            if ((_basisCurve.Line().Direction).Dot(oz) < 0.0)
             {
                 yrev = true;
                 oz = oz.Reversed();
@@ -125,7 +125,7 @@ public class RevolutionSurfaceAdaptor : SurfaceAdaptor
 
         if (_basisCurve.GetType() == Circle)
         {
-            q = p = (_basisCurve.Circle()).Location();
+            q = p = (_basisCurve.Circle()).Location;
         }
         else
         {
@@ -133,7 +133,7 @@ public class RevolutionSurfaceAdaptor : SurfaceAdaptor
             p = Value(0.0, 0.0); // which does not mean much
             if (GetType() == global::Kerf.Geometry.SurfaceKind.Cone)
             {
-                if (new Line3D(_axis).Distance(p) <= global::Kerf.Engine.Foundation.Precision.Confusion())
+                if (new Line3D(_axis).DistanceTo(p) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     q = global::Kerf.Engine.Geometry.ElCLib.Value(1.0, _basisCurve.Line());
                 }
@@ -152,9 +152,9 @@ public class RevolutionSurfaceAdaptor : SurfaceAdaptor
             }
         }
 
-        Direction3D dz = _axis.Direction();
+        Direction3D dz = _axis.Direction;
         o = o.WithXYZ(o.XYZ() + (new Vector3D(o, p) * new Vector3D(dz)) * dz.XYZ());
-        if (new Line3D(_axis).Distance(q) > global::Kerf.Engine.Foundation.Precision.Confusion())
+        if (new Line3D(_axis).DistanceTo(q) > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             ox = new Direction3D(q.XYZ() - o.XYZ());
         }
@@ -168,7 +168,7 @@ public class RevolutionSurfaceAdaptor : SurfaceAdaptor
             do
             {
                 pp = _basisCurve.Value(first + (last - first) / ratio);
-                dist = new Line3D(_axis).Distance(pp);
+                dist = new Line3D(_axis).DistanceTo(pp);
                 ratio++;
             } while (dist < global::Kerf.Engine.Foundation.Precision.Confusion() && ratio < 100);
 
@@ -189,7 +189,7 @@ public class RevolutionSurfaceAdaptor : SurfaceAdaptor
         }
         else if (_basisCurve.GetType() == Circle)
         {
-            Direction3D dc = (_basisCurve.Circle()).Axis().Direction();
+            Direction3D dc = (_basisCurve.Circle()).Axis.Direction;
             if ((ox.Crossed(oz)).Dot(dc) < 0.0)
             {
                 _axeRev = _axeRev.ZReversed();
@@ -273,12 +273,12 @@ public class RevolutionSurfaceAdaptor : SurfaceAdaptor
         {
             case Line:
             {
-                Axis3D axe = _basisCurve.Line().Position();
+                Axis3D axe = _basisCurve.Line().Position;
 
                 if (_axis.IsParallel(axe, tolAng))
                 {
                     Point3D p = Value(0.0, 0.0);
-                    double R = new Vector3D(_axeRev.Location(), p) * new Vector3D(_axeRev.XDirection());
+                    double R = new Vector3D(_axeRev.Location, p) * new Vector3D(_axeRev.XDirection);
                     if (R > tolConf)
                     {
                         return global::Kerf.Geometry.SurfaceKind.Cylinder;
@@ -297,15 +297,15 @@ public class RevolutionSurfaceAdaptor : SurfaceAdaptor
                     {
                         Point3D pf = _basisCurve.Value(uf);
                         Point3D pl = _basisCurve.Value(ul);
-                        double len = pf.Distance(pl);
+                        double len = pf.DistanceTo(pl);
                         // Compute the distance projected onto the axis.
                         Vector3D vlin = new Vector3D(pf, pl);
-                        Vector3D vaxe = new Vector3D(_axis.Direction());
+                        Vector3D vaxe = new Vector3D(_axis.Direction);
                         double projlen = Math.Abs(vaxe.Dot(vlin));
                         if ((len - projlen) <= tolConf)
                         {
                             Point3D p = Value(0.0, 0.0);
-                            double R = new Vector3D(_axeRev.Location(), p) * new Vector3D(_axeRev.XDirection());
+                            double R = new Vector3D(_axeRev.Location, p) * new Vector3D(_axeRev.XDirection);
                             if (R > tolConf)
                             {
                                 return global::Kerf.Geometry.SurfaceKind.Cylinder;
@@ -316,9 +316,9 @@ public class RevolutionSurfaceAdaptor : SurfaceAdaptor
                             return global::Kerf.Geometry.SurfaceKind.Plane;
                         }
                     }
-                    Vector3D v = new Vector3D(_axis.Location(), _basisCurve.Line().Location());
-                    Vector3D w = new Vector3D(axe.Direction());
-                    Vector3D axisDir = new Vector3D(_axis.Direction());
+                    Vector3D v = new Vector3D(_axis.Location, _basisCurve.Line().Location);
+                    Vector3D w = new Vector3D(axe.Direction);
+                    Vector3D axisDir = new Vector3D(_axis.Direction);
                     double proj = Math.Abs(w.Dot(axisDir));
                     if (Math.Abs(v.DotCross(axisDir, w)) <= tolConf
                         && (proj >= tolConeSemiAng && proj <= 1.0 - tolConeSemiAng))
@@ -335,21 +335,21 @@ public class RevolutionSurfaceAdaptor : SurfaceAdaptor
                 Line3D lin = new Line3D(_axis);
                 //
                 Circle3D c = _basisCurve.Circle();
-                Point3D lc = c.Location();
-                r = c.Radius();
+                Point3D lc = c.Location;
+                r = c.Radius;
                 //
 
-                if (!c.Position().IsCoplanar(_axis, tolConf, tolAng))
+                if (!c.Position.IsCoplanar(_axis, tolConf, tolAng))
                 {
                     return SurfaceOfRevolution;
                 }
-                else if (lin.Distance(lc) <= tolConf)
+                else if (lin.DistanceTo(lc) <= tolConf)
                 {
                     return global::Kerf.Geometry.SurfaceKind.Sphere;
                 }
                 else
                 {
-                    majorRadius = lin.Distance(lc);
+                    majorRadius = lin.DistanceTo(lc);
                     if (majorRadius > r)
                     {
                         return global::Kerf.Geometry.SurfaceKind.Torus;
@@ -372,11 +372,11 @@ public class RevolutionSurfaceAdaptor : SurfaceAdaptor
 
         CoordinateSystem axe = _axeRev;
         Point3D ponCurve = Value(0.0, 0.0);
-        double dot = (ponCurve.XYZ() - _axis.Location().XYZ()).Dot(_axis.Direction().XYZ());
+        double dot = (ponCurve.XYZ() - _axis.Location.XYZ()).Dot(_axis.Direction.XYZ());
 
-        Point3D p = new Point3D(_axis.Location().XYZ() + dot * _axis.Direction().XYZ());
+        Point3D p = new Point3D(_axis.Location.XYZ() + dot * _axis.Direction.XYZ());
         axe = axe.WithLocation(p);
-        if (axe.XDirection().Dot(_basisCurve!.Line().Direction()) >= -global::Kerf.Engine.Foundation.Precision.Confusion())
+        if (axe.XDirection.Dot(_basisCurve!.Line().Direction) >= -global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             axe = axe.XReversed();
         }
@@ -390,7 +390,7 @@ public class RevolutionSurfaceAdaptor : SurfaceAdaptor
         Standard_NoSuchObject_Raise_if(GetType() != global::Kerf.Geometry.SurfaceKind.Cylinder, "GeomAdaptor_SurfaceOfRevolution::Cylinder");
 
         Point3D p = Value(0.0, 0.0);
-        double r = new Vector3D(_axeRev.Location(), p) * new Vector3D(_axeRev.XDirection());
+        double r = new Vector3D(_axeRev.Location, p) * new Vector3D(_axeRev.XDirection);
         return new Cylinder(_axeRev, r);
     }
 
@@ -400,18 +400,18 @@ public class RevolutionSurfaceAdaptor : SurfaceAdaptor
         Standard_NoSuchObject_Raise_if(GetType() != global::Kerf.Geometry.SurfaceKind.Cone, "GeomAdaptor_SurfaceOfRevolution:Cone");
 
         CoordinateSystem axe = _axeRev;
-        Direction3D ldir = (_basisCurve!.Line()).Direction();
-        double angle = (axe.Direction()).Angle(ldir);
+        Direction3D ldir = (_basisCurve!.Line()).Direction;
+        double angle = (axe.Direction).AngleTo(ldir);
         Point3D p0 = Value(0.0, 0.0);
-        double r = (axe.Location()).Distance(p0);
+        double r = (axe.Location).DistanceTo(p0);
         if (r >= global::Kerf.Engine.Foundation.Precision.Confusion())
         {
-            Point3D o = axe.Location();
+            Point3D o = axe.Location;
             Vector3D op0 = new Vector3D(o, p0);
-            double t = op0.Dot(new Vector3D(axe.XDirection()));
-            t /= ldir.Dot(axe.XDirection());
+            double t = op0.Dot(new Vector3D(axe.XDirection));
+            t /= ldir.Dot(axe.XDirection);
             op0 = op0.Added(-t * new Vector3D(ldir));
-            if (op0.Dot(new Vector3D(axe.Direction())) > 0.0)
+            if (op0.Dot(new Vector3D(axe.Direction)) > 0.0)
             {
                 angle = -angle;
             }
@@ -426,8 +426,8 @@ public class RevolutionSurfaceAdaptor : SurfaceAdaptor
 
         Circle3D c = _basisCurve!.Circle();
         CoordinateSystem axe = _axeRev;
-        axe = axe.WithLocation(c.Location());
-        return new Sphere(axe, c.Radius());
+        axe = axe.WithLocation(c.Location);
+        return new Sphere(axe, c.Radius);
     }
 
     /// <exception cref="NoSuchObjectException">The surface is not a torus.</exception>
@@ -436,8 +436,8 @@ public class RevolutionSurfaceAdaptor : SurfaceAdaptor
         Standard_NoSuchObject_Raise_if(GetType() != global::Kerf.Geometry.SurfaceKind.Torus, "GeomAdaptor_SurfaceOfRevolution:Torus");
 
         Circle3D c = _basisCurve!.Circle();
-        double majorRadius = new Line3D(_axis).Distance(c.Location());
-        return new Torus(_axeRev, majorRadius, c.Radius());
+        double majorRadius = new Line3D(_axis).DistanceTo(c.Location);
+        return new Torus(_axeRev, majorRadius, c.Radius);
     }
 
     public override int VDegree() => _basisCurve!.Degree();

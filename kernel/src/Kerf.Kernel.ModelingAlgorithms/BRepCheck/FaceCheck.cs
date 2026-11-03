@@ -382,7 +382,7 @@ public class FaceCheck : ResultCheck
             Shape localShape = _shape.EmptyCopied();
             Face newFace = ShapeCasts.Face(localShape);
 
-            newFace.Orientation(Forward);
+            newFace.Orient(Forward);
             b.Add(newFace, wir1);
 
             var fClass2d = new FClass2d(newFace, global::Kerf.Engine.Foundation.Precision.PConfusion());
@@ -477,7 +477,7 @@ public class FaceCheck : ResultCheck
     {
         NCollection_List<StatusCheck> statusList = LockedStatusList();
         // WARNING : it is assumed that the edges of a wire are correctly oriented
-        bool infinite = _shape.Infinite();
+        bool infinite = _shape.IsInfinite;
         if (_oridone)
         {
             if (update)
@@ -544,7 +544,7 @@ public class FaceCheck : ResultCheck
             Wire wir = ShapeCasts.Wire(exp.Current());
             if (!wext.IsNull && wir.IsSame(wext))
             {
-                if (wir.Orientation() != wext.Orientation())
+                if (wir.Orientation != wext.Orientation)
                 {
                     // the exterior wire defines a hole
                     if (CheckThin(wir, _shape.Oriented(Forward)))
@@ -579,7 +579,7 @@ public class FaceCheck : ResultCheck
                     throw new NoSuchObjectException("BRepCheck_Face::OrientationOfWires");
                 }
 
-                if (keys[itm].Orientation() == wir.Orientation())
+                if (keys[itm].Orientation == wir.Orientation)
                 {
                     // the given wire does not define a hole
                     _orires = StatusCheck.BadOrientationOfSubshape;
@@ -706,7 +706,7 @@ public class FaceCheck : ResultCheck
         {
             Vertex v = ShapeCasts.Vertex(commonVertices[i]);
             Point2D p2d = Tool.Parameters(v, f);
-            Point3D p = surf.Value(p2d.X(), p2d.Y());
+            Point3D p = surf.Value(p2d.X, p2d.Y);
             pntSeq.Append(p);
         }
 
@@ -803,8 +803,8 @@ public class FaceCheck : ResultCheck
 
                                     Point2D firstP2d = inter.Segment(i).FirstPoint().Value();
                                     Point2D lastP2d = inter.Segment(i).LastPoint().Value();
-                                    Point3D firstP = surf.Value(firstP2d.X(), firstP2d.Y());
-                                    Point3D lastP = surf.Value(lastP2d.X(), lastP2d.Y());
+                                    Point3D firstP = surf.Value(firstP2d.X, firstP2d.Y);
+                                    Point3D lastP = surf.Value(lastP2d.X, lastP2d.Y);
                                     for (int j = 1; j <= pntSeq.Length(); j++)
                                     {
                                         double tolv = Tool.Tolerance(ShapeCasts.Vertex(commonVertices[j]));
@@ -832,12 +832,12 @@ public class FaceCheck : ResultCheck
                                 for (i = 1; i <= inter.PointCount; i++)
                                 {
                                     Point2D p2d = inter.Point(i).Value();
-                                    Point3D p = surf.Value(p2d.X(), p2d.Y());
+                                    Point3D p = surf.Value(p2d.X, p2d.Y);
                                     for (int j = 1; j <= pntSeq.Length(); j++)
                                     {
                                         double tolv = Tool.Tolerance(ShapeCasts.Vertex(commonVertices[j]));
                                         tolv += 1.0e-8; // possible tolerance of intersection point
-                                        double dd = p.SquareDistance(pntSeq[j]);
+                                        double dd = p.SquareDistanceTo(pntSeq[j]);
                                         if (dd <= tolv * tolv)
                                         {
                                             nbCoinc++;
@@ -931,7 +931,7 @@ public class FaceCheck : ResultCheck
                 Point3D points0 = curve.Value(first);
                 // Compute middle point of edge
                 Point3D points1 = curve.Value((first3D + last3D) / 2.0);
-                if (points0.Distance(points1) < global::Kerf.Engine.Foundation.Precision.Confusion())
+                if (points0.DistanceTo(points1) < global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     continue;
                 }
@@ -1022,8 +1022,8 @@ public class FaceCheck : ResultCheck
             return false;
         }
 
-        Orientation e1or = e1.Orientation();
-        Orientation e2or = e2.Orientation();
+        Orientation e1or = e1.Orientation;
+        Orientation e2or = e2.Orientation;
 
         Curve2D? pc1 = Tool.CurveOnSurface(e1, aF, out double f1, out double l1);
         Curve2D? pc2 = Tool.CurveOnSurface(e2, aF, out double f2, out double l2);

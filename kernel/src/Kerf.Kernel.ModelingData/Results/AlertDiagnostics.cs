@@ -23,7 +23,7 @@ namespace Kerf.Engine.Topology;
 /// (<see cref="MsgFile"/>) where it has one, which BOPAlgo's do.
 /// </para>
 /// </remarks>
-public static class AlertDiagnostics
+internal static class AlertDiagnostics
 {
     private static readonly Dictionary<string, string> Areas = new(StringComparer.Ordinal)
     {

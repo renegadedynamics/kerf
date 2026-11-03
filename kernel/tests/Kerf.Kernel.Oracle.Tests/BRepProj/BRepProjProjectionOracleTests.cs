@@ -365,7 +365,7 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
     }
 
     private static Point3D OnPlane(in Frame3D theAx, double theU, double theV) =>
-        theAx.Location().Translated(new Vector3D(theAx.XDirection()) * theU + new Vector3D(theAx.YDirection()) * theV);
+        theAx.Location.Translated(new Vector3D(theAx.XDirection) * theU + new Vector3D(theAx.YDirection) * theV);
 
     // A wire (or an edge) to project, in the plane theAx
     private static (Shape Shape, string Kind) Projected(Oracle theOracle, in Frame3D theAx, double theSize)

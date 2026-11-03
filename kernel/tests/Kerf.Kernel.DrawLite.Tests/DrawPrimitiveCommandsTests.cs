@@ -248,7 +248,7 @@ public class DrawPrimitiveCommandsTests
         i.Eval("prism p b_1 -2 0 0 Copy");
         Assert.Equal(2.0, Math.Abs(Volume(i, "p")), 1e-12);
         i.Eval("prism p b_1 1 0 0 Inf");
-        Assert.True(i.GetShape("p").Infinite() || Counts(i, "p").F == 4);
+        Assert.True(i.GetShape("p").IsInfinite || Counts(i, "p").F == 4);
         i.Eval("prism p b_1 1 0 0 semiinf");
         Assert.StartsWith("p is a shape SOLID", i.Eval("whatis p"));
         Assert.Equal("", Error(i, "prism p b_1 1 0"));

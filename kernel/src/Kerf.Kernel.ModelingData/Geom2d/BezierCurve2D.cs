@@ -21,7 +21,7 @@ namespace Kerf.Geometry;
 /// <remarks>
 /// <para>
 /// OCCT returns its pole, weight and knot arrays by const reference. The port returns them to callers as
-/// <see cref="PackedList{T}"/> copies (<see cref="Poles()"/>, <see cref="Weights()"/>, ...), and gives ported
+/// <see cref="PackedList{T}"/> copies (<see cref="Poles"/>, <see cref="WeightsOrNull()"/>, ...), and gives ported
 /// code the arrays themselves through internal <c>Internal...()</c> accessors, which must not be modified
 /// (decision 131).
 /// </para>
@@ -30,7 +30,7 @@ namespace Kerf.Geometry;
 /// filled at most once per value and is safe to read from several threads.
 /// </para>
 /// </remarks>
-public class BezierCurve2D : BoundedCurve2D
+public sealed partial class BezierCurve2D : BoundedCurve2D
 {
     private NCollection_Array1<Point2D> _poles = new NCollection_Array1<Point2D>();
     private NCollection_Array1<double> _weights = new NCollection_Array1<double>();
@@ -41,7 +41,7 @@ public class BezierCurve2D : BoundedCurve2D
     private bool _maxDerivInvOk = false;
 
     /// <summary>True if an evaluation representation is attached.</summary>
-    public bool HasEvalRepresentation => _evalRep is not null;
+    internal bool HasEvalRepresentation => _evalRep is not null;
 
     /// <summary>The attached evaluation representation, or null. Internal: descriptors are mutable (decision 507).</summary>
     internal RepCurveDesc2D.Base? EvalRepresentation() => _evalRep;
@@ -79,10 +79,10 @@ public class BezierCurve2D : BoundedCurve2D
 
     /// <summary>The non-rational Bezier curve of poles CurvePoles.</summary>
     /// <exception cref="ConstructionErrorException">Fewer than 2 or more than MaxDegree() + 1 poles.</exception>
-    public BezierCurve2D(NCollection_Array1<Point2D> curvePoles)
+    internal BezierCurve2D(NCollection_Array1<Point2D> curvePoles)
     {
         int nbpoles = curvePoles.Length();
-        if (nbpoles < 2 || nbpoles > (BezierCurve2D.MaxDegree() + 1))
+        if (nbpoles < 2 || nbpoles > (BezierCurve2D.MaxDegree + 1))
         {
             throw new ConstructionErrorException();
         }
@@ -98,10 +98,10 @@ public class BezierCurve2D : BoundedCurve2D
     /// Fewer than 2 or more than MaxDegree() + 1 poles, a weight count different from the pole count, or a
     /// weight not above gp::Resolution().
     /// </exception>
-    public BezierCurve2D(NCollection_Array1<Point2D> curvePoles, NCollection_Array1<double> poleWeights)
+    internal BezierCurve2D(NCollection_Array1<Point2D> curvePoles, NCollection_Array1<double> poleWeights)
     {
         int nbpoles = curvePoles.Length();
-        if (nbpoles < 2 || nbpoles > (BezierCurve2D.MaxDegree() + 1))
+        if (nbpoles < 2 || nbpoles > (BezierCurve2D.MaxDegree + 1))
         {
             throw new ConstructionErrorException();
         }
@@ -148,12 +148,12 @@ public class BezierCurve2D : BoundedCurve2D
     internal void Increase(int deg)
     {
         CheckMutable();
-        if (deg == Degree())
+        if (deg == Degree)
         {
             return;
         }
 
-        Standard_ConstructionError_Raise_if(deg < Degree() || deg > BezierCurve2D.MaxDegree(),
+        Standard_ConstructionError_Raise_if(deg < Degree || deg > BezierCurve2D.MaxDegree,
                                             "Geom2d_BezierCurve::Increase");
 
         NCollection_Array1<Point2D> npoles = new NCollection_Array1<Point2D>(1, deg + 1);
@@ -163,7 +163,7 @@ public class BezierCurve2D : BoundedCurve2D
         if (IsRational)
         {
             NCollection_Array1<double> nweights = new NCollection_Array1<double>(1, deg + 1);
-            global::Kerf.Engine.Geometry.Splines.BSplCLib.IncreaseDegree(Degree(),
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.IncreaseDegree(Degree,
                                     deg,
                                     false,
                                     _poles,
@@ -178,7 +178,7 @@ public class BezierCurve2D : BoundedCurve2D
         }
         else
         {
-            global::Kerf.Engine.Geometry.Splines.BSplCLib.IncreaseDegree(Degree(),
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.IncreaseDegree(Degree,
                                     deg,
                                     false,
                                     _poles,
@@ -194,7 +194,7 @@ public class BezierCurve2D : BoundedCurve2D
     }
 
     /// <summary>The maximum degree of a Bezier curve: 25.</summary>
-    public static int MaxDegree() => global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxDegree();
+    public static int MaxDegree => global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxDegree();
 
     /// <summary>Inserts the pole P (with the weight Weight) after the pole of index Index (0 inserts first).</summary>
     /// <exception cref="ConstructionErrorException">
@@ -206,7 +206,7 @@ public class BezierCurve2D : BoundedCurve2D
         CheckMutable();
         int nbpoles = PoleCount;
 
-        Standard_ConstructionError_Raise_if(nbpoles >= BezierCurve2D.MaxDegree()
+        Standard_ConstructionError_Raise_if(nbpoles >= BezierCurve2D.MaxDegree
                                               || weight <= Constants.Resolution(),
                                             "Geom2d_BezierCurve::InsertPoleAfter");
 
@@ -372,7 +372,7 @@ public class BezierCurve2D : BoundedCurve2D
     internal void Segment(double u1, double u2)
     {
         CheckMutable();
-        _closed = (Math.Abs(Value(u1).Distance(Value(u2))) <= Constants.Resolution());
+        _closed = (Math.Abs(Value(u1).DistanceTo(Value(u2))) <= Constants.Resolution());
 
         NCollection_Array1<Point2D> coeffs = new NCollection_Array1<Point2D>(1, _poles.Length());
         if (IsRational)
@@ -381,7 +381,7 @@ public class BezierCurve2D : BoundedCurve2D
             global::Kerf.Engine.Geometry.Splines.BSplCLib.BuildCache(0.0,
                                 1.0,
                                 false,
-                                Degree(),
+                                Degree,
                                 InternalKnotSequence(),
                                 _poles,
                                 _weights,
@@ -395,7 +395,7 @@ public class BezierCurve2D : BoundedCurve2D
             global::Kerf.Engine.Geometry.Splines.BSplCLib.BuildCache(0.0,
                                 1.0,
                                 false,
-                                Degree(),
+                                Degree,
                                 InternalKnotSequence(),
                                 _poles,
                                 global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(),
@@ -417,7 +417,7 @@ public class BezierCurve2D : BoundedCurve2D
 
         if (index == 1 || index == _poles.Length())
         {
-            _closed = (_poles[1].Distance(_poles[PoleCount]) <= Constants.Resolution());
+            _closed = (_poles[1].DistanceTo(_poles[PoleCount]) <= Constants.Resolution());
         }
         _maxDerivInvOk = false;
     }
@@ -477,7 +477,7 @@ public class BezierCurve2D : BoundedCurve2D
     public sealed override bool IsClosed => _closed;
 
     /// <summary>True: a Bezier curve is CN.</summary>
-    public sealed override bool IsCN(int n) => true;
+    internal sealed override bool IsCN(int n) => true;
 
     /// <summary>False.</summary>
     public sealed override bool IsPeriodic => false;
@@ -486,12 +486,12 @@ public class BezierCurve2D : BoundedCurve2D
     public bool IsRational => _rational;
 
     /// <summary>CN.</summary>
-    public sealed override Continuity Continuity() => CN;
+    public sealed override Continuity Continuity => CN;
 
     /// <summary>The degree: NbPoles() - 1.</summary>
-    public int Degree() => _poles.Length() - 1;
+    public int Degree => _poles.Length() - 1;
 
-    public sealed override Point2D EvalD0(double u)
+    internal sealed override Point2D EvalD0(double u)
     {
         Point2D evalRepResult;
         if (RepUtils2D.TryEvalCurveD0(_evalRep, u, out evalRepResult))
@@ -503,7 +503,7 @@ public class BezierCurve2D : BoundedCurve2D
         return p;
     }
 
-    public sealed override ResD1 EvalD1(double u)
+    internal sealed override ResD1 EvalD1(double u)
     {
         ResD1 evalRepResult;
         if (RepUtils2D.TryEvalCurveD1(_evalRep, u, out evalRepResult))
@@ -515,7 +515,7 @@ public class BezierCurve2D : BoundedCurve2D
         return result;
     }
 
-    public sealed override ResD2 EvalD2(double u)
+    internal sealed override ResD2 EvalD2(double u)
     {
         ResD2 evalRepResult;
         if (RepUtils2D.TryEvalCurveD2(_evalRep, u, out evalRepResult))
@@ -527,7 +527,7 @@ public class BezierCurve2D : BoundedCurve2D
         return result;
     }
 
-    public sealed override ResD3 EvalD3(double u)
+    internal sealed override ResD3 EvalD3(double u)
     {
         ResD3 evalRepResult;
         if (RepUtils2D.TryEvalCurveD3(_evalRep, u, out evalRepResult))
@@ -540,7 +540,7 @@ public class BezierCurve2D : BoundedCurve2D
     }
 
     /// <exception cref="UndefinedDerivative2DException">N &lt; 1.</exception>
-    public sealed override Vector2D EvalDN(double u, int n)
+    internal sealed override Vector2D EvalDN(double u, int n)
     {
         if (n < 1)
         {
@@ -552,25 +552,25 @@ public class BezierCurve2D : BoundedCurve2D
             return evalRepResult;
         }
         Vector2D v;
-        global::Kerf.Engine.Geometry.Splines.BSplCLib.DN(u, n, 0, Degree(), false, _poles, InternalWeights(), InternalKnots(), InternalMultiplicities(), out v);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.DN(u, n, 0, Degree, false, _poles, InternalWeights(), InternalKnots(), InternalMultiplicities(), out v);
         return v;
     }
 
     /// <summary>The last pole.</summary>
-    public sealed override Point2D EndPoint() => _poles[_poles.Upper()];
+    public sealed override Point2D EndPoint => _poles[_poles.Upper()];
 
     /// <summary>0.</summary>
-    public sealed override double FirstParameter() => 0.0;
+    public sealed override double FirstParameter => 0.0;
 
     /// <summary>1.</summary>
-    public sealed override double LastParameter() => 1.0;
+    public sealed override double LastParameter => 1.0;
 
     /// <summary>The number of poles.</summary>
     public int PoleCount => _poles.Length();
 
     /// <summary>The pole of index Index.</summary>
     /// <exception cref="OutOfRangeException">Index is outside [1, NbPoles()].</exception>
-    public Point2D Pole(int index)
+    internal Point2D Pole(int index)
     {
         Standard_OutOfRange_Raise_if(index < 1 || index > _poles.Length(), "Geom2d_BezierCurve::Pole");
         return _poles[index];
@@ -578,24 +578,24 @@ public class BezierCurve2D : BoundedCurve2D
 
     /// <summary>Copies the poles into P (indexed as P is).</summary>
     /// <exception cref="DimensionErrorException">P's length is not NbPoles().</exception>
-    public void Poles(NCollection_Array1<Point2D> p)
+    internal void CopyPolesTo(NCollection_Array1<Point2D> p)
     {
         Standard_DimensionError_Raise_if(p.Length() != _poles.Length(), "Geom2d_BezierCurve::Poles");
         p.Assign(_poles);
     }
 
     /// <summary>The poles (a copy; OCCT returns a reference to its array).</summary>
-    public IReadOnlyList<Point2D> Poles() => _poles.ToPackedList();
+    public IReadOnlyList<Point2D> Poles => _poles.ToPackedList();
 
     /// <summary>The pole array itself, indexed from 1, for ported code: don't modify it (decision 131).</summary>
     internal NCollection_Array1<Point2D> InternalPoles() => _poles;
 
     /// <summary>The first pole.</summary>
-    public sealed override Point2D StartPoint() => _poles[1];
+    public sealed override Point2D StartPoint => _poles[1];
 
     /// <summary>The weight of the pole of index Index (1 if the curve is not rational).</summary>
     /// <exception cref="OutOfRangeException">Index is outside [1, NbPoles()].</exception>
-    public double Weight(int index)
+    internal double Weight(int index)
     {
         Standard_OutOfRange_Raise_if(index < 1 || index > _poles.Length(), "Geom2d_BezierCurve::Weight");
         if (IsRational)
@@ -610,7 +610,7 @@ public class BezierCurve2D : BoundedCurve2D
 
     /// <summary>Copies the weights into W (ones if the curve is not rational).</summary>
     /// <exception cref="DimensionErrorException">W's length is not NbPoles().</exception>
-    public void Weights(NCollection_Array1<double> w)
+    internal void CopyWeightsTo(NCollection_Array1<double> w)
     {
         int nbpoles = PoleCount;
         Standard_DimensionError_Raise_if(w.Length() != nbpoles, "Geom2d_BezierCurve::Weights");
@@ -628,13 +628,13 @@ public class BezierCurve2D : BoundedCurve2D
     }
 
     /// <summary>The weights (a copy), or null if the curve is not rational (OCCT's <c>BSplCLib::NoWeights()</c>).</summary>
-    public IReadOnlyList<double>? Weights() => _rational ? _weights.ToPackedList() : null;
+    internal IReadOnlyList<double>? WeightsOrNull() => _rational ? _weights.ToPackedList() : null;
 
     /// <summary>The weight array for ported code, or null if the curve is not rational: don't modify it.</summary>
     internal NCollection_Array1<double>? InternalWeights() => _rational ? _weights : global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights();
 
     /// <summary>The weights (a copy), ones if the curve is not rational.</summary>
-    public IReadOnlyList<double> WeightsArray() => _weights.ToPackedList();
+    public IReadOnlyList<double> Weights => _weights.ToPackedList();
 
     /// <summary>The weight array (shared unit weights if not rational) for ported code: don't modify it.</summary>
     internal NCollection_Array1<double> InternalWeightsArray() => _weights;
@@ -658,7 +658,7 @@ public class BezierCurve2D : BoundedCurve2D
     /// The parametric tolerance UTolerance such that |t1 - t0| &lt; UTolerance implies
     /// |C(t1) - C(t0)| &lt; ToleranceUV.
     /// </summary>
-    public void Resolution(double toleranceUV, out double uTolerance)
+    internal void Resolution(double toleranceUV, out double uTolerance)
     {
         // OCCT.NET: a cache filled on a possibly shared curve; the flag is published after the value.
         if (!Volatile.Read(ref _maxDerivInvOk))
@@ -668,7 +668,7 @@ public class BezierCurve2D : BoundedCurve2D
                                 InternalWeights(),
                                 _poles.Length(),
                                 InternalKnotSequence(),
-                                Degree(),
+                                Degree,
                                 1.0,
                                 out maxDerivInv);
             _maxDerivInv = maxDerivInv;
@@ -681,13 +681,13 @@ public class BezierCurve2D : BoundedCurve2D
     public sealed override Geometry2D Copy() => new BezierCurve2D(this);
 
     /// <summary>The knots {0, 1} of the curve seen as a B-spline (a copy).</summary>
-    public IReadOnlyList<double> Knots() => InternalKnots().ToPackedList();
+    public IReadOnlyList<double> Knots => InternalKnots().ToPackedList();
 
     /// <summary>The multiplicities {Degree() + 1, Degree() + 1} of the curve seen as a B-spline (a copy).</summary>
-    public IReadOnlyList<int> Multiplicities() => InternalMultiplicities().ToPackedList();
+    public IReadOnlyList<int> Multiplicities => InternalMultiplicities().ToPackedList();
 
     /// <summary>The flat knots of the curve seen as a B-spline: Degree() + 1 zeros then Degree() + 1 ones (a copy).</summary>
-    public IReadOnlyList<double> KnotSequence() => InternalKnotSequence().ToPackedList();
+    public IReadOnlyList<double> KnotSequence => InternalKnotSequence().ToPackedList();
 
     private static readonly NCollection_Array1<double> THE_KNOTS = NCollection_Array1<double>.From([0.0, 1.0]);
 
@@ -736,11 +736,11 @@ public class BezierCurve2D : BoundedCurve2D
     }
 
     /// <summary>Sets the poles and weights (null: non-rational), resetting the caches and the evaluation representation.</summary>
-    protected void Init(NCollection_Array1<Point2D> poles, NCollection_Array1<double>? weights)
+    private void Init(NCollection_Array1<Point2D> poles, NCollection_Array1<double>? weights)
     {
         int nbpoles = poles.Length();
         // closed ?
-        _closed = poles[poles.Lower()].Distance(poles[poles.Upper()]) <= Constants.Resolution();
+        _closed = poles[poles.Lower()].DistanceTo(poles[poles.Upper()]) <= Constants.Resolution();
 
         // set fields
         _poles.Resize(1, nbpoles, false);
@@ -783,7 +783,7 @@ public class BezierCurve2D : BoundedCurve2D
     }
 
     /// <summary>A copy with the pole P (weight Weight) inserted after the pole of index Index.</summary>
-    public BezierCurve2D PoleInsertedAfter(int index, in Point2D p, double weight = 1.0)
+    internal BezierCurve2D PoleInsertedAfter(int index, in Point2D p, double weight = 1.0)
     {
         BezierCurve2D copy = new BezierCurve2D(this);
         copy.InsertPoleAfter(index, p, weight);
@@ -791,7 +791,7 @@ public class BezierCurve2D : BoundedCurve2D
     }
 
     /// <summary>A copy with the pole P (weight Weight) inserted before the pole of index Index.</summary>
-    public BezierCurve2D PoleInsertedBefore(int index, in Point2D p, double weight = 1.0)
+    internal BezierCurve2D PoleInsertedBefore(int index, in Point2D p, double weight = 1.0)
     {
         BezierCurve2D copy = new BezierCurve2D(this);
         copy.InsertPoleBefore(index, p, weight);
@@ -799,7 +799,7 @@ public class BezierCurve2D : BoundedCurve2D
     }
 
     /// <summary>A copy without the pole of index Index.</summary>
-    public BezierCurve2D PoleRemoved(int index)
+    internal BezierCurve2D PoleRemoved(int index)
     {
         BezierCurve2D copy = new BezierCurve2D(this);
         copy.RemovePole(index);
@@ -815,7 +815,7 @@ public class BezierCurve2D : BoundedCurve2D
     }
 
     /// <summary>A copy with the pole of index Index replaced by P.</summary>
-    public BezierCurve2D WithPole(int index, in Point2D p)
+    internal BezierCurve2D WithPole(int index, in Point2D p)
     {
         BezierCurve2D copy = new BezierCurve2D(this);
         copy.SetPole(index, p);
@@ -823,7 +823,7 @@ public class BezierCurve2D : BoundedCurve2D
     }
 
     /// <summary>A copy with the pole of index Index replaced by P, of weight Weight.</summary>
-    public BezierCurve2D WithPole(int index, in Point2D p, double weight)
+    internal BezierCurve2D WithPole(int index, in Point2D p, double weight)
     {
         BezierCurve2D copy = new BezierCurve2D(this);
         copy.SetPole(index, p, weight);
@@ -831,7 +831,7 @@ public class BezierCurve2D : BoundedCurve2D
     }
 
     /// <summary>A copy with the weight of the pole of index Index changed to Weight.</summary>
-    public BezierCurve2D WithWeight(int index, double weight)
+    internal BezierCurve2D WithWeight(int index, double weight)
     {
         BezierCurve2D copy = new BezierCurve2D(this);
         copy.SetWeight(index, weight);
@@ -840,7 +840,7 @@ public class BezierCurve2D : BoundedCurve2D
 
     /// <summary>A copy evaluated through theDesc, which is copied (so later changes to theDesc don't affect it).</summary>
     /// <exception cref="ProgramErrorException">The descriptor is invalid.</exception>
-    public BezierCurve2D WithEvalRepresentation(RepCurveDesc2D.Base? desc)
+    internal BezierCurve2D WithEvalRepresentation(RepCurveDesc2D.Base? desc)
     {
         BezierCurve2D copy = new BezierCurve2D(this);
         RepUtils2D.ValidateCurveDesc(desc, this);
@@ -849,7 +849,7 @@ public class BezierCurve2D : BoundedCurve2D
     }
 
     /// <summary>A copy without an evaluation representation.</summary>
-    public BezierCurve2D WithoutEvalRepresentation()
+    internal BezierCurve2D WithoutEvalRepresentation()
     {
         BezierCurve2D copy = new BezierCurve2D(this);
         copy.ClearEvalRepresentation();

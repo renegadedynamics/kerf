@@ -395,7 +395,7 @@ internal static class ClassificationScenes
                     3 => 1e-2,
                     _ => -0.3,
                 };
-                if (anOffset != 0.0 && aN.Magnitude() > 1e-9)
+                if (anOffset != 0.0 && aN.Magnitude > 1e-9)
                 {
                     aP = aP.Translated(aN.Normalized().Multiplied(anOffset));
                 }

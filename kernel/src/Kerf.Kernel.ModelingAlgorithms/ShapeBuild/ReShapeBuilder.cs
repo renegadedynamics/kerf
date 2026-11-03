@@ -64,7 +64,7 @@ public class ReShapeBuilder : ReShape
             return newsh;
         }
 
-        ShapeType st = shape.ShapeType();
+        ShapeType st = shape.Type;
         if (st == until)
         {
             return newsh; // critere d arret
@@ -111,7 +111,7 @@ public class ReShapeBuilder : ReShape
                 {
                     modif = -1;
                 }
-                else if (newsh.ShapeType() != ShapeType.Shell)
+                else if (newsh.Type != ShapeType.Shell)
                 {
                     int nbsub = 0;
                     for (var exh = new Explorer(newsh, ShapeType.Shell); exh.More(); exh.Next())
@@ -162,7 +162,7 @@ public class ReShapeBuilder : ReShape
                 {
                     modif = -1;
                 }
-                else if (newsh.ShapeType() != ShapeType.Face)
+                else if (newsh.Type != ShapeType.Face)
                 {
                     int nbsub = 0;
                     for (var exf = new Explorer(newsh, ShapeType.Face); exf.More(); exf.Next())
@@ -252,7 +252,7 @@ public class ReShapeBuilder : ReShape
             return res;
         }
 
-        ShapeType st = shape.ShapeType();
+        ShapeType st = shape.Type;
         if (st >= until)
         {
             return newShape; // stop criterion
@@ -265,8 +265,8 @@ public class ReShapeBuilder : ReShape
         BrepBuilder builder = new();
 
         Shape result = shape.EmptyCopied();
-        Orientation orient = shape.Orientation();
-        result.Orientation(Forward); // protect against INTERNAL or EXTERNAL shapes
+        Orientation orient = shape.Orientation;
+        result.Orient(Forward); // protect against INTERNAL or EXTERNAL shapes
         bool modif = false;
         int locStatus = _status;
 
@@ -290,7 +290,7 @@ public class ReShapeBuilder : ReShape
                 continue;
             }
             locStatus |= global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE3);
-            if (st == ShapeType.Compound || newShape.ShapeType() == sh.ShapeType())
+            if (st == ShapeType.Compound || newShape.Type == sh.Type)
             {
                 // Fix for SAMTECH bug OCC322 about absence internal vertices after sewing
                 builder.Add(result, newShape);
@@ -300,7 +300,7 @@ public class ReShapeBuilder : ReShape
             for (var subIt = new Iterator(newShape); subIt.More(); subIt.Next(), nbItems++)
             {
                 Shape subSh = subIt.Value();
-                if (subSh.ShapeType() == sh.ShapeType())
+                if (subSh.Type == sh.Type)
                 {
                     builder.Add(result, subSh);
                 }
@@ -330,7 +330,7 @@ public class ReShapeBuilder : ReShape
         {
             result.Closed(Tool.IsClosed(result));
         }
-        result.Orientation(orient);
+        result.Orient(orient);
         _status = locStatus;
 
         ReplaceCore(shape, result, result.IsNull ? TReplacementKind.TReplacementKind_Remove : TReplacementKind.TReplacementKind_Modify);

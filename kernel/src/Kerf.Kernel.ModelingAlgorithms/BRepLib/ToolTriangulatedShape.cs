@@ -87,9 +87,9 @@ public static class ToolTriangulatedShape
         {
             Direction3D norm = NodeNormal(surf, tris, nodeIter, polyConnect);
             int k = 3 * (nodeIter - 1);
-            normals[k] = (float)norm.X();
-            normals[k + 1] = (float)norm.Y();
-            normals[k + 2] = (float)norm.Z();
+            normals[k] = (float)norm.X;
+            normals[k + 1] = (float)norm.Y;
+            normals[k + 2] = (float)norm.Z;
         }
         return true;
     }

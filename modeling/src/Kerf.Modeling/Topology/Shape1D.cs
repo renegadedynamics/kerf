@@ -70,7 +70,7 @@ public abstract partial class Shape1D : Shape
         {
             if (IsEmpty)
                 throw new InvalidOperationException("Can't determine direction of empty Edge or Wire");
-            return TopoShape.Orientation() == global::Kerf.Topology.Orientation.Forward;
+            return TopoShape.Orientation == global::Kerf.Topology.Orientation.Forward;
         }
     }
 
@@ -98,7 +98,7 @@ public abstract partial class Shape1D : Shape
             if (geom.GetType() != CurveKind.Circle)
                 throw new InvalidOperationException("Shape could not be reduced to a circle");
             var circle = geom.Circle();
-            return circle.Radius();
+            return circle.Radius;
         }
     }
 
@@ -219,7 +219,7 @@ public abstract partial class Shape1D : Shape
         }
         {
             var d = curve.DN(param, order);
-            if (d.Magnitude() == 0)
+            if (d.Magnitude == 0)
                 return new Vector(0, 0, 0);
             var derivative = new Vector(d);
             // An odd derivative runs the way the shape does
@@ -490,15 +490,15 @@ public abstract partial class Shape1D : Shape
             case GeomType.Circle:
             {
                 var circ = curve.Circle();
-                var axis = circ.Axis();
-                var dir = axis.Direction();
+                var axis = circ.Axis;
+                var dir = axis.Direction;
                 return new Vector(dir);
             }
             case GeomType.Ellipse:
             {
                 var ell = curve.Ellipse();
-                var axis = ell.Axis();
-                var dir = axis.Direction();
+                var axis = ell.Axis;
+                var dir = axis.Direction;
                 return new Vector(dir);
             }
             default:
@@ -506,9 +506,9 @@ public abstract partial class Shape1D : Shape
                 var finder = new FindSurface(TopoShape, -1, true);
                 var surface = finder.Surface();
                 var plane = (surface as PlaneSurface) ?? throw new InvalidOperationException("Normal not defined");
-                var pln = plane.Pln();
-                var axis = pln.Axis();
-                var dir = axis.Direction();
+                var pln = plane.Plane;
+                var axis = pln.Axis;
+                var dir = axis.Direction;
                 return new Vector(dir);
             }
         }

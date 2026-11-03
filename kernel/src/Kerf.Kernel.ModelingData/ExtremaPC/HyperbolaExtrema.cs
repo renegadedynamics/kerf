@@ -89,46 +89,46 @@ public sealed class HyperbolaExtrema : global::Kerf.Engine.Extrema.PointCurve.Ex
 
     private void CacheGeometry()
     {
-        Point3D center = _hyperbola.Location();
-        _centerX = center.X();
-        _centerY = center.Y();
-        _centerZ = center.Z();
+        Point3D center = _hyperbola.Location;
+        _centerX = center.X;
+        _centerY = center.Y;
+        _centerZ = center.Z;
 
-        Direction3D xDir = _hyperbola.XAxis().Direction();
-        _xDirX = xDir.X();
-        _xDirY = xDir.Y();
-        _xDirZ = xDir.Z();
+        Direction3D xDir = _hyperbola.XAxis.Direction;
+        _xDirX = xDir.X;
+        _xDirY = xDir.Y;
+        _xDirZ = xDir.Z;
 
-        Direction3D yDir = _hyperbola.YAxis().Direction();
-        _yDirX = yDir.X();
-        _yDirY = yDir.Y();
-        _yDirZ = yDir.Z();
+        Direction3D yDir = _hyperbola.YAxis.Direction;
+        _yDirX = yDir.X;
+        _yDirY = yDir.Y;
+        _yDirZ = yDir.Z;
 
-        Direction3D axis = _hyperbola.Axis().Direction();
-        _axisX = axis.X();
-        _axisY = axis.Y();
-        _axisZ = axis.Z();
+        Direction3D axis = _hyperbola.Axis.Direction;
+        _axisX = axis.X;
+        _axisY = axis.Y;
+        _axisZ = axis.Z;
 
-        _majorR = _hyperbola.MajorRadius();
-        _minorR = _hyperbola.MinorRadius();
+        _majorR = _hyperbola.MajorRadius;
+        _minorR = _hyperbola.MinorRadius;
         _r2PlusR2Over4 = (_majorR * _majorR + _minorR * _minorR) / 4.0;
     }
 
     private global::Kerf.Engine.Numerics.Utilities.MathUtils.PolyResult SolveQuartic(in Point3D p)
     {
         // Vector from center to point
-        double dx = p.X() - _centerX;
-        double dy = p.Y() - _centerY;
-        double dz = p.Z() - _centerZ;
+        double dx = p.X - _centerX;
+        double dy = p.Y - _centerY;
+        double dz = p.Z - _centerZ;
 
         // Project point P onto the hyperbola plane
         // Height = (P - Center) . Axis
         double height = dx * _axisX + dy * _axisY + dz * _axisZ;
 
         // Projected point Pp = P - Height * Axis
-        double ppX = p.X() - height * _axisX;
-        double ppY = p.Y() - height * _axisY;
-        double ppZ = p.Z() - height * _axisZ;
+        double ppX = p.X - height * _axisX;
+        double ppY = p.Y - height * _axisY;
+        double ppZ = p.Z - height * _axisZ;
 
         // Vector from center to projected point
         double oPpX = ppX - _centerX;
@@ -161,7 +161,7 @@ public sealed class HyperbolaExtrema : global::Kerf.Engine.Extrema.PointCurve.Ex
             {
                 _result.Status = global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Status.InfiniteSolutions;
                 Point3D ptOnCurve = Value(0.0);
-                _result.InfiniteSquareDistance = p.SquareDistance(ptOnCurve);
+                _result.InfiniteSquareDistance = p.SquareDistanceTo(ptOnCurve);
             }
             else
             {
@@ -194,7 +194,7 @@ public sealed class HyperbolaExtrema : global::Kerf.Engine.Extrema.PointCurve.Ex
             bool duplicate = false;
             for (int j = 0; j < _result._extrema.Count; ++j)
             {
-                if (curvePt.SquareDistance(_result._extrema[j].Point) < tol2)
+                if (curvePt.SquareDistanceTo(_result._extrema[j].Point) < tol2)
                 {
                     duplicate = true;
                     break;
@@ -204,7 +204,7 @@ public sealed class HyperbolaExtrema : global::Kerf.Engine.Extrema.PointCurve.Ex
                 continue;
 
             // Determine if minimum or maximum using neighbor comparison
-            double sqDist = p.SquareDistance(curvePt);
+            double sqDist = p.SquareDistanceTo(curvePt);
             double neighborU;
             if (domain.HasValue)
             {
@@ -218,7 +218,7 @@ public sealed class HyperbolaExtrema : global::Kerf.Engine.Extrema.PointCurve.Ex
                 neighborU = u + 1.0;
             }
             Point3D neighborPt = Value(neighborU);
-            double neighborDist = p.SquareDistance(neighborPt);
+            double neighborDist = p.SquareDistanceTo(neighborPt);
             bool isMin = sqDist < neighborDist;
 
             // Filter by search mode

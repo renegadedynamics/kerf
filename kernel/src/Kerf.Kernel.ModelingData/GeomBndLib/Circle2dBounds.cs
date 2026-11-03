@@ -16,7 +16,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Computes bounding box for a 2D circle (Geom2d_Circle), with analytical per-coordinate extrema. The static methods
 /// accepting gp_Circ2d can be used directly without constructing a Geom2d_Circle.
 /// </summary>
-public sealed class Circle2dBounds : Curve2dBounds.ICurve2dEvaluator
+internal sealed class Circle2dBounds : Curve2dBounds.ICurve2dEvaluator
 {
     private readonly CircleCurve2D _geom;
 
@@ -30,10 +30,10 @@ public sealed class Circle2dBounds : Curve2dBounds.ICurve2dEvaluator
     Curve2D? Curve2dBounds.ICurve2dEvaluator.CurveGeometry() => _geom;
 
     /// <summary>Compute bounding box for full circle.</summary>
-    public Box2d Box(double tol) => Box(_geom.Circ2d(), tol);
+    public Box2d Box(double tol) => Box(_geom.Circle, tol);
 
     /// <summary>Compute bounding box for arc [theU1, theU2].</summary>
-    public Box2d Box(double u1, double u2, double tol) => Box(_geom.Circ2d(), u1, u2, tol);
+    public Box2d Box(double u1, double u2, double tol) => Box(_geom.Circle, u1, u2, tol);
 
     /// <summary>For analytical curves, BoxOptimal is same as Box.</summary>
     public Box2d BoxOptimal(double u1, double u2, double tol) => Box(u1, u2, tol);
@@ -42,10 +42,10 @@ public sealed class Circle2dBounds : Curve2dBounds.ICurve2dEvaluator
     public static Box2d Box(in Circle2D circ, double tol)
     {
         Box2d box = new();
-        double r = circ.Radius();
-        Xy o = circ.Location().XY();
-        Xy xd = circ.XAxis().Direction().XY();
-        Xy yd = circ.YAxis().Direction().XY();
+        double r = circ.Radius;
+        Xy o = circ.Location.XY();
+        Xy xd = circ.XAxis.Direction.XY();
+        Xy yd = circ.YAxis.Direction.XY();
 
         // For a full circle, compute per-coordinate analytical extrema.
         Span<double> min = stackalloc double[2];
@@ -67,10 +67,10 @@ public sealed class Circle2dBounds : Curve2dBounds.ICurve2dEvaluator
     public static Box2d Box(in Circle2D circ, double u1, double u2, double tol)
     {
         Box2d box = new();
-        double r = circ.Radius();
-        Xy o = circ.Location().XY();
-        Xy xd = circ.XAxis().Direction().XY();
-        Xy yd = circ.YAxis().Direction().XY();
+        double r = circ.Radius;
+        Xy o = circ.Location.XY();
+        Xy xd = circ.XAxis.Direction.XY();
+        Xy yd = circ.YAxis.Direction.XY();
 
         if (u2 - u1 >= 2.0 * M_PI - global::Kerf.Engine.Foundation.Precision.PConfusion())
         {

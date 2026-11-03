@@ -24,7 +24,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// conversion is made for B-spline and Bezier surfaces, and for other surfaces that some analytical surface
 /// approximates within that tolerance. The surfaces returned are new, and the caller owns them.
 /// </summary>
-public sealed class SurfToAnaSurf
+internal sealed class SurfToAnaSurf
 {
     private Surface? _surf;
     private double _gap;
@@ -71,16 +71,16 @@ public sealed class SurfToAnaSurf
     //=================================================================================================
     private static void CheckVTrimForRevSurf(RevolutionSurface aRevSurf, ref double v1, ref double v2)
     {
-        Curve3D bc = aRevSurf.BasisCurve();
+        Curve3D bc = aRevSurf.BasisCurve;
         LineCurve3D? line = bc as LineCurve3D;
         if (line is null)
         {
             return;
         }
-        Axis3D axis = aRevSurf.Axis();
+        Axis3D axis = aRevSurf.Axis;
 
         Line3D aLin = new(axis);
-        ExtElC extLL = new(line.Lin(), aLin, global::Kerf.Engine.Foundation.Precision.Angular());
+        ExtElC extLL = new(line.Line, aLin, global::Kerf.Engine.Foundation.Precision.Angular());
         if (!extLL.IsDone || extLL.IsParallel)
         {
             return;
@@ -146,7 +146,7 @@ public sealed class SurfToAnaSurf
             firstiso = surf.VIso(v1);
             lastiso = surf.VIso(v2);
             midisocirc = vmidiso as CircleCurve3D;
-            isoline = ((LineCurve3D)umidiso).Lin().Direction();
+            isoline = ((LineCurve3D)umidiso).Line.Direction;
         }
         else
         {
@@ -155,7 +155,7 @@ public sealed class SurfToAnaSurf
             firstiso = surf.UIso(u1);
             lastiso = surf.UIso(u2);
             midisocirc = umidiso as CircleCurve3D;
-            isoline = ((LineCurve3D)vmidiso).Lin().Direction();
+            isoline = ((LineCurve3D)vmidiso).Line.Direction;
         }
         firstisocirc = CurveToAnaCurve.ComputeCurve(firstiso,
                                                                 toler,
@@ -181,27 +181,27 @@ public sealed class SurfToAnaSurf
             Point3D p1, p2, p3;
             if (firstisocirc is not null)
             {
-                r1 = firstisocirc.Circ().Radius();
-                p1 = firstisocirc.Circ().Location();
+                r1 = firstisocirc.Circle.Radius;
+                p1 = firstisocirc.Circle.Location;
             }
             else
             {
                 r1 = 0;
                 // OCCT: half the parameter range, not its middle (occt-issues.md)
-                p1 = firstiso.Value((firstiso.LastParameter() - firstiso.FirstParameter()) / 2);
+                p1 = firstiso.Value((firstiso.LastParameter - firstiso.FirstParameter) / 2);
             }
-            r2 = midisocirc!.Circ().Radius();
-            p2 = midisocirc.Circ().Location();
+            r2 = midisocirc!.Circle.Radius;
+            p2 = midisocirc.Circle.Location;
             if (lastisocirc is not null)
             {
-                r3 = lastisocirc.Circ().Radius();
-                p3 = lastisocirc.Circ().Location();
+                r3 = lastisocirc.Circle.Radius;
+                p3 = lastisocirc.Circle.Location;
             }
             else
             {
                 r3 = 0;
                 // OCCT: half the parameter range, not its middle (occt-issues.md)
-                p3 = lastiso.Value((lastiso.LastParameter() - lastiso.FirstParameter()) / 2);
+                p3 = lastiso.Value((lastiso.LastParameter - lastiso.FirstParameter) / 2);
             }
             // cylinder
             if (((Math.Abs(r2 - r1)) < toler) && ((Math.Abs(r3 - r1)) < toler)
@@ -216,7 +216,7 @@ public sealed class SurfToAnaSurf
             {
                 double radius;
                 CoordinateSystem axes;
-                double semiangle = new Vector3D(isoline).Angle(new Vector3D(p3, p1));
+                double semiangle = new Vector3D(isoline).AngleTo(new Vector3D(p3, p1));
                 if (semiangle > M_PI / 2)
                 {
                     semiangle = M_PI - semiangle;
@@ -243,13 +243,13 @@ public sealed class SurfToAnaSurf
     {
         gap = 0.0;
         int i;
-        Xyz loc = pos.Location().XYZ();
-        Direction3D dir = pos.Direction();
+        Xyz loc = pos.Location.XYZ();
+        Direction3D dir = pos.Direction;
         for (i = points.Lower(); i <= points.Upper(); ++i)
         {
             Vector3D d = new(points.Value(i) - loc);
             d = d.Crossed(new Vector3D(dir));
-            gap = Max(gap, Math.Abs((d.Magnitude() - r)));
+            gap = Max(gap, Math.Abs((d.Magnitude - r)));
         }
     }
 
@@ -278,9 +278,9 @@ public sealed class SurfToAnaSurf
                               //[R - aRelDev*R, R + aRelDev*R]. This interval is set
                               //  for R as boundary values for optimization algo.
 
-        startPoint[1] = pos.Location().X();
-        startPoint[2] = pos.Location().Y();
-        startPoint[3] = pos.Location().Z();
+        startPoint[1] = pos.Location.X;
+        startPoint[2] = pos.Location.Y;
+        startPoint[3] = pos.Location.Z;
         startPoint[4] = r;
         double dr = relDev * r;
         double dxyz = dr;
@@ -295,7 +295,7 @@ public sealed class SurfToAnaSurf
         //
         double aTol = global::Kerf.Engine.Foundation.Precision.Confusion();
         MultipleVarFunction pFunc;
-        FuncCylinderLSDist funcCyl = new(points, pos.Direction());
+        FuncCylinderLSDist funcCyl = new(points, pos.Direction);
         pFunc = funcCyl;
         //
         math_Vector steps = new(1, nbVar);
@@ -326,10 +326,10 @@ public sealed class SurfToAnaSurf
 
         // Set search direction for location to be perpendicular to axis to avoid
         // searching along axis
-        Direction3D dir = pos.Direction();
-        Plane3D pln = new(pos.Location(), dir);
-        Direction3D uDir = pln.Position().XDirection();
-        Direction3D vDir = pln.Position().YDirection();
+        Direction3D dir = pos.Direction;
+        Plane3D pln = new(pos.Location, dir);
+        Direction3D uDir = pln.Position.XDirection;
+        Direction3D vDir = pln.Position.YDirection;
         for (i = 1; i <= 3; ++i)
         {
             dirMatrix[i, 1] = uDir.Coord(i);
@@ -493,8 +493,8 @@ public sealed class SurfToAnaSurf
 
         if (leastSquare)
         {
-            CoordinateSystem pos = cyl.Position();
-            double r = cyl.Radius();
+            CoordinateSystem pos = cyl.Position;
+            double r = cyl.Radius;
             bool isDone = GetCylByLS(points!, toler, ref pos, ref r, out double _);
             if (isDone)
             {
@@ -526,7 +526,7 @@ public sealed class SurfToAnaSurf
         Curve3D isoCrv2;
         double gap1 = 0.0, gap2 = 0.0;
         // initial radius
-        double r = circle.Circ().Radius();
+        double r = circle.Circle.Radius;
         // iso lines
 
         if (isTryUMajor)
@@ -563,8 +563,8 @@ public sealed class SurfToAnaSurf
             return newSurface;
         }
 
-        double r1 = circle1.Circ().Radius();
-        double r2 = circle2.Circ().Radius();
+        double r1 = circle1.Circle.Radius;
+        double r2 = circle2.Circle.Radius;
 
         // check radiuses
         if ((Math.Abs(r - r1) > toler) || (Math.Abs(r - r2) > toler))
@@ -574,20 +574,20 @@ public sealed class SurfToAnaSurf
 
         // get centers of the major radius
         Point3D pnt1, pnt2, pnt3;
-        pnt1 = circle.Circ().Location();
-        pnt2 = circle1.Circ().Location();
-        pnt3 = circle2.Circ().Location();
+        pnt1 = circle.Circle.Location;
+        pnt2 = circle1.Circle.Location;
+        pnt3 = circle2.Circle.Location;
 
         // double eps = 1.e-09;  // angular resolution
-        double d0 = pnt1.Distance(pnt2);
-        double d1 = pnt1.Distance(pnt3);
+        double d0 = pnt1.DistanceTo(pnt2);
+        double d1 = pnt1.DistanceTo(pnt3);
         Circle3D circ = new();
 
         if (d0 < toler || d1 < toler)
         {
             // compute sphere
-            Direction3D mainDir = otherCircle.Circ().Axis().Direction();
-            CoordinateSystem axes = new(circle.Circ().Location(), mainDir);
+            Direction3D mainDir = otherCircle.Circle.Axis.Direction;
+            CoordinateSystem axes = new(circle.Circle.Location, mainDir);
             SphericalSurface anObject = new(axes, r);
             newSurface = anObject;
 
@@ -599,8 +599,8 @@ public sealed class SurfToAnaSurf
             return newSurface;
         }
 
-        double majorR = circ.Radius();
-        Point3D center = circ.Location();
+        double majorR = circ.Radius;
+        Point3D center = circ.Location;
         Direction3D dir = new((pnt1.XYZ() - center.XYZ()) ^ (pnt3.XYZ() - center.XYZ()));
         CoordinateSystem ax3 = new(center, dir);
         newSurface = new ToroidalSurface(ax3, majorR, r);
@@ -704,7 +704,7 @@ public sealed class SurfToAnaSurf
                         break;
                 }
 
-                double dis = p3d.Distance(p3d2);
+                double dis = p3d.DistanceTo(p3d2);
                 if (dis > gap)
                 {
                     gap = dis;
@@ -729,7 +729,7 @@ public sealed class SurfToAnaSurf
     public Surface? ConvertToAnalytical(double initialToler)
     {
         double u1, u2, v1, v2;
-        _surf!.Bounds(out u1, out u2, out v1, out v2);
+        _surf!.ParameterBounds(out u1, out u2, out v1, out v2);
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(u1) && global::Kerf.Engine.Foundation.Precision.IsInfinite(u2))
         {
             u1 = -1.0;
@@ -797,7 +797,7 @@ public sealed class SurfToAnaSurf
 
         // Check boundaries
         double u1, u2, v1, v2;
-        _surf!.Bounds(out u1, out u2, out v1, out v2);
+        _surf!.ParameterBounds(out u1, out u2, out v1, out v2);
         bool doSegment = false;
         double tolBnd = global::Kerf.Engine.Foundation.Precision.PConfusion();
         int isurf = 0;
@@ -881,7 +881,7 @@ public sealed class SurfToAnaSurf
         }
 
         // OCCT: evaluates at U1 + U2, not at the middle (U1 + U2) / 2 (occt-issues.md)
-        double diagonal = _surf.Value(u1, v1).Distance(_surf.Value((u1 + u2), (v1 + v2) / 2));
+        double diagonal = _surf.Value(u1, v1).DistanceTo(_surf.Value((u1 + u2), (v1 + v2) / 2));
         double twist = 1000;
         if (toler > diagonal / twist)
         {

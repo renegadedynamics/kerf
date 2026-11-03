@@ -51,19 +51,19 @@ public readonly partial struct Parabola2D : IEquatable<Parabola2D>
     /// </summary>
     public Parabola2D(in Axis2D directrix, in Point2D focus, bool sense = true)
     {
-        Point2D dirLoc = directrix.Location();
-        Direction2D dirVec = directrix.Direction();
+        Point2D dirLoc = directrix.Location;
+        Direction2D dirVec = directrix.Direction;
 
         Vector2D fVec = new(dirLoc, focus);
 
         Point2D origin = new(dirLoc.XY() + dirVec.XY() * (fVec.Dot(new Vector2D(dirVec))));
         Point2D apex = new(0.5 * (origin.XY() + focus.XY()));
 
-        _focalLength = 0.5 * origin.Distance(focus);
+        _focalLength = 0.5 * origin.DistanceTo(focus);
 
         Direction2D xDir = (_focalLength > 0.0)
                              ? new Direction2D(focus.XY() - origin.XY())
-                             : directrix.Rotated(dirLoc, sense ? -M_PI_2 : M_PI_2).Direction();
+                             : directrix.Rotated(dirLoc, sense ? -M_PI_2 : M_PI_2).Direction;
 
         _pos = new Frame2D(apex, xDir, dirVec);
     }
@@ -108,7 +108,7 @@ public readonly partial struct Parabola2D : IEquatable<Parabola2D>
     public readonly void Coefficients(out double a, out double b, out double c, out double d, out double e, out double f)
     {
         double p = 2.0 * _focalLength;
-        Transform2D t = new Transform2D().WithTransformation(_pos.XAxis());
+        Transform2D t = new Transform2D().WithTransformation(_pos.XAxis);
         double t11 = t.Value(1, 1);
         double t12 = t.Value(1, 2);
         double t13 = t.Value(1, 3);
@@ -124,39 +124,42 @@ public readonly partial struct Parabola2D : IEquatable<Parabola2D>
     }
 
     /// <summary>The directrix: normal to the axis of symmetry, at the focal length on the side opposite the focus.</summary>
-    public readonly Axis2D Directrix()
+    public readonly Axis2D Directrix
     {
-        Point2D p = new(_pos.Location().X() - _focalLength * _pos.XDirection().X(),
-                          _pos.Location().Y() - _focalLength * _pos.XDirection().Y());
-        Direction2D v = _pos.YDirection();
-        return new Axis2D(p, v);
+        get
+        {
+            Point2D p = new(_pos.Location.X - _focalLength * _pos.XDirection.X,
+                              _pos.Location.Y - _focalLength * _pos.XDirection.Y);
+            Direction2D v = _pos.YDirection;
+            return new Axis2D(p, v);
+        }
     }
 
     /// <summary>The distance between the apex and the focus.</summary>
-    public readonly double Focal() => _focalLength;
+    public readonly double Focal => _focalLength;
 
-    public readonly Point2D Focus()
-        => new(_pos.Location().X() + _focalLength * _pos.XDirection().X(),
-               _pos.Location().Y() + _focalLength * _pos.XDirection().Y());
+    public readonly Point2D Focus
+        => new(_pos.Location.X + _focalLength * _pos.XDirection.X,
+               _pos.Location.Y + _focalLength * _pos.XDirection.Y);
 
-    public readonly Point2D Location() => _pos.Location();
+    public readonly Point2D Location => _pos.Location;
 
-    public readonly Axis2D MirrorAxis() => _pos.XAxis();
+    public readonly Axis2D MirrorAxis => _pos.XAxis;
 
-    public readonly Frame2D Axis() => _pos;
+    public readonly Frame2D Axis => _pos;
 
     /// <summary>The parameter: the distance between the focus and the directrix (2 * focal length).</summary>
-    public readonly double Parameter() => 2.0 * _focalLength;
+    public readonly double Parameter => 2.0 * _focalLength;
 
     /// <summary>True when the parabola's system is direct (counterclockwise).</summary>
-    public readonly bool IsDirect => (_pos.XDirection().Crossed(_pos.YDirection())) >= 0.0;
+    public readonly bool IsDirect => (_pos.XDirection.Crossed(_pos.YDirection)) >= 0.0;
 
     public readonly Parabola2D Reversed()
     {
         Frame2D pos = _pos;
-        Direction2D temp = _pos.YDirection();
+        Direction2D temp = _pos.YDirection;
         temp = temp.Reversed();
-        pos = pos.WithAxis(new Frame2D(_pos.Location(), _pos.XDirection(), temp));
+        pos = pos.WithAxis(new Frame2D(_pos.Location, _pos.XDirection, temp));
         return new Parabola2D(pos, _focalLength);
     }
 
@@ -199,7 +202,7 @@ public readonly partial struct Parabola2D : IEquatable<Parabola2D>
     {
         Frame2D pos = _pos;
         double focalLength = _focalLength;
-        focalLength *= t.ScaleFactor();
+        focalLength *= t.ScaleFactor;
         if (focalLength < 0)
         {
             focalLength = -focalLength;

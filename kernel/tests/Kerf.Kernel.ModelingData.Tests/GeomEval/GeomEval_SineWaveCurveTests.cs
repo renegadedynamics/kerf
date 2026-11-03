@@ -41,16 +41,16 @@ public class GeomEval_SineWaveCurveTest
 
         // t=0: C(0) = (0, 0, 0) since sin(0)=0
         Point3D aP0 = aCurve.EvalD0(0.0);
-        Assert.Equal(0.0, aP0.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aP0.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aP0.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aP0.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aP0.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aP0.Z, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // t = Pi/(2*omega): C = (Pi/(2*omega), A, 0) since sin(Pi/2)=1
         double aT1 = M_PI / (2.0 * aOm);
         Point3D aP1 = aCurve.EvalD0(aT1);
-        Assert.Equal(aT1, aP1.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(aA, aP1.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aP1.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aT1, aP1.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aA, aP1.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aP1.Z, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -59,7 +59,7 @@ public class GeomEval_SineWaveCurveTest
         Frame3D anAx2 = new();
         SineWaveCurve aCurve = new(anAx2, 2.0, 3.0, 0.0);
         Assert.False(aCurve.IsPeriodic);
-        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aCurve.Period());
+        Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aCurve.Period);
         Assert.False(aCurve.IsClosed);
     }
 
@@ -84,9 +84,9 @@ public class GeomEval_SineWaveCurveTest
         Point3D aP2 = aCurve.EvalD0(aT - global::Kerf.Engine.Foundation.Precision.Confusion());
         Vector3D aFD = new((aP1.XYZ() - aP2.XYZ()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
 
-        Assert.Equal(aFD.X(), aD1.D1.X(), THE_FD_TOL);
-        Assert.Equal(aFD.Y(), aD1.D1.Y(), THE_FD_TOL);
-        Assert.Equal(aFD.Z(), aD1.D1.Z(), THE_FD_TOL);
+        Assert.Equal(aFD.X, aD1.D1.X, THE_FD_TOL);
+        Assert.Equal(aFD.Y, aD1.D1.Y, THE_FD_TOL);
+        Assert.Equal(aFD.Z, aD1.D1.Z, THE_FD_TOL);
     }
 
     [Fact]
@@ -101,9 +101,9 @@ public class GeomEval_SineWaveCurveTest
 
         // D2 = -A*omega^2*sin(omega*t+phi)*YDir = (0, -A*om^2*sin(...), 0)
         double aExpY = -aA * aOm * aOm * Math.Sin(aOm * aT + aPhi);
-        Assert.Equal(0.0, aD2.D2.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(aExpY, aD2.D2.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aD2.D2.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aD2.D2.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aExpY, aD2.D2.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aD2.D2.Z, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -116,8 +116,8 @@ public class GeomEval_SineWaveCurveTest
         const double aT = 1.0;
 
         Curve3D.ResD3 aD3 = aCurve.EvalD3(aT);
-        Assert.Equal(0.0, aD3.D2.Magnitude(), 1e-5);
-        Assert.Equal(0.0, aD3.D3.Magnitude(), 1e-5);
+        Assert.Equal(0.0, aD3.D2.Magnitude, 1e-5);
+        Assert.Equal(0.0, aD3.D3.Magnitude, 1e-5);
     }
 
     [Fact]

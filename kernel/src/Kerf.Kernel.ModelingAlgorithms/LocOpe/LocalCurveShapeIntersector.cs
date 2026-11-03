@@ -384,7 +384,7 @@ public sealed class LocalCurveShapeIntersector
         {
             Point3D thept = theInt.Pnt();
             Face theface = theInt.Face();
-            orface = theface.Orientation();
+            orface = theface.Orientation;
             param = theInt.W();
             paramu = theInt.U();
             paramv = theInt.V();

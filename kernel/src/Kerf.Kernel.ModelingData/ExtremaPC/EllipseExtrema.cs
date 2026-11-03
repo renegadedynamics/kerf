@@ -77,19 +77,19 @@ public sealed class EllipseExtrema : global::Kerf.Engine.Extrema.PointCurve.Extr
         double theUMax = domain.Max;
 
         // Step 1: Project point P onto the ellipse plane
-        Point3D center = _ellipse.Location();
-        Direction3D axis = _ellipse.Axis().Direction();
+        Point3D center = _ellipse.Location;
+        Direction3D axis = _ellipse.Axis.Direction;
         Vector3D toP = new(center, p);
         double height = toP.Dot(new Vector3D(axis));
         Vector3D trsl = new Vector3D(axis) * (-height);
         Point3D pp = p.Translated(trsl);
 
         // Step 2: Get ellipse radii and compute local coordinates
-        double a = _ellipse.MajorRadius();
-        double b = _ellipse.MinorRadius();
+        double a = _ellipse.MajorRadius;
+        double b = _ellipse.MinorRadius;
 
         Vector3D oPp = new(center, pp);
-        double oPpMag = oPp.Magnitude();
+        double oPpMag = oPp.Magnitude;
 
         // Check for degenerate case: point at center with circular ellipse
         if (oPpMag < tol)
@@ -105,8 +105,8 @@ public sealed class EllipseExtrema : global::Kerf.Engine.Extrema.PointCurve.Extr
         }
 
         // Local coordinates
-        double x = oPp.Dot(new Vector3D(_ellipse.XAxis().Direction()));
-        double y = oPp.Dot(new Vector3D(_ellipse.YAxis().Direction()));
+        double x = oPp.Dot(new Vector3D(_ellipse.XAxis.Direction));
+        double y = oPp.Dot(new Vector3D(_ellipse.YAxis.Direction));
 
         // Step 3: Solve trigonometric equation
         // (B^2 - A^2)*cos*sin - B*Y*cos + A*X*sin = 0
@@ -127,7 +127,7 @@ public sealed class EllipseExtrema : global::Kerf.Engine.Extrema.PointCurve.Extr
                 _result.Status = global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Status.InfiniteSolutions;
                 // For infinite case, compute distance to any point (use U=0)
                 Point3D ptOnCurve = global::Kerf.Engine.Geometry.ElCLib.Value(0.0, _ellipse);
-                _result.InfiniteSquareDistance = p.SquareDistance(ptOnCurve);
+                _result.InfiniteSquareDistance = p.SquareDistanceTo(ptOnCurve);
             }
             else
             {
@@ -161,13 +161,13 @@ public sealed class EllipseExtrema : global::Kerf.Engine.Extrema.PointCurve.Extr
             {
                 return;
             }
-            if (curvePt.SquareDistance(_result._extrema[j].Point) < aTol2)
+            if (curvePt.SquareDistanceTo(_result._extrema[j].Point) < aTol2)
             {
                 return;
             }
         }
 
-        double sqDist = p.SquareDistance(curvePt);
+        double sqDist = p.SquareDistanceTo(curvePt);
 
         // Determine if this is a minimum or maximum by checking neighboring points
         // Use step relative to parameter range
@@ -175,8 +175,8 @@ public sealed class EllipseExtrema : global::Kerf.Engine.Extrema.PointCurve.Extr
                            (uMax - uMin) * global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.THE_NEIGHBOR_STEP_RATIO);
         Point3D ptPlus = global::Kerf.Engine.Geometry.ElCLib.Value(aU + step, _ellipse);
         Point3D ptMinus = global::Kerf.Engine.Geometry.ElCLib.Value(aU - step, _ellipse);
-        double distPlus = p.SquareDistance(ptPlus);
-        double distMinus = p.SquareDistance(ptMinus);
+        double distPlus = p.SquareDistanceTo(ptPlus);
+        double distMinus = p.SquareDistanceTo(ptMinus);
         bool isMin = (sqDist <= distPlus) && (sqDist <= distMinus);
 
         // Filter by search mode

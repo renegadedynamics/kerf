@@ -38,16 +38,16 @@ public class ShapeExtendHealingTests
         var see = new ExtendExplorer();
 
         Shape aFaces = see.SortedCompound(aBox, ShapeType.Face, true, false);
-        Assert.Equal(ShapeType.Compound, aFaces.ShapeType());
+        Assert.Equal(ShapeType.Compound, aFaces.Type);
         Assert.True(aFaces.TShape()!.IsFrozen);
         Assert.Equal(ShapeType.Face, see.ShapeType(aFaces, true));
         Assert.Equal(6, see.SeqFromCompound(aFaces, false).Length());
 
         // a single shell is returned itself; an edge asked as a wire becomes a wire
         Shape aShell = see.SortedCompound(aBox, ShapeType.Shell, true, false);
-        Assert.Equal(ShapeType.Shell, aShell.ShapeType());
+        Assert.Equal(ShapeType.Shell, aShell.Type);
         Shape anEdge = new Explorer(aBox, ShapeType.Edge).Current();
-        Assert.Equal(ShapeType.Wire, see.SortedCompound(anEdge, ShapeType.Wire, false, false).ShapeType());
+        Assert.Equal(ShapeType.Wire, see.SortedCompound(anEdge, ShapeType.Wire, false, false).Type);
         Assert.True(see.SortedCompound(aBox, ShapeType.Face, false, false).IsNull); // no exploration of a solid
 
         // nested compounds, mixed types
@@ -86,14 +86,14 @@ public class ShapeExtendHealingTests
         var aSurf = new CompositeSurface(Grid());
         Assert.Equal(2, aSurf.UPatchCount);
         Assert.Equal(1, aSurf.VPatchCount);
-        aSurf.Bounds(out double U1, out double U2, out double V1, out double V2);
+        aSurf.ParameterBounds(out double U1, out double U2, out double V1, out double V2);
         Assert.Equal((0.0, 30.0, 0.0, 5.0), (U1, U2, V1, V2));
         Assert.Equal(1, aSurf.LocateUParameter(5));
         Assert.Equal(2, aSurf.LocateUParameter(15));
         Assert.Equal(2, aSurf.LocateUParameter(100)); // the last outside the range
         Assert.False(aSurf.IsUClosed);
         Assert.False(aSurf.IsUPeriodic);
-        Assert.Equal(Continuity.C0, aSurf.Continuity());
+        Assert.Equal(Continuity.C0, aSurf.Continuity);
 
         Point3D aP = aSurf.Value(new Point2D(15, 2));
         Assert.Equal(new Point3D(15, 2, 0), aP);
@@ -114,8 +114,8 @@ public class ShapeExtendHealingTests
         Assert.Equal(2.0, aSurf.UJointValue(3));
         Assert.Equal(1, aSurf.LocateUParameter(0.5));
         Point3D aP = aSurf.Value(new Point2D(1.5, 0.5));
-        Assert.Equal(20.0, aP.X(), 1e-12);
-        Assert.Equal(2.5, aP.Y(), 1e-12);
+        Assert.Equal(20.0, aP.X, 1e-12);
+        Assert.Equal(2.5, aP.Y, 1e-12);
         Assert.True(aSurf.GlobalToLocalTransformation(2, 1, out _, out _));
 
         // bad joints (not increasing): natural ones instead
@@ -168,8 +168,8 @@ public class ShapeExtendHealingTests
         var aT = new Transform3D();
         aT = aT.WithTranslation(new Vector3D(0, 0, 1));
         var aMoved = (CompositeSurface)aSurf.Transformed(aT);
-        Assert.Equal(1.0, aMoved.Value(new Point2D(5, 1)).Z());
-        Assert.Equal(0.0, aSurf.Value(new Point2D(5, 1)).Z());
+        Assert.Equal(1.0, aMoved.Value(new Point2D(5, 1)).Z);
+        Assert.Equal(0.0, aSurf.Value(new Point2D(5, 1)).Z);
 
         aSurf.Freeze();
         Assert.ThrowsAny<ImmutableObjectException>(() => aSurf.SetUFirstValue(1));

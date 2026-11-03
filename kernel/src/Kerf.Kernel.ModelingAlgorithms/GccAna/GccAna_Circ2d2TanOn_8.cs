@@ -32,8 +32,8 @@ public sealed partial class AnalyticCirc2d2TanOn
         NCollection_Array1<double> radius = new(1, 2);
         Direction2D dirx = new(Direction2D.D.X);
         Circle2D c1 = qualified1.Qualified();
-        double r1 = c1.Radius();
-        Point2D center1 = c1.Location();
+        double r1 = c1.Radius;
+        Point2D center1 = c1.Location;
 
         //=========================================================================
         //   Processing of boundary cases.                                          +
@@ -41,17 +41,17 @@ public sealed partial class AnalyticCirc2d2TanOn
 
         int nbsol1 = 1;
         //  int nbsol2 = 0;
-        double ron = onCirc.Radius();
-        double distcco = onCirc.Location().Distance(center1);
+        double ron = onCirc.Radius;
+        double distcco = onCirc.Location.DistanceTo(center1);
         Point2D pinterm = new();
         Direction2D dircc = new();
         bool sameCenter = false;
-        if (!onCirc.Location().IsEqual(center1, global::Kerf.Engine.Foundation.Precision.Confusion()))
+        if (!onCirc.Location.IsEqual(center1, global::Kerf.Engine.Foundation.Precision.Confusion()))
         {
-            dircc = new Direction2D(onCirc.Location().XY() - center1.XY());
+            dircc = new Direction2D(onCirc.Location.XY() - center1.XY());
             pinterm = new Point2D(center1.XY() + (distcco - ron) * dircc.XY());
-            double distcc2 = pinterm.Distance(point2);
-            double distcc1 = pinterm.Distance(center1);
+            double distcc2 = pinterm.DistanceTo(point2);
+            double distcc1 = pinterm.DistanceTo(center1);
             double d1 = Math.Abs(distcc2 - Math.Abs(distcc1 - r1));
             double d2 = Math.Abs(distcc2 - (distcc1 + r1));
             if (d1 > tol || d2 > tol)
@@ -60,8 +60,8 @@ public sealed partial class AnalyticCirc2d2TanOn
                 {
                     pinterm = new Point2D(center1.XY() + (distcco + ron) * dircc.XY());
                 }
-                distcc2 = pinterm.Distance(point2);
-                distcc1 = pinterm.Distance(center1);
+                distcc2 = pinterm.DistanceTo(point2);
+                distcc1 = pinterm.DistanceTo(center1);
                 d1 = Math.Abs(distcc2 - Math.Abs(distcc1 - r1));
                 d2 = Math.Abs(distcc2 - (distcc1 + r1));
                 if (d1 > tol || d2 > tol)
@@ -126,7 +126,7 @@ public sealed partial class AnalyticCirc2d2TanOn
                             _pnttg1sol[_nbrSol] = new Point2D(pinterm.XY());
                         }
                         _pnttg2sol[_nbrSol] = point2;
-                        _pntcen[_nbrSol] = _cirsol[_nbrSol].Location();
+                        _pntcen[_nbrSol] = _cirsol[_nbrSol].Location;
                         _par1sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);
                         _pararg1[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(c1, _pnttg1sol[_nbrSol]);
                         _par2sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg2sol[_nbrSol]);
@@ -177,7 +177,7 @@ public sealed partial class AnalyticCirc2d2TanOn
                         for (int j = 1; j <= intp.PointCount; j++)
                         {
                             Point2D center = intp.Point(j).Value();
-                            double dist1 = center1.Distance(center);
+                            double dist1 = center1.DistanceTo(center);
                             int nbsol = 1;
                             bool ok = false;
                             // OCCT: the radius follows Qualified1 only, whichever branch of the bisector the centre is
@@ -185,31 +185,31 @@ public sealed partial class AnalyticCirc2d2TanOn
                             // through Point2
                             if (qualified1.IsEnclosed)
                             {
-                                if (dist1 - c1.Radius() <= tol)
+                                if (dist1 - c1.Radius <= tol)
                                 {
                                     ok = true;
-                                    radius[1] = Math.Abs(c1.Radius() - dist1);
+                                    radius[1] = Math.Abs(c1.Radius - dist1);
                                 }
                             }
                             else if (qualified1.IsOutside)
                             {
-                                if (c1.Radius() - dist1 <= tol)
+                                if (c1.Radius - dist1 <= tol)
                                 {
                                     ok = true;
-                                    radius[1] = Math.Abs(c1.Radius() - dist1);
+                                    radius[1] = Math.Abs(c1.Radius - dist1);
                                 }
                             }
                             else if (qualified1.IsEnclosing)
                             {
                                 ok = true;
-                                radius[1] = c1.Radius() + dist1;
+                                radius[1] = c1.Radius + dist1;
                             }
                             else if (qualified1.IsUnqualified)
                             {
                                 ok = true;
                                 nbsol = 2;
-                                radius[1] = Math.Abs(c1.Radius() - dist1);
-                                radius[2] = c1.Radius() + dist1;
+                                radius[1] = Math.Abs(c1.Radius - dist1);
+                                radius[2] = c1.Radius + dist1;
                             }
                             if (ok)
                             {
@@ -220,7 +220,7 @@ public sealed partial class AnalyticCirc2d2TanOn
                                     {
                                         continue;
                                     }
-                                    if (onCirc.Distance(center) > tol)
+                                    if (onCirc.DistanceTo(center) > tol)
                                     {
                                         continue;
                                     }
@@ -231,7 +231,7 @@ public sealed partial class AnalyticCirc2d2TanOn
                                     _nbrSol++;
                                     _cirsol[_nbrSol] = new Circle2D(new Axis2D(center, dirx), radius[k]);
                                     //              ==========================================================
-                                    double distcc1 = center.Distance(center1);
+                                    double distcc1 = center.DistanceTo(center1);
                                     if (!qualified1.IsUnqualified)
                                     {
                                         _qualifier1[_nbrSol] = qualified1.Qualifier();
@@ -249,7 +249,7 @@ public sealed partial class AnalyticCirc2d2TanOn
                                         _qualifier1[_nbrSol] = Qualifier.Enclosing;
                                     }
                                     _qualifier2[_nbrSol] = Qualifier.Noqualifier;
-                                    if (distcc1 <= tol && Math.Abs(radius[k] - c1.Radius()) <= tol)
+                                    if (distcc1 <= tol && Math.Abs(radius[k] - c1.Radius) <= tol)
                                     {
                                         _theSame1[_nbrSol] = 1;
                                     }

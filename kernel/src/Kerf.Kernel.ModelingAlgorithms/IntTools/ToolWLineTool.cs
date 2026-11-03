@@ -39,12 +39,12 @@ public static class ToolWLineTool
         bool bFlag = true;
         double us1, us2, vs1, vs2, dY, dX, d1, d2, dD;
         double xm, ym, xb, yb, xe, ye;
-        aS.Bounds(out us1, out us2, out vs1, out vs2);
+        aS.ParameterBounds(out us1, out us2, out vs1, out vs2);
 
         Point3D pm, pb, pe;
 
-        xm = aP2d.X();
-        ym = aP2d.Y();
+        xm = aP2d.X;
+        ym = aP2d.Y;
 
         aS.D0(xm, ym, out pm);
 
@@ -69,8 +69,8 @@ public static class ToolWLineTool
             aS.D0(xb, yb, out pb);
             aS.D0(xe, ye, out pe);
 
-            d1 = pm.Distance(pb);
-            d2 = pm.Distance(pe);
+            d1 = pm.DistanceTo(pb);
+            d2 = pm.DistanceTo(pe);
             if (d1 < dD && d2 < dD)
             {
                 return bFlag;
@@ -95,8 +95,8 @@ public static class ToolWLineTool
             aS.D0(xb, yb, out pb);
             aS.D0(xe, ye, out pe);
 
-            d1 = pm.Distance(pb);
-            d2 = pm.Distance(pe);
+            d1 = pm.DistanceTo(pb);
+            d2 = pm.DistanceTo(pe);
             if (d1 < dD && d2 < dD)
             {
                 return bFlag;
@@ -115,11 +115,11 @@ public static class ToolWLineTool
         Point2D p2d = new();
 
         Surface s1 = Tool.Surface(aF1)!;
-        s1.Bounds(out us11, out us12, out vs11, out vs12);
+        s1.ParameterBounds(out us11, out us12, out vs11, out vs12);
         SurfaceAdaptor gas1 = new(s1);
 
         Surface s2 = Tool.Surface(aF2)!;
-        s1.Bounds(out us21, out us22, out vs21, out vs22); // OCCT reads the first surface's bounds for the second
+        s1.ParameterBounds(out us21, out us22, out vs21, out vs22); // OCCT reads the first surface's bounds for the second
         SurfaceAdaptor gas2 = new(s2);
         //
         aP2S.Parameters(out u1, out v1, out u2, out v2);
@@ -273,8 +273,8 @@ public static class ToolWLineTool
 
             for (int pIt = -1; pIt <= 1; pIt++)
             {
-                pTest = pTest.WithX(originalPoint.X() + period * pIt);
-                double dd = ap1.SquareDistance(pTest);
+                pTest = pTest.WithX(originalPoint.X + period * pIt);
+                double dd = ap1.SquareDistanceTo(pTest);
 
                 if (dd < sqDistMin)
                 {
@@ -291,8 +291,8 @@ public static class ToolWLineTool
 
             for (int pIt = -1; pIt <= 1; pIt++)
             {
-                pTest = pTest.WithY(originalPoint.Y() + period * pIt);
-                double dd = ap1.SquareDistance(pTest);
+                pTest = pTest.WithY(originalPoint.Y + period * pIt);
+                double dd = ap1.SquareDistanceTo(pTest);
 
                 if (dd < sqDistMin)
                 {
@@ -397,13 +397,13 @@ public static class ToolWLineTool
 
             if ((i % 2) == 0)
             {
-                adist = (i < 2) ? Math.Abs(lastPoint.X() - umin) : Math.Abs(lastPoint.X() - umax);
-                bIsOut = (i < 2) ? (lastPoint.X() < umin) : (lastPoint.X() > umax);
+                adist = (i < 2) ? Math.Abs(lastPoint.X - umin) : Math.Abs(lastPoint.X - umax);
+                bIsOut = (i < 2) ? (lastPoint.X < umin) : (lastPoint.X > umax);
             }
             else
             {
-                adist = (i < 2) ? Math.Abs(lastPoint.Y() - vmin) : Math.Abs(lastPoint.Y() - vmax);
-                bIsOut = (i < 2) ? (lastPoint.Y() < vmin) : (lastPoint.Y() > vmax);
+                adist = (i < 2) ? Math.Abs(lastPoint.Y - vmin) : Math.Abs(lastPoint.Y - vmax);
+                bIsOut = (i < 2) ? (lastPoint.Y < vmin) : (lastPoint.Y > vmax);
             }
             double anoffset = adist * otherVec.Dot(anormvec) / adot1;
 
@@ -420,13 +420,13 @@ public static class ToolWLineTool
                 double dotX, angleX;
                 //
                 dotX = vec.Dot(acurvec);
-                angleX = vec.Angle(acurvec);
+                angleX = vec.AngleTo(acurvec);
                 //
                 if (dotX > 0.0 && Math.Abs(angleX) < global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     if ((i % 2) == 0)
                     {
-                        if ((acurpoint.Y() >= vmin) && (acurpoint.Y() <= vmax))
+                        if ((acurpoint.Y >= vmin) && (acurpoint.Y <= vmax))
                         {
                             newPoint = acurpoint;
                             return true;
@@ -434,7 +434,7 @@ public static class ToolWLineTool
                     }
                     else
                     {
-                        if ((acurpoint.X() >= umin) && (acurpoint.X() <= umax))
+                        if ((acurpoint.X >= umin) && (acurpoint.X <= umax))
                         {
                             newPoint = acurpoint;
                             return true;
@@ -508,7 +508,7 @@ public static class ToolWLineTool
             for (i = 0; i < 2; ++i)
             {
                 SurfaceAdaptor gaSurface = (i == 0) ? surface1 : surface2;
-                gaSurface.Surface()!.Bounds(out umin, out umax, out vmin, out vmax);
+                gaSurface.Surface()!.ParameterBounds(out umin, out umax, out vmin, out vmax);
                 if (i == 0)
                 {
                     point.ParametersOnS1(out u, out v);
@@ -636,7 +636,7 @@ public static class ToolWLineTool
 
                     SurfaceAdaptor gaSurface = (surfit == 0) ? surface1 : surface2;
                     double umin = 0.0, umax = 0.0, vmin = 0.0, vmax = 0.0;
-                    gaSurface.Surface()!.Bounds(out umin, out umax, out vmin, out vmax);
+                    gaSurface.Surface()!.ParameterBounds(out umin, out umax, out vmin, out vmax);
                     double u = 0.0, v = 0.0;
 
                     if (surfit == 0)
@@ -755,7 +755,7 @@ public static class ToolWLineTool
                                 bCheckAngle1 = true;
                                 newVec = new Vector2D(new Point2D(nU1, nV1), new Point2D(anewU, anewV));
 
-                                if (newVec.SquareMagnitude() < Constants.Resolution())
+                                if (newVec.SquareMagnitude < Constants.Resolution())
                                 {
                                     newP.SetValue((surfit == 0), anewU, anewV);
                                     bCheckAngle1 = false;
@@ -766,7 +766,7 @@ public static class ToolWLineTool
                                 bCheckAngle2 = true;
                                 newVec = new Vector2D(new Point2D(nU1, nV1), new Point2D(u, v));
 
-                                if (newVec.SquareMagnitude() < Constants.Resolution())
+                                if (newVec.SquareMagnitude < Constants.Resolution())
                                 {
                                     bCheckAngle2 = false;
                                 }
@@ -793,13 +793,13 @@ public static class ToolWLineTool
                                     }
                                     Vector2D vecOld = new(new Point2D(nU2, nV2), new Point2D(nU1, nV1));
 
-                                    if (vecOld.SquareMagnitude() <= Constants.Resolution())
+                                    if (vecOld.SquareMagnitude <= Constants.Resolution())
                                     {
                                         continue;
                                     }
                                     else
                                     {
-                                        double angle = newVec.Angle(vecOld);
+                                        double angle = newVec.AngleTo(vecOld);
 
                                         if ((Math.Abs(angle) < (M_PI * 0.25)) && (newVec.Dot(vecOld) > 0.0))
                                         {
@@ -877,14 +877,14 @@ public static class ToolWLineTool
                                 // re-compute point near boundary if shifted on a period
                                 ap2 = AdjustByNeighbour(ap1, anewpoint, gaSurface);
 
-                                if ((ap2.X() < umin) || (ap2.X() > umax) || (ap2.Y() < vmin) || (ap2.Y() > vmax))
+                                if ((ap2.X < umin) || (ap2.X > umax) || (ap2.Y < vmin) || (ap2.Y > vmax))
                                 {
                                     found = FindPoint(ap1, ap2, umin, umax, vmin, vmax, ref anewpoint);
                                 }
                                 else
                                 {
                                     anewpoint = ap2;
-                                    newP.SetValue((surfit == 0), anewpoint.X(), anewpoint.Y());
+                                    newP.SetValue((surfit == 0), anewpoint.X, anewpoint.Y);
                                 }
                             }
                         }
@@ -924,7 +924,7 @@ public static class ToolWLineTool
                                 ap2 = ap2.WithX(nU2);
                                 ap2 = ap2.WithY(nV2);
 
-                                if (ap1.SquareDistance(ap2) > Constants.Resolution())
+                                if (ap1.SquareDistanceTo(ap2) > Constants.Resolution())
                                 {
                                     break;
                                 }
@@ -942,7 +942,7 @@ public static class ToolWLineTool
 
                             SurfaceAdaptor surfaceOther = (surfit == 0) ? surface2 : surface1;
 
-                            Point3D p3d = surface.Value(anewpoint.X(), anewpoint.Y());
+                            Point3D p3d = surface.Value(anewpoint.X, anewpoint.Y);
                             projector.Perform(p3d);
 
                             if (projector.IsDone)
@@ -969,12 +969,12 @@ public static class ToolWLineTool
                                     Point2D neighbour2d = new(nUn, nVn);
                                     Point2D adjustedPoint =
                                         AdjustByNeighbour(neighbour2d, new Point2D(foundU, foundV), surfaceOther);
-                                    foundU = adjustedPoint.X();
-                                    foundV = adjustedPoint.Y();
+                                    foundU = adjustedPoint.X;
+                                    foundV = adjustedPoint.Y;
 
                                     // OCCT: the condition can't hold (X < umin and X > umax), so the branch never runs
-                                    if ((adjustedPoint.X() < umin) && (adjustedPoint.X() > umax)
-                                        && (adjustedPoint.Y() < vmin) && (adjustedPoint.Y() > vmax))
+                                    if ((adjustedPoint.X < umin) && (adjustedPoint.X > umax)
+                                        && (adjustedPoint.Y < vmin) && (adjustedPoint.Y > vmax))
                                     {
                                         // attempt to roughly re-compute point
                                         foundU = (foundU < umin) ? umin : foundU;
@@ -1003,11 +1003,11 @@ public static class ToolWLineTool
 
                                     if (surfit == 0)
                                     {
-                                        newP.SetValue(p3d, anewpoint.X(), anewpoint.Y(), foundU, foundV);
+                                        newP.SetValue(p3d, anewpoint.X, anewpoint.Y, foundU, foundV);
                                     }
                                     else
                                     {
-                                        newP.SetValue(p3d, foundU, foundV, anewpoint.X(), anewpoint.Y());
+                                        newP.SetValue(p3d, foundU, foundV, anewpoint.X, anewpoint.Y);
                                     }
                                 }
                             }

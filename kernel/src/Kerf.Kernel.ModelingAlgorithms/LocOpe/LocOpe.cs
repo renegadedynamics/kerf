@@ -35,7 +35,7 @@ public static class LocOpe
         {
             for (exp2.Init(exp.Current(), ShapeType.Vertex); exp2.More(); exp2.Next())
             {
-                if (exp2.Current().IsSame(vf) && exp2.Current().Orientation() == Forward)
+                if (exp2.Current().IsSame(vf) && exp2.Current().Orientation == Forward)
                 {
                     break;
                 }
@@ -53,7 +53,7 @@ public static class LocOpe
         {
             for (exp2.Init(exp.Current(), ShapeType.Vertex); exp2.More(); exp2.Next())
             {
-                if (exp2.Current().IsSame(vl) && exp2.Current().Orientation() == Reversed)
+                if (exp2.Current().IsSame(vl) && exp2.Current().Orientation == Reversed)
                 {
                     break;
                 }
@@ -67,7 +67,7 @@ public static class LocOpe
 
         Point2D pf, pl;
         Curve2D c2d = Tool.CurveOnSurface(ef, F, out double f, out double l)!;
-        if (ef.Orientation() == Forward)
+        if (ef.Orientation == Forward)
         {
             pf = c2d.Value(f);
         }
@@ -76,7 +76,7 @@ public static class LocOpe
             pf = c2d.Value(l);
         }
         c2d = Tool.CurveOnSurface(el, F, out f, out l)!;
-        if (el.Orientation() == Forward)
+        if (el.Orientation == Forward)
         {
             pl = c2d.Value(l);
         }
@@ -85,7 +85,7 @@ public static class LocOpe
             pl = c2d.Value(f);
         }
 
-        if (pf.Distance(pl) <= global::Kerf.Engine.Foundation.Precision.PConfusion(global::Kerf.Engine.Foundation.Precision.Confusion()))
+        if (pf.DistanceTo(pl) <= global::Kerf.Engine.Foundation.Precision.PConfusion(global::Kerf.Engine.Foundation.Precision.Confusion()))
         {
             return true;
         }
@@ -113,14 +113,14 @@ public static class LocOpe
 
         FaceSurfaceAdaptor hs1 = new(f1);
         FaceSurfaceAdaptor hs2 = new(f2);
-        e.Orientation(Forward);
+        e.Orient(Forward);
         EdgeCurve2DAdaptor hc2d = new();
         EdgeCurve2DAdaptor hc2d2 = new();
         hc2d.Initialize(e, f1);
         hc2d2.Initialize(e, f2);
 
-        bool rev1 = (f1.Orientation() == Reversed);
-        bool rev2 = (f2.Orientation() == Reversed);
+        bool rev1 = (f1.Orientation == Reversed);
+        bool rev2 = (f2.Orientation == Reversed);
         double eps, angmin = Math.PI, angmax = -Math.PI, ang;
         Tool.Range(e, out double f, out double l);
 
@@ -136,7 +136,7 @@ public static class LocOpe
         {
             u = f + (l - f) * i / 20;
             hc2d.D0(u, out Point2D p);
-            hs1.D1(p.X(), p.Y(), out Point3D pp1, out Vector3D du, out Vector3D dv);
+            hs1.D1(p.X, p.Y, out Point3D pp1, out Vector3D du, out Vector3D dv);
             d1 = (du.Crossed(dv)).Normalized();
             if (rev1)
             {
@@ -150,7 +150,7 @@ public static class LocOpe
             {
                 d2 = d2.Reversed();
             }
-            ang = d1.Angle(d2);
+            ang = d1.AngleTo(d2);
             if (ang <= angmin)
             {
                 angmin = ang;
@@ -188,7 +188,7 @@ public static class LocOpe
             if (!Tool.Degenerated(edg))
             {
                 Curve3D c = Tool.Curve(edg, out Placement loc, out double f, out double l)!;
-                c = (Curve3D)c.Transformed(loc.Transformation());
+                c = (Curve3D)c.Transformed(loc.Transformation);
                 double delta = (l - f) / Nechant * 0.123456;
                 for (i = 1; i < Nechant; i++)
                 {

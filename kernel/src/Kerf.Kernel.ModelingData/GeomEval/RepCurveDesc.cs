@@ -13,7 +13,7 @@ namespace Kerf.Engine.Geometry.Evaluation;
 /// exact analytic form of a B-spline), possibly limited in derivative order, domain and through an affine
 /// parameter map. A C++ namespace in OCCT.
 /// </summary>
-public static class RepCurveDesc
+internal static class RepCurveDesc
 {
     /// <summary>1D affine parameter map: uRep = Scale * u + Offset.</summary>
     public struct Map1d

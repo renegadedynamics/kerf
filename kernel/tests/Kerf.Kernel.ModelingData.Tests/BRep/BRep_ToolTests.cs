@@ -39,9 +39,9 @@ public class BRep_ToolTests
         Point3D aPnt = Tool.Pnt(aVertex);
 
         // The point coordinates should be within the box bounds [0,10] x [0,20] x [0,30]
-        Assert.True(aPnt.X() >= -global::Kerf.Engine.Foundation.Precision.Confusion() && aPnt.X() <= 10.0 + global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.True(aPnt.Y() >= -global::Kerf.Engine.Foundation.Precision.Confusion() && aPnt.Y() <= 20.0 + global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.True(aPnt.Z() >= -global::Kerf.Engine.Foundation.Precision.Confusion() && aPnt.Z() <= 30.0 + global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(aPnt.X >= -global::Kerf.Engine.Foundation.Precision.Confusion() && aPnt.X <= 10.0 + global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(aPnt.Y >= -global::Kerf.Engine.Foundation.Precision.Confusion() && aPnt.Y <= 20.0 + global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(aPnt.Z >= -global::Kerf.Engine.Foundation.Precision.Confusion() && aPnt.Z <= 30.0 + global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -138,8 +138,8 @@ public class BRep_ToolTests
         var aCircle = new CircleCurve3D(new Frame3D(new Point3D(), new Direction3D(0, 0, 1)), 1.0);
         Edge anEdge = FullCircleEdge(aCircle);
 
-        double aRangeFirst = aCircle.Period();
-        double aRangeLast = 2.0 * aCircle.Period();
+        double aRangeFirst = aCircle.Period;
+        double aRangeLast = 2.0 * aCircle.Period;
         new BrepBuilder().Range(anEdge, aRangeFirst, aRangeLast, true);
 
         var aPlane = new PlaneSurface(new CoordinateSystem(Constants.XOY()));
@@ -159,7 +159,7 @@ public class BRep_ToolTests
         Edge anEdge = anEdgeMaker.Edge();
 
         Tool.Range(anEdge, out double aEdgeFirst, out double aEdgeLast);
-        Assert.Equal(aCircle.Period(), aEdgeLast - aEdgeFirst, global::Kerf.Engine.Foundation.Precision.PConfusion());
+        Assert.Equal(aCircle.Period, aEdgeLast - aEdgeFirst, global::Kerf.Engine.Foundation.Precision.PConfusion());
 
         var aPlane = new PlaneSurface(new CoordinateSystem(Constants.XOY()));
         Curve2D? aPCurve = Tool.CurveOnPlane(anEdge, aPlane, new Placement(), out double aFirst, out double aLast);
@@ -190,8 +190,8 @@ public class BRep_ToolTests
         var aPlane = new PlaneSurface(new CoordinateSystem(Constants.XOY()));
         Curve2D? aPCurve = Tool.CurveOnPlane(anEdge, aPlane, new Placement(), out double aFirst, out double aLast);
         Assert.NotNull(aPCurve);
-        Assert.True(aPCurve.Value(aFirst).Distance(new Point2D(0, 0)) < 1e-12);
-        Assert.True(aPCurve.Value(aLast).Distance(new Point2D(1, 0)) < 1e-12);
+        Assert.True(aPCurve.Value(aFirst).DistanceTo(new Point2D(0, 0)) < 1e-12);
+        Assert.True(aPCurve.Value(aLast).DistanceTo(new Point2D(1, 0)) < 1e-12);
         // not a plane: null without projecting
         var aCyl = new CylindricalSurface(new CoordinateSystem(Constants.XOY()), 1.0);
         Assert.Null(Tool.CurveOnSurface(anEdge, aCyl, new Placement(), out _, out _));
@@ -216,12 +216,12 @@ public class BRep_ToolTests
                 foreach (double t in new[] { f, (f + l) / 2, l })
                 {
                     Point2D aUV = aPC.Value(t);
-                    Assert.True(aSurf.Value(aUV.X(), aUV.Y()).Distance(aC.Value(t)) < 1e-12);
+                    Assert.True(aSurf.Value(aUV.X, aUV.Y).DistanceTo(aC.Value(t)) < 1e-12);
                 }
 
                 // the UV points stored with the pcurve are its ends (computed by SetRange)
                 Tool.UVPoints(anEdge, aFace, out Point2D aP1, out Point2D aP2);
-                Assert.True(aP1.Distance(aPC.Value(f)) < 1e-15 && aP2.Distance(aPC.Value(l)) < 1e-15);
+                Assert.True(aP1.DistanceTo(aPC.Value(f)) < 1e-15 && aP2.DistanceTo(aPC.Value(l)) < 1e-15);
             }
         }
     }
@@ -247,7 +247,7 @@ public class BRep_ToolTests
         var aVExp = new Explorer(aFace, ShapeType.Vertex);
         Vertex aV = ShapeCasts.Vertex(aVExp.Current());
         Point2D aUV = Tool.Parameters(aV, aFace);
-        Assert.True(Tool.Surface(aFace)!.Value(aUV.X(), aUV.Y()).Distance(Tool.Pnt(aV)) < 1e-12);
+        Assert.True(Tool.Surface(aFace)!.Value(aUV.X, aUV.Y).DistanceTo(Tool.Pnt(aV)) < 1e-12);
 
         // a vertex not on the edge has no parameter
         Vertex aFar = TestShapes.Vertex(new Point3D(100, 100, 100));
@@ -272,8 +272,8 @@ public class BRep_ToolTests
             Assert.True(BrepTools.IsReallyClosed(anEdge, aFace));
             Curve2D aForward = Tool.CurveOnSurface(ShapeCasts.Edge(anEdge.Oriented(Forward)), aFace, out _, out _)!;
             Curve2D aReversed = Tool.CurveOnSurface(ShapeCasts.Edge(anEdge.Oriented(Reversed)), aFace, out _, out _)!;
-            Assert.Equal(2.0 * Math.PI, aForward.Value(0).X(), 15);
-            Assert.Equal(0.0, aReversed.Value(0).X(), 15);
+            Assert.Equal(2.0 * Math.PI, aForward.Value(0).X, 15);
+            Assert.Equal(0.0, aReversed.Value(0).X, 15);
             // on the reversed face the pcurves swap
             Curve2D aOnReversedFace = Tool.CurveOnSurface(ShapeCasts.Edge(anEdge.Oriented(Forward)),
                                                                      ShapeCasts.Face(aFace.Reversed()), out _, out _)!;
@@ -301,7 +301,7 @@ public class BRep_ToolTests
         // the placed curve is a transformed copy
         Curve3D aPlaced = Tool.Curve(anEdge, out _, out _)!;
         Assert.NotSame(aLine, aPlaced);
-        Assert.Equal(5.0, aPlaced.Value(0).X());
+        Assert.Equal(5.0, aPlaced.Value(0).X);
 
         // moving the edge composes its location with the representation's
         Edge aMoved = ShapeCasts.Edge(anEdge.Moved(aLoc));
@@ -322,7 +322,7 @@ public class BRep_ToolTests
         Curve2D? aProjected = Tool.CurveOnSurface(anEdge, aMovedFace, out double aFirst, out _, out bool isStored);
         Assert.NotNull(aProjected);
         Assert.False(isStored);
-        Assert.True(aProjected.Value(aFirst).Distance(new Point2D(aFirst, 0)) < 1e-12);
+        Assert.True(aProjected.Value(aFirst).DistanceTo(new Point2D(aFirst, 0)) < 1e-12);
     }
 
     [Fact]
@@ -480,7 +480,7 @@ public class BRep_ToolTests
 
         BrepTools.UpdateFaceUVPoints(aFace);
         Tool.UVPoints(aStale, aFace, out Point2D aP1, out _);
-        Assert.Equal(9.0, aP1.X());
+        Assert.Equal(9.0, aP1.X);
 
         // with the locked edge after it, the stale edge is updated
         Face aFace2 = ShapeCasts.Face(aFace.EmptyCopied());
@@ -491,6 +491,6 @@ public class BRep_ToolTests
         aBuilder.Add(aFace2, aWire2);
         BrepTools.UpdateFaceUVPoints(aFace2);
         Tool.UVPoints(aStale, aFace2, out aP1, out _);
-        Assert.Equal(1.0, aP1.X());
+        Assert.Equal(1.0, aP1.X);
     }
 }

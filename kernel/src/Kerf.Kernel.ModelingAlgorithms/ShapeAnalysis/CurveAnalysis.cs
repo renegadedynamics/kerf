@@ -54,7 +54,7 @@ public sealed class CurveAnalysis
         {
             double currentParam      = aStartParam + (paramStep * i);
             Point3D currentPoint      = curve.Value(currentParam);
-            double currentSqDistance = currentPoint.SquareDistance(point);
+            double currentSqDistance = currentPoint.SquareDistanceTo(point);
             if (currentSqDistance < minSqDistance)
             {
                 minSqDistance = currentSqDistance;
@@ -81,8 +81,8 @@ public sealed class CurveAnalysis
     public double Project(Curve3D c3D, in Point3D p3D, double preci, out Point3D proj, out double param,
                           bool adjustToEnds = true)
     {
-        double uMin = c3D.FirstParameter();
-        double uMax = c3D.LastParameter();
+        double uMin = c3D.FirstParameter;
+        double uMax = c3D.LastParameter;
         if (uMin < uMax)
         {
             return Project(c3D, p3D, preci, out proj, out param, uMin, uMax, adjustToEnds);
@@ -108,7 +108,7 @@ public sealed class CurveAnalysis
             double prec     = (adjustToEnds ? preci : global::Kerf.Engine.Foundation.Precision.Confusion());
             Point3D lowBound = gac.Value(uMin);
             Point3D higBound = gac.Value(uMax);
-            distmin = lowBound.Distance(p3D);
+            distmin = lowBound.DistanceTo(p3D);
             if (distmin <= prec)
             {
                 param = uMin;
@@ -116,7 +116,7 @@ public sealed class CurveAnalysis
                 return distmin;
             }
 
-            distmin = higBound.Distance(p3D);
+            distmin = higBound.DistanceTo(p3D);
             if (distmin <= prec)
             {
                 param = uMax;
@@ -159,8 +159,8 @@ public sealed class CurveAnalysis
         double prec     = (adjustToEnds ? preci : global::Kerf.Engine.Foundation.Precision.Confusion());
         Point3D lowBound = c3D.Value(uMin);
         Point3D higBound = c3D.Value(uMax);
-        distmin_L = lowBound.Distance(p3D);
-        distmin_H = higBound.Distance(p3D);
+        distmin_L = lowBound.DistanceTo(p3D);
+        distmin_H = higBound.DistanceTo(p3D);
 
         if (distmin_L <= prec)
         {
@@ -267,7 +267,7 @@ public sealed class CurveAnalysis
             isHaveOldSolution = true;
             oldProj           = projPoint;
             oldParam          = projParam;
-            projDistance       = projPoint.Distance(point);
+            projDistance       = projPoint.DistanceTo(point);
             modMin             = projDistance;
             if (projDistance > tolerance)
             {
@@ -294,11 +294,11 @@ public sealed class CurveAnalysis
                 case Circle:
                 {
                     Circle3D circ = curve.Circle();
-                    projPoint = circ.Position().Location();
-                    if (circ.Radius() <= Constants.Resolution() || point.SquareDistance(projPoint) <= Constants.Resolution())
+                    projPoint = circ.Position.Location;
+                    if (circ.Radius <= Constants.Resolution() || point.SquareDistanceTo(projPoint) <= Constants.Resolution())
                     {
                         projParam = curve.FirstParameter();
-                        projPoint = new Point3D(projPoint.XYZ() + circ.XAxis().Direction().XYZ() * circ.Radius());
+                        projPoint = new Point3D(projPoint.XYZ() + circ.XAxis.Direction.XYZ() * circ.Radius);
                     }
                     else
                     {
@@ -361,7 +361,7 @@ public sealed class CurveAnalysis
                     {
                         projParam = projector.Point().Parameter();
                         projPoint = projector.Point().Value();
-                        double distNewton = point.Distance(projPoint);
+                        double distNewton = point.DistanceTo(projPoint);
                         if (distNewton < modMin)
                         {
                             return distNewton;
@@ -409,8 +409,8 @@ public sealed class CurveAnalysis
         if (isHaveOldSolution)
         {
             // PTV 29.05.2002 Compare old solution and new;
-            double oldDist = oldProj.SquareDistance(point);
-            double newDist  = projPoint.SquareDistance(point);
+            double oldDist = oldProj.SquareDistanceTo(point);
+            double newDist  = projPoint.SquareDistanceTo(point);
             if (oldDist < newDist)
             {
                 projPoint = oldProj;
@@ -418,7 +418,7 @@ public sealed class CurveAnalysis
             }
         }
 
-        return projPoint.Distance(point);
+        return projPoint.DistanceTo(point);
     }
 
     private static readonly int[] SegmentCounts = [40, 20, 25, 40];
@@ -440,7 +440,7 @@ public sealed class CurveAnalysis
             double prec     = (adjustToEnds ? preci : global::Kerf.Engine.Foundation.Precision.Confusion());
             Point3D lowBound = gac.Value(uMin);
             Point3D higBound = gac.Value(uMax);
-            distmin = lowBound.Distance(p3D);
+            distmin = lowBound.DistanceTo(p3D);
             if (distmin <= prec)
             {
                 param = uMin;
@@ -448,7 +448,7 @@ public sealed class CurveAnalysis
                 return distmin;
             }
 
-            distmin = higBound.Distance(p3D);
+            distmin = higBound.DistanceTo(p3D);
             if (distmin <= prec)
             {
                 param = uMax;
@@ -481,7 +481,7 @@ public sealed class CurveAnalysis
         {
             param = projector.Point().Parameter();
             proj  = projector.Point().Value();
-            return p3D.Distance(proj);
+            return p3D.DistanceTo(proj);
         }
 
         return Project(c3D, p3D, preci, out proj, out param, false);
@@ -501,8 +501,8 @@ public sealed class CurveAnalysis
         // First and/or Last may be outside the natural bounds of the curve.
         // They are then given the end values.
 
-        double cf = curve.FirstParameter();
-        double cl = curve.LastParameter();
+        double cf = curve.FirstParameter;
+        double cl = curve.LastParameter;
 
         if (curve is BoundedCurve3D && !curve.IsClosed)
         {
@@ -557,12 +557,12 @@ public sealed class CurveAnalysis
             else
             {
                 //: S4136 abv 20 Apr 99: r0701_ug.stp #6230: add check in 3d
-                if (curve.Value(first).Distance(curve.Value(cf)) < preci)
+                if (curve.Value(first).DistanceTo(curve.Value(cf)) < preci)
                 {
                     first = cf;
                 }
 
-                if (curve.Value(last).Distance(curve.Value(cl)) < preci)
+                if (curve.Value(last).DistanceTo(curve.Value(cl)) < preci)
                 {
                     last = cl;
                 }
@@ -578,7 +578,7 @@ public sealed class CurveAnalysis
         // The curve is closed within the 3D tolerance
         else if (curve is BSplineCurve3D bSpline)
         {
-            if (bSpline.StartPoint().Distance(bSpline.EndPoint()) <= preci)
+            if (bSpline.StartPoint.DistanceTo(bSpline.EndPoint) <= preci)
             {
                 // Last = cf instead of Last = cl
                 if (Math.Abs(last - cf) < global::Kerf.Engine.Foundation.Precision.PConfusion() /*preci*/)
@@ -765,10 +765,10 @@ public sealed class CurveAnalysis
                 return theCurveIndice;
             }
 
-            Point2D startBC1 = bc1.StartPoint();
-            Point2D endBC1   = bc1.EndPoint();
+            Point2D startBC1 = bc1.StartPoint;
+            Point2D endBC1   = bc1.EndPoint;
             var      vecBC1   = new Vector2D(startBC1, endBC1);
-            if (vecBC1.SquareMagnitude() < Constants.Resolution())
+            if (vecBC1.SquareMagnitude < Constants.Resolution())
             {
                 return theCurveIndice;
             }
@@ -785,10 +785,10 @@ public sealed class CurveAnalysis
                 return theCurveIndice;
             }
 
-            Point2D startBC2 = bc2.StartPoint();
-            Point2D endBC2   = bc2.EndPoint();
+            Point2D startBC2 = bc2.StartPoint;
+            Point2D endBC2   = bc2.EndPoint;
             var      vecBC2   = new Vector2D(startBC2, endBC2);
-            if (vecBC2.SquareMagnitude() < Constants.Resolution())
+            if (vecBC2.SquareMagnitude < Constants.Resolution())
             {
                 return theCurveIndice;
             }
@@ -799,23 +799,23 @@ public sealed class CurveAnalysis
         bool udirPos, udirNeg, vdirPos, vdirNeg;
         udirPos = udirNeg = vdirPos = vdirNeg = false;
 
-        Direction2D theDir  = l1.Direction();
-        Point2D theLoc1 = l1.Location();
-        Point2D theLoc2 = l2.Location();
+        Direction2D theDir  = l1.Direction;
+        Point2D theLoc1 = l1.Location;
+        Point2D theLoc2 = l2.Location;
 
-        if (theDir.X() > 0.0)
+        if (theDir.X > 0.0)
         {
             udirPos = true; // szv#4:S4163:12Mar99 Udir unused
         }
-        else if (theDir.X() < 0.0)
+        else if (theDir.X < 0.0)
         {
             udirNeg = true; // szv#4:S4163:12Mar99 Udir unused
         }
-        else if (theDir.Y() > 0.0)
+        else if (theDir.Y > 0.0)
         {
             vdirPos = true; // szv#4:S4163:12Mar99 Vdir unused
         }
-        else if (theDir.Y() < 0.0)
+        else if (theDir.Y < 0.0)
         {
             vdirNeg = true; // szv#4:S4163:12Mar99 Vdir unused
         }
@@ -823,7 +823,7 @@ public sealed class CurveAnalysis
         if (vdirPos)
         {
             // max of Loc1.X() Loc2.X()
-            if (theLoc1.X() > theLoc2.X())
+            if (theLoc1.X > theLoc2.X)
             {
                 theCurveIndice = 1;
             }
@@ -834,7 +834,7 @@ public sealed class CurveAnalysis
         }
         else if (vdirNeg)
         {
-            if (theLoc1.X() > theLoc2.X())
+            if (theLoc1.X > theLoc2.X)
             {
                 theCurveIndice = 2;
             }
@@ -846,7 +846,7 @@ public sealed class CurveAnalysis
         else if (udirPos)
         {
             // min of Loc1.X() Loc2.X()
-            if (theLoc1.Y() < theLoc2.Y())
+            if (theLoc1.Y < theLoc2.Y)
             {
                 theCurveIndice = 1;
             }
@@ -857,7 +857,7 @@ public sealed class CurveAnalysis
         }
         else if (udirNeg)
         {
-            if (theLoc1.Y() < theLoc2.Y())
+            if (theLoc1.Y < theLoc2.Y)
             {
                 theCurveIndice = 2;
             }
@@ -912,14 +912,14 @@ public sealed class CurveAnalysis
         }
         else if (curve is TrimmedCurve3D trimmed)
         {
-            Curve3D baseCrv = trimmed.BasisCurve();
+            Curve3D baseCrv = trimmed.BasisCurve;
             bool       done     = false;
             if (baseCrv is BSplineCurve3D)
             {
                 try
                 {
                     var bslp = (BSplineCurve3D)baseCrv.Copy();
-                    bslp.Segment(curve.FirstParameter(), curve.LastParameter());
+                    bslp.Segment(curve.FirstParameter, curve.LastParameter);
                     AppendControlPoles(seq, bslp);
                     done = true;
                 }
@@ -932,7 +932,7 @@ public sealed class CurveAnalysis
                 try
                 {
                     var bz = (BezierCurve3D)baseCrv.Copy();
-                    bz.Segment(curve.FirstParameter(), curve.LastParameter());
+                    bz.Segment(curve.FirstParameter, curve.LastParameter);
                     AppendControlPoles(seq, bz);
                     done = true;
                 }
@@ -943,16 +943,16 @@ public sealed class CurveAnalysis
 
             if (!done)
             {
-                seq.Append(curve.Value(curve.FirstParameter()));
-                seq.Append(curve.Value((curve.FirstParameter() + curve.LastParameter()) / 2.0));
-                seq.Append(curve.Value(curve.LastParameter()));
+                seq.Append(curve.Value(curve.FirstParameter));
+                seq.Append(curve.Value((curve.FirstParameter + curve.LastParameter) / 2.0));
+                seq.Append(curve.Value(curve.LastParameter));
             }
         }
         else if (curve is OffsetCurve3D)
         {
-            seq.Append(curve.Value(curve.FirstParameter()));
-            seq.Append(curve.Value((curve.FirstParameter() + curve.LastParameter()) / 2.0));
-            seq.Append(curve.Value(curve.LastParameter()));
+            seq.Append(curve.Value(curve.FirstParameter));
+            seq.Append(curve.Value((curve.FirstParameter + curve.LastParameter) / 2.0));
+            seq.Append(curve.Value(curve.LastParameter));
         }
         else if (curve is BSplineCurve3D bSpline)
         {
@@ -1068,7 +1068,7 @@ public sealed class CurveAnalysis
 
         if (curve is LineCurve3D line)
         {
-            Xyz n1 = line.Position().Direction().XYZ();
+            Xyz n1 = line.Position.Direction.XYZ();
             if (noNorm)
             {
                 normal = GetAnyNormal(n1);
@@ -1080,7 +1080,7 @@ public sealed class CurveAnalysis
 
         if (curve is ConicCurve3D conic)
         {
-            Xyz n1 = conic.Axis().Direction().XYZ();
+            Xyz n1 = conic.Axis.Direction.XYZ();
             if (noNorm)
             {
                 normal = n1;
@@ -1093,12 +1093,12 @@ public sealed class CurveAnalysis
 
         if (curve is TrimmedCurve3D trimmed)
         {
-            return IsPlanar(trimmed.BasisCurve(), ref normal, precision);
+            return IsPlanar(trimmed.BasisCurve, ref normal, precision);
         }
 
         if (curve is OffsetCurve3D offsetC)
         {
-            return IsPlanar(offsetC.BasisCurve(), ref normal, precision);
+            return IsPlanar(offsetC.BasisCurve, ref normal, precision);
         }
 
         if (curve is BSplineCurve3D bSpline)
@@ -1139,7 +1139,7 @@ public sealed class CurveAnalysis
     /// </summary>
     public static bool GetSamplePoints(Curve3D curve, double first, double last, NCollection_Sequence<Point3D> seq)
     {
-        double adelta = curve.LastParameter() - curve.FirstParameter();
+        double adelta = curve.LastParameter - curve.FirstParameter;
         if (adelta == 0)
         {
             return false;
@@ -1157,7 +1157,7 @@ public sealed class CurveAnalysis
         }
         else if (curve is BSplineCurve3D bspl)
         {
-            nbp = bspl.KnotCount * bspl.Degree() * k;
+            nbp = bspl.KnotCount * bspl.Degree * k;
             if (nbp < 2.0)
             {
                 nbp = 2;
@@ -1169,11 +1169,11 @@ public sealed class CurveAnalysis
         }
         else if (curve is OffsetCurve3D oc)
         {
-            return GetSamplePoints(oc.BasisCurve(), first, last, seq);
+            return GetSamplePoints(oc.BasisCurve, first, last, seq);
         }
         else if (curve is TrimmedCurve3D tc)
         {
-            return GetSamplePoints(tc.BasisCurve(), first, last, seq);
+            return GetSamplePoints(tc.BasisCurve, first, last, seq);
         }
 
         var    gac  = new CurveAdaptor(curve);
@@ -1227,15 +1227,15 @@ public sealed class CurveAnalysis
         double prec = Max(preci, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         double f, l;
-        f = curve.FirstParameter();
-        l = curve.LastParameter();
+        f = curve.FirstParameter;
+        l = curve.LastParameter;
 
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(f) || global::Kerf.Engine.Foundation.Precision.IsInfinite(l))
         {
             return false;
         }
 
-        double closedVal = curve.Value(f).SquareDistance(curve.Value(l));
+        double closedVal = curve.Value(f).SquareDistanceTo(curve.Value(l));
         double preci2     = prec * prec;
 
         return (closedVal <= preci2);
@@ -1252,12 +1252,12 @@ public sealed class CurveAnalysis
         {
             if (tmpCurve is OffsetCurve3D offset)
             {
-                tmpCurve = offset.BasisCurve();
+                tmpCurve = offset.BasisCurve;
             }
 
             if (tmpCurve is TrimmedCurve3D trimmed)
             {
-                tmpCurve = trimmed.BasisCurve();
+                tmpCurve = trimmed.BasisCurve;
             }
         }
 
@@ -1274,12 +1274,12 @@ public sealed class CurveAnalysis
         {
             if (tmpCurve is OffsetCurve2D offset)
             {
-                tmpCurve = offset.BasisCurve();
+                tmpCurve = offset.BasisCurve;
             }
 
             if (tmpCurve is TrimmedCurve2D trimmed)
             {
-                tmpCurve = trimmed.BasisCurve();
+                tmpCurve = trimmed.BasisCurve;
             }
         }
 

@@ -85,7 +85,7 @@ public class GeomPlate_ClassesTests
         Assert.Equal(5.0, aC.Length(), 9);
         aC.D1(2.0, out Point3D aP, out Vector3D aV1, out Vector3D aV2);
         Assert.Equal(new Point3D(3, 1, 0), aP);
-        Assert.Equal(1.0, (aV1 ^ aV2).Z());
+        Assert.Equal(1.0, (aV1 ^ aV2).Z);
         Assert.Equal(0.0, aC.LPropSurf(2.0).GaussianCurvature());
         Assert.Equal(0.01, aC.G1Criterion(1.0));
         aC.SetG1Criterion(new Linear());
@@ -106,7 +106,7 @@ public class GeomPlate_ClassesTests
         PlateSolver aPlate = SolvedPlate();
         var aSurf = new PlateSurface(XYPlane(), aPlate);
         Point3D aP = aSurf.Value(0.5, 0.5);
-        Assert.Equal(0.3, aP.Z(), 12);
+        Assert.Equal(0.3, aP.Z, 12);
         Xyz aD = aPlate.Evaluate(new Xy(0.25, 0.75));
         Assert.Equal(new Point3D(0.25 + aD.X(), 0.75 + aD.Y(), aD.Z()), aSurf.Value(0.25, 0.75));
         aSurf.D2(0.3, 0.6, out Point3D aP2, out Vector3D aD1U, out _, out Vector3D aD2U, out _, out _);
@@ -117,18 +117,18 @@ public class GeomPlate_ClassesTests
 
         // the surface keeps its own copy of the plate
         aPlate.Init();
-        Assert.Equal(0.3, aSurf.Value(0.5, 0.5).Z(), 12);
+        Assert.Equal(0.3, aSurf.Value(0.5, 0.5).Z, 12);
 
         // bounds: settable while unfrozen, a twin otherwise; Copy doesn't keep them, as OCCT's
         aSurf.SetBounds(0, 1, 0, 1);
-        aSurf.Bounds(out double u1, out double u2, out double v1, out double v2);
+        aSurf.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
         Assert.Equal((0.0, 1.0, 0.0, 1.0), (u1, u2, v1, v2));
         aSurf.Freeze();
         Assert.Throws<ImmutableObjectException>(() => aSurf.SetBounds(0, 2, 0, 2));
         PlateSurface aWider = aSurf.WithBounds(-1, 2, -1, 2);
-        aWider.Bounds(out u1, out u2, out _, out _);
+        aWider.ParameterBounds(out u1, out u2, out _, out _);
         Assert.Equal((-1.0, 2.0), (u1, u2));
-        ((PlateSurface)aSurf.Copy()).Bounds(out u1, out u2, out _, out _);
+        ((PlateSurface)aSurf.Copy()).ParameterBounds(out u1, out u2, out _, out _);
         Assert.Equal((0.0, 0.0), (u1, u2));
         Assert.Throws<FailureException>(() => aSurf.WithBounds(1, 0, 0, 1));
         Assert.Throws<FailureException>(() => aSurf.WithBounds(0, 0, 0, 1));
@@ -146,9 +146,9 @@ public class GeomPlate_ClassesTests
     {
         var aSurf = new PlateSurface(XYPlane(), SolvedPlate());
         aSurf.Freeze();
-        double[] aSerial = Enumerable.Range(0, 400).Select(i => aSurf.Value(i / 400.0, (i * 7 % 400) / 400.0).Z()).ToArray();
+        double[] aSerial = Enumerable.Range(0, 400).Select(i => aSurf.Value(i / 400.0, (i * 7 % 400) / 400.0).Z).ToArray();
         double[] aParallel = new double[400];
-        Parallel.For(0, 400, i => aParallel[i] = aSurf.Value(i / 400.0, (i * 7 % 400) / 400.0).Z());
+        Parallel.For(0, 400, i => aParallel[i] = aSurf.Value(i / 400.0, (i * 7 % 400) / 400.0).Z);
         Assert.Equal(aSerial, aParallel);
     }
 
@@ -166,8 +166,8 @@ public class GeomPlate_ClassesTests
         Assert.False(aBAP.IsLine());
         PlaneSurface aPlane = aBAP.Plane()!;
         Assert.True(aPlane.IsFrozen);
-        Assert.Equal(1.0, Math.Abs(aPlane.Pln().Axis().Direction().Z()), 12);
-        Assert.Equal(1.0, aPlane.Pln().Location().Z(), 12);
+        Assert.Equal(1.0, Math.Abs(aPlane.Plane.Axis.Direction.Z), 12);
+        Assert.Equal(1.0, aPlane.Plane.Location.Z, 12);
         Assert.Throws<NoSuchObjectException>(() => aBAP.Line());
         aBAP.MinMaxBox(out double u1, out double u2, out double v1, out double v2);
         Assert.Equal(5.0, Math.Sqrt((u2 - u1) * (u2 - u1) + (v2 - v1) * (v2 - v1)), 9);
@@ -179,7 +179,7 @@ public class GeomPlate_ClassesTests
         aLinePts.SetValue(3, new Point3D(2, 2, 2));
         var aLine = new BuildAveragePlane(aLinePts, 0, 1e-7, 2, 1);
         Assert.NotEqual(aLine.IsPlane(), aLine.IsLine());
-        Assert.Equal(0.0, aLine.Plane()!.Pln().Distance(new Point3D(2, 2, 2)), 9);
+        Assert.Equal(0.0, aLine.Plane()!.Plane.DistanceTo(new Point3D(2, 2, 2)), 9);
 
         // from normals
         var aNormals = new NCollection_Sequence<Vector3D>();
@@ -187,7 +187,7 @@ public class GeomPlate_ClassesTests
         aNormals.Append(new Vector3D(0, -0.2, 1).Normalized());
         aNormals.Append(new Vector3D(0.2, 0, 1).Normalized());
         var aFromNormals = new BuildAveragePlane(aNormals, aPts);
-        Assert.Equal(1.0, Math.Abs(aFromNormals.Plane()!.Pln().Axis().Direction().Z()), 3);
+        Assert.Equal(1.0, Math.Abs(aFromNormals.Plane()!.Plane.Axis.Direction.Z), 3);
     }
 
     [Fact]
@@ -222,7 +222,7 @@ public class GeomPlate_ClassesTests
             BSplineSurface aBS = anApprox.Surface()!;
             Assert.True(aBS.IsFrozen);
             Assert.True(anApprox.ApproxError() < 1e-3, $"{aCrit}: {anApprox.ApproxError()}");
-            Assert.Equal(aSurf.Value(0.4, 0.7).Z(), aBS.Value(0.4, 0.7).Z(), 3);
+            Assert.Equal(aSurf.Value(0.4, 0.7).Z, aBS.Value(0.4, 0.7).Z, 3);
             if (aCrit == -1)
             {
                 Assert.Equal(0.0, anApprox.CriterionError());

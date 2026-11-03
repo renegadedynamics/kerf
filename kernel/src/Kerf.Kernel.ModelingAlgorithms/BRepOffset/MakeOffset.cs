@@ -162,7 +162,7 @@ public sealed partial class MakeOffset
             Shape anEdge = explo.Current();
             if (anEdge.IsSame(edge))
             {
-                or = anEdge.Orientation();
+                or = anEdge.Orientation;
                 break;
             }
         }
@@ -188,7 +188,7 @@ public sealed partial class MakeOffset
 
         if (!itv.More() && Tool.Degenerated(e))
         {
-            orient = v.Orientation();
+            orient = v.Orientation;
         }
 
         while (itv.More())
@@ -202,8 +202,8 @@ public sealed partial class MakeOffset
                 }
                 else
                 {
-                    rev = e.Orientation() == global::Kerf.Topology.Orientation.Reversed;
-                    if (vcur.Orientation() == v.Orientation())
+                    rev = e.Orientation == global::Kerf.Topology.Orientation.Reversed;
+                    if (vcur.Orientation == v.Orientation)
                     {
                         vf = vcur;
                     }
@@ -214,7 +214,7 @@ public sealed partial class MakeOffset
 
         if (!vf.IsNull)
         {
-            orient = vf.Orientation();
+            orient = vf.Orientation;
         }
 
         double f, l;
@@ -238,7 +238,7 @@ public sealed partial class MakeOffset
         else
         {
             Curve3D? c = Tool.Curve(e, out Placement L, out f, out l);
-            L = L.Predivided(v.Location());
+            L = L.Predivided(v.Placement);
             if (c is not null || Tool.Degenerated(e))
             {
                 NCollection_List<PointRepresentation>.Iterator itpr = new(((BrepTVertex)v.TShape()!).Points());
@@ -265,14 +265,14 @@ public sealed partial class MakeOffset
                                 u = pr.Parameter();
                                 return true;
                             }
-                            Point3D pf = c.Value(f).Transformed(L.Transformation());
-                            Point3D pl = c.Value(l).Transformed(L.Transformation());
+                            Point3D pf = c.Value(f).Transformed(L.Transformation);
+                            Point3D pl = c.Value(l).Transformed(L.Transformation);
                             double tol = Tool.Tolerance(v);
-                            if (pf.Distance(pl) < tol)
+                            if (pf.DistanceTo(pl) < tol)
                             {
-                                if (pf.Distance(Tool.Pnt(v)) < tol)
+                                if (pf.DistanceTo(Tool.Pnt(v)) < tol)
                                 {
-                                    if (v.Orientation() == Forward)
+                                    if (v.Orientation == Forward)
                                     {
                                         res = f; // p = f;
                                     }
@@ -295,7 +295,7 @@ public sealed partial class MakeOffset
                 // no 3d curve !!
                 // let us try with the first pcurve
                 Tool.CurveOnSurface(e, out Curve2D? pc, out Surface? s, out L, out f, out l);
-                L = L.Predivided(v.Location());
+                L = L.Predivided(v.Placement);
                 NCollection_List<PointRepresentation>.Iterator itpr = new(((BrepTVertex)v.TShape()!).Points());
 
                 while (itpr.More())
@@ -307,15 +307,15 @@ public sealed partial class MakeOffset
                         // Closed curves RLE 16 june 94
                         if (pc!.IsClosed)
                         {
-                            if ((p == pc.FirstParameter()) || (p == pc.LastParameter()))
+                            if ((p == pc.FirstParameter) || (p == pc.LastParameter))
                             {
-                                if (v.Orientation() == Forward)
+                                if (v.Orientation == Forward)
                                 {
-                                    p = pc.FirstParameter();
+                                    p = pc.FirstParameter;
                                 }
                                 else
                                 {
-                                    p = pc.LastParameter();
+                                    p = pc.LastParameter;
                                 }
                             }
                         }
@@ -344,9 +344,9 @@ public sealed partial class MakeOffset
         Point2D lPnt2d = theCurve.Value(l);
         Point2D mPnt2d = theCurve.Value(0.5 * (f + l));
         Surface surf = Tool.Surface(aFace)!;
-        fPnt = surf.Value(fPnt2d.X(), fPnt2d.Y());
-        lPnt = surf.Value(lPnt2d.X(), lPnt2d.Y());
-        mPnt = surf.Value(mPnt2d.X(), mPnt2d.Y());
+        fPnt = surf.Value(fPnt2d.X, fPnt2d.Y);
+        lPnt = surf.Value(lPnt2d.X, lPnt2d.Y);
+        mPnt = surf.Value(mPnt2d.X, mPnt2d.Y);
     }
 
     //=======================================================================
@@ -376,7 +376,7 @@ public sealed partial class MakeOffset
                     {
                         continue;
                     }
-                    NCollection_List<Interval> lint = analyser.Type(edge);
+                    NCollection_List<OffsetInterval> lint = analyser.Type(edge);
                     if (!lint.IsEmpty() && lint.First().Type() == TypeOfConcavity.FreeBound)
                     {
                         mapEF[edge] = face;
@@ -793,7 +793,7 @@ public sealed partial class MakeOffset
         for (; eExp.More(); eExp.Next())
         {
             Edge e = ShapeCasts.Edge(eExp.Current());
-            NCollection_List<Interval> li = _analyse.Type(e);
+            NCollection_List<OffsetInterval> li = _analyse.Type(e);
             if (li.IsEmpty())
             {
                 continue;
@@ -1456,7 +1456,7 @@ public sealed partial class MakeOffset
                             NCollection_List<Shape>.Iterator itLOE = new(loe);
                             for (; itLOE.More(); itLOE.Next())
                             {
-                                Shape localShape = itLOE.Value().Oriented(oe.Orientation());
+                                Shape localShape = itLOE.Value().Oriented(oe.Orientation);
                                 Edge coe = ShapeCasts.Edge(localShape);
                                 //              const TopoDS_Edge& COE =
                                 //              TopoDS::Edge(itLOE.Value().Oriented(OE.Orientation()));
@@ -1535,7 +1535,7 @@ public sealed partial class MakeOffset
                     {
                         Shape newShape = build.GetValue(edgeRef);
 
-                        if (newShape.ShapeType() == ShapeType.Edge)
+                        if (newShape.Type == ShapeType.Edge)
                         {
                             if (imoe.HasImage(newShape))
                             {
@@ -1625,7 +1625,7 @@ public sealed partial class MakeOffset
                     for (; itLOE.More(); itLOE.Next())
                     {
                         Edge coe = ShapeCasts.Edge(itLOE.Value());
-                        _asDes.Add(cork, coe.Oriented(oe.Orientation()));
+                        _asDes.Add(cork, coe.Oriented(oe.Orientation));
 
                         if (!_asDes.HasDescendant(coe))
                         {
@@ -1713,7 +1713,7 @@ public sealed partial class MakeOffset
         for (; explo.More(); explo.Next())
         {
             Shape face = explo.Current();
-            Orientation or = face.Orientation();
+            Orientation or = face.Orientation;
             if (_facePlanfaceMap.TryGetValue(face, out Shape planface))
             {
                 face = planface;
@@ -1764,7 +1764,7 @@ public sealed partial class MakeOffset
                 NCollection_List<Shape> anc = _analyse.Ancestors(e);
                 if (anc.Extent() == 2)
                 {
-                    NCollection_List<Interval> l = _analyse.Type(e);
+                    NCollection_List<OffsetInterval> l = _analyse.Type(e);
                     if (!l.IsEmpty() && l.First().Type() == ot)
                     {
                         double curOffset = _offset;
@@ -1940,7 +1940,7 @@ public sealed partial class MakeOffset
             _initOffsetFace.SetRoot(si); // Initial<-> Offset
             _imageOffset.SetRoot(of);    // FaceOffset root of images
 
-            if (si.ShapeType() == ShapeType.Face)
+            if (si.Type == ShapeType.Face)
             {
                 for (exp.Init(si.Oriented(Forward), ShapeType.Edge); exp.More(); exp.Next())
                 {
@@ -1950,10 +1950,10 @@ public sealed partial class MakeOffset
                     // to two faces are removed.
                     //--------------------------------------------------------------------
                     Edge e = ShapeCasts.Edge(exp.Current());
-                    NCollection_List<Interval> l = _analyse.Type(e);
+                    NCollection_List<OffsetInterval> l = _analyse.Type(e);
                     if (!l.IsEmpty() && l.First().Type() != rt)
                     {
-                        Orientation oo = e.Orientation();
+                        Orientation oo = e.Orientation;
                         Shape localShape = It.Value.InternalGenerated(e);
                         Edge oe = ShapeCasts.Edge(localShape);
                         //          TopoDS_Edge        OE  = TopoDS::Edge(It.Value().Generated(E));
@@ -2066,28 +2066,28 @@ public sealed partial class MakeOffset
             _initOffsetFace.SetRoot(s); // Initial<-> Offset
             _imageOffset.SetRoot(nf);
 
-            if (s.ShapeType() == ShapeType.Face)
+            if (s.Type == ShapeType.Face)
             {
                 for (exp.Init(s.Oriented(Forward), ShapeType.Edge); exp.More(); exp.Next())
                 {
 
                     Edge e = ShapeCasts.Edge(exp.Current());
-                    NCollection_List<Interval> l = _analyse.Type(e);
+                    NCollection_List<OffsetInterval> l = _analyse.Type(e);
                     oe = bof.InternalGenerated(e);
-                    or = e.Orientation();
-                    oe.Orientation(or);
+                    or = e.Orientation;
+                    oe.Orient(or);
                     if (!l.IsEmpty() && l.First().Type() != rt)
                     {
                         if (created.ContainsKey(oe))
                         {
                             ne = created.GetValue(oe);
-                            if (ne.Orientation() == global::Kerf.Topology.Orientation.Reversed)
+                            if (ne.Orientation == global::Kerf.Topology.Orientation.Reversed)
                             {
-                                ne.Orientation(global::Kerf.Engine.Topology.TopAbs.Reverse(or));
+                                ne.Orient(global::Kerf.Engine.Topology.TopAbs.Reverse(or));
                             }
                             else
                             {
-                                ne.Orientation(or);
+                                ne.Orient(or);
                             }
                             _asDes.Add(nf, ne);
                         }
@@ -2122,14 +2122,14 @@ public sealed partial class MakeOffset
             if (_initOffsetEdge.IsImage(oe))
             {
                 Shape e = _initOffsetEdge.ImageFrom(oe);
-                or = _initOffsetEdge.Image(e).First().Orientation();
-                if (ne.Orientation() == global::Kerf.Topology.Orientation.Reversed)
+                or = _initOffsetEdge.Image(e).First().Orientation;
+                if (ne.Orientation == global::Kerf.Topology.Orientation.Reversed)
                 {
-                    ne.Orientation(global::Kerf.Engine.Topology.TopAbs.Reverse(or));
+                    ne.Orient(global::Kerf.Engine.Topology.TopAbs.Reverse(or));
                 }
                 else
                 {
-                    ne.Orientation(or);
+                    ne.Orient(or);
                 }
                 _initOffsetEdge.Remove(oe);
                 _initOffsetEdge.Bind(e, ne);
@@ -2234,7 +2234,7 @@ public sealed partial class MakeOffset
                         pfirst = baCurve.Value(baCurve.FirstParameter());
                         plast = baCurve.Value(baCurve.LastParameter());
                         pmid = baCurve.Value((baCurve.FirstParameter() + baCurve.LastParameter()) / 2.0);
-                        if (pfirst.Distance(plast) <= tolApex && pfirst.Distance(pmid) <= tolApex)
+                        if (pfirst.DistanceTo(plast) <= tolApex && pfirst.DistanceTo(pmid) <= tolApex)
                         {
                             continue;
                         }
@@ -2325,7 +2325,7 @@ public sealed partial class MakeOffset
                 Vertex firstVert, endVert;
                 Exploration.Vertices(curEdge, out Vertex v1, out Vertex v2);
                 firstVert = curFirstVertex;
-                if (lPnt.Distance(firstPoint) <= global::Kerf.Engine.Foundation.Precision.Confusion())
+                if (lPnt.DistanceTo(firstPoint) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     endVert = theFirstVertex;
                 }
@@ -2389,13 +2389,13 @@ public sealed partial class MakeOffset
                     p2d2_ = eEc.Value(eEc.LastParameter());
                     if (v1e.IsSame(v1))
                     {
-                        Vertex newV = (p2d1_.Distance(fPnt2d) <= global::Kerf.Engine.Foundation.Precision.Confusion()) ? firstVert : endVert;
+                        Vertex newV = (p2d1_.DistanceTo(fPnt2d) <= global::Kerf.Engine.Foundation.Precision.Confusion()) ? firstVert : endVert;
                         bb.Remove(eforward, v1e);
                         bb.Add(eforward, newV.Oriented(Forward));
                     }
                     else
                     {
-                        Vertex newV = (p2d2_.Distance(fPnt2d) <= global::Kerf.Engine.Foundation.Precision.Confusion()) ? firstVert : endVert;
+                        Vertex newV = (p2d2_.DistanceTo(fPnt2d) <= global::Kerf.Engine.Foundation.Precision.Confusion()) ? firstVert : endVert;
                         bb.Remove(eforward, v2e);
                         bb.Add(eforward, newV.Oriented(global::Kerf.Topology.Orientation.Reversed));
                     }
@@ -2416,21 +2416,21 @@ public sealed partial class MakeOffset
                 Curve2D c2d = Tool.CurveOnSurface(edge, sphSurf, L, out double f, out double l)!;
                 p2d1 = c2d.Value(f);
                 p2d2 = c2d.Value(l);
-                if (p2d1.X() < ufirst)
+                if (p2d1.X < ufirst)
                 {
-                    ufirst = p2d1.X();
+                    ufirst = p2d1.X;
                 }
-                if (p2d1.X() > ulast)
+                if (p2d1.X > ulast)
                 {
-                    ulast = p2d1.X();
+                    ulast = p2d1.X;
                 }
-                if (p2d2.X() < ufirst)
+                if (p2d2.X < ufirst)
                 {
-                    ufirst = p2d2.X();
+                    ufirst = p2d2.X;
                 }
-                if (p2d2.X() > ulast)
+                if (p2d2.X > ulast)
                 {
-                    ulast = p2d2.X();
+                    ulast = p2d2.X;
                 }
             }
             NCollection_List<Shape> newEdges = new();
@@ -2442,7 +2442,7 @@ public sealed partial class MakeOffset
                 Curve2D c2d = Tool.CurveOnSurface(firstEdge, sphSurf, L, out double f, out double l)!;
                 p2d1 = c2d.Value(f);
                 p2d2 = c2d.Value(l);
-                if (Math.Abs(p2d1.X() - ufirst) <= global::Kerf.Engine.Foundation.Precision.Confusion())
+                if (Math.Abs(p2d1.X - ufirst) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     edgesOfWire.Remove(itl);
                     break;
@@ -2468,15 +2468,15 @@ public sealed partial class MakeOffset
             }
 
             double vfirst, vlast;
-            if (p2d1.Y() > 0.0)
+            if (p2d1.Y > 0.0)
             {
-                vfirst = p2d1.Y();
+                vfirst = p2d1.Y;
                 vlast = M_PI / 2.0;
             }
             else
             {
                 vfirst = -M_PI / 2.0;
-                vlast = p2d1.Y();
+                vlast = p2d1.Y;
             }
             Face newSphericalFace =
                 new LibraryMakeFace(sphSurf!, ufirst, ulast, vfirst, vlast, global::Kerf.Engine.Foundation.Precision.Confusion()).InternalFace();
@@ -2523,7 +2523,7 @@ public sealed partial class MakeOffset
             theShell.Free(true);
             bb.Add(theShell, newSphericalFace);
             isModified = true;
-            if (!theShell.Closed())
+            if (!theShell.IsClosed)
             {
                 if (Tool.IsClosed(theShell))
                 {
@@ -2537,7 +2537,7 @@ public sealed partial class MakeOffset
             return;
         }
         //
-        if (_shape.ShapeType() == ShapeType.Solid || _thickening)
+        if (_shape.Type == ShapeType.Solid || _thickening)
         {
             // Explo.Init( myOffsetShape, TopAbs_SHELL );
 
@@ -2560,7 +2560,7 @@ public sealed partial class MakeOffset
                 // if (myThickening && myOffset > 0.)
                 //   Sh.Reverse();
                 nbShell++;
-                if (sh.Closed())
+                if (sh.IsClosed)
                 {
                     bb.Add(sol, sh);
                 }
@@ -2910,8 +2910,8 @@ public sealed partial class MakeOffset
                     // can fail and offset edge cannot get vertices.
                     // Following workaround is only to avoid exception if V3 and V4 are Null
                     // Vertex points are invalid.
-                    Orientation oeOri = oe.Orientation();
-                    oe.Orientation(Forward);
+                    Orientation oeOri = oe.Orientation;
+                    oe.Orient(Forward);
                     Curve3D oec = Tool.Curve(oe, out double oef, out double oel)!;
                     BrepBuilder aBB = new();
                     Point3D p1 = oec.Value(aF);
@@ -2919,20 +2919,20 @@ public sealed partial class MakeOffset
                     Vertex oev1 = new(), oev2 = new();
                     double tol = Math.Max(Tool.Tolerance(v1), Tool.Tolerance(v2));
                     aBB.MakeVertex(ref oev1, p1, tol);
-                    oev1.Orientation(Forward);
+                    oev1.Orient(Forward);
                     aBB.MakeVertex(ref oev2, p2, tol);
-                    oev2.Orientation(global::Kerf.Topology.Orientation.Reversed);
+                    oev2.Orient(global::Kerf.Topology.Orientation.Reversed);
                     aBB.Add(oe, oev1);
                     aBB.Add(oe, oev2);
                     aBB.Range(oe, aF, aL);
-                    oe.Orientation(oeOri);
+                    oe.Orient(oeOri);
                     Exploration.Vertices(oe, out v4, out v3);
                 }
                 if (c is not null && (!c.IsClosed && !c.IsPeriodic))
                 {
                     Point3D pntF = Tool.Pnt(v1);
                     Point3D pntL = Tool.Pnt(v2);
-                    double distE = pntF.SquareDistance(pntL);
+                    double distE = pntF.SquareDistanceTo(pntL);
                     if (distE < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         // Bad case: non closed, but vertexes mapped to same 3d point.
@@ -2945,12 +2945,12 @@ public sealed partial class MakeOffset
                         // Potential problems not detected via checkshape.
                         Point3D pntOF = Tool.Pnt(v4);
                         Point3D pntOL = Tool.Pnt(v3);
-                        if (pntOF.SquareDistance(pntOL) > Constants.Resolution())
+                        if (pntOF.SquareDistanceTo(pntOL) > Constants.Resolution())
                         {
                             // To avoid computation of complex analytical continuation of Sin / ArcSin.
-                            double sinValue = Math.Min(2 * edgeTol0 / pntOF.Distance(pntOL), 1.0);
+                            double sinValue = Math.Min(2 * edgeTol0 / pntOF.DistanceTo(pntOL), 1.0);
                             double maxAngle = Math.Min(Math.Abs(Math.Asin(sinValue)), M_PI_4); // Maximal angle.
-                            double currentAngle = new Vector3D(pntF, pntL).Angle(new Vector3D(pntOF, pntOL));
+                            double currentAngle = new Vector3D(pntF, pntL).AngleTo(new Vector3D(pntOF, pntOL));
                             if (c is LineCurve3D && Math.Abs(currentAngle) > maxAngle)
                             {
                                 // anEdge not collinear to offset edge.
@@ -2974,7 +2974,7 @@ public sealed partial class MakeOffset
                     toReverse = true;
                 }
 
-                oe.Orientation(global::Kerf.Engine.Topology.TopAbs.Reverse(edge.Orientation()));
+                oe.Orient(global::Kerf.Engine.Topology.TopAbs.Reverse(edge.Orientation));
                 Edge E3, E4 = new();
                 bool arcOnV2 = ((_join == Arc) && (_initOffsetEdge.HasImage(v2)));
                 if (firstStep || isBuildFromScratch)
@@ -3044,21 +3044,21 @@ public sealed partial class MakeOffset
                 {
                     Circle3D circ = bAcurve.Circle();
                     Circle3D circOE = bAcurveOE.Circle();
-                    Line3D axisLine = new(circ.Axis());
-                    Direction3D circAxisDir = circ.Axis().Direction();
-                    if (circ.Axis().IsParallel(circOE.Axis(), global::Kerf.Engine.Foundation.Precision.Confusion())
-                        && axisLine.Contains(circOE.Location(), global::Kerf.Engine.Foundation.Precision.Confusion()))
+                    Line3D axisLine = new(circ.Axis);
+                    Direction3D circAxisDir = circ.Axis.Direction;
+                    if (circ.Axis.IsParallel(circOE.Axis, global::Kerf.Engine.Foundation.Precision.Confusion())
+                        && axisLine.Contains(circOE.Location, global::Kerf.Engine.Foundation.Precision.Confusion()))
                     { // cylinder, plane or cone
-                        if (Math.Abs(circ.Radius() - circOE.Radius()) <= global::Kerf.Engine.Foundation.Precision.Confusion())
+                        if (Math.Abs(circ.Radius - circOE.Radius) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                         { // case of cylinder
                             theSurf = new MakeCylindricalSurface(circ).Value();
                         }
-                        else if (circ.Location().Distance(circOE.Location()) <= global::Kerf.Engine.Foundation.Precision.Confusion())
+                        else if (circ.Location.DistanceTo(circOE.Location) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                         { // case of plane
                             isPlanar = true;
                             //
                             Point3D ponEL = bAcurve.Value(lpar);
-                            if (ponEL.Distance(ponE) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
+                            if (ponEL.DistanceTo(ponE) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
                             {
                                 bool bIsHole;
                                 Edge e1, e2;
@@ -3066,7 +3066,7 @@ public sealed partial class MakeOffset
                                 PlaneSurface pl;
                                 FaceClassifier2D clsf = new();
                                 //
-                                if (circ.Radius() > circOE.Radius())
+                                if (circ.Radius > circOE.Radius)
                                 {
                                     e1 = edge;
                                     e2 = oe;
@@ -3082,7 +3082,7 @@ public sealed partial class MakeOffset
                                 bb.MakeWire(ref w2);
                                 bb.Add(w2, e2);
                                 //
-                                pl = new PlaneSurface(circ.Location(), circAxisDir);
+                                pl = new PlaneSurface(circ.Location, circAxisDir);
                                 for (int i = 0; i < 2; ++i)
                                 {
                                     ref Wire w = ref (i == 0) ? ref w1 : ref w2;
@@ -3109,9 +3109,9 @@ public sealed partial class MakeOffset
                         else // case of cone
                         {
                             Cone theCone =
-                                new MakeCone(circ.Location(), circOE.Location(), circ.Radius(), circOE.Radius()).Value();
-                            CoordinateSystem theAx3 = new(circ.Position());
-                            if (circAxisDir * theCone.Axis().Direction() < 0.0)
+                                new MakeCone(circ.Location, circOE.Location, circ.Radius, circOE.Radius).Value();
+                            CoordinateSystem theAx3 = new(circ.Position);
+                            if (circAxisDir * theCone.Axis.Direction < 0.0)
                             {
                                 theAx3 = theAx3.ZReversed();
                                 circAxisDir = circAxisDir.Reversed();
@@ -3172,10 +3172,10 @@ public sealed partial class MakeOffset
                     {
                         Curve3D? gc = Tool.Curve(edge, out double f, out double l);
                         PlaneSurface pln = (PlaneSurface)findPlane.Surface()!;
-                        double maxDist = ComputeMaxDist(pln.Pln(), gc, f, l);
+                        double maxDist = ComputeMaxDist(pln.Plane, gc, f, l);
                         if (maxDist <= edgeTol)
                         {
-                            LibraryMakeFace mf = new(pln.Pln(), theWire);
+                            LibraryMakeFace mf = new(pln.Plane, theWire);
                             if (mf.IsDone)
                             {
                                 newFace = mf.InternalFace();
@@ -3188,7 +3188,7 @@ public sealed partial class MakeOffset
                                         continue;
                                     }
                                     gc = Tool.Curve(e, out f, out l);
-                                    maxDist = ComputeMaxDist(pln.Pln(), gc, f, l);
+                                    maxDist = ComputeMaxDist(pln.Plane, gc, f, l);
                                     bb.UpdateEdge(e, maxDist);
                                 }
                                 isPlanar = true;
@@ -3207,7 +3207,7 @@ public sealed partial class MakeOffset
                         thrusecGenerator.AddCurve(trOffsetCurve);
                         thrusecGenerator.Perform(global::Kerf.Engine.Foundation.Precision.PConfusion());
                         theSurf = thrusecGenerator.Surface()!;
-                        theSurf.Bounds(out double uf, out double ul, out double vf, out double vl);
+                        theSurf.ParameterBounds(out double uf, out double ul, out double vf, out double vl);
                         Placement loc = new();
                         edgeLine2d = new LineCurve2D(new Point2D(0.0, vf), new Direction2D(Direction2D.D.X));
                         bb.UpdateEdge(edge, edgeLine2d, theSurf, loc, global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -3256,7 +3256,7 @@ public sealed partial class MakeOffset
                         Point2D fp2dOE = oeLine2d!.Value(fparOE);
                         line2d2 = new MakeLine2d(fp2d, fp2dOE).Value();
                         Curve3D? curve = null;
-                        double firstPar = 0.0, lastPar = fp2d.Distance(fp2dOE);
+                        double firstPar = 0.0, lastPar = fp2d.DistanceTo(fp2dOE);
                         CurveAdaptor2D ac2d = new(line2d2, firstPar, lastPar);
                         SurfaceAdaptor gAsurf = new(theSurf!);
                         CurveAdaptor2D hc2d = ac2d; // OCCT copies the adaptors into handles
@@ -3275,7 +3275,7 @@ public sealed partial class MakeOffset
                         Point2D lp2dOE = oeLine2d!.Value(lparOE);
                         line2d = new MakeLine2d(lp2d, lp2dOE).Value();
                         Curve3D? curve = null;
-                        double firstPar = 0.0, lastPar = lp2d.Distance(lp2dOE);
+                        double firstPar = 0.0, lastPar = lp2d.DistanceTo(lp2dOE);
                         CurveAdaptor2D ac2d = new(line2d, firstPar, lastPar);
                         SurfaceAdaptor gAsurf = new(theSurf!);
                         CurveAdaptor2D hc2d = ac2d; // OCCT copies the adaptors into handles
@@ -3334,12 +3334,12 @@ public sealed partial class MakeOffset
                     {
                         ea2 = new LibraryMakeEdge(v2, arcV2).InternalEdge();
                     }
-                    arc.Orientation(((arcReverse) ? global::Kerf.Topology.Orientation.Reversed : Forward));
-                    if (ea1.Orientation() == global::Kerf.Topology.Orientation.Reversed)
+                    arc.Orient(((arcReverse) ? global::Kerf.Topology.Orientation.Reversed : Forward));
+                    if (ea1.Orientation == global::Kerf.Topology.Orientation.Reversed)
                     {
                         arc.Reverse();
                     }
-                    ea2.Orientation(global::Kerf.Engine.Topology.TopAbs.Reverse(ea1.Orientation()));
+                    ea2.Orient(global::Kerf.Engine.Topology.TopAbs.Reverse(ea1.Orientation));
                     Wire arcWire = new();
                     bb.MakeWire(ref arcWire);
                     bb.Add(arcWire, ea1);
@@ -3460,7 +3460,7 @@ public sealed partial class MakeOffset
         for (; explo.More(); explo.Next())
         {
             Shape s = explo.Current();
-            if (!s.Closed())
+            if (!s.IsClosed)
             {
                 if (Tool.IsClosed(s))
                 {
@@ -3496,7 +3496,7 @@ public sealed partial class MakeOffset
         Solid sol = new();
         b.MakeSolid(ref sol);
         sol.Closed(true);
-        bool makeSolid = (_shape.ShapeType() == ShapeType.Solid) || _thickening;
+        bool makeSolid = (_shape.Type == ShapeType.Solid) || _thickening;
         for (exp.Init(_offsetShape, ShapeType.Shell); exp.More(); exp.Next())
         {
             if (!ps.More())
@@ -3510,7 +3510,7 @@ public sealed partial class MakeOffset
                 sh.Reverse();
             }
             nbShell++;
-            if (sh.Closed() && makeSolid)
+            if (sh.IsClosed && makeSolid)
             {
                 b.Add(sol, sh);
             }
@@ -3748,8 +3748,8 @@ public sealed partial class MakeOffset
             Shape root1 = _initOffsetFace.Root(f1);
             Shape root2 = _initOffsetFace.Root(f2);
 
-            ShapeType type1 = root1.ShapeType();
-            ShapeType type2 = root2.ShapeType();
+            ShapeType type1 = root1.Type;
+            ShapeType type2 = root2.Type;
 
             if (f1.IsSame(f2))
             {
@@ -3856,7 +3856,7 @@ public sealed partial class MakeOffset
                     Edge ed = ShapeCasts.Edge(le.First());
                     if (_analyse.HasAncestor(ed))
                     {
-                        NCollection_List<Interval> li = _analyse.Type(ed);
+                        NCollection_List<OffsetInterval> li = _analyse.Type(ed);
                         if (li.Extent() == 1 && li.First().Type() == TypeOfConcavity.Tangential)
                         {
                             b.Continuity(oe, f1, f2, G1);
@@ -3900,11 +3900,11 @@ public sealed partial class MakeOffset
         {
             prm = ((ncontrol - 1 - i) * first + i * last) / (ncontrol - 1);
             p = crv!.Value(prm);
-            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(p.X()) || global::Kerf.Engine.Foundation.Precision.IsInfinite(p.Y()) || global::Kerf.Engine.Foundation.Precision.IsInfinite(p.Z()))
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(p.X) || global::Kerf.Engine.Foundation.Precision.IsInfinite(p.Y) || global::Kerf.Engine.Foundation.Precision.IsInfinite(p.Z))
             {
                 return global::Kerf.Engine.Foundation.Precision.Infinite();
             }
-            dist2 = plane.SquareDistance(p);
+            dist2 = plane.SquareDistanceTo(p);
             if (dist2 > maxDist)
             {
                 maxDist = dist2;
@@ -4170,7 +4170,7 @@ public sealed partial class MakeOffset
             BrepTools.UVBounds(f, out double umin, out double umax, out double vmin, out double vmax);
 
             // Continuity check.
-            if (surf.Continuity() == C0)
+            if (surf.Continuity == C0)
             {
                 _error = global::Kerf.Engine.Offsets.Error.C0Geometry;
                 return false;
@@ -4211,7 +4211,7 @@ public sealed partial class MakeOffset
                 Vertex v = ShapeCasts.Vertex(expFV.Current());
                 pnt2d = Tool.Parameters(v, f);
 
-                _error = CheckSinglePoint(pnt2d.X(), pnt2d.Y(), surf, bad3dPnts);
+                _error = CheckSinglePoint(pnt2d.X, pnt2d.Y, surf, bad3dPnts);
                 if (_error != global::Kerf.Engine.Offsets.Error.NoError)
                 {
                     return false;
@@ -4264,7 +4264,7 @@ public sealed partial class MakeOffset
                 for (; expE.More(); expE.Next())
                 {
                     Shape e = expE.Current();
-                    if (e.Orientation() != Internal)
+                    if (e.Orientation != Internal)
                     {
                         bRemoveWire = false;
                         continue;
@@ -4312,12 +4312,12 @@ public sealed partial class MakeOffset
     {
         surf.D1(uParam, vParam, out Point3D pnt, out Vector3D d1U, out Vector3D d1V);
 
-        if (d1U.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.SquareConfusion() || d1V.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+        if (d1U.SquareMagnitude < global::Kerf.Engine.Foundation.Precision.SquareConfusion() || d1V.SquareMagnitude < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             bool isKnownBadPnt = false;
             for (int idx = 0; idx <= (badPoints.Count - 1); ++idx)
             {
-                if (pnt.SquareDistance(badPoints[idx]) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+                if (pnt.SquareDistanceTo(badPoints[idx]) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                 {
                     isKnownBadPnt = true;
                     break;
@@ -4514,7 +4514,7 @@ public sealed partial class MakeOffset
                         AppendToList(edgesOrigins.GetValue(nec), s);
                     }
                     // trim edges
-                    if (NE.ShapeType() == ShapeType.Edge)
+                    if (NE.Type == ShapeType.Edge)
                     {
                         if (AddNew(newEdges, NE))
                         {
@@ -4557,7 +4557,7 @@ public sealed partial class MakeOffset
                 }
                 else
                 {
-                    if (s.ShapeType() != ShapeType.Edge)
+                    if (s.Type != ShapeType.Edge)
                     {
                         continue;
                     }
@@ -4568,7 +4568,7 @@ public sealed partial class MakeOffset
 
                     NE = mapSF.GetValue(fi).InternalGenerated(s);
                     //// modified by jgv, 19.12.03 for OCC4455 ////
-                    NE.Orientation(s.Orientation());
+                    NE.Orient(s.Orientation);
                     //
                     if (!edgesOrigins.ContainsKey(NE))
                     {
@@ -4579,7 +4579,7 @@ public sealed partial class MakeOffset
                     if (mes.ContainsKey(NE))
                     {
                         NE = mes.GetValue(NE);
-                        NE.Orientation(s.Orientation());
+                        NE.Orient(s.Orientation);
                         if (AddNew(newEdges, NE))
                         {
                             Edge ne = ShapeCasts.Edge(NE);
@@ -4644,7 +4644,7 @@ public sealed partial class MakeOffset
             for (; it.More(); it.Next())
             {
                 Vertex v = ShapeCasts.Vertex(it.Value());
-                if (ne.Orientation() == global::Kerf.Topology.Orientation.Reversed)
+                if (ne.Orientation == global::Kerf.Topology.Orientation.Reversed)
                 {
                     v.Reverse();
                 }
@@ -4680,15 +4680,15 @@ public sealed partial class MakeOffset
             {
                 ne.Free(true);
                 BrepBuilder b = new();
-                Orientation or = ne.Orientation();
-                ne.Orientation(Forward);
+                Orientation or = ne.Orientation;
+                ne.Orient(Forward);
                 Exploration.Vertices(ne, out Vertex vf, out Vertex vl);
                 b.Remove(ne, vf);
                 b.Remove(ne, vl);
                 b.Add(ne, v1.Oriented(Forward));
                 b.Add(ne, v2.Oriented(global::Kerf.Topology.Orientation.Reversed));
                 b.Range(ne, uMin, uMax);
-                ne.Orientation(or);
+                ne.Orient(or);
                 asDes.Add(ne, v1.Oriented(Forward));
                 asDes.Add(ne, v2.Oriented(global::Kerf.Topology.Orientation.Reversed));
                 BrepLibrary.SameParameter(ne, sameParTol, true);
@@ -4767,7 +4767,7 @@ public sealed partial class MakeOffset
         UpdateHistory(lf, mv1, image);
         //
         Shape result1 = mv1.InternalShape();
-        if (result1.ShapeType() == ShapeType.Solid)
+        if (result1.Type == ShapeType.Solid)
         {
             // result is the alone solid, nothing to do
             return GetSubShapes(result1, ShapeType.Shell, ref shells);
@@ -4842,7 +4842,7 @@ public sealed partial class MakeOffset
         }
         //
         Shape result2 = mv2.InternalShape();
-        if (result2.ShapeType() == ShapeType.Solid)
+        if (result2.Type == ShapeType.Solid)
         {
             return GetSubShapes(result2, ShapeType.Shell, ref shells);
         }
@@ -4932,7 +4932,7 @@ public sealed partial class MakeOffset
     {
         Shape theS = InternalCopied(s0);
         _generated.Clear();
-        ShapeType type = theS.ShapeType();
+        ShapeType type = theS.Type;
         // OCCT's switch falls through from VERTEX to EDGE to FACE.
         if (type == ShapeType.Vertex)
         {
@@ -5042,7 +5042,7 @@ public sealed partial class MakeOffset
         Shape theShape = InternalCopied(shape0);
         _generated.Clear();
 
-        if (theShape.ShapeType() == ShapeType.Face)
+        if (theShape.Type == ShapeType.Face)
         {
             Shape s = theShape;
             if (_facePlanfaceMap.TryGetValue(s, out Shape planface))
@@ -5183,7 +5183,7 @@ public sealed partial class MakeOffset
                 {
                     Plane3D pln = planarityChecker.Plan();
                     double um, vm;
-                    surf.Bounds(out double u1, out double u2, out double v1, out double v2);
+                    surf.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
                     bool isInf1 = global::Kerf.Engine.Foundation.Precision.IsInfinite(u1), isInf2 = global::Kerf.Engine.Foundation.Precision.IsInfinite(u2);
                     if (!isInf1 && !isInf2)
                     {
@@ -5221,18 +5221,18 @@ public sealed partial class MakeOffset
                     }
                     bas.D1(um, vm, out Point3D p, out Vector3D d1, out Vector3D d2);
                     Vector3D norm = d1.Crossed(d2);
-                    Direction3D plnNorm = pln.Position().Direction();
+                    Direction3D plnNorm = pln.Position.Direction;
                     if (norm.Dot(new Vector3D(plnNorm)) < 0.0)
                     {
                         plnNorm = plnNorm.Reversed();
-                        Axis3D ax = new(pln.Position().Location(), plnNorm);
+                        Axis3D ax = new(pln.Position.Location, plnNorm);
                         pln = pln.WithAxis(ax);
                     }
                     PlaneSurface plane = new(pln);
                     Face planarFace = new();
                     bb.MakeFace(ref planarFace, plane, tolForFace);
                     Face faceForward = f;
-                    faceForward.Orientation(Forward);
+                    faceForward.Orient(Forward);
                     Iterator itFace = new(faceForward);
                     for (; itFace.More(); itFace.Next())
                     {
@@ -5268,7 +5268,7 @@ public sealed partial class MakeOffset
     private static void RemoveSeamAndDegeneratedEdges(in Face face, in Face oldFace)
     {
         Face aFace = face;
-        aFace.Orientation(Forward);
+        aFace.Orient(Forward);
 
         bool isDegOrSeamFound = false;
         NCollection_Sequence<Shape> eseq = new();

@@ -14,7 +14,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Computes bounding box for a 3D B-spline curve (Geom_BSplineCurve): the curve is segmented to the range, sampled
 /// span by span with a deflection estimate, and the result reduced by the poles' convex hull.
 /// </summary>
-public sealed class BSplineCurveBounds : CurveBounds.ICurveEvaluator
+internal sealed class BSplineCurveBounds : CurveBounds.ICurveEvaluator
 {
     private readonly BSplineCurve3D _geom;
 
@@ -28,7 +28,7 @@ public sealed class BSplineCurveBounds : CurveBounds.ICurveEvaluator
     Curve3D? CurveBounds.ICurveEvaluator.CurveGeometry() => _geom;
 
     /// <summary>Compute bounding box for full curve.</summary>
-    public Box Box(double tol) => Box(_geom.FirstParameter(), _geom.LastParameter(), tol);
+    public Box Box(double tol) => Box(_geom.FirstParameter, _geom.LastParameter, tol);
 
     /// <summary>Compute bounding box for arc [theU1, theU2].</summary>
     public Box Box(double u1, double u2, double tol)
@@ -38,35 +38,35 @@ public sealed class BSplineCurveBounds : CurveBounds.ICurveEvaluator
         double aU1 = u1;
         double aU2 = u2;
 
-        if (Math.Abs(curve.FirstParameter() - aU1) > global::Kerf.Engine.Foundation.Precision.Parametric(tol)
-            || Math.Abs(curve.LastParameter() - aU2) > global::Kerf.Engine.Foundation.Precision.Parametric(tol))
+        if (Math.Abs(curve.FirstParameter - aU1) > global::Kerf.Engine.Foundation.Precision.Parametric(tol)
+            || Math.Abs(curve.LastParameter - aU2) > global::Kerf.Engine.Foundation.Precision.Parametric(tol))
         {
             Geometry3D geometry = curve.Copy();
             BSplineCurve3D segmentedCurve = (BSplineCurve3D)geometry;
             if (segmentedCurve.IsPeriodic)
             {
-                global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(segmentedCurve.FirstParameter(),
-                                      segmentedCurve.LastParameter(),
+                global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(segmentedCurve.FirstParameter,
+                                      segmentedCurve.LastParameter,
                                       global::Kerf.Engine.Foundation.Precision.PConfusion(),
                                       ref aU1,
                                       ref aU2);
             }
             else
             {
-                if (segmentedCurve.FirstParameter() > aU1)
+                if (segmentedCurve.FirstParameter > aU1)
                 {
-                    aU1 = segmentedCurve.FirstParameter();
+                    aU1 = segmentedCurve.FirstParameter;
                 }
-                if (segmentedCurve.LastParameter() < aU2)
+                if (segmentedCurve.LastParameter < aU2)
                 {
-                    aU2 = segmentedCurve.LastParameter();
+                    aU2 = segmentedCurve.LastParameter;
                 }
             }
 
             double segmentTol = 2.0 * global::Kerf.Engine.Foundation.Precision.PConfusion();
             if (segmentedCurve.IsPeriodic)
             {
-                double period = segmentedCurve.LastParameter() - segmentedCurve.FirstParameter();
+                double period = segmentedCurve.LastParameter - segmentedCurve.FirstParameter;
                 double directDiff = Math.Abs(aU2 - aU1);
                 double crossPeriodDiff1 = Math.Abs(aU2 - period - aU1);
                 double crossPeriodDiff2 = Math.Abs(aU1 - period - aU2);
@@ -90,7 +90,7 @@ public sealed class BSplineCurveBounds : CurveBounds.ICurveEvaluator
         Box sampledBox = new();
         int knotFirst = curve.FirstUKnotIndex();
         int knotLast = curve.LastUKnotIndex();
-        int degree = curve.Degree();
+        int degree = curve.Degree;
         NCollection_Array1<double> knots = curve.InternalKnots();
         CurveAdaptor gaCurve = new(curve);
         double maxDeflection = 0.0;

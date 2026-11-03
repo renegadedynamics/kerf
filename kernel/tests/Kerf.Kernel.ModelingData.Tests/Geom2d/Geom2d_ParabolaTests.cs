@@ -15,7 +15,7 @@ public class Geom2d_ParabolaTest
     [Fact]
     public void Focal()
     {
-        Assert.Equal(4.0, myParabola.Focal(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(4.0, myParabola.Focal, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -28,22 +28,22 @@ public class Geom2d_ParabolaTest
     [Fact]
     public void Eccentricity()
     {
-        Assert.Equal(1.0, myParabola.Eccentricity(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, myParabola.Eccentricity, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
     public void Focus()
     {
-        Point2D aFocus = myParabola.Focus();
-        Assert.Equal(4.0, aFocus.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aFocus.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Point2D aFocus = myParabola.Focus;
+        Assert.Equal(4.0, aFocus.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aFocus.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
     public void Parameter()
     {
         // p = 2*Focal = 8
-        Assert.Equal(8.0, myParabola.Parameter(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(8.0, myParabola.Parameter, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -51,8 +51,8 @@ public class Geom2d_ParabolaTest
     {
         // At U=0: vertex
         Point2D aPnt = myParabola.EvalD0(0.0);
-        Assert.Equal(0.0, aPnt.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aPnt.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aPnt.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aPnt.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -62,8 +62,8 @@ public class Geom2d_ParabolaTest
         double aU = 3.0;
         Point2D aPntPos = myParabola.EvalD0(aU);
         Point2D aPntNeg = myParabola.EvalD0(-aU);
-        Assert.Equal(aPntNeg.X(), aPntPos.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(-aPntNeg.Y(), aPntPos.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aPntNeg.X, aPntPos.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(-aPntNeg.Y, aPntPos.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -71,8 +71,8 @@ public class Geom2d_ParabolaTest
     {
         Curve2D.ResD1 aR = myParabola.EvalD1(0.0);
         // At vertex: tangent is along Y axis
-        Assert.Equal(0.0, aR.D1.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.True(aR.D1.Magnitude() > global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aR.D1.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(aR.D1.Magnitude > global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -80,21 +80,21 @@ public class Geom2d_ParabolaTest
     {
         Curve2D.ResD2 aR = myParabola.EvalD2(0.0);
         // Second derivative at vertex should be along X (opening direction)
-        Assert.True(aR.D2.X() > 0.0);
+        Assert.True(aR.D2.X > 0.0);
     }
 
     [Fact]
     public void PointOnParabola_FocusDirectrixProperty()
     {
         // For any point P on parabola: distance(P, Focus) = distance(P, Directrix)
-        Point2D aFocus = myParabola.Focus();
-        Axis2D aDirectrix = myParabola.Directrix();
+        Point2D aFocus = myParabola.Focus;
+        Axis2D aDirectrix = myParabola.Directrix;
         Line2D aDirLine = new Line2D(aDirectrix);
         for (double u = -5.0; u <= 5.0; u += 1.0)
         {
             Point2D aPnt = myParabola.EvalD0(u);
-            double aDistFocus = aPnt.Distance(aFocus);
-            double aDistDir = aDirLine.Distance(aPnt);
+            double aDistFocus = aPnt.DistanceTo(aFocus);
+            double aDistDir = aDirLine.DistanceTo(aPnt);
             Assert.Equal(aDistDir, aDistFocus, 1e-6);
         }
     }
@@ -103,7 +103,7 @@ public class Geom2d_ParabolaTest
     public void SetFocal()
     {
         myParabola.SetFocal(10.0);
-        Assert.Equal(10.0, myParabola.Focal(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(10.0, myParabola.Focal, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -112,7 +112,7 @@ public class Geom2d_ParabolaTest
         Geometry2D aCopyGeom = myParabola.Copy();
         ParabolaCurve2D? aCopy = aCopyGeom as ParabolaCurve2D;
         Assert.NotNull(aCopy);
-        Assert.Equal(4.0, aCopy.Focal(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(4.0, aCopy.Focal, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -120,7 +120,7 @@ public class Geom2d_ParabolaTest
     {
         Transform2D aTrsf = new Transform2D().WithTranslation(new Vector2D(5.0, 10.0));
         myParabola.Transform(aTrsf);
-        Assert.Equal(5.0, myParabola.Location().X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(10.0, myParabola.Location().Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(5.0, myParabola.Location.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(10.0, myParabola.Location.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 }

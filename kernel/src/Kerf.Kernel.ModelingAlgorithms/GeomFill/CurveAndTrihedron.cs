@@ -281,6 +281,6 @@ public class CurveAndTrihedron : SurfaceLocationLaw
 
     public override void Rotation(ref Point3D centre)
     {
-        centre = _curve!.Circle().Location();
+        centre = _curve!.Circle().Location;
     }
 }

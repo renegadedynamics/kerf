@@ -12,7 +12,7 @@ using Occt;
 namespace Kerf.Engine.Topology.Brep;
 
 /// <summary>The root of the geometric curve representations: a range, a first and a last parameter.</summary>
-public abstract class GCurve : CurveRepresentation
+internal abstract class GCurve : CurveRepresentation
 {
     private double _first;
     private double _last;

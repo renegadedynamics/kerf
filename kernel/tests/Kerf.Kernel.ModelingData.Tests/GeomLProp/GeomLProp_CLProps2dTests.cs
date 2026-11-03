@@ -34,8 +34,8 @@ public class GeomLProp_CLProps2dTest
         var aProps = new CLProps2d(myCircle, 0.0, 2, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         Point2D aPnt = aProps.Value();
-        Assert.Equal(5.0, aPnt.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aPnt.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(5.0, aPnt.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aPnt.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -45,8 +45,8 @@ public class GeomLProp_CLProps2dTest
 
         aProps.SetParameter(Math.PI / 2.0);
         Point2D aPnt = aProps.Value();
-        Assert.Equal(0.0, aPnt.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(5.0, aPnt.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aPnt.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(5.0, aPnt.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -63,8 +63,8 @@ public class GeomLProp_CLProps2dTest
         var aProps = new CLProps2d(myCircle, 0.0, 2, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         aProps.Tangent(out Direction2D aTangent);
-        Assert.Equal(0.0, aTangent.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(1.0, aTangent.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aTangent.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aTangent.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -99,7 +99,7 @@ public class GeomLProp_CLProps2dTest
         aProps.Normal(out Direction2D aNormal);
         // Normal should be perpendicular to tangent
         aProps.Tangent(out Direction2D aTangent);
-        Assert.Equal(0.0, Math.Abs(aTangent.X() * aNormal.X() + aTangent.Y() * aNormal.Y()), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, Math.Abs(aTangent.X * aNormal.X + aTangent.Y * aNormal.Y), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -109,8 +109,8 @@ public class GeomLProp_CLProps2dTest
         var aProps = new CLProps2d(myCircle, 0.0, 2, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         aProps.CentreOfCurvature(out Point2D aCenter);
-        Assert.Equal(0.0, aCenter.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aCenter.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aCenter.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aCenter.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -119,8 +119,8 @@ public class GeomLProp_CLProps2dTest
         var aProps = new CLProps2d(myCircle, Math.PI / 2.0, 2, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         aProps.CentreOfCurvature(out Point2D aCenter);
-        Assert.Equal(0.0, aCenter.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aCenter.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aCenter.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aCenter.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -136,8 +136,8 @@ public class GeomLProp_CLProps2dTest
         var aProps = new CLProps2d(myLine, 5.0, 2, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         aProps.Tangent(out Direction2D aTangent);
-        Assert.Equal(1.0, aTangent.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aTangent.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aTangent.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aTangent.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -186,7 +186,7 @@ public class GeomLProp_CLProps2dTest
         aProps.SetParameter(0.0);
 
         Point2D aPnt = aProps.Value();
-        Assert.Equal(5.0, aPnt.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(5.0, aPnt.X, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -196,8 +196,8 @@ public class GeomLProp_CLProps2dTest
         Vector2D aD1 = aProps.D1();
 
         // First derivative at U=0 on circle(R=5) is (0, 5)
-        Assert.Equal(0.0, aD1.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(5.0, aD1.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aD1.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(5.0, aD1.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -207,7 +207,7 @@ public class GeomLProp_CLProps2dTest
         Vector2D aD2 = aProps.D2();
 
         // Second derivative at U=0 on circle(R=5) is (-5, 0)
-        Assert.Equal(-5.0, aD2.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aD2.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(-5.0, aD2.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aD2.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 }

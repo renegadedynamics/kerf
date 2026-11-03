@@ -27,7 +27,7 @@ public class BOPTools_AlgoTools2DTests
         {
             double aT = theT1 + (theT2 - theT1) * i / 100.0;
             Point2D aUV = theC2D.Value(aT);
-            aMax = Math.Max(aMax, theC3D.Value(aT).Distance(theS.Value(aUV.X(), aUV.Y())));
+            aMax = Math.Max(aMax, theC3D.Value(aT).DistanceTo(theS.Value(aUV.X, aUV.Y)));
         }
         return aMax;
     }
@@ -80,7 +80,7 @@ public class BOPTools_AlgoTools2DTests
         {
             Vector3D aTau = new();
             Assert.True(AlgoTools2D.EdgeTangent(aE, 0.5, ref aTau));
-            Assert.Equal(1.0, aTau.Magnitude(), 1.0e-15);
+            Assert.Equal(1.0, aTau.Magnitude, 1.0e-15);
             Point3D aP1 = Tool.Pnt(Exploration.FirstVertex(aE, true));
             Point3D aP2 = Tool.Pnt(Exploration.LastVertex(aE, true));
             Assert.True(aTau.IsParallel(new Vector3D(aP1, aP2), 1.0e-12) && aTau.Dot(new Vector3D(aP1, aP2)) > 0);
@@ -151,8 +151,8 @@ public class BOPTools_AlgoTools2DTests
             // the pcurve's middle point is inside the face's UV bounds
             BrepTools.UVBounds(aF, out double aU1, out double aU2, out double aV1, out double aV2);
             Point2D aMid = aC2D!.Value(0.5 * (aT1 + aT2));
-            Assert.InRange(aMid.X(), aU1 - 1.0e-9, aU2 + 1.0e-9);
-            Assert.InRange(aMid.Y(), aV1 - 1.0e-9, aV2 + 1.0e-9);
+            Assert.InRange(aMid.X, aU1 - 1.0e-9, aU2 + 1.0e-9);
+            Assert.InRange(aMid.Y, aV1 - 1.0e-9, aV2 + 1.0e-9);
 
             // with a context: the same answer
             double aTolC = 0.0;
@@ -213,8 +213,8 @@ public class BOPTools_AlgoTools2DTests
             LineCurve2D aL = new(new Point2D(1.0 + k * 2 * Math.PI, 0.0), new Direction2D(0, 1));
             AlgoTools2D.AdjustPCurveOnFace(aF, 1.0, 4.0, aL, out Curve2D? aA);
             Assert.NotSame(aL, aA);
-            Assert.Equal(1.0, aA!.Value(2.0).X(), 1.0e-12);
-            Assert.Equal(2.0, aA.Value(2.0).Y(), 1.0e-12);
+            Assert.Equal(1.0, aA!.Value(2.0).X, 1.0e-12);
+            Assert.Equal(2.0, aA.Value(2.0).Y, 1.0e-12);
         }
         // in range: the curve itself
         LineCurve2D aIn = new(new Point2D(1.0, 0.0), new Direction2D(0, 1));
@@ -224,7 +224,7 @@ public class BOPTools_AlgoTools2DTests
         TrimmedCurve3D aC3D = new(new LineCurve3D(new Point3D(2, 0, 0), new Direction3D(0, 0, 1)), 1.0, 4.0);
         LineCurve2D aOut = new(new Point2D(1.0 + 2 * Math.PI, 0.0), new Direction2D(0, 1));
         AlgoTools2D.AdjustPCurveOnFace(aF, aC3D, aOut, out Curve2D? aA2);
-        Assert.Equal(1.0, aA2!.Value(2.0).X(), 1.0e-12);
+        Assert.Equal(1.0, aA2!.Value(2.0).X, 1.0e-12);
     }
 
     [Fact]

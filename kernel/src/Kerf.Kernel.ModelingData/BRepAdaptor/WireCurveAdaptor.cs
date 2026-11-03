@@ -152,9 +152,9 @@ public class WireCurveAdaptor : CurveAdaptorBase
         }
 
         _forward = true; // Default ; The Reverse Edges are parsed.
-        if ((nbEdge > 2) || ((nbEdge == 2) && (!_wire.Closed())))
+        if ((nbEdge > 2) || ((nbEdge == 2) && (!_wire.IsClosed)))
         {
-            Orientation or = _curves.Value(1).Edge().Orientation();
+            Orientation or = _curves.Value(1).Edge().Orientation;
             Vertex vi = new Vertex(), vl;
             Exploration.CommonVertex(_curves.Value(1).Edge(), _curves.Value(2).Edge(), ref vi);
             vl = Exploration.LastVertex(_curves.Value(1).Edge());
@@ -335,7 +335,7 @@ public class WireCurveAdaptor : CurveAdaptorBase
         return hc;
     }
 
-    public override bool IsClosed => _wire.Closed();
+    public override bool IsClosed => _wire.IsClosed;
 
     public override bool IsPeriodic => false;
 
@@ -349,7 +349,7 @@ public class WireCurveAdaptor : CurveAdaptorBase
         return _curves!.Value(index).EvalD0(u);
     }
 
-    public sealed override Curve3D.ResD1 EvalD1(double theU)
+    internal sealed override Curve3D.ResD1 EvalD1(double theU)
     {
         double u = theU;
         int index = _curIndex;
@@ -359,7 +359,7 @@ public class WireCurveAdaptor : CurveAdaptorBase
         return res;
     }
 
-    public sealed override Curve3D.ResD2 EvalD2(double theU)
+    internal sealed override Curve3D.ResD2 EvalD2(double theU)
     {
         double u = theU;
         int index = _curIndex;
@@ -370,7 +370,7 @@ public class WireCurveAdaptor : CurveAdaptorBase
         return res;
     }
 
-    public sealed override Curve3D.ResD3 EvalD3(double theU)
+    internal sealed override Curve3D.ResD3 EvalD3(double theU)
     {
         double u = theU;
         int index = _curIndex;
@@ -491,7 +491,7 @@ public class WireCurveAdaptor : CurveAdaptorBase
 
         // Invert ?
         Edge e = _curves!.Value(curIndex).Edge();
-        Orientation or = e.Orientation();
+        Orientation or = e.Orientation;
         bool reverse;
         reverse = (_forward && (or == Reversed)) || (!_forward && (or != Reversed));
 
@@ -518,7 +518,7 @@ public class WireCurveAdaptor : CurveAdaptorBase
     {
         // Invert?
         Edge e = _curves!.Value(index).Edge();
-        Orientation or = e.Orientation();
+        Orientation or = e.Orientation;
         bool reverse;
         reverse = (_forward && (or == Reversed)) || (!_forward && (or != Reversed));
 

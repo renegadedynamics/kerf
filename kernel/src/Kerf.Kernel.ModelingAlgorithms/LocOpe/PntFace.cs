@@ -69,7 +69,7 @@ public partial struct PntFace : IEquatable<PntFace>
     }
 
     public readonly bool Equals(PntFace other) =>
-        _pnt == other._pnt && _face == other._face && _face.Orientation() == other._face.Orientation()
+        _pnt == other._pnt && _face == other._face && _face.Orientation == other._face.Orientation
         && _ori == other._ori && _par.Equals(other._par) && _uPar.Equals(other._uPar) && _vPar.Equals(other._vPar);
 
     public override readonly bool Equals(object? obj) => obj is PntFace other && Equals(other);
@@ -81,5 +81,5 @@ public partial struct PntFace : IEquatable<PntFace>
     public static bool operator !=(in PntFace left, in PntFace right) => !left.Equals(right);
 
     public override readonly string ToString() =>
-        Constants.Format("LocOpe_PntFace", _pnt.X(), _pnt.Y(), _pnt.Z(), (double)_ori, _par, _uPar, _vPar);
+        Constants.Format("LocOpe_PntFace", _pnt.X, _pnt.Y, _pnt.Z, (double)_ori, _par, _uPar, _vPar);
 }

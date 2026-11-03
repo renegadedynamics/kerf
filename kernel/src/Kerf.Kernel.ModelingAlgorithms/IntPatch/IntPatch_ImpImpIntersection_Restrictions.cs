@@ -54,10 +54,10 @@ public sealed partial class ImpImpIntersection
         Curve2DAdaptorBase thearc = onS1 ? ptvtx.ArcOnS1() : ptvtx.ArcOnS2();
         double parOnArc = onS1 ? ptvtx.ParameterOnArc1() : ptvtx.ParameterOnArc2();
         thearc.D1(parOnArc, out Point2D p2d, out Vector2D d2d);
-        quad.D1(p2d.X(), p2d.Y(), ref valpt, ref d1u, ref d1v);
-        tgarc = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+        quad.D1(p2d.X, p2d.Y, ref valpt, ref d1u, ref d1v);
+        tgarc = Vector3D.LinearForm(d2d.X, d1u, d2d.Y, d1v);
         Vector3D norm = d1u.Crossed(d1v);
-        if (norm.SquareMagnitude() < 1e-16)
+        if (norm.SquareMagnitude < 1e-16)
         {
             tRest.SetValue(true, WalkingTypeTrans.Undecided);
             tArc.SetValue(true, WalkingTypeTrans.Undecided);
@@ -144,15 +144,15 @@ public sealed partial class ImpImpIntersection
                 arcRef.D1(0.5 * (paramf + paraml), out p2d, out d2d);
                 if (onFirst)
                 {
-                    quad1.D1(p2d.X(), p2d.Y(), ref valpt, ref d1u, ref d1v);
+                    quad1.D1(p2d.X, p2d.Y, ref valpt, ref d1u, ref d1v);
                 }
                 else
                 {
-                    quad2.D1(p2d.X(), p2d.Y(), ref valpt, ref d1u, ref d1v);
+                    quad2.D1(p2d.X, p2d.Y, ref valpt, ref d1u, ref d1v);
                 }
-                tgline = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+                tgline = Vector3D.LinearForm(d2d.X, d1u, d2d.Y, d1v);
 
-                if (d1u.Magnitude() < 1e-7)
+                if (d1u.Magnitude < 1e-7)
                 { //-- edge degenere ?
                     edgeDegenere = true;
                     for (int edg = 0; edg <= 10; edg++)
@@ -160,14 +160,14 @@ public sealed partial class ImpImpIntersection
                         arcRef.D1(paramf + (paraml - paramf) * edg * 0.1, out p2d, out d2d);
                         if (onFirst)
                         {
-                            quad1.D1(p2d.X(), p2d.Y(), ref valpt, ref d1u, ref d1v);
+                            quad1.D1(p2d.X, p2d.Y, ref valpt, ref d1u, ref d1v);
                         }
                         else
                         {
-                            quad2.D1(p2d.X(), p2d.Y(), ref valpt, ref d1u, ref d1v);
+                            quad2.D1(p2d.X, p2d.Y, ref valpt, ref d1u, ref d1v);
                         }
 
-                        if (d1u.Magnitude() > 1e-7)
+                        if (d1u.Magnitude > 1e-7)
                         {
                             edgeDegenere = false;
                         }
@@ -239,7 +239,7 @@ public sealed partial class ImpImpIntersection
 
                         if (!edgeDegenere && dofirst)
                         {
-                            if (ptvtx.Value().Distance(pStartf.Value()) <= tolArc)
+                            if (ptvtx.Value().DistanceTo(pStartf.Value()) <= tolArc)
                             {
                                 ptvtx.SetMultiple(true);
                                 ptvtx.SetTolerance(tolArc);
@@ -251,13 +251,13 @@ public sealed partial class ImpImpIntersection
                                 arcRef.D1(paramf, out p2d, out d2d);
                                 if (onFirst)
                                 {
-                                    quad1.D1(p2d.X(), p2d.Y(), ref valpt, ref d1u, ref d1v);
+                                    quad1.D1(p2d.X, p2d.Y, ref valpt, ref d1u, ref d1v);
                                 }
                                 else
                                 {
-                                    quad2.D1(p2d.X(), p2d.Y(), ref valpt, ref d1u, ref d1v);
+                                    quad2.D1(p2d.X, p2d.Y, ref valpt, ref d1u, ref d1v);
                                 }
-                                tgline = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+                                tgline = Vector3D.LinearForm(d2d.X, d1u, d2d.Y, d1v);
                                 if (ptvtx.IsOnDomS1)
                                 {
                                     SetArcTransition(ref newptvtx, ptvtx, true, quad1, tgline, ref valpt, ref d1u,
@@ -279,7 +279,7 @@ public sealed partial class ImpImpIntersection
                         }
                         if (!edgeDegenere && dolast)
                         {
-                            if (ptvtx.Value().Distance(pStartl.Value()) <= tolArc)
+                            if (ptvtx.Value().DistanceTo(pStartl.Value()) <= tolArc)
                             {
                                 ptvtx.SetMultiple(true);
                                 ptvtx.SetTolerance(tolArc);
@@ -292,13 +292,13 @@ public sealed partial class ImpImpIntersection
                                 arcRef.D1(paraml, out p2d, out d2d);
                                 if (onFirst)
                                 {
-                                    quad1.D1(p2d.X(), p2d.Y(), ref valpt, ref d1u, ref d1v);
+                                    quad1.D1(p2d.X, p2d.Y, ref valpt, ref d1u, ref d1v);
                                 }
                                 else
                                 {
-                                    quad2.D1(p2d.X(), p2d.Y(), ref valpt, ref d1u, ref d1v);
+                                    quad2.D1(p2d.X, p2d.Y, ref valpt, ref d1u, ref d1v);
                                 }
-                                tgline = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+                                tgline = Vector3D.LinearForm(d2d.X, d1u, d2d.Y, d1v);
                                 if (ptvtx.IsOnDomS1)
                                 {
                                     SetArcTransition(ref newptvtx, ptvtx, true, quad1, tgline, ref valpt, ref d1u,
@@ -387,10 +387,10 @@ public sealed partial class ImpImpIntersection
         switch (gLine.ArcType())
         {
             case PatchLineType.Lin:
-                sqDist = gLine.Line().SquareDistance(p);
+                sqDist = gLine.Line().SquareDistanceTo(p);
                 break;
             case PatchLineType.Circle:
-                sqDist = gLine.Circle().SquareDistance(p);
+                sqDist = gLine.Circle().SquareDistanceTo(p);
                 break;
             default:
                 extr.Perform(p);
@@ -463,7 +463,7 @@ public sealed partial class ImpImpIntersection
 
         if (curv is not null)
         {
-            double uinf = curv.FirstParameter(), usup = curv.LastParameter();
+            double uinf = curv.FirstParameter, usup = curv.LastParameter;
             ac.Load(curv, uinf, usup);
             extr.Initialize(ac, uinf, usup);
         }
@@ -472,7 +472,7 @@ public sealed partial class ImpImpIntersection
         {
             Point3D p1 = value(rLine, 1), p2 = value(rLine, 2);
 
-            if (p1.SquareDistance(p2) < sqTol)
+            if (p1.SquareDistanceTo(p2) < sqTol)
             {
                 // RLine is degenerated
                 return false;
@@ -484,14 +484,14 @@ public sealed partial class ImpImpIntersection
                 Curve2DAdaptorBase ac2d = rLine.ArcOnS1()!;
                 double parF = ac2d.FirstParameter(), parL = ac2d.LastParameter();
                 Point2D p2d = ac2d.Value(0.5 * (parF + parL));
-                pMid = quad1.Value(p2d.X(), p2d.Y());
+                pMid = quad1.Value(p2d.X, p2d.Y);
             }
             else
             {
                 Curve2DAdaptorBase ac2d = rLine.ArcOnS2()!;
                 double parF = ac2d.FirstParameter(), parL = ac2d.LastParameter();
                 Point2D p2d = ac2d.Value(0.5 * (parF + parL));
-                pMid = quad2.Value(p2d.X(), p2d.Y());
+                pMid = quad2.Value(p2d.X, p2d.Y);
             }
 
             double sqDist1 = SquareDistance(gLine, pMid, extr);
@@ -607,13 +607,13 @@ public sealed partial class ImpImpIntersection
                             arcref!.D1(paramf + (paraml - paramf) * edg * 0.1, out p2d, out d2d);
                             if (onFirst)
                             {
-                                quad1.D1(p2d.X(), p2d.Y(), ref valpt, ref d1u, ref d1v);
+                                quad1.D1(p2d.X, p2d.Y, ref valpt, ref d1u, ref d1v);
                             }
                             else
                             {
-                                quad2.D1(p2d.X(), p2d.Y(), ref valpt, ref d1u, ref d1v);
+                                quad2.D1(p2d.X, p2d.Y, ref valpt, ref d1u, ref d1v);
                             }
-                            if (d1u.Magnitude() > 1e-7)
+                            if (d1u.Magnitude > 1e-7)
                             {
                                 edgeDegenere = false;
                             }
@@ -633,7 +633,7 @@ public sealed partial class ImpImpIntersection
                                 int jj;
                                 for (jj = 1; jj <= nbpt; jj++)
                                 {
-                                    if (toproj.Distance(seq_Pnt3d[jj]) < _TolArc)
+                                    if (toproj.DistanceTo(seq_Pnt3d[jj]) < _TolArc)
                                     {
                                         project = false;
                                         break;
@@ -657,13 +657,13 @@ public sealed partial class ImpImpIntersection
                                     {
                                         if (onFirst)
                                         {
-                                            ptproj = quad1.Value(p2d.X(), p2d.Y());
+                                            ptproj = quad1.Value(p2d.X, p2d.Y);
                                         }
                                         else
                                         {
-                                            ptproj = quad2.Value(p2d.X(), p2d.Y());
+                                            ptproj = quad2.Value(p2d.X, p2d.Y);
                                         }
-                                        if ((toproj.Distance(ptproj) <= 100 * tolArc) && (paramproj >= paramf)
+                                        if ((toproj.DistanceTo(ptproj) <= 100 * tolArc) && (paramproj >= paramf)
                                             && (paramproj <= paraml))
                                         {
                                             newptvtx = ptvtx;
@@ -719,15 +719,15 @@ public sealed partial class ImpImpIntersection
 
                                         if (onFirst)
                                         { // donc OnDomS2
-                                            quad1.D1(p2d.X(), p2d.Y(), ref valpt, ref d1u, ref d1v);
-                                            tgrest = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+                                            quad1.D1(p2d.X, p2d.Y, ref valpt, ref d1u, ref d1v);
+                                            tgrest = Vector3D.LinearForm(d2d.X, d1u, d2d.Y, d1v);
 
                                             Curve2DAdaptorBase thearc = ptvtx.ArcOnS2();
                                             thearc.D1(ptvtx.ParameterOnArc2(), out p2d, out d2d);
-                                            quad2.D1(p2d.X(), p2d.Y(), ref valpt, ref d1u, ref d1v);
-                                            tgarc = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+                                            quad2.D1(p2d.X, p2d.Y, ref valpt, ref d1u, ref d1v);
+                                            tgarc = Vector3D.LinearForm(d2d.X, d1u, d2d.Y, d1v);
                                             norm = d1u.Crossed(d1v); // Quad2.Normale(valpt);
-                                            if (norm.SquareMagnitude() < 1e-16)
+                                            if (norm.SquareMagnitude < 1e-16)
                                             {
                                                 tRest.SetValue(true, WalkingTypeTrans.Undecided);
                                                 tArc.SetValue(true, WalkingTypeTrans.Undecided);
@@ -741,15 +741,15 @@ public sealed partial class ImpImpIntersection
                                         }
                                         else
                                         { // donc OnDomS1
-                                            quad2.D1(p2d.X(), p2d.Y(), ref valpt, ref d1u, ref d1v);
-                                            tgrest = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+                                            quad2.D1(p2d.X, p2d.Y, ref valpt, ref d1u, ref d1v);
+                                            tgrest = Vector3D.LinearForm(d2d.X, d1u, d2d.Y, d1v);
 
                                             Curve2DAdaptorBase thearc = ptvtx.ArcOnS1();
                                             thearc.D1(ptvtx.ParameterOnArc1(), out p2d, out d2d);
-                                            quad1.D1(p2d.X(), p2d.Y(), ref valpt, ref d1u, ref d1v);
-                                            tgarc = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+                                            quad1.D1(p2d.X, p2d.Y, ref valpt, ref d1u, ref d1v);
+                                            tgarc = Vector3D.LinearForm(d2d.X, d1u, d2d.Y, d1v);
                                             norm = d1u.Crossed(d1v); // Quad1.Normale(valpt);
-                                            if (norm.SquareMagnitude() < 1e-16)
+                                            if (norm.SquareMagnitude < 1e-16)
                                             {
                                                 tRest.SetValue(true, WalkingTypeTrans.Undecided);
                                                 tArc.SetValue(true, WalkingTypeTrans.Undecided);

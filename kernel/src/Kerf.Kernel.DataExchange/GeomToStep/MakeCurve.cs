@@ -44,18 +44,18 @@ public sealed class MakeCurve : GeometryRoot
         else if (c is TrimmedCurve3D)
         {
             TrimmedCurve3D t = c as TrimmedCurve3D;
-            Curve3D b = t.BasisCurve();
+            Curve3D b = t.BasisCurve;
             //    TANT PIS, on passe la courbe de base ...
             if (b is BSplineCurve3D)
             {
                 BSplineCurve3D bs = b.Copy() as BSplineCurve3D;
-                bs.Segment(t.FirstParameter(), t.LastParameter());
+                bs.Segment(t.FirstParameter, t.LastParameter);
                 b = bs;
             }
             else if (b is BezierCurve3D)
             {
                 BezierCurve3D bz = b.Copy() as BezierCurve3D;
-                bz.Segment(t.FirstParameter(), t.LastParameter());
+                bz.Segment(t.FirstParameter, t.LastParameter);
                 b = bz;
             }
             else
@@ -107,7 +107,7 @@ public sealed class MakeCurve : GeometryRoot
             if (c is CircleCurve2D)
             {
                 CircleCurve2D theC2d = c as CircleCurve2D;
-                Circle2D c2d = theC2d.Circ2d();
+                Circle2D c2d = theC2d.Circle;
                 if (!c2d.IsDirect)
                 {
                     // OCCT_DEBUG output left out
@@ -126,7 +126,7 @@ public sealed class MakeCurve : GeometryRoot
             else if (c is EllipseCurve2D)
             {
                 EllipseCurve2D theE2d = c as EllipseCurve2D;
-                Ellipse2D e2d = theE2d.Elips2d();
+                Ellipse2D e2d = theE2d.Ellipse;
                 if (!e2d.IsDirect)
                 {
                     // OCCT_DEBUG output left out
@@ -153,7 +153,7 @@ public sealed class MakeCurve : GeometryRoot
         {
             // before the bounded curves, which a trimmed curve is (OCCT tested it after them, so it was never reached
             // and MakeBoundedCurve refused a trimmed curve; Kerf decision 1507)
-            MakeCurve maker = new MakeCurve((c as TrimmedCurve2D).BasisCurve(), localFactors);
+            MakeCurve maker = new MakeCurve((c as TrimmedCurve2D).BasisCurve, localFactors);
             _curve = maker.Value();
         }
         else if (c is BoundedCurve2D)

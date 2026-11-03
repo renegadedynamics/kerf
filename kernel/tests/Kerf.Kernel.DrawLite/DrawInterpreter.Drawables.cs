@@ -124,14 +124,14 @@ public sealed partial class DrawInterpreter
     public Shape GetShape(string theName, ShapeType theType, bool theToComplain = true)
     {
         Shape aShape = GetShape(theName);
-        if (aShape.IsNull || theType == ShapeType.Shape || theType == aShape.ShapeType())
+        if (aShape.IsNull || theType == ShapeType.Shape || theType == aShape.Type)
         {
             return aShape;
         }
 
         if (theToComplain)
         {
-            Output.WriteLine($"{theName} is not a {Kerf.Engine.Topology.TopAbs.ShapeTypeToString(theType)} but a {Kerf.Engine.Topology.TopAbs.ShapeTypeToString(aShape.ShapeType())}");
+            Output.WriteLine($"{theName} is not a {Kerf.Engine.Topology.TopAbs.ShapeTypeToString(theType)} but a {Kerf.Engine.Topology.TopAbs.ShapeTypeToString(aShape.Type)}");
         }
 
         return new Shape();

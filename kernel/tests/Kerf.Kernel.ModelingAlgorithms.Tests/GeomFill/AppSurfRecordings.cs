@@ -66,7 +66,7 @@ internal static class AppSurfRecordings
     private static string Hex(double theValue) =>
         ((ulong)BitConverter.DoubleToInt64Bits(theValue)).ToString("x", CultureInfo.InvariantCulture);
 
-    private static string Hex(Point3D theP) => Hex(theP.X()) + "," + Hex(theP.Y()) + "," + Hex(theP.Z());
+    private static string Hex(Point3D theP) => Hex(theP.X) + "," + Hex(theP.Y) + "," + Hex(theP.Z);
 
     private static string Int(int theValue) => theValue.ToString(CultureInfo.InvariantCulture);
 
@@ -91,9 +91,9 @@ internal static class AppSurfRecordings
 
         public void Add(Point3D theP)
         {
-            Add(theP.X());
-            Add(theP.Y());
-            Add(theP.Z());
+            Add(theP.X);
+            Add(theP.Y);
+            Add(theP.Z);
         }
 
         public string Str() => Int(myN) + "," + myH.ToString("x", CultureInfo.InvariantCulture);
@@ -228,7 +228,7 @@ internal static class AppSurfRecordings
 
     private static void PutBSplineSurface(Writer theW, BSplineSurface theS)
     {
-        theW.Put("sdeg:" + Int(theS.UDegree()) + "," + Int(theS.VDegree()) + "," + Int(theS.UPoleCount) + ","
+        theW.Put("sdeg:" + Int(theS.UDegree) + "," + Int(theS.VDegree) + "," + Int(theS.UPoleCount) + ","
                  + Int(theS.VPoleCount) + "," + (theS.IsURational ? "1" : "0") + (theS.IsVRational ? "1" : "0")
                  + (theS.IsUPeriodic ? "1" : "0") + (theS.IsVPeriodic ? "1" : "0"));
         Digest aP = new(), aW = new();
@@ -253,7 +253,7 @@ internal static class AppSurfRecordings
         }
         theW.Put("suk:" + aU);
         theW.Put("svk:" + aV);
-        theS.Bounds(out double u1, out double u2, out double v1, out double v2);
+        theS.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
         string aD = "";
         for (int i = 0; i <= 2; i++)
         {

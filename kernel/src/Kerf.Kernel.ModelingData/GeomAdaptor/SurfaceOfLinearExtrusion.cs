@@ -182,7 +182,7 @@ public class SurfaceOfLinearExtrusion : SurfaceAdaptor
         {
             case Line:
             {
-                Direction3D d = _basisCurve.Line().Direction();
+                Direction3D d = _basisCurve.Line().Direction;
                 if (!_direction.IsParallel(d, global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     return global::Kerf.Geometry.SurfaceKind.Plane;
@@ -192,7 +192,7 @@ public class SurfaceOfLinearExtrusion : SurfaceAdaptor
 
             case Circle:
             {
-                Direction3D d = (_basisCurve.Circle()).Axis().Direction();
+                Direction3D d = (_basisCurve.Circle()).Axis.Direction;
                 if (_direction.IsParallel(d, global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     return global::Kerf.Geometry.SurfaceKind.Cylinder;
@@ -206,7 +206,7 @@ public class SurfaceOfLinearExtrusion : SurfaceAdaptor
 
             case Ellipse:
             {
-                Direction3D d = (_basisCurve.Ellipse()).Axis().Direction();
+                Direction3D d = (_basisCurve.Ellipse()).Axis.Direction;
                 if (_direction.IsNormal(d, global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     return global::Kerf.Geometry.SurfaceKind.Plane;
@@ -216,7 +216,7 @@ public class SurfaceOfLinearExtrusion : SurfaceAdaptor
 
             case Parabola:
             {
-                Direction3D d = (_basisCurve.Parabola()).Axis().Direction();
+                Direction3D d = (_basisCurve.Parabola()).Axis.Direction;
                 if (_direction.IsNormal(d, global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     return global::Kerf.Geometry.SurfaceKind.Plane;
@@ -226,7 +226,7 @@ public class SurfaceOfLinearExtrusion : SurfaceAdaptor
 
             case Hyperbola:
             {
-                Direction3D d = (_basisCurve.Hyperbola()).Axis().Direction();
+                Direction3D d = (_basisCurve.Hyperbola()).Axis.Direction;
                 if (_direction.IsNormal(d, global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     return global::Kerf.Geometry.SurfaceKind.Plane;
@@ -269,13 +269,13 @@ public class SurfaceOfLinearExtrusion : SurfaceAdaptor
             double prm = uFirst + (i - 1) * deltau;
             _basisCurve.D1(prm, out p, out d1u);
             newZ = d1u.Normalized().Crossed(new Vector3D(_direction));
-            if (newZ.Magnitude() > 1.0e-12)
+            if (newZ.Magnitude > 1.0e-12)
             {
                 break;
             }
         }
         CoordinateSystem ax3 = new CoordinateSystem(p, new Direction3D(newZ), new Direction3D(d1u));
-        if (_direction.Dot(ax3.YDirection()) < 0.0)
+        if (_direction.Dot(ax3.YDirection) < 0.0)
         {
             ax3 = ax3.YReversed();
         }
@@ -288,12 +288,12 @@ public class SurfaceOfLinearExtrusion : SurfaceAdaptor
         Standard_NoSuchObject_Raise_if(GetType() != global::Kerf.Geometry.SurfaceKind.Cylinder, "GeomAdaptor_SurfaceOfLinearExtrusion::Cylinder");
 
         Circle3D c = _basisCurve!.Circle();
-        CoordinateSystem ax3 = new CoordinateSystem(c.Position());
-        if (_direction.Dot((c.Axis()).Direction()) < 0.0)
+        CoordinateSystem ax3 = new CoordinateSystem(c.Position);
+        if (_direction.Dot((c.Axis).Direction) < 0.0)
         {
             ax3 = ax3.ZReversed();
         }
-        return new Cylinder(ax3, c.Radius());
+        return new Cylinder(ax3, c.Radius);
     }
 
     /// <exception cref="NoSuchObjectException">Always.</exception>

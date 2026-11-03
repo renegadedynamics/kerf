@@ -57,9 +57,9 @@ public sealed class Lin2dTanPer
     public Lin2dTanPer(in Point2D thePnt, in Line2D theLin) : this(1)
     {
         _linsol[1] = new Line2D(thePnt,
-                                 new Direction2D(-(theLin.Direction().Y()),
+                                 new Direction2D(-(theLin.Direction.Y),
                                               // ===============================================================
-                                              theLin.Direction().X()));
+                                              theLin.Direction.X));
         //                                      ========================
         _pnttg1sol[1] = thePnt;
         AnalyticIntersection intp = new(_linsol[1], theLin);
@@ -93,7 +93,7 @@ public sealed class Lin2dTanPer
     {
         _linsol[1] = new Line2D(thePnt,
                                  // ============================
-                                 new Direction2D(theCircle.Location().XY() - thePnt.XY()));
+                                 new Direction2D(theCircle.Location.XY() - thePnt.XY()));
         //                      ================================================
         _pnttg1sol[1] = thePnt;
         AnalyticIntersection intp = new(_linsol[1], theCircle);
@@ -105,7 +105,7 @@ public sealed class Lin2dTanPer
                 for (int i = 1; i <= intp.PointCount; i++)
                 {
                     // OCCT: maxdist is never lowered, so this keeps the last intersection point, not the nearest
-                    if (intp.Point(i).Value().Distance(thePnt) < maxdist)
+                    if (intp.Point(i).Value().DistanceTo(thePnt) < maxdist)
                     {
                         _pntint2sol[1] = intp.Point(i).Value();
                     }
@@ -161,18 +161,18 @@ public sealed class Lin2dTanPer
             nbsol = 2;
             signe = -1;
         }
-        Xy xy = c1.Radius() * theLin.Direction().XY();
+        Xy xy = c1.Radius * theLin.Direction.XY();
         for (int j = 1; j <= nbsol; j++)
         {
             signe = -signe;
             _nbrSol++;
-            _linsol[_nbrSol] = new Line2D(new Point2D((c1.Location().XY()).Added(signe * xy)),
+            _linsol[_nbrSol] = new Line2D(new Point2D((c1.Location.XY()).Added(signe * xy)),
                                           //   =======================================================================
-                                          new Direction2D(-theLin.Direction().Y(),
+                                          new Direction2D(-theLin.Direction.Y,
                                                        //                           =================================
-                                                       theLin.Direction().X()));
+                                                       theLin.Direction.X));
             //                                    ========================
-            _pnttg1sol[_nbrSol] = new Point2D((c1.Location().XY()).Added(signe * xy));
+            _pnttg1sol[_nbrSol] = new Point2D((c1.Location.XY()).Added(signe * xy));
             AnalyticIntersection intp = new(_linsol[_nbrSol], theLin);
             if (intp.IsDone)
             {
@@ -242,13 +242,13 @@ public sealed class Lin2dTanPer
         {
             _nbrSol++;
             signe = -signe;
-            Direction2D d1 = new(theCircle.Location().XY() - c1.Location().XY());
-            _linsol[_nbrSol] = new Line2D(new Point2D((c1.Location().XY())
+            Direction2D d1 = new(theCircle.Location.XY() - c1.Location.XY());
+            _linsol[_nbrSol] = new Line2D(new Point2D((c1.Location.XY())
                                                        //   ===================================================
-                                                       + signe * (d1.XY() * c1.Radius())),
-                                          new Direction2D(-d1.Y(), d1.X()));
+                                                       + signe * (d1.XY() * c1.Radius)),
+                                          new Direction2D(-d1.Y, d1.X));
             //                     ======================================================
-            _pnttg1sol[_nbrSol] = new Point2D((c1.Location().XY()) + signe * (d1.XY() * c1.Radius()));
+            _pnttg1sol[_nbrSol] = new Point2D((c1.Location.XY()) + signe * (d1.XY() * c1.Radius));
             AnalyticIntersection intp = new(_linsol[_nbrSol], theCircle);
             if (intp.IsDone)
             {
@@ -258,7 +258,7 @@ public sealed class Lin2dTanPer
                     for (int i = 1; i <= intp.PointCount; i++)
                     {
                         // OCCT: maxdist is never lowered, so this keeps the last intersection point
-                        if (intp.Point(i).Value().Distance(_pnttg1sol[_nbrSol]) < maxdist)
+                        if (intp.Point(i).Value().DistanceTo(_pnttg1sol[_nbrSol]) < maxdist)
                         {
                             _pntint2sol[_nbrSol] = intp.Point(i).Value();
                         }

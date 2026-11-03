@@ -31,7 +31,7 @@ namespace Kerf.Engine.Geometry.Library;
 /// <c>AdjustExtremity</c>, <c>ExtendCurveToPoint</c>, <c>ExtendSurfByLength</c>, <c>CancelDenominatorDerivative</c>)
 /// take it by <c>ref</c> and give it a new object the caller owns; they never change the caller's geometry.
 /// </remarks>
-public static partial class GeomLib
+internal static partial class GeomLib
 {
     //=================================================================================================
 
@@ -406,7 +406,7 @@ public static partial class GeomLib
         {
             aCurve.D0(parameters[ii], out point1);
             aReferenceCurve.D0(parameters[ii], out point2);
-            local_distance_squared = point1.SquareDistance(point2);
+            local_distance_squared = point1.SquareDistanceTo(point2);
             max_squared = Max(max_squared, local_distance_squared);
         }
         if (max_squared > 0.0e0)
@@ -446,7 +446,7 @@ public static partial class GeomLib
         {
             aCurve.D0(parameters[ii], out point1);
             aReferenceCurve.D0(parameters[ii], out point2);
-            local_distance_squared = point1.SquareDistance(point2);
+            local_distance_squared = point1.SquareDistanceTo(point2);
 
             if (local_distance_squared > tolerance_squared)
             {
@@ -456,7 +456,7 @@ public static partial class GeomLib
                 {
                     other_parameter = a_projector.Point().Parameter();
                     aReferenceCurve.D0(other_parameter, out point2);
-                    local_distance_squared = point1.SquareDistance(point2);
+                    local_distance_squared = point1.SquareDistanceTo(point2);
                 }
                 else
                 {
@@ -494,19 +494,19 @@ public static partial class GeomLib
         if (curve2d.GetType() == typeof(TrimmedCurve2D))
         {
             TrimmedCurve2D ct = (TrimmedCurve2D)curve2d;
-            double u1 = ct.FirstParameter();
-            double u2 = ct.LastParameter();
-            Curve2D cBasis2d = ct.BasisCurve();
+            double u1 = ct.FirstParameter;
+            double u2 = ct.LastParameter;
+            Curve2D cBasis2d = ct.BasisCurve;
             Curve3D cc = global::Kerf.Engine.Geometry.Library.GeomLib.To3d(position, cBasis2d);
             curve3d = new TrimmedCurve3D(cc, u1, u2);
         }
         else if (curve2d.GetType() == typeof(OffsetCurve2D))
         {
             OffsetCurve2D co = (OffsetCurve2D)curve2d;
-            double offset = co.Offset();
-            Curve2D cBasis2d = co.BasisCurve();
+            double offset = co.Offset;
+            Curve2D cBasis2d = co.BasisCurve;
             Curve3D cc = global::Kerf.Engine.Geometry.Library.GeomLib.To3d(position, cBasis2d);
-            curve3d = new OffsetCurve3D(cc, offset, position.Direction());
+            curve3d = new OffsetCurve3D(cc, offset, position.Direction);
         }
         else if (curve2d.GetType() == typeof(BezierCurve2D))
         {
@@ -532,7 +532,7 @@ public static partial class GeomLib
         else if (curve2d.GetType() == typeof(BSplineCurve2D))
         {
             BSplineCurve2D cbSpl2d = (BSplineCurve2D)curve2d;
-            int theDegree = cbSpl2d.Degree();
+            int theDegree = cbSpl2d.Degree;
             bool isPeriodic = cbSpl2d.IsPeriodic;
             NCollection_Array1<Point2D> poles2d = cbSpl2d.InternalPoles();
             int nbpoles = poles2d.Length();
@@ -562,7 +562,7 @@ public static partial class GeomLib
         else if (curve2d.GetType() == typeof(LineCurve2D))
         {
             LineCurve2D line2d = (LineCurve2D)curve2d;
-            Line2D l2d = line2d.Lin2d();
+            Line2D l2d = line2d.Line;
             Line3D l3d = global::Kerf.Engine.Geometry.ElCLib.To3d(position, l2d);
             LineCurve3D geomL3d = new(l3d);
             curve3d = geomL3d;
@@ -570,7 +570,7 @@ public static partial class GeomLib
         else if (curve2d.GetType() == typeof(CircleCurve2D))
         {
             CircleCurve2D circle2d = (CircleCurve2D)curve2d;
-            Circle2D c2d = circle2d.Circ2d();
+            Circle2D c2d = circle2d.Circle;
             Circle3D c3d = global::Kerf.Engine.Geometry.ElCLib.To3d(position, c2d);
             CircleCurve3D geomC3d = new(c3d);
             curve3d = geomC3d;
@@ -578,7 +578,7 @@ public static partial class GeomLib
         else if (curve2d.GetType() == typeof(EllipseCurve2D))
         {
             EllipseCurve2D ellipse2d = (EllipseCurve2D)curve2d;
-            Ellipse2D e2d = ellipse2d.Elips2d();
+            Ellipse2D e2d = ellipse2d.Ellipse;
             Ellipse3D e3d = global::Kerf.Engine.Geometry.ElCLib.To3d(position, e2d);
             EllipseCurve3D geomE3d = new(e3d);
             curve3d = geomE3d;
@@ -586,7 +586,7 @@ public static partial class GeomLib
         else if (curve2d.GetType() == typeof(ParabolaCurve2D))
         {
             ParabolaCurve2D parabola2d = (ParabolaCurve2D)curve2d;
-            Parabola2D prb2d = parabola2d.Parab2d();
+            Parabola2D prb2d = parabola2d.Parabola;
             Parabola3D prb3d = global::Kerf.Engine.Geometry.ElCLib.To3d(position, prb2d);
             ParabolaCurve3D geomPrb3d = new(prb3d);
             curve3d = geomPrb3d;
@@ -594,7 +594,7 @@ public static partial class GeomLib
         else if (curve2d.GetType() == typeof(HyperbolaCurve2D))
         {
             HyperbolaCurve2D hyperbola2d = (HyperbolaCurve2D)curve2d;
-            Hyperbola2D h2d = hyperbola2d.Hypr2d();
+            Hyperbola2D h2d = hyperbola2d.Hyperbola;
             Hyperbola3D h3d = global::Kerf.Engine.Geometry.ElCLib.To3d(position, h2d);
             HyperbolaCurve3D geomH3d = new(h3d);
             curve3d = geomH3d;
@@ -615,7 +615,7 @@ public static partial class GeomLib
     /// </summary>
     public static Curve2D? GTransform(Curve2D curve, in GeneralTransform2D gTrsf)
     {
-        TransformForm form = gTrsf.Form();
+        TransformForm form = gTrsf.Form;
 
         if (form != Other)
         {
@@ -623,7 +623,7 @@ public static partial class GeomLib
             // Then, the GTrsf is actually a Trsf.
             // The curve geometry will then remain unchanged.
 
-            Curve2D? c = curve.Transformed(gTrsf.Trsf2d()) as Curve2D;
+            Curve2D? c = curve.Transformed(gTrsf.ToTransform()) as Curve2D;
             return c;
         }
         else
@@ -642,7 +642,7 @@ public static partial class GeomLib
 
                 TrimmedCurve2D c = (TrimmedCurve2D)curve.Copy();
 
-                Type theBasisType = (c.BasisCurve()).GetType();
+                Type theBasisType = (c.BasisCurve).GetType();
 
                 if (theBasisType == typeof(BSplineCurve2D)
                     || theBasisType == typeof(BezierCurve2D))
@@ -651,11 +651,11 @@ public static partial class GeomLib
                     // In these cases the parameterization is preserved on the transformed curve,
                     // so we can trim it with the parameters of the base curve.
 
-                    double u1 = c.FirstParameter();
-                    double u2 = c.LastParameter();
+                    double u1 = c.FirstParameter;
+                    double u2 = c.LastParameter;
 
                     TrimmedCurve2D result =
-                      new(GTransform(c.BasisCurve(), gTrsf)!, u1, u2);
+                      new(GTransform(c.BasisCurve, gTrsf)!, u1, u2);
                     return result;
                 }
                 else if (theBasisType == typeof(LineCurve2D))
@@ -665,11 +665,11 @@ public static partial class GeomLib
                     // We must recompute the trimming parameters on the resulting
                     // curve (by projecting the transformed start and end points using ElCLib).
 
-                    LineCurve2D l = (LineCurve2D)GTransform(c.BasisCurve(), gTrsf)!;
-                    Line2D lin = l.Lin2d();
+                    LineCurve2D l = (LineCurve2D)GTransform(c.BasisCurve, gTrsf)!;
+                    Line2D lin = l.Line;
 
-                    Point2D p1 = c.StartPoint();
-                    Point2D p2 = c.EndPoint();
+                    Point2D p1 = c.StartPoint;
+                    Point2D p2 = c.EndPoint;
                     p1 = p1.WithXY(gTrsf.Transformed(p1.XY()));
                     p2 = p2.WithXY(gTrsf.Transformed(p2.XY()));
                     double u1 = global::Kerf.Engine.Geometry.ElCLib.Parameter(lin, p1);
@@ -702,8 +702,8 @@ public static partial class GeomLib
             {
 
                 LineCurve2D l = (LineCurve2D)curve.Copy();
-                Line2D lin = l.Lin2d();
-                Point2D p = lin.Location();
+                Line2D lin = l.Line;
+                Point2D p = lin.Location;
                 Point2D pp = l.Value(10.0); // arbitrary point
                 p = p.WithXY(gTrsf.Transformed(p.XY()));
                 pp = pp.WithXY(gTrsf.Transformed(pp.XY()));
@@ -799,7 +799,7 @@ public static partial class GeomLib
             {
                 LineCurve2D line = (LineCurve2D)curvePtr.Copy();
                 double dU = firstOnCurve - requestedFirst;
-                Direction2D d = line.Direction();
+                Direction2D d = line.Direction;
                 line.Translate(dU * new Vector2D(d));
                 newCurvePtr = line;
             }
@@ -808,9 +808,9 @@ public static partial class GeomLib
                 Transform2D trsf = new();
                 newCurvePtr = (Curve2D)curvePtr.Copy();
                 CircleCurve2D circ = (CircleCurve2D)newCurvePtr;
-                Point2D p = circ.Location();
+                Point2D p = circ.Location;
                 double dU;
-                if (circ.Circ2d().IsDirect)
+                if (circ.Circle.IsDirect)
                 {
                     dU = firstOnCurve - requestedFirst;
                 }
@@ -825,7 +825,7 @@ public static partial class GeomLib
             {
                 TrimmedCurve2D tc = (TrimmedCurve2D)curvePtr;
                 global::Kerf.Engine.Geometry.Library.GeomLib.SameRange(tolerance,
-                                  tc.BasisCurve(),
+                                  tc.BasisCurve,
                                   firstOnCurve,
                                   lastOnCurve,
                                   requestedFirst,
@@ -862,7 +862,7 @@ public static partial class GeomLib
 
             if (cCheck is TrimmedCurve2D)
             {
-                cCheck = ((TrimmedCurve2D)cCheck).BasisCurve();
+                cCheck = ((TrimmedCurve2D)cCheck).BasisCurve;
             }
 
             if (cCheck.IsPeriodic)
@@ -874,13 +874,13 @@ public static partial class GeomLib
                 else
                 {
                     tc =
-                      new TrimmedCurve2D(curvePtr, curvePtr.FirstParameter(), curvePtr.LastParameter());
+                      new TrimmedCurve2D(curvePtr, curvePtr.FirstParameter, curvePtr.LastParameter);
                 }
             }
             else
             {
-                double udeb = Max(curvePtr.FirstParameter(), firstOnCurve);
-                double ufin = Min(curvePtr.LastParameter(), lastOnCurve);
+                double udeb = Max(curvePtr.FirstParameter, firstOnCurve);
+                double ufin = Min(curvePtr.LastParameter, lastOnCurve);
                 if (Math.Abs(ufin - udeb) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     tc = new TrimmedCurve2D(curvePtr, udeb, ufin);
@@ -888,7 +888,7 @@ public static partial class GeomLib
                 else
                 {
                     tc =
-                      new TrimmedCurve2D(curvePtr, curvePtr.FirstParameter(), curvePtr.LastParameter());
+                      new TrimmedCurve2D(curvePtr, curvePtr.FirstParameter, curvePtr.LastParameter);
                 }
             }
 
@@ -1005,13 +1005,13 @@ public static partial class GeomLib
             }
             else
             {
-                p = rt.BasisSurface() as PlaneSurface;
+                p = rt.BasisSurface as PlaneSurface;
             }
 
             if (p is not null)
             {
                 // compute the 3d curve
-                Frame3D axes = p.Position().Ax2();
+                Frame3D axes = p.Position.Frame;
                 CurveAdaptor2D geom2d_curve = geom_adaptor_curve_ptr;
                 newCurvePtr = global::Kerf.Engine.Geometry.Library.GeomLib.To3d(axes, geom2d_curve.Curve()!);
                 return;
@@ -1117,14 +1117,14 @@ public static partial class GeomLib
         NCollection_Array1<double> ti = new(1, 4);
         NCollection_Array1<int> contact = new(1, 4);
 
-        ti[1] = ti[2] = aIn.FirstParameter();
-        ti[3] = ti[4] = aIn.LastParameter();
+        ti[1] = ti[2] = aIn.FirstParameter;
+        ti[3] = ti[4] = aIn.LastParameter;
         contact[1] = contact[3] = 0;
         contact[2] = contact[4] = 1;
         for (ii = 1; ii <= 4; ii++)
         {
-            fk[ii] = aIn.FirstParameter();
-            fk[ii] = aIn.LastParameter();
+            fk[ii] = aIn.FirstParameter;
+            fk[ii] = aIn.LastParameter;
         }
 
         // Calculation of deformation constraints
@@ -1169,13 +1169,13 @@ public static partial class GeomLib
         m.Init(4);
 
         def = new BSplineCurve3D(polesDef, k, m, 3);
-        if (aIn.Degree() < 3)
+        if (aIn.Degree < 3)
         {
             aIn.IncreaseDegree(3);
         }
         else
         {
-            def.IncreaseDegree(aIn.Degree());
+            def.IncreaseDegree(aIn.Degree);
         }
 
         for (ii = 2; ii < aIn.KnotCount; ii++)
@@ -1227,11 +1227,11 @@ public static partial class GeomLib
         NCollection_Array1<Xyz> cont = new(1, size);
         if (after)
         {
-            ubord = curve.LastParameter();
+            ubord = curve.LastParameter;
         }
         else
         {
-            ubord = curve.FirstParameter();
+            ubord = curve.FirstParameter;
         }
         global::Kerf.Engine.Numerics.Polynomials.PLib.HermiteCoefficients(0,
                                  1, // The Bounds
@@ -1246,7 +1246,7 @@ public static partial class GeomLib
             d3 *= -1;
         }
 
-        l1 = p0.Distance(point);
+        l1 = p0.DistanceTo(point);
         if (l1 > tol)
         {
             // Lambda is the ratio to apply to the derivative of the curve
@@ -1256,19 +1256,19 @@ public static partial class GeomLib
             // have on the curve.
             Vector3D daux;
             Point3D pp;
-            double f = curve.FirstParameter(), t, dt, norm;
-            dt = (curve.LastParameter() - f) / 9;
-            norm = d1.Magnitude();
+            double f = curve.FirstParameter, t, dt, norm;
+            dt = (curve.LastParameter - f) / 9;
+            norm = d1.Magnitude;
             for (ii = 1, t = f + dt; ii <= 8; ii++, t += dt)
             {
                 curve.D1(t, out pp, out daux);
-                norm += daux.Magnitude();
+                norm += daux.Magnitude;
             }
             norm /= 9;
-            dt = d1.Magnitude() / norm;
+            dt = d1.Magnitude / norm;
             if ((dt < 1.5) && (dt > 0.75))
             { // The edge is within the average, keep it
-                lambda = ((double)1) / Max(d1.Magnitude() / l1, tol);
+                lambda = ((double)1) / Max(d1.Magnitude / l1, tol);
             }
             else
             {
@@ -1282,26 +1282,26 @@ public static partial class GeomLib
 
         // Optimization of Lambda
         Matrix cons = new(1, 3, 1, size);
-        cons[1, 1] = p0.X();
-        cons[2, 1] = p0.Y();
-        cons[3, 1] = p0.Z();
-        cons[1, 2] = d1.X();
-        cons[2, 2] = d1.Y();
-        cons[3, 2] = d1.Z();
-        cons[1, size] = point.X();
-        cons[2, size] = point.Y();
-        cons[3, size] = point.Z();
+        cons[1, 1] = p0.X;
+        cons[2, 1] = p0.Y;
+        cons[3, 1] = p0.Z;
+        cons[1, 2] = d1.X;
+        cons[2, 2] = d1.Y;
+        cons[3, 2] = d1.Z;
+        cons[1, size] = point.X;
+        cons[2, size] = point.Y;
+        cons[3, size] = point.Z;
         if (continuity >= 2)
         {
-            cons[1, 3] = d2.X();
-            cons[2, 3] = d2.Y();
-            cons[3, 3] = d2.Z();
+            cons[1, 3] = d2.X;
+            cons[2, 3] = d2.Y;
+            cons[3, 3] = d2.Z;
         }
         if (continuity >= 3)
         {
-            cons[1, 4] = d3.X();
-            cons[2, 4] = d3.Y();
-            cons[3, 4] = d3.Z();
+            cons[1, 4] = d3.X;
+            cons[2, 4] = d3.Y;
+            cons[3, 4] = d3.Z;
         }
         ComputeLambda(cons, matCoefs, l1, ref lambda);
 
@@ -1336,7 +1336,7 @@ public static partial class GeomLib
 
         BezierCurve3D bezier = new(extrapPoles);
 
-        double dist = extrapPoles[1].Distance(p0);
+        double dist = extrapPoles[1].DistanceTo(p0);
         bool ok;
         tol += dist;
 
@@ -1365,10 +1365,10 @@ public static partial class GeomLib
 
         bool ok = true;
         double uf, ul, vf, vl;
-        Surface support = surface.BasisSurface();
+        Surface support = surface.BasisSurface;
         SurfaceKind type;
 
-        surface.Bounds(out uf, out ul, out vf, out vl);
+        surface.ParameterBounds(out uf, out ul, out vf, out vl);
         SurfaceAdaptor AS = new(surface);
         type = AS.GetType();
 
@@ -1475,20 +1475,20 @@ public static partial class GeomLib
         // OCCT changes the caller's B-spline surface (or ApproxSurface's frozen one) in place below: the port changes a
         // copy (decision 245), which the caller receives as OCCT's caller receives its own surface.
         bs = (global::Kerf.Geometry.BSplineSurface)bs!.Copy();
-        if (inU && (bs.UDegree() < continuity + 1))
+        if (inU && (bs.UDegree < continuity + 1))
         {
-            bs.IncreaseDegree(continuity + 1, bs.VDegree());
+            bs.IncreaseDegree(continuity + 1, bs.VDegree);
         }
-        if (!inU && (bs.VDegree() < continuity + 1))
+        if (!inU && (bs.VDegree < continuity + 1))
         {
-            bs.IncreaseDegree(bs.UDegree(), continuity + 1);
+            bs.IncreaseDegree(bs.UDegree, continuity + 1);
         }
 
         // if BS was periodic in the extension direction, it will no longer be
         if ((inU && (bs.IsUPeriodic)) || (!inU && (bs.IsVPeriodic)))
         {
             double u0, u1, v0, v1;
-            bs.Bounds(out u0, out u1, out v0, out v1);
+            bs.ParameterBounds(out u0, out u1, out v0, out v1);
             bs.Segment(u0, u1, v0, v1);
         }
 
@@ -1520,13 +1520,13 @@ public static partial class GeomLib
 
             if (inU)
             {
-                cdeg = bs.UDegree();
+                cdeg = bs.UDegree;
                 nbP = bs.UPoleCount;
                 cdim = bs.VPoleCount * gap;
             }
             else
             {
-                cdeg = bs.VDegree();
+                cdeg = bs.VDegree;
                 nbP = bs.VPoleCount;
                 cdim = bs.UPoleCount * gap;
             }
@@ -1562,9 +1562,9 @@ public static partial class GeomLib
                 {
                     for (jj = 1; jj <= bs.VPoleCount; jj++)
                     {
-                        poles.SetValue(ipole, bs.Pole(ii, jj).X());
-                        poles.SetValue(ipole + 1, bs.Pole(ii, jj).Y());
-                        poles.SetValue(ipole + 2, bs.Pole(ii, jj).Z());
+                        poles.SetValue(ipole, bs.Pole(ii, jj).X);
+                        poles.SetValue(ipole + 1, bs.Pole(ii, jj).Y);
+                        poles.SetValue(ipole + 2, bs.Pole(ii, jj).Z);
                         if (rational)
                         {
                             poles.SetValue(ipole + 3, bs.Weight(ii, jj));
@@ -1579,9 +1579,9 @@ public static partial class GeomLib
                 {
                     for (ii = 1; ii <= bs.UPoleCount; ii++)
                     {
-                        poles.SetValue(ipole, bs.Pole(ii, jj).X());
-                        poles.SetValue(ipole + 1, bs.Pole(ii, jj).Y());
-                        poles.SetValue(ipole + 2, bs.Pole(ii, jj).Z());
+                        poles.SetValue(ipole, bs.Pole(ii, jj).X);
+                        poles.SetValue(ipole + 1, bs.Pole(ii, jj).Y);
+                        poles.SetValue(ipole + 2, bs.Pole(ii, jj).Z);
                         if (rational)
                         {
                             poles.SetValue(ipole + 3, bs.Weight(ii, jj));
@@ -1636,14 +1636,14 @@ public static partial class GeomLib
                 for (ii = gap; ii <= cdim; ii += gap)
                 {
                     curT = curT.WithCoord(tgte[ii - 3], tgte[ii - 2], tgte[ii - 1]);
-                    nTgte = curT.Magnitude();
+                    nTgte = curT.Magnitude;
                     if (nTgte > tgtol)
                     {
                         val = length / nTgte;
                         // Attention to cases where the segment given by the poles
                         // is opposite to the direction of the derivative
                         // Example: Certain portions of torus.
-                        if ((oldN > tgtol) && (curT.Angle(oldT) > 2))
+                        if ((oldN > tgtol) && (curT.AngleTo(oldT) > 2))
                         {
                             ok = false;
                         }
@@ -1666,14 +1666,14 @@ public static partial class GeomLib
                 for (ii = gap; ii <= cdim; ii += gap)
                 {
                     curT = curT.WithCoord(tgte[ii - 2], tgte[ii - 1], tgte[ii]);
-                    nTgte = curT.Magnitude();
+                    nTgte = curT.Magnitude;
                     if (nTgte > tgtol)
                     {
                         val = length / nTgte;
                         // Attention to cases where the segment given by the poles
                         // is opposite to the direction of the derivative
                         // Example: Certain portions of torus.
-                        if ((oldN > tgtol) && (curT.Angle(oldT) > 2))
+                        if ((oldN > tgtol) && (curT.AngleTo(oldT) > 2))
                         {
                             ok = false;
                         }
@@ -1694,11 +1694,11 @@ public static partial class GeomLib
                 // And we retry
                 if (inU)
                 {
-                    bs.IncreaseDegree(bs.UDegree(), bs.VDegree() + 2);
+                    bs.IncreaseDegree(bs.UDegree, bs.VDegree + 2);
                 }
                 else
                 {
-                    bs.IncreaseDegree(bs.UDegree() + 2, bs.VDegree());
+                    bs.IncreaseDegree(bs.UDegree + 2, bs.VDegree);
                 }
             }
         }
@@ -1889,7 +1889,7 @@ public static partial class GeomLib
                                       // n'est pas ok.
             vKnots.Assign(bs.InternalVKnots());
             vMults.Assign(bs.InternalVMultiplicities());
-            vDeg = bs.VDegree();
+            vDeg = bs.VDegree;
         }
         else
         {
@@ -1898,7 +1898,7 @@ public static partial class GeomLib
             vMults[vsize] = vDeg + 1;
             uKnots.Assign(bs.InternalUKnots());
             uMults.Assign(bs.InternalUMultiplicities());
-            uDeg = bs.UDegree();
+            uDeg = bs.UDegree;
         }
 
         //  Construct the resulting BSpline surface
@@ -2055,7 +2055,7 @@ public static partial class GeomLib
         if (gy * points.Length() <= tol)
         {
             Frame3D axe = new(bary, ox);
-            oy = axe.XDirection();
+            oy = axe.XDirection;
             isSingular = true;
         }
         else
@@ -2323,15 +2323,15 @@ public static partial class GeomLib
         BuildFlatKnot(surface_u_knots,
                       surface_u_mults,
                       3,
-                      bSurf.UDegree() + 3,
+                      bSurf.UDegree + 3,
                       knotmin,
                       knotmax,
                       out newuknots,
                       out newumults);
         BuildFlatKnot(surface_v_knots,
                       surface_v_mults,
-                      bSurf.VDegree(),
-                      2 * (bSurf.VDegree()),
+                      bSurf.VDegree,
+                      2 * (bSurf.VDegree),
                       1.0,
                       0.0,
                       out newvknots,
@@ -2341,14 +2341,14 @@ public static partial class GeomLib
         {
             length += newumults.Value(i);
         }
-        new_num_u_poles = (length - bSurf.UDegree() - 3 - 1);
+        new_num_u_poles = (length - bSurf.UDegree - 3 - 1);
         NCollection_Array1<double> newuflatknots = new(1, length);
         length = 0;
         for (i = 1; i <= newvmults.Length(); i++)
         {
             length += newvmults.Value(i);
         }
-        new_num_v_poles = (length - 2 * bSurf.VDegree() - 1);
+        new_num_v_poles = (length - 2 * bSurf.VDegree - 1);
         NCollection_Array1<double> newvflatknots = new(1, length);
 
         NCollection_Array2<Point3D> newNumerator = new(1, new_num_u_poles, 1, new_num_v_poles);
@@ -2360,8 +2360,8 @@ public static partial class GeomLib
         LawEvaluator ev = new(denominator);
         // BSplSLib::FunctionMultiply(LawEvaluator,               //multiplication
         SurfaceBSplSLib.FunctionMultiply(ev, // multiplication
-                                  bSurf.UDegree(),
-                                  bSurf.VDegree(),
+                                  bSurf.UDegree,
+                                  bSurf.VDegree,
                                   surface_u_knots,
                                   surface_v_knots,
                                   surface_u_mults,
@@ -2370,8 +2370,8 @@ public static partial class GeomLib
                                   surface_weights,
                                   newuflatknots,
                                   newvflatknots,
-                                  bSurf.UDegree() + 3,
-                                  2 * (bSurf.VDegree()),
+                                  bSurf.UDegree + 3,
+                                  2 * (bSurf.VDegree),
                                   newNumerator,
                                   newDenominator,
                                   out status);
@@ -2395,8 +2395,8 @@ public static partial class GeomLib
                                         newvknots.ChangeArray1(),
                                         newumults.ChangeArray1(),
                                         newvmults.ChangeArray1(),
-                                        bSurf.UDegree() + 3,
-                                        2 * (bSurf.VDegree()));
+                                        bSurf.UDegree + 3,
+                                        2 * (bSurf.VDegree));
     }
 
     //=================================================================================================
@@ -2435,7 +2435,7 @@ public static partial class GeomLib
                                                bCurveWeights,
                                                bCurveKnots,
                                                bCurveMults,
-                                               bSurf.UDegree());
+                                               bSurf.UDegree);
                 global::Kerf.Engine.Approximation.Hermit.Solutionbis(bCurve, ref x, ref y, global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.Confusion());
                 if (x < uknotmin)
                 {
@@ -2496,7 +2496,7 @@ public static partial class GeomLib
             {
                 if (udirection && vdirection)
                 { // optimize the treatment
-                    if (bSurf.UDegree() <= bSurf.VDegree())
+                    if (bSurf.UDegree <= bSurf.VDegree)
                     {
                         CancelDenominatorDerivative1D(ref bSurf);
                         bSurf.ExchangeUV();
@@ -2530,13 +2530,13 @@ public static partial class GeomLib
 
         Vector3D du, dv;
         Point3D dummyPnt;
-        surf.D1(uv.X(), uv.Y(), out dummyPnt, out du, out dv);
+        surf.D1(uv.X, uv.Y, out dummyPnt, out du, out dv);
 
-        double mdu = du.SquareMagnitude(), mdv = dv.SquareMagnitude();
+        double mdu = du.SquareMagnitude, mdv = dv.SquareMagnitude;
         if (mdu >= tol2 && mdv >= tol2)
         {
             Vector3D aNorm = du ^ dv;
-            double magn = aNorm.SquareMagnitude();
+            double magn = aNorm.SquareMagnitude;
             if (magn < tol2)
             {
                 return 3;
@@ -2551,7 +2551,7 @@ public static partial class GeomLib
         NormalStatus status;
         Direction3D normal = new();
 
-        surf.D2(uv.X(), uv.Y(), out dummyPnt, out du, out dv, out d2U, out d2V, out d2UV);
+        surf.D2(uv.X, uv.Y, out dummyPnt, out du, out dv, out d2U, out d2V, out d2UV);
         global::Kerf.Engine.Geometry.CSLib.Normal(du, dv, d2U, d2V, d2UV, tol, out isDone, out status, ref normal);
         if (!isDone)
         {
@@ -2563,18 +2563,18 @@ public static partial class GeomLib
         double step = 1.0e-5;
         double eps = 1.0e-16;
         double sign = -1.0;
-        surf.Bounds(out umin, out umax, out vmin, out vmax);
+        surf.ParameterBounds(out umin, out umax, out vmin, out vmax);
 
         // check for cone apex singularity point
-        if ((uv.Y() > vmin + step) && (uv.Y() < vmax - step))
+        if ((uv.Y > vmin + step) && (uv.Y < vmax - step))
         {
             Direction3D normal1, normal2;
             double coneSingularityAngleEps = 1.0e-4;
-            surf.D1(uv.X(), uv.Y() - sign * step, out dummyPnt, out du, out dv);
+            surf.D1(uv.X, uv.Y - sign * step, out dummyPnt, out du, out dv);
             if ((du.XYZ().SquareModulus() > eps) && (dv.XYZ().SquareModulus() > eps))
             {
                 normal1 = new Direction3D(du ^ dv);
-                surf.D1(uv.X(), uv.Y() + sign * step, out dummyPnt, out du, out dv);
+                surf.D1(uv.X, uv.Y + sign * step, out dummyPnt, out du, out dv);
                 if ((du.XYZ().SquareModulus() > eps) && (dv.XYZ().SquareModulus() > eps))
                 {
                     normal2 = new Direction3D(du ^ dv);
@@ -2589,24 +2589,24 @@ public static partial class GeomLib
         // Along V
         if (mdu < tol2 && mdv >= tol2)
         {
-            if ((vmax - uv.Y()) > (uv.Y() - vmin))
+            if ((vmax - uv.Y) > (uv.Y - vmin))
             {
                 sign = 1.0;
             }
 
-            surf.D1(uv.X(), uv.Y() + sign * step, out dummyPnt, out du, out dv);
+            surf.D1(uv.X, uv.Y + sign * step, out dummyPnt, out du, out dv);
             Vector3D Norm = du ^ dv;
-            if (Norm.SquareMagnitude() < eps)
+            if (Norm.SquareMagnitude < eps)
             {
                 double sign1 = -1.0;
-                if ((umax - uv.X()) > (uv.X() - umin))
+                if ((umax - uv.X) > (uv.X - umin))
                 {
                     sign1 = 1.0;
                 }
-                surf.D1(uv.X() + sign1 * step, uv.Y() + sign * step, out dummyPnt, out du, out dv);
+                surf.D1(uv.X + sign1 * step, uv.Y + sign * step, out dummyPnt, out du, out dv);
                 Norm = du ^ dv;
             }
-            if (Norm.SquareMagnitude() >= eps && Norm.Dot(new Vector3D(normal)) < 0.0)
+            if (Norm.SquareMagnitude >= eps && Norm.Dot(new Vector3D(normal)) < 0.0)
             {
                 normal = normal.Reversed();
             }
@@ -2615,25 +2615,25 @@ public static partial class GeomLib
         // Along U
         if (mdv < tol2 && mdu >= tol2)
         {
-            if ((umax - uv.X()) > (uv.X() - umin))
+            if ((umax - uv.X) > (uv.X - umin))
             {
                 sign = 1.0;
             }
 
-            surf.D1(uv.X() + sign * step, uv.Y(), out dummyPnt, out du, out dv);
+            surf.D1(uv.X + sign * step, uv.Y, out dummyPnt, out du, out dv);
             Vector3D Norm = du ^ dv;
-            if (Norm.SquareMagnitude() < eps)
+            if (Norm.SquareMagnitude < eps)
             {
                 double sign1 = -1.0;
-                if ((vmax - uv.Y()) > (uv.Y() - vmin))
+                if ((vmax - uv.Y) > (uv.Y - vmin))
                 {
                     sign1 = 1.0;
                 }
 
-                surf.D1(uv.X() + sign * step, uv.Y() + sign1 * step, out dummyPnt, out du, out dv);
+                surf.D1(uv.X + sign * step, uv.Y + sign1 * step, out dummyPnt, out du, out dv);
                 Norm = du ^ dv;
             }
-            if (Norm.SquareMagnitude() >= eps && Norm.Dot(new Vector3D(normal)) < 0.0)
+            if (Norm.SquareMagnitude >= eps && Norm.Dot(new Vector3D(normal)) < 0.0)
             {
                 normal = normal.Reversed();
             }
@@ -2696,7 +2696,7 @@ public static partial class GeomLib
                 }
                 Point3D p1 = gas.Value(u1, v1);
                 Point3D p2 = gas.Value(u2, v1);
-                isUClosed = p1.SquareDistance(p2) <= tol2;
+                isUClosed = p1.SquareDistanceTo(p2) <= tol2;
                 return;
             }
             case SurfaceKind.Cone:
@@ -2705,10 +2705,10 @@ public static partial class GeomLib
                 if (!(global::Kerf.Engine.Foundation.Precision.IsInfinite(v1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(v2)))
                 {
                     Cone cone = gas.Cone();
-                    Point3D apex = cone.Apex();
+                    Point3D apex = cone.Apex;
                     Point3D P1 = gas.Value(u1, v1);
                     Point3D P2 = gas.Value(u1, v2);
-                    if (P2.SquareDistance(apex) > P1.SquareDistance(apex))
+                    if (P2.SquareDistanceTo(apex) > P1.SquareDistanceTo(apex))
                     {
                         v1 = v2;
                     }
@@ -2719,7 +2719,7 @@ public static partial class GeomLib
                 }
                 Point3D p1 = gas.Value(u1, v1);
                 Point3D p2 = gas.Value(u2, v1);
-                isUClosed = p1.SquareDistance(p2) <= tol2;
+                isUClosed = p1.SquareDistanceTo(p2) <= tol2;
                 return;
             }
             case SurfaceKind.Sphere:
@@ -2738,7 +2738,7 @@ public static partial class GeomLib
                 }
                 Point3D p1 = gas.Value(u1, v1);
                 Point3D p2 = gas.Value(u2, v1);
-                isUClosed = p1.SquareDistance(p2) <= tol2;
+                isUClosed = p1.SquareDistanceTo(p2) <= tol2;
                 return;
             }
             case SurfaceKind.Torus:
@@ -2805,7 +2805,7 @@ public static partial class GeomLib
                     t = (i == nbp - 1 ? v2 : v1 + i * dt);
                     Point3D p1 = gas.Value(u1, t);
                     Point3D p2 = gas.Value(u2, t);
-                    if (p1.SquareDistance(p2) > tol2)
+                    if (p1.SquareDistanceTo(p2) > tol2)
                     {
                         isUClosed = false;
                         break;
@@ -2827,7 +2827,7 @@ public static partial class GeomLib
                     t = (i == nbp - 1 ? u2 : u1 + i * dt);
                     Point3D p1 = gas.Value(t, v1);
                     Point3D p2 = gas.Value(t, v2);
-                    if (p1.SquareDistance(p2) > tol2)
+                    if (p1.SquareDistanceTo(p2) > tol2)
                     {
                         isVClosed = false;
                         break;
@@ -2998,14 +2998,14 @@ public static partial class GeomLib
         if (type == Line)
         {
             Line2D lin2d = c2D.Line();
-            loc2d = lin2d.Location();
-            dir2d = lin2d.Direction();
+            loc2d = lin2d.Location;
+            dir2d = lin2d.Direction;
             isAppropriateType = true;
         }
         else if (type == BSplineCurve)
         {
             BSplineCurve2D bSpline2d = c2D.BSpline();
-            if (bSpline2d.Degree() != 1 || bSpline2d.PoleCount != 2)
+            if (bSpline2d.Degree != 1 || bSpline2d.PoleCount != 2)
             {
                 return false; // Not a line or uneven parameterization.
             }
@@ -3014,7 +3014,7 @@ public static partial class GeomLib
 
             // Vector should be non-degenerated.
             Vector2D vec2d = new(bSpline2d.Pole(1), bSpline2d.Pole(2));
-            if (vec2d.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.Confusion())
+            if (vec2d.SquareMagnitude < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 return false; // Degenerated spline.
             }
@@ -3025,7 +3025,7 @@ public static partial class GeomLib
         else if (type == BezierCurve)
         {
             BezierCurve2D bezier2d = c2D.Bezier();
-            if (bezier2d.Degree() != 1 || bezier2d.PoleCount != 2)
+            if (bezier2d.Degree != 1 || bezier2d.PoleCount != 2)
             {
                 return false; // Not a line or uneven parameterization.
             }
@@ -3034,7 +3034,7 @@ public static partial class GeomLib
 
             // Vector should be non-degenerated.
             Vector2D vec2d = new(bezier2d.Pole(1), bezier2d.Pole(2));
-            if (vec2d.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.Confusion())
+            if (vec2d.SquareMagnitude < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 return false; // Degenerated spline.
             }
@@ -3053,7 +3053,7 @@ public static partial class GeomLib
         {
             // Horizontal line. V = const.
             isU = false;
-            param = loc2d.Y();
+            param = loc2d.Y;
             isForward = dir2d.Dot(Constants.DX2d()) > 0.0;
             return true;
         }
@@ -3061,7 +3061,7 @@ public static partial class GeomLib
         {
             // Vertical line. U = const.
             isU = true;
-            param = loc2d.X();
+            param = loc2d.X;
             isForward = dir2d.Dot(Constants.DY2d()) > 0.0;
             return true;
         }
@@ -3105,12 +3105,12 @@ public static partial class GeomLib
 
         bool isToTrim = true;
         double u1, u2, v1, v2;
-        aSurf.Bounds(out u1, out u2, out v1, out v2);
+        aSurf.ParameterBounds(out u1, out u2, out v1, out v2);
 
         if (isU)
         {
-            double v1Param = Min(f2d.Y(), l2d.Y());
-            double v2Param = Max(f2d.Y(), l2d.Y());
+            double v1Param = Min(f2d.Y, l2d.Y);
+            double v2Param = Max(f2d.Y, l2d.Y);
             if (v2Param < v1 - tolerance || v1Param > v2 + tolerance)
             {
                 return null;
@@ -3141,8 +3141,8 @@ public static partial class GeomLib
         }
         else
         {
-            double u1Param = Min(f2d.X(), l2d.X());
-            double u2Param = Max(f2d.X(), l2d.X());
+            double u1Param = Min(f2d.X, l2d.X);
+            double u2Param = Max(f2d.X, l2d.X);
             if (u2Param < u1 - tolerance || u1Param > u2 + tolerance)
             {
                 return null;
@@ -3204,9 +3204,9 @@ public static partial class GeomLib
             Point2D pnt2d = c2D.Value(par);
 
             Point3D pntC3D = curve3d.Value(par);
-            Point3D pntC2D = surf.Value(pnt2d.X(), pnt2d.Y());
+            Point3D pntC2D = surf.Value(pnt2d.X, pnt2d.Y);
 
-            double sqDeviation = pntC3D.SquareDistance(pntC2D);
+            double sqDeviation = pntC3D.SquareDistanceTo(pntC2D);
             error3d = Max(sqDeviation, error3d);
         }
 

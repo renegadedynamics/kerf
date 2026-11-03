@@ -229,9 +229,9 @@ public abstract class BaseMeshAlgo : MeshAlgo
                 Point2D pnt2_2 = aPCurve.GetPoint(aPCurve.ParametersNb() - 1);
 
                 double sqDist1 =
-                    Min(pnt1_1.SquareDistance(pnt1_2), pnt1_1.SquareDistance(pnt2_2));
+                    Min(pnt1_1.SquareDistanceTo(pnt1_2), pnt1_1.SquareDistanceTo(pnt2_2));
                 double sqDist2 =
-                    Min(pnt2_1.SquareDistance(pnt1_2), pnt2_1.SquareDistance(pnt2_2));
+                    Min(pnt2_1.SquareDistanceTo(pnt1_2), pnt2_1.SquareDistanceTo(pnt2_2));
                 if (sqDist1 < global::Kerf.Engine.Foundation.Precision.SquareConfusion() && sqDist2 < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                 {
                     return Internal;

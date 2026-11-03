@@ -19,7 +19,7 @@ public readonly struct PConicTool : IParTool<PConic>
         switch (pConic.TypeCurve())
         {
             case Line:
-                return (global::Kerf.Engine.Geometry.ElCLib.LineValue(x, pConic.Axis2().XAxis()));
+                return (global::Kerf.Engine.Geometry.ElCLib.LineValue(x, pConic.Axis2().XAxis));
             case Circle:
                 return (global::Kerf.Engine.Geometry.ElCLib.CircleValue(x, pConic.Axis2(), pConic.Param1()));
             case Ellipse:
@@ -36,7 +36,7 @@ public readonly struct PConicTool : IParTool<PConic>
         switch (pConic.TypeCurve())
         {
             case Line:
-                global::Kerf.Engine.Geometry.ElCLib.LineD1(u, pConic.Axis2().XAxis(), out pt, out tan);
+                global::Kerf.Engine.Geometry.ElCLib.LineD1(u, pConic.Axis2().XAxis, out pt, out tan);
                 break;
             case Circle:
                 global::Kerf.Engine.Geometry.ElCLib.CircleD1(u, pConic.Axis2(), pConic.Param1(), out pt, out tan);
@@ -66,7 +66,7 @@ public readonly struct PConicTool : IParTool<PConic>
                 // OCCT clears Tan (which LineD1 then writes) and leaves Norm unwritten: its callers' Norm stays
                 // as default-constructed, (0, 0), which the port writes.
                 norm = new Vector2D(0.0, 0.0);
-                global::Kerf.Engine.Geometry.ElCLib.LineD1(u, pConic.Axis2().XAxis(), out pt, out tan);
+                global::Kerf.Engine.Geometry.ElCLib.LineD1(u, pConic.Axis2().XAxis, out pt, out tan);
                 break;
             case Circle:
                 global::Kerf.Engine.Geometry.ElCLib.CircleD2(u, pConic.Axis2(), pConic.Param1(), out pt, out tan, out norm);

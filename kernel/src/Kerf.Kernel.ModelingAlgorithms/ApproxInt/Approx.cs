@@ -129,9 +129,9 @@ public class Approx<ThePSurface, ThePSurfaceTool, TheWLine>
         for (int i = 1; i <= nbPnts; i++)
         {
             Point3D p = theline.Point(i).Value();
-            xmin = Min(p.X(), xmin);
-            ymin = Min(p.Y(), ymin);
-            zmin = Min(p.Z(), zmin);
+            xmin = Min(p.X, xmin);
+            ymin = Min(p.Y, ymin);
+            zmin = Min(p.Z, zmin);
         }
 
         xo = -xmin;
@@ -228,13 +228,13 @@ public class Approx<ThePSurface, ThePSurfaceTool, TheWLine>
                 for (j = 1; j <= nbP3d; j++)
                 {
                     Point3D p1 = tabP[j], p2 = tabPP[j];
-                    dist += p2.SquareDistance(p1);
+                    dist += p2.SquareDistanceTo(p1);
                 }
                 for (j = 1; j <= nbP2d; j++)
                 {
                     Point2D p12d = tabP2d[j], p22d = tabPP2d[j];
 
-                    dist += p22d.SquareDistance(p12d);
+                    dist += p22d.SquareDistanceTo(p12d);
                 }
 
                 dist = Math.Sqrt(dist);

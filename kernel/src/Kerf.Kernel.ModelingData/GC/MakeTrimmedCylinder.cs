@@ -27,7 +27,7 @@ public sealed class MakeTrimmedCylinder : Root
         _theError = cyl.Status();
         if (_theError == Done)
         {
-            _theCyl = new TrimmedSurface(cyl.Value(), 0.0, 2.0 * M_PI, 0.0, p2.Distance(p1), true,
+            _theCyl = new TrimmedSurface(cyl.Value(), 0.0, 2.0 * M_PI, 0.0, p2.DistanceTo(p1), true,
                                                         true);
         }
     }

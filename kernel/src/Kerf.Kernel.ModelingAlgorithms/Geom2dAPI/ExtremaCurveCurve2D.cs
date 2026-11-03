@@ -23,7 +23,7 @@ namespace Kerf.Engine.Geometry.Api;
 /// port keeps the object it builds (decision 224). OCCT's implicit conversions to int and double are explicit
 /// operators (decision 327).
 /// </remarks>
-public class ExtremaCurveCurve2D
+internal class ExtremaCurveCurve2D
 {
     private readonly bool _isDone;
     private readonly int _index;

@@ -118,8 +118,8 @@ public partial class UnifySameDomain
         Edge resEdge = new LibraryMakeEdge(resCurve,
                                                     firstVertex,
                                                     lastVertex,
-                                                    resCurve.FirstParameter(),
-                                                    resCurve.LastParameter()).InternalEdge();
+                                                    resCurve.FirstParameter,
+                                                    resCurve.LastParameter).InternalEdge();
         var builder = new BrepBuilder();
         builder.SameRange(resEdge, false);
         builder.SameParameter(resEdge, false);
@@ -152,7 +152,7 @@ public partial class UnifySameDomain
                 face = ShapeCasts.Face(_faceNewFace.GetValue(face));
             }
 
-            face.Orientation(Forward); // to get proper pcurves of seam edges
+            face.Orient(Forward); // to get proper pcurves of seam edges
 
             var bAsurf = new FaceSurfaceAdaptor(face, false);
             if (bAsurf.GetType() == Plane)
@@ -165,7 +165,7 @@ public partial class UnifySameDomain
             for (int ii = 1; ii <= faceSeq.Length(); ii++)
             {
                 Surface? prevSurf = Tool.Surface(ShapeCasts.Face(faceSeq[ii]), out Placement prevLoc);
-                if (ReferenceEquals(prevSurf, surf) && prevLoc == loc)
+                if (ReferenceEquals(prevSurf, surf) && prevLoc.IsEqual(loc))
                 {
                     isFound = true;
                     break;
@@ -198,7 +198,7 @@ public partial class UnifySameDomain
             for (int i = 1; i <= chain.Length(); i++)
             {
                 Edge anEdge    = ShapeCasts.Edge(chain.Value(i));
-                bool        isForward = (anEdge.Orientation() != Reversed);
+                bool        isForward = (anEdge.Orientation != Reversed);
 
                 if (isSeam && j == 2)
                 { // second pass
@@ -244,7 +244,7 @@ public partial class UnifySameDomain
                     var copyPCurve = (Curve2D)pCurve.Copy();
                     if (copyPCurve is TrimmedCurve2D copyTrimmed)
                     {
-                        copyPCurve = copyTrimmed.BasisCurve();
+                        copyPCurve = copyTrimmed.BasisCurve;
                     }
 
                     pCurveSeq.Append(copyPCurve);
@@ -294,8 +294,8 @@ public partial class UnifySameDomain
                         {
                             Circle2D circ     = adaptor.Circle();
                             Circle2D prevCirc = prevAdaptor.Circle();
-                            if (circ.Location().Distance(prevCirc.Location()) <= global::Kerf.Engine.Foundation.Precision.Confusion()
-                                && Math.Abs(circ.Radius() - prevCirc.Radius()) <= global::Kerf.Engine.Foundation.Precision.Confusion())
+                            if (circ.Location.DistanceTo(prevCirc.Location) <= global::Kerf.Engine.Foundation.Precision.Confusion()
+                                && Math.Abs(circ.Radius - prevCirc.Radius) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
                                 isSameCurve = true;
                                 Point2D p1 = adaptor.Value(first);
@@ -331,7 +331,7 @@ public partial class UnifySameDomain
                     var copyPCurve = (Curve2D)pCurve.Copy();
                     if (copyPCurve is TrimmedCurve2D copyTrimmed)
                     {
-                        copyPCurve = copyTrimmed.BasisCurve();
+                        copyPCurve = copyTrimmed.BasisCurve;
                     }
 
                     pCurveSeq.Append(copyPCurve);
@@ -412,8 +412,8 @@ public partial class UnifySameDomain
                 }
                 BSplineCurve2D bSplineCurve = concatc2d.Value(concatc2d.Lower());
                 resPCurve = bSplineCurve;
-                resFirst  = bSplineCurve.FirstParameter();
-                resLast   = bSplineCurve.LastParameter();
+                resFirst  = bSplineCurve.FirstParameter;
+                resLast   = bSplineCurve.LastParameter;
             }
             resPCurves.Append(resPCurve);
             resFirsts.Append(resFirst);
@@ -474,7 +474,7 @@ public partial class UnifySameDomain
                     if (type == Line)
                     {
                         Line2D lin2d   = gAcurve.Line();
-                        Direction2D dir2d   = lin2d.Direction();
+                        Direction2D dir2d   = lin2d.Direction;
                         Point2D pnt2d   = gAcurve.Value(resFirsts[ii]);
                         Vector2D offset = -new Vector2D(dir2d);
                         offset *= first3d;
@@ -485,9 +485,9 @@ public partial class UnifySameDomain
                     else if (type == Circle)
                     {
                         Circle2D circ2d   = gAcurve.Circle();
-                        double    radius   = circ2d.Radius();
-                        Frame2D  position = circ2d.Position();
-                        Point2D  location = circ2d.Location();
+                        double    radius   = circ2d.Radius;
+                        Frame2D  position = circ2d.Position;
+                        Point2D  location = circ2d.Location;
                         double    offset  = resFirsts[ii] - first3d;
                         position = position.Rotated(location, offset);
                         var newCircle2d = new CircleCurve2D(position, radius);
@@ -584,13 +584,13 @@ public partial class UnifySameDomain
 
                 Vertex vertex     = Exploration.FirstVertex(edgeFirst);
                 Vertex startVertex = vertex, endVertex = vertex;
-                startVertex.Orientation(Forward);
-                endVertex.Orientation(Reversed);
+                startVertex.Orient(Forward);
+                endVertex.Orient(Reversed);
 
                 var newEdge = new Edge();
                 b.MakeEdge(ref newEdge);
                 b.UpdateEdge(newEdge, line, commonFace, global::Kerf.Engine.Foundation.Precision.Confusion());
-                b.Range(newEdge, 0.0, startPoint.Distance(endPoint));
+                b.Range(newEdge, 0.0, startPoint.DistanceTo(endPoint));
                 b.Add(newEdge, startVertex);
                 b.Add(newEdge, endVertex);
                 b.Degenerated(newEdge, true);
@@ -612,11 +612,11 @@ public partial class UnifySameDomain
 
             if (c3d1 is TrimmedCurve3D tc1)
             {
-                c3d1 = tc1.BasisCurve();
+                c3d1 = tc1.BasisCurve;
             }
             if (c3d2 is TrimmedCurve3D tc2)
             {
-                c3d2 = tc2.BasisCurve();
+                c3d2 = tc2.BasisCurve;
             }
             if (IsLinear(bAcurve1, ref aDir1) && IsLinear(bAcurve2, ref aDir2))
             {
@@ -631,9 +631,9 @@ public partial class UnifySameDomain
             }
             if (c3d1 is CircleCurve3D c1 && c3d2 is CircleCurve3D c2)
             {
-                Point3D p01 = c1.Location();
-                Point3D p02 = c2.Location();
-                if (p01.Distance(p02) > global::Kerf.Engine.Foundation.Precision.Confusion())
+                Point3D p01 = c1.Location;
+                Point3D p02 = c2.Location;
+                if (p01.DistanceTo(p02) > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     isUnionOfCirclesPossible = false;
                 }
@@ -674,7 +674,7 @@ public partial class UnifySameDomain
                 }
             }
             var    l    = new LineCurve3D(new Axis3D(pv1, new Direction3D(vec)));
-            double dist = pv1.Distance(pv2);
+            double dist = pv1.DistanceTo(pv2);
             var    tc   = new TrimmedCurve3D(l, 0.0, dist);
             var    e    = new Edge();
             b.MakeEdge(ref e, tc, global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -694,7 +694,7 @@ public partial class UnifySameDomain
 
             if (c3d is TrimmedCurve3D tc)
             {
-                c3d = tc.BasisCurve();
+                c3d = tc.BasisCurve;
             }
             var cir = (CircleCurve3D)c3d;
 
@@ -709,7 +709,7 @@ public partial class UnifySameDomain
                 Point3D p0  = Tool.Pnt(v[0]);
                 Point3D p1  = Tool.Pnt(v[1]);
                 double tol = Max(Tool.Tolerance(v[0]), Tool.Tolerance(v[1]));
-                if (p0.SquareDistance(p1) < tol * tol)
+                if (p0.SquareDistanceTo(p1) < tol * tol)
                 {
                     isClosed = true;
                     v[1]     = v[0];
@@ -723,7 +723,7 @@ public partial class UnifySameDomain
                 var          adef = new EdgeCurveAdaptor(fe);
                 CircleCurve3D  cir1;
                 double       fp, lp;
-                if (fe.Orientation() == Forward)
+                if (fe.Orientation == Forward)
                 {
                     fp = adef.FirstParameter();
                     lp = adef.LastParameter();
@@ -738,7 +738,7 @@ public partial class UnifySameDomain
                     b.MakeEdge(ref e, cir, global::Kerf.Engine.Foundation.Precision.Confusion());
                     b.Add(e, v[0]);
                     b.Add(e, v[1]);
-                    e.Orientation(fe.Orientation());
+                    e.Orient(fe.Orientation);
                 }
                 else
                 {
@@ -786,12 +786,12 @@ public partial class UnifySameDomain
                 }
                 var    bAcurveFE        = new EdgeCurveAdaptor(fe);
                 Point3D pointLast        = bAcurveFE.Value(paramLast);
-                Point3D origin           = cir.Circ().Location();
+                Point3D origin           = cir.Circle.Location;
                 var    dir1             = new Direction3D(new Vector3D(origin, pointFirst));
                 var    dir2             = new Direction3D(new Vector3D(origin, pointLast));
                 Direction3D vdir             = dir1 ^ dir2;
                 var    ax2            = new Frame3D(origin, vdir, dir1);
-                var    newCircle       = new CircleCurve3D(ax2, cir.Radius());
+                var    newCircle       = new CircleCurve3D(ax2, cir.Radius);
                 Point3D pointLastInChain = Tool.Pnt(v[1]);
                 var    dirLastInChain   = new Direction3D(new Vector3D(origin, pointLastInChain));
                 double lpar             = dir1.AngleWithRef(dirLastInChain, vdir);
@@ -830,7 +830,7 @@ public partial class UnifySameDomain
                 }
                 if (c3d is TrimmedCurve3D tc)
                 {
-                    c3d = tc.BasisCurve();
+                    c3d = tc.BasisCurve;
                 }
                 if (c3d is BSplineCurve3D || c3d is BezierCurve3D)
                 {
@@ -912,7 +912,7 @@ public partial class UnifySameDomain
 
         if (t1 == Circle && t2 == Circle)
         {
-            if (ade1.Circle().Location().Distance(ade2.Circle().Location()) > global::Kerf.Engine.Foundation.Precision.Confusion())
+            if (ade1.Circle().Location.DistanceTo(ade2.Circle().Location) > global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 return false;
             }
@@ -929,7 +929,7 @@ public partial class UnifySameDomain
 
         Vector3D diff1, diff2;
         Point3D p1, p2;
-        if (edge1.Orientation() == Forward)
+        if (edge1.Orientation == Forward)
         {
             ade1.D1(ade1.LastParameter(), out p1, out diff1);
         }
@@ -939,7 +939,7 @@ public partial class UnifySameDomain
             diff1 = -diff1;
         }
 
-        if (edge2.Orientation() == Forward)
+        if (edge2.Orientation == Forward)
         {
             ade2.D1(ade2.FirstParameter(), out p2, out diff2);
         }
@@ -949,7 +949,7 @@ public partial class UnifySameDomain
             diff2 = -diff2;
         }
 
-        if (diff1.Angle(diff2) > angTol)
+        if (diff1.AngleTo(diff2) > angTol)
         {
             return false;
         }
@@ -957,7 +957,7 @@ public partial class UnifySameDomain
         if (lineDirectionOk && t2 == Line)
         {
             // Check that the accumulated deflection does not exceed the linear tolerance
-            double last = (edge2.Orientation() == Forward) ? ade2.LastParameter() : ade2.FirstParameter();
+            double last = (edge2.Orientation == Forward) ? ade2.LastParameter() : ade2.FirstParameter();
             var    curV = new Vector3D(firstPoint, ade2.Value(last));
             double dd   = directionVec.CrossSquareMagnitude(curV);
             if (dd > linTol * linTol)
@@ -969,7 +969,7 @@ public partial class UnifySameDomain
             // For symmetry, check the angle between vectors of:
             // - first edge and resulting curve, and
             // - the last edge and resulting curve.
-            if (directionVec.Angle(curV) > angTol || diff2.Angle(curV) > angTol)
+            if (directionVec.AngleTo(curV) > angTol || diff2.AngleTo(curV) > angTol)
             {
                 return false;
             }
@@ -988,7 +988,7 @@ public partial class UnifySameDomain
 
         if (cur is TrimmedCurve3D tc)
         {
-            cur = tc.BasisCurve();
+            cur = tc.BasisCurve;
         }
 
         if (cur.GetType() != typeof(LineCurve3D))
@@ -996,7 +996,7 @@ public partial class UnifySameDomain
             return false;
         }
 
-        if (inpEdge.Orientation() == Reversed)
+        if (inpEdge.Orientation == Reversed)
         {
             double tmp = f;
             f = l;
@@ -1094,7 +1094,7 @@ public partial class UnifySameDomain
             for (var it = new Iterator(anEdge.Oriented(Forward)); it.More(); it.Next())
             {
                 Shape aV = it.Value();
-                if (aV.Orientation() == Forward || aV.Orientation() == Reversed)
+                if (aV.Orientation == Forward || aV.Orientation == Reversed)
                 {
                     if (!mapVE.ContainsKey(aV))
                     {

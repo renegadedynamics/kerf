@@ -92,7 +92,7 @@ public sealed class NSections : SectionLaw
             // apply transformation if needed
             if (!loc.IsIdentity)
             {
-                bsCurve.Transform(loc.Transformation());
+                bsCurve.Transform(loc.Transformation);
             }
 
             // reparameterize to [0,1]
@@ -102,7 +102,7 @@ public sealed class NSections : SectionLaw
         }
 
         // reverse curve if edge is reversed
-        if (edge.Orientation() == Reversed)
+        if (edge.Orientation == Reversed)
         {
             bsCurve.Reverse();
         }
@@ -464,7 +464,7 @@ public sealed class NSections : SectionLaw
                 if (!Tool.Degenerated(e))
                 {
                     _edges.SetValue(ii, jj, e);
-                    if (e.Orientation() == Forward)
+                    if (e.Orientation == Forward)
                     {
                         _indices[e] = ii;
                     }
@@ -477,7 +477,7 @@ public sealed class NSections : SectionLaw
 
             // Is the law closed by U ?
 
-            wClosed = w.Closed();
+            wClosed = w.IsClosed;
             if (!wClosed)
             {
                 // if unsure about the flag, make check
@@ -486,7 +486,7 @@ public sealed class NSections : SectionLaw
                 edge1 = ShapeCasts.Edge(_edges.Value(nbEdge, jj));
                 edge2 = ShapeCasts.Edge(_edges.Value(1, jj));
 
-                if (edge1.Orientation() == Reversed)
+                if (edge1.Orientation == Reversed)
                 {
                     v1 = Exploration.FirstVertex(edge1);
                 }
@@ -494,7 +494,7 @@ public sealed class NSections : SectionLaw
                 {
                     v1 = Exploration.LastVertex(edge1);
                 }
-                if (edge2.Orientation() == Reversed)
+                if (edge2.Orientation == Reversed)
                 {
                     v2 = Exploration.LastVertex(edge2);
                 }
@@ -562,9 +562,9 @@ public sealed class NSections : SectionLaw
         // Increase the degree so that the position D2
         // on GeomFill_NSections could be correct
         // see comments in GeomFill_NSections
-        if (_surface.VDegree() < 2)
+        if (_surface.VDegree < 2)
         {
-            _surface.IncreaseDegree(_surface.UDegree(), 2);
+            _surface.IncreaseDegree(_surface.UDegree, 2);
         }
 
         // Fill tables
@@ -598,7 +598,7 @@ public sealed class NSections : SectionLaw
                     {
                         c = Tool.Curve(e, out double first, out double last)!;
 
-                        if (e.Orientation() == Reversed)
+                        if (e.Orientation == Reversed)
                         {
                             double aux;
                             Curve3D cBis;
@@ -655,14 +655,14 @@ public sealed class NSections : SectionLaw
         if (index <= _edges!.ColLength())
         {
             BSplineCurve3D curve = (BSplineCurve3D)LawSurface(index).VIso(param);
-            double first = curve.FirstParameter();
+            double first = curve.FirstParameter;
             curve.D0(first, out p);
             b.UpdateVertex(v, p, global::Kerf.Engine.Foundation.Precision.Confusion());
         }
         else if (index == _edges.ColLength() + 1)
         {
             BSplineCurve3D curve = (BSplineCurve3D)LawSurface(index - 1).VIso(param);
-            double last = curve.LastParameter();
+            double last = curve.LastParameter;
             curve.D0(last, out p);
             b.UpdateVertex(v, p, global::Kerf.Engine.Foundation.Precision.Confusion());
         }
@@ -736,7 +736,7 @@ public sealed class NSections : SectionLaw
                                    mults.Array1(),
                                    degree,
                                    loi.IsUPeriodic);
-        tol += pFirst.Distance(bs.Value(knots.Value(1)));
+        tol += pFirst.DistanceTo(bs.Value(knots.Value(1)));
         return tol;
     }
 
@@ -755,7 +755,7 @@ public sealed class NSections : SectionLaw
         }
         else
         {
-            _surface!.Bounds(out double ufirst, out double ulast, out double vfirst, out double vlast);
+            _surface!.ParameterBounds(out double ufirst, out double ulast, out double vfirst, out double vlast);
             NCollection_Sequence<Curve3D> nCompo = new();
             nCompo.Clear();
             for (int jj = 1; jj <= _shapes.Length(); jj++)
@@ -798,7 +798,7 @@ public sealed class NSections : SectionLaw
             }
 
             Vertex v1, v2;
-            if (edge1.Orientation() == Reversed)
+            if (edge1.Orientation == Reversed)
             {
                 v1 = Exploration.FirstVertex(edge1);
             }
@@ -806,7 +806,7 @@ public sealed class NSections : SectionLaw
             {
                 v1 = Exploration.LastVertex(edge1);
             }
-            if (edge2.Orientation() == Reversed)
+            if (edge2.Orientation == Reversed)
             {
                 v2 = Exploration.LastVertex(edge2);
             }
@@ -852,7 +852,7 @@ public sealed class NSections : SectionLaw
         for (ii = 1; ii <= nbEdge; ii++)
         {
             BSplineCurve3D curve = (BSplineCurve3D)LawSurface(ii).VIso(v);
-            double first = curve.FirstParameter(), last = curve.LastParameter();
+            double first = curve.FirstParameter, last = curve.LastParameter;
             Edge e = new LibraryMakeEdge(curve, first, last).InternalEdge();
             mw.Add(e);
         }

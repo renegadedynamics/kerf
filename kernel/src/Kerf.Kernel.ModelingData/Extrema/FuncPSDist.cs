@@ -41,7 +41,7 @@ public class FuncPSDist : MultipleVarFunctionWithGradient
             return false;
         }
 
-        f = _surf.Value(x[1], x[2]).SquareDistance(_p);
+        f = _surf.Value(x[1], x[2]).SquareDistanceTo(_p);
 
         return true;
     }
@@ -78,7 +78,7 @@ public class FuncPSDist : MultipleVarFunctionWithGradient
         g[1] = p1P2.Dot(du1s);
         g[2] = p1P2.Dot(dv1s);
 
-        f = _surf.Value(x[1], x[2]).SquareDistance(_p);
+        f = _surf.Value(x[1], x[2]).SquareDistanceTo(_p);
 
         return true;
     }

@@ -15,9 +15,9 @@ public class Geom_PointVectorTests
 
     private static void AssertPnt(in Point3D theExpected, in Point3D theActual, double theTol = 0.0)
     {
-        Assert.Equal(theExpected.X(), theActual.X(), theTol);
-        Assert.Equal(theExpected.Y(), theActual.Y(), theTol);
-        Assert.Equal(theExpected.Z(), theActual.Z(), theTol);
+        Assert.Equal(theExpected.X, theActual.X, theTol);
+        Assert.Equal(theExpected.Y, theActual.Y, theTol);
+        Assert.Equal(theExpected.Z, theActual.Z, theTol);
     }
 
     [Fact]

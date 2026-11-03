@@ -11,7 +11,7 @@ namespace Kerf.Engine.Geometry.Evaluation.Grid;
 /// <summary>
 /// Efficient batch evaluator for circle grid points: P(u) = C + R * (cos(u) * X + sin(u) * Y).
 /// </summary>
-public sealed class CircleGrid : GeomGridEvalGrid.ICurveEvaluator
+internal sealed class CircleGrid : GeomGridEvalGrid.ICurveEvaluator
 {
     private readonly CircleCurve3D? _geom;
 
@@ -36,22 +36,22 @@ public sealed class CircleGrid : GeomGridEvalGrid.ICurveEvaluator
         NCollection_Array1<Point3D> result = new(1, nb);
 
         // Extract circle data from geometry
-        Circle3D circ = _geom.Circ();
-        Point3D center = circ.Location();
-        Direction3D xDir = circ.Position().XDirection();
-        Direction3D yDir = circ.Position().YDirection();
-        double radius = circ.Radius();
+        Circle3D circ = _geom.Circle;
+        Point3D center = circ.Location;
+        Direction3D xDir = circ.Position.XDirection;
+        Direction3D yDir = circ.Position.YDirection;
+        double radius = circ.Radius;
 
         // Pre-extract coordinates for performance
-        double cx = center.X();
-        double cy = center.Y();
-        double cz = center.Z();
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double xz = xDir.Z();
-        double yx = yDir.X();
-        double yy = yDir.Y();
-        double yz = yDir.Z();
+        double cx = center.X;
+        double cy = center.Y;
+        double cz = center.Z;
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double xz = xDir.Z;
+        double yx = yDir.X;
+        double yy = yDir.Y;
+        double yz = yDir.Z;
 
         for (int i = theParams.Lower(); i <= theParams.Upper(); ++i)
         {
@@ -80,22 +80,22 @@ public sealed class CircleGrid : GeomGridEvalGrid.ICurveEvaluator
         NCollection_Array1<Curve3D.ResD1> result = new(1, nb);
 
         // Extract circle data from geometry
-        Circle3D circ = _geom.Circ();
-        Point3D center = circ.Location();
-        Direction3D xDir = circ.Position().XDirection();
-        Direction3D yDir = circ.Position().YDirection();
-        double radius = circ.Radius();
+        Circle3D circ = _geom.Circle;
+        Point3D center = circ.Location;
+        Direction3D xDir = circ.Position.XDirection;
+        Direction3D yDir = circ.Position.YDirection;
+        double radius = circ.Radius;
 
         // Pre-extract coordinates for performance
-        double cx = center.X();
-        double cy = center.Y();
-        double cz = center.Z();
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double xz = xDir.Z();
-        double yx = yDir.X();
-        double yy = yDir.Y();
-        double yz = yDir.Z();
+        double cx = center.X;
+        double cy = center.Y;
+        double cz = center.Z;
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double xz = xDir.Z;
+        double yx = yDir.X;
+        double yy = yDir.Y;
+        double yz = yDir.Z;
 
         for (int i = theParams.Lower(); i <= theParams.Upper(); ++i)
         {
@@ -130,22 +130,22 @@ public sealed class CircleGrid : GeomGridEvalGrid.ICurveEvaluator
         NCollection_Array1<Curve3D.ResD2> result = new(1, nb);
 
         // Extract circle data from geometry
-        Circle3D circ = _geom.Circ();
-        Point3D center = circ.Location();
-        Direction3D xDir = circ.Position().XDirection();
-        Direction3D yDir = circ.Position().YDirection();
-        double radius = circ.Radius();
+        Circle3D circ = _geom.Circle;
+        Point3D center = circ.Location;
+        Direction3D xDir = circ.Position.XDirection;
+        Direction3D yDir = circ.Position.YDirection;
+        double radius = circ.Radius;
 
         // Pre-extract coordinates for performance
-        double cx = center.X();
-        double cy = center.Y();
-        double cz = center.Z();
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double xz = xDir.Z();
-        double yx = yDir.X();
-        double yy = yDir.Y();
-        double yz = yDir.Z();
+        double cx = center.X;
+        double cy = center.Y;
+        double cz = center.Z;
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double xz = xDir.Z;
+        double yx = yDir.X;
+        double yy = yDir.Y;
+        double yz = yDir.Z;
 
         for (int i = theParams.Lower(); i <= theParams.Upper(); ++i)
         {
@@ -184,22 +184,22 @@ public sealed class CircleGrid : GeomGridEvalGrid.ICurveEvaluator
         NCollection_Array1<Curve3D.ResD3> result = new(1, nb);
 
         // Extract circle data from geometry
-        Circle3D circ = _geom.Circ();
-        Point3D center = circ.Location();
-        Direction3D xDir = circ.Position().XDirection();
-        Direction3D yDir = circ.Position().YDirection();
-        double radius = circ.Radius();
+        Circle3D circ = _geom.Circle;
+        Point3D center = circ.Location;
+        Direction3D xDir = circ.Position.XDirection;
+        Direction3D yDir = circ.Position.YDirection;
+        double radius = circ.Radius;
 
         // Pre-extract coordinates for performance
-        double cx = center.X();
-        double cy = center.Y();
-        double cz = center.Z();
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double xz = xDir.Z();
-        double yx = yDir.X();
-        double yy = yDir.Y();
-        double yz = yDir.Z();
+        double cx = center.X;
+        double cy = center.Y;
+        double cz = center.Z;
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double xz = xDir.Z;
+        double yx = yDir.X;
+        double yy = yDir.Y;
+        double yz = yDir.Z;
 
         for (int i = theParams.Lower(); i <= theParams.Upper(); ++i)
         {
@@ -241,17 +241,17 @@ public sealed class CircleGrid : GeomGridEvalGrid.ICurveEvaluator
         int nb = theParams.Length();
         NCollection_Array1<Vector3D> result = new(1, nb);
 
-        Circle3D circ = _geom.Circ();
-        Direction3D xDir = circ.Position().XDirection();
-        Direction3D yDir = circ.Position().YDirection();
-        double radius = circ.Radius();
+        Circle3D circ = _geom.Circle;
+        Direction3D xDir = circ.Position.XDirection;
+        Direction3D yDir = circ.Position.YDirection;
+        double radius = circ.Radius;
 
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double xz = xDir.Z();
-        double yx = yDir.X();
-        double yy = yDir.Y();
-        double yz = yDir.Z();
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double xz = xDir.Z;
+        double yx = yDir.X;
+        double yy = yDir.Y;
+        double yz = yDir.Z;
 
         // Circle derivatives are cyclic with period 4:
         // D1 = R * (-sin(u) * X + cos(u) * Y)  -> coefficients: (-sin, cos)

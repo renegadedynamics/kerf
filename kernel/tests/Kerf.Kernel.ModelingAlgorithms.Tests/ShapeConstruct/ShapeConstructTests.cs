@@ -44,13 +44,13 @@ public class ShapeConstructTests
         BSplineCurve3D? aBSpl = global::Kerf.Engine.Healing.Construct.ShapeConstruct.ConvertCurveToBSpline(aCircle, 0.0, Math.PI, 1e-6, C1, 100, 9);
         Assert.NotNull(aBSpl);
         Assert.True(aBSpl.IsFrozen);
-        Assert.True(aBSpl.Degree() <= 6); // conics are limited to degree 6
+        Assert.True(aBSpl.Degree <= 6); // conics are limited to degree 6
         for (int i = 0; i <= 10; i++)
         {
-            double t = aBSpl.FirstParameter() + i * (aBSpl.LastParameter() - aBSpl.FirstParameter()) / 10;
+            double t = aBSpl.FirstParameter + i * (aBSpl.LastParameter - aBSpl.FirstParameter) / 10;
             Point3D aP = aBSpl.Value(t);
-            Assert.Equal(5.0, aP.Distance(new Point3D(1, 2, aP.Z())), 1e-5);
-            Assert.Equal(3.0, aP.Z(), 1e-9);
+            Assert.Equal(5.0, aP.DistanceTo(new Point3D(1, 2, aP.Z)), 1e-5);
+            Assert.Equal(3.0, aP.Z, 1e-9);
         }
 
         // a B-spline is returned as it is
@@ -68,13 +68,13 @@ public class ShapeConstructTests
         BSplineCurve2D? aBSpl = global::Kerf.Engine.Healing.Construct.ShapeConstruct.ConvertCurveToBSpline(aCircle, 0.0, Math.PI / 2, 1e-7, C1, 100, 9);
         Assert.NotNull(aBSpl);
         Assert.True(aBSpl.IsFrozen);
-        Assert.True(aBSpl.Value(aBSpl.FirstParameter()).IsEqual(new Point2D(2, 0), 1e-6));
-        Assert.True(aBSpl.Value(aBSpl.LastParameter()).IsEqual(new Point2D(0, 2), 1e-6));
+        Assert.True(aBSpl.Value(aBSpl.FirstParameter).IsEqual(new Point2D(2, 0), 1e-6));
+        Assert.True(aBSpl.Value(aBSpl.LastParameter).IsEqual(new Point2D(0, 2), 1e-6));
 
         TrimmedCurve2D aSeg = new(new LineCurve2D(new Point2D(0, 0), new Direction2D(1, 0)), 0, 4);
         BSplineCurve2D? aLin = global::Kerf.Engine.Healing.Construct.ShapeConstruct.ConvertCurveToBSpline(aSeg, 0, 4, 1e-7, C1, 100, 9);
-        Assert.Equal(1, aLin!.Degree());
-        Assert.True(aLin.Value(aLin.LastParameter()).IsEqual(new Point2D(4, 0), Tol));
+        Assert.Equal(1, aLin!.Degree);
+        Assert.True(aLin.Value(aLin.LastParameter).IsEqual(new Point2D(4, 0), Tol));
     }
 
     [Fact]
@@ -84,23 +84,23 @@ public class ShapeConstructTests
         BSplineSurface? aBS = global::Kerf.Engine.Healing.Construct.ShapeConstruct.ConvertSurfaceToBSpline(aCyl, 0, Math.PI, 0, 5, 1e-6, C1, 100, 9);
         Assert.NotNull(aBS);
         Assert.True(aBS.IsFrozen);
-        aBS.Bounds(out double u1, out double u2, out double v1, out double v2);
+        aBS.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
         for (int i = 0; i <= 4; i++)
         {
             Point3D aP = aBS.Value(u1 + i * (u2 - u1) / 4, 0.5 * (v1 + v2));
-            Assert.Equal(3.0, Math.Sqrt(aP.X() * aP.X() + aP.Y() * aP.Y()), 1e-9);
+            Assert.Equal(3.0, Math.Sqrt(aP.X * aP.X + aP.Y * aP.Y), 1e-9);
         }
 
         // an extrusion of a B-spline: two rows of poles shifted along the direction
         BSplineCurve3D aBasis = CubicThrough(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0), new Point3D(3, 1, 0));
         ExtrusionSurface anExtr = new(aBasis, new Direction3D(0, 0, 1));
-        BSplineSurface? anExtrBS = global::Kerf.Engine.Healing.Construct.ShapeConstruct.ConvertSurfaceToBSpline(anExtr, aBasis.FirstParameter(), aBasis.LastParameter(),
+        BSplineSurface? anExtrBS = global::Kerf.Engine.Healing.Construct.ShapeConstruct.ConvertSurfaceToBSpline(anExtr, aBasis.FirstParameter, aBasis.LastParameter,
                                                                                -1, 2, 1e-6, C2, 100, 9);
         Assert.NotNull(anExtrBS);
-        Assert.Equal(1, anExtrBS.VDegree());
+        Assert.Equal(1, anExtrBS.VDegree);
         Assert.Equal(2, anExtrBS.VPoleCount);
-        Assert.True(anExtrBS.Value(aBasis.FirstParameter(), 2).IsEqual(new Point3D(0, 0, 2), Tol));
-        Assert.True(anExtrBS.Value(aBasis.LastParameter(), -1).IsEqual(new Point3D(3, 1, -1), Tol));
+        Assert.True(anExtrBS.Value(aBasis.FirstParameter, 2).IsEqual(new Point3D(0, 0, 2), Tol));
+        Assert.True(anExtrBS.Value(aBasis.LastParameter, -1).IsEqual(new Point3D(3, 1, -1), Tol));
     }
 
     [Fact]
@@ -111,7 +111,7 @@ public class ShapeConstructTests
         aC1.Freeze();
         aC2.Freeze();
         Point3D aPole1 = aC1.Pole(aC1.PoleCount);
-        double f1 = aC1.FirstParameter(), l1 = aC1.LastParameter(), f2 = aC2.FirstParameter(), l2 = aC2.LastParameter();
+        double f1 = aC1.FirstParameter, l1 = aC1.LastParameter, f2 = aC2.FirstParameter, l2 = aC2.LastParameter;
         bool isDone = global::Kerf.Engine.Healing.Construct.ShapeConstruct.JoinCurves(aC1, aC2, Forward, Forward, ref f1, ref l1, ref f2, ref l2,
                                                 out Curve3D? aJoined, out bool isRev1, out bool isRev2);
         Assert.True(isDone);
@@ -119,17 +119,17 @@ public class ShapeConstructTests
         Assert.False(isRev2);
         Assert.NotNull(aJoined);
         Assert.True(aJoined.IsFrozen);
-        Assert.True(aJoined.Value(aJoined.FirstParameter()).IsEqual(new Point3D(0, 0, 0), 1e-7));
-        Assert.True(aJoined.Value(aJoined.LastParameter()).IsEqual(new Point3D(6, 0, 0), 1e-7));
+        Assert.True(aJoined.Value(aJoined.FirstParameter).IsEqual(new Point3D(0, 0, 0), 1e-7));
+        Assert.True(aJoined.Value(aJoined.LastParameter).IsEqual(new Point3D(6, 0, 0), 1e-7));
         // the inputs were copied before their poles were moved
         Assert.True(aC1.Pole(aC1.PoleCount).IsEqual(aPole1, 0.0));
 
         // the second edge reversed: its curve is reversed with its range
         Curve3D aC2Rev = aC2.Reversed();
-        double g1 = aC1.FirstParameter(), m1 = aC1.LastParameter(), g2 = aC2Rev.FirstParameter(), m2 = aC2Rev.LastParameter();
+        double g1 = aC1.FirstParameter, m1 = aC1.LastParameter, g2 = aC2Rev.FirstParameter, m2 = aC2Rev.LastParameter;
         Assert.True(global::Kerf.Engine.Healing.Construct.ShapeConstruct.JoinCurves(aC1, aC2Rev, Forward, Reversed, ref g1, ref m1, ref g2, ref m2,
                                               out Curve3D? aJoined2, out _, out _));
-        Assert.True(aJoined2!.Value(aJoined2.LastParameter()).IsEqual(new Point3D(6, 0, 0), 1e-7));
+        Assert.True(aJoined2!.Value(aJoined2.LastParameter).IsEqual(new Point3D(6, 0, 0), 1e-7));
     }
 
     [Fact]
@@ -144,9 +144,9 @@ public class ShapeConstructTests
                                               out Curve2D? aJoined, out bool isRev1, out bool isRev2));
         Assert.False(isRev1 || isRev2);
         Assert.True(aJoined!.IsFrozen);
-        Assert.True(aJoined.Value(aJoined.FirstParameter()).IsEqual(new Point2D(0, 0), 1e-9));
-        Assert.True(aJoined.Value(aJoined.LastParameter()).IsEqual(new Point2D(2, 3), 1e-9));
-        Assert.True(aL1.Location().IsEqual(new Point2D(0, 0), 0.0));
+        Assert.True(aJoined.Value(aJoined.FirstParameter).IsEqual(new Point2D(0, 0), 1e-9));
+        Assert.True(aJoined.Value(aJoined.LastParameter).IsEqual(new Point2D(2, 3), 1e-9));
+        Assert.True(aL1.Location.IsEqual(new Point2D(0, 0), 0.0));
     }
 
     [Fact]
@@ -157,8 +157,8 @@ public class ShapeConstructTests
 
         BSplineCurve3D aCopy = (BSplineCurve3D)aC.Copy();
         Assert.True(aSCC.AdjustCurve(aCopy, new Point3D(0, 0, 1), new Point3D(3, 1, 1)));
-        Assert.True(aCopy.Value(aCopy.FirstParameter()).IsEqual(new Point3D(0, 0, 1), Tol));
-        Assert.True(aCopy.Value(aCopy.LastParameter()).IsEqual(new Point3D(3, 1, 1), Tol));
+        Assert.True(aCopy.Value(aCopy.FirstParameter).IsEqual(new Point3D(0, 0, 1), Tol));
+        Assert.True(aCopy.Value(aCopy.LastParameter).IsEqual(new Point3D(3, 1, 1), Tol));
 
         aC.Freeze();
         Assert.ThrowsAny<ImmutableObjectException>(() => aSCC.AdjustCurve(aC, new Point3D(0, 0, 1), new Point3D(3, 1, 1)));
@@ -167,14 +167,14 @@ public class ShapeConstructTests
         Assert.True(isDone);
         Assert.NotSame(aC, aTwin);
         Assert.True(aTwin.IsFrozen);
-        Assert.True(aTwin.Value(aTwin.FirstParameter()).IsEqual(new Point3D(0, 0, 1), Tol));
-        Assert.True(aC.Value(aC.FirstParameter()).IsEqual(new Point3D(0, 0, 0), Tol));
+        Assert.True(aTwin.Value(aTwin.FirstParameter).IsEqual(new Point3D(0, 0, 1), Tol));
+        Assert.True(aC.Value(aC.FirstParameter).IsEqual(new Point3D(0, 0, 0), Tol));
 
         // a line is moved through both points
         LineCurve3D aLine = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
         Curve3D aMoved = aSCC.CurveAdjusted(aLine, new Point3D(0, 1, 0), new Point3D(1, 2, 0), out isDone);
         Assert.True(isDone);
-        Assert.True(((LineCurve3D)aMoved).Lin().Direction().IsEqual(new Direction3D(1, 1, 0), 1e-12));
+        Assert.True(((LineCurve3D)aMoved).Line.Direction.IsEqual(new Direction3D(1, 1, 0), 1e-12));
 
         // a circle can't be adjusted: the curve itself comes back
         CircleCurve3D aCircle = new(new Frame3D(), 1);
@@ -184,7 +184,7 @@ public class ShapeConstructTests
         // segment then adjust
         Curve3D aSeg = aSCC.CurveSegmentAdjusted(aC, new Point3D(1, 0, 0), new Point3D(2, 0, 0), 0.25, 0.75, out isDone);
         Assert.True(isDone);
-        Assert.Equal(0.25, aSeg.FirstParameter(), Tol);
+        Assert.Equal(0.25, aSeg.FirstParameter, Tol);
         Assert.True(aSeg.Value(0.75).IsEqual(new Point3D(2, 0, 0), Tol));
 
         // 2D
@@ -192,7 +192,7 @@ public class ShapeConstructTests
         aLine2d.Freeze();
         Curve2D aMoved2d = aSCC.Curve2dAdjusted(aLine2d, new Point2D(0, 1), new Point2D(1, 1), out isDone);
         Assert.True(isDone);
-        Assert.True(((LineCurve2D)aMoved2d).Location().IsEqual(new Point2D(0, 1), 1e-12));
+        Assert.True(((LineCurve2D)aMoved2d).Location.IsEqual(new Point2D(0, 1), 1e-12));
     }
 
     [Fact]
@@ -203,23 +203,23 @@ public class ShapeConstructTests
         BSplineCurve3D? aBS = aSCC.ConvertToBSpline(aLine, 1, 3, 1e-7);
         Assert.NotNull(aBS);
         Assert.True(aBS.IsFrozen);
-        Assert.True(aBS.Value(aBS.FirstParameter()).IsEqual(new Point3D(1, 0, 0), Tol));
-        Assert.True(aBS.Value(aBS.LastParameter()).IsEqual(new Point3D(3, 0, 0), Tol));
+        Assert.True(aBS.Value(aBS.FirstParameter).IsEqual(new Point3D(1, 0, 0), Tol));
+        Assert.True(aBS.Value(aBS.LastParameter).IsEqual(new Point3D(3, 0, 0), Tol));
 
         // a B-spline needing a segment is copied; the input keeps its range
         BSplineCurve3D aC = CubicThrough(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0), new Point3D(3, 1, 0));
         aC.Freeze();
         BSplineCurve3D? aSegmented = aSCC.ConvertToBSpline(aC, 0.25, 0.5, 1e-7);
         Assert.NotSame(aC, aSegmented);
-        Assert.Equal(0.25, aSegmented!.FirstParameter(), Tol);
-        Assert.Equal(0.0, aC.FirstParameter());
+        Assert.Equal(0.25, aSegmented!.FirstParameter, Tol);
+        Assert.Equal(0.0, aC.FirstParameter);
         Assert.Same(aC, aSCC.ConvertToBSpline(aC, 0, 1, 1e-7));
 
         // a circle is approximated
         CircleCurve2D aCircle = new(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.0);
         BSplineCurve2D? aBS2d = aSCC.ConvertToBSpline(aCircle, 0, 1, 1e-6);
         Assert.NotNull(aBS2d);
-        Assert.True(aBS2d.Value(aBS2d.LastParameter()).IsEqual(new Point2D(Math.Cos(1), Math.Sin(1)), 1e-5));
+        Assert.True(aBS2d.Value(aBS2d.LastParameter).IsEqual(new Point2D(Math.Cos(1), Math.Sin(1)), 1e-5));
 
         NCollection_Array1<double> aKnots = new(1, 4);
         aKnots[1] = 0;
@@ -240,10 +240,10 @@ public class ShapeConstructTests
         aLine.Freeze();
         global::Kerf.Engine.Healing.Construct.ProjectCurveOnSurface aProj = new();
         aProj.Init(aPlane, 1e-7);
-        Assert.True(aProj.Perform(aLine, aLine.FirstParameter(), aLine.LastParameter(), out Curve2D? aPC));
+        Assert.True(aProj.Perform(aLine, aLine.FirstParameter, aLine.LastParameter, out Curve2D? aPC));
         Assert.True(aPC!.IsFrozen);
-        Assert.True(aProj.InternalPerform(aLine, aLine.FirstParameter(), aLine.LastParameter(), out Curve2D? aPC2));
-        Assert.True(aPC2!.Value(aLine.LastParameter()).IsEqual(new Point2D(3, 4), 1e-9));
+        Assert.True(aProj.InternalPerform(aLine, aLine.FirstParameter, aLine.LastParameter, out Curve2D? aPC2));
+        Assert.True(aPC2!.Value(aLine.LastParameter).IsEqual(new Point2D(3, 4), 1e-9));
         Assert.True(aProj.Status(ExtendStatus.DONE1));
 
         // a non-planar case through the points: a helix-like B-spline on a cylinder (frozen surface and curve)
@@ -257,13 +257,13 @@ public class ShapeConstructTests
         }
         BSplineCurve3D aHelix = new PointsToBSpline(aPnts).Curve();
         aProj.Init(aCyl, 1e-4);
-        Assert.True(aProj.Perform(aHelix, aHelix.FirstParameter(), aHelix.LastParameter(), out Curve2D? aPCH));
+        Assert.True(aProj.Perform(aHelix, aHelix.FirstParameter, aHelix.LastParameter, out Curve2D? aPCH));
         Assert.True(aProj.Status(ExtendStatus.DONE2));
         Assert.True(aPCH!.IsFrozen);
-        Assert.True(aProj.InternalPerform(aHelix, aHelix.FirstParameter(), aHelix.LastParameter(), out Curve2D? aPCH2));
+        Assert.True(aProj.InternalPerform(aHelix, aHelix.FirstParameter, aHelix.LastParameter, out Curve2D? aPCH2));
         Assert.False(aPCH2!.IsFrozen); // the interpolated pcurve, unfrozen for ported code
-        Point2D aUV = aPCH.Value(aHelix.FirstParameter());
-        Assert.True(aCyl.Value(aUV.X(), aUV.Y()).IsEqual(aHelix.Value(aHelix.FirstParameter()), 1e-4));
+        Point2D aUV = aPCH.Value(aHelix.FirstParameter);
+        Assert.True(aCyl.Value(aUV.X, aUV.Y).IsEqual(aHelix.Value(aHelix.FirstParameter), 1e-4));
 
         // no surface: FAIL1
         global::Kerf.Engine.Healing.Construct.ProjectCurveOnSurface anEmpty = new();
@@ -346,7 +346,7 @@ public class ShapeConstructTests
         global::Kerf.Engine.Healing.Construct.MakeTriangulation aMT = new(aSquare);
         Assert.True(aMT.IsDone);
         Shape aFace = aMT.Shape();
-        Assert.Equal(ShapeType.Face, aFace.ShapeType());
+        Assert.Equal(ShapeType.Face, aFace.Type);
         Assert.True(aFace.TShape()!.IsFrozen);
 
         // a non-planar zigzag hexagon from a frozen wire: a shell of planar facets holding the wire's edges
@@ -364,7 +364,7 @@ public class ShapeConstructTests
         Assert.True(aMT2.IsDone);
         Shape aShell = aMT2.Shape();
         aSnap.AssertUnchanged(aWire);
-        Assert.Equal(ShapeType.Shell, aShell.ShapeType());
+        Assert.Equal(ShapeType.Shell, aShell.Type);
         int aNbFaces = 0;
         for (Explorer anExp = new(aShell, ShapeType.Face); anExp.More(); anExp.Next())
         {
@@ -395,12 +395,12 @@ public class ShapeConstructTests
         Assert.True(anInt.IsDone);
         BSplineCurve2D aC = anInt.Curve();
         Assert.True(aC.IsFrozen);
-        Assert.Equal(3, aC.Degree());
+        Assert.Equal(3, aC.Degree);
         for (int i = 1; i <= 5; i++)
         {
             Assert.True(aC.Value(aC.Knot(i)).IsEqual(aPnts.Value(i), 1e-9));
         }
-        aC.D1(aC.FirstParameter(), out _, out Vector2D aT0);
+        aC.D1(aC.FirstParameter, out _, out Vector2D aT0);
         Assert.True(aT0.IsParallel(new Vector2D(1, 0), 1e-9));
 
         Interpolate2D aPer = new(aPnts, true, 1e-7);
@@ -408,7 +408,7 @@ public class ShapeConstructTests
         Assert.True(aPer.IsDone);
         BSplineCurve2D aCP = aPer.Curve();
         Assert.True(aCP.IsPeriodic);
-        Assert.True(aCP.Value(aCP.FirstParameter()).IsEqual(aCP.Value(aCP.LastParameter()), 1e-9));
+        Assert.True(aCP.Value(aCP.FirstParameter).IsEqual(aCP.Value(aCP.LastParameter), 1e-9));
 
         // too close points
         NCollection_HArray1<Point2D> aBad = new(1, 2);
@@ -430,13 +430,13 @@ public class ShapeConstructTests
         PointsToBSpline2D aGraph = new(aY, 0.0, 0.5);
         Assert.True(aGraph.IsDone);
         BSplineCurve2D aC = aGraph.Curve();
-        Assert.Equal(0.0, aC.FirstParameter(), 1e-12);
-        Assert.Equal(3.0, aC.LastParameter(), 1e-12);
+        Assert.Equal(0.0, aC.FirstParameter, 1e-12);
+        Assert.Equal(3.0, aC.LastParameter, 1e-12);
         for (int i = 0; i <= 6; i++)
         {
             double t = i * 0.5;
-            Assert.Equal(t, aC.Value(t).X(), 1e-9);
-            Assert.Equal(t * t, aC.Value(t).Y(), 1e-5);
+            Assert.Equal(t, aC.Value(t).X, 1e-9);
+            Assert.Equal(t * t, aC.Value(t).Y, 1e-5);
         }
 
         NCollection_Array1<Point2D> aPnts = new(1, 5);
@@ -450,8 +450,8 @@ public class ShapeConstructTests
         Assert.True(anAppr.IsDone);
         BSplineCurve2D aC2 = anAppr.Curve();
         // OCCT's 2D form keeps the knots on [0, 1]
-        Assert.Equal(0.0, aC2.FirstParameter(), 1e-12);
-        Assert.Equal(1.0, aC2.LastParameter(), 1e-12);
+        Assert.Equal(0.0, aC2.FirstParameter, 1e-12);
+        Assert.Equal(1.0, aC2.LastParameter, 1e-12);
         Assert.True(aC2.Value(0).IsEqual(aPnts[1], 1e-3));
 
         PointsToBSpline2D aVar = new(aPnts, 1.0, 0.0, 0.0);

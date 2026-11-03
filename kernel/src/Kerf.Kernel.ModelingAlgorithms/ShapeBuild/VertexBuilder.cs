@@ -48,7 +48,7 @@ public sealed class VertexBuilder
         double tol;
 
         Vector3D v = new Vector3D(pnt2.XYZ() - pnt1.XYZ());
-        double dist = v.Magnitude();
+        double dist = v.Magnitude;
 
         // #47 rln 09.12.98 S4054 PRO14323 entity 2844
         if (dist + tol2 <= tol1)

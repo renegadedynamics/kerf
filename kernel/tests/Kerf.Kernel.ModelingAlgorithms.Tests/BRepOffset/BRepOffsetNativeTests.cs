@@ -101,9 +101,9 @@ public class BRepOffsetNativeTests(ITestOutputHelper output)
                     var aS = new StringBuilder();
                     for (int i = 1; i <= anEdges.Count; i++)
                     {
-                        NCollection_List<Interval> aL = anA.Type(ShapeCasts.Edge(anEdges[i - 1]));
+                        NCollection_List<OffsetInterval> aL = anA.Type(ShapeCasts.Edge(anEdges[i - 1]));
                         aS.Append(i.ToString(CultureInfo.InvariantCulture)).Append(' ').Append(aL.Extent().ToString(CultureInfo.InvariantCulture));
-                        foreach (Interval anI in aL)
+                        foreach (OffsetInterval anI in aL)
                         {
                             aS.Append(' ').Append(Hex(anI.First())).Append(' ').Append(Hex(anI.Last())).Append(' ')
                               .Append(((int)anI.Type()).ToString(CultureInfo.InvariantCulture));

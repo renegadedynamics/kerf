@@ -31,17 +31,17 @@ public class Geom2dConvertTests
         {
             Point2D aP = theExpected.Value(theU1 + (theU2 - theU1) * i / 20.0);
             Point2D aQ = theActual.Value(theV1 + (theV2 - theV1) * i / 20.0);
-            Assert.True(aP.Distance(aQ) < theTol, $"point {i}: {aP} vs {aQ}");
+            Assert.True(aP.DistanceTo(aQ) < theTol, $"point {i}: {aP} vs {aQ}");
         }
     }
 
     private static double MinDistance(Curve2D theCurve, Point2D theP)
     {
         double aMin = double.MaxValue;
-        double aF = theCurve.FirstParameter(), aL = theCurve.LastParameter();
+        double aF = theCurve.FirstParameter, aL = theCurve.LastParameter;
         for (int i = 0; i <= 2000; i++)
         {
-            aMin = Math.Min(aMin, theCurve.Value(aF + (aL - aF) * i / 2000.0).Distance(theP));
+            aMin = Math.Min(aMin, theCurve.Value(aF + (aL - aF) * i / 2000.0).DistanceTo(theP));
         }
 
         return aMin;
@@ -58,8 +58,8 @@ public class Geom2dConvertTests
             Assert.False(aBS.IsFrozen);
             for (int i = 0; i < 16; i++)
             {
-                double aU = aBS.FirstParameter() + (aBS.LastParameter() - aBS.FirstParameter()) * i / 16.0;
-                Assert.Equal(3.0, aBS.Value(aU).Distance(new Point2D(1, 2)), aParam == Polynomial ? 1e-4 : Tol);
+                double aU = aBS.FirstParameter + (aBS.LastParameter - aBS.FirstParameter) * i / 16.0;
+                Assert.Equal(3.0, aBS.Value(aU).DistanceTo(new Point2D(1, 2)), aParam == Polynomial ? 1e-4 : Tol);
             }
         }
     }
@@ -70,9 +70,9 @@ public class Geom2dConvertTests
         EllipseCurve2D anEllipse = new(new Frame2D(new Point2D(0, 0), new Direction2D(0, 1), false), 4.0, 2.0);
         TrimmedCurve2D aTrimmed = new(anEllipse, 0.3, 2.5);
         BSplineCurve2D aBS = Geom2dConvert2D.CurveToBSplineCurve(aTrimmed);
-        Assert.True(aBS.StartPoint().Distance(aTrimmed.StartPoint()) < Tol);
-        Assert.True(aBS.EndPoint().Distance(aTrimmed.EndPoint()) < Tol);
-        Assert.True(MinDistance(aTrimmed, aBS.Value(0.5 * (aBS.FirstParameter() + aBS.LastParameter()))) < 1e-3);
+        Assert.True(aBS.StartPoint.DistanceTo(aTrimmed.StartPoint) < Tol);
+        Assert.True(aBS.EndPoint.DistanceTo(aTrimmed.EndPoint) < Tol);
+        Assert.True(MinDistance(aTrimmed, aBS.Value(0.5 * (aBS.FirstParameter + aBS.LastParameter))) < 1e-3);
     }
 
     [Fact]
@@ -82,12 +82,12 @@ public class Geom2dConvertTests
         TrimmedCurve2D anArc = new(aCircle, 0.1, 6.2);
         BSplineCurve2D aBS = Geom2dConvert2D.CurveToBSplineCurve(anArc, RationalC1);
         Assert.False(aBS.IsFrozen);
-        Assert.True(aBS.StartPoint().Distance(anArc.StartPoint()) < Tol);
-        Assert.True(aBS.EndPoint().Distance(anArc.EndPoint()) < Tol);
+        Assert.True(aBS.StartPoint.DistanceTo(anArc.StartPoint) < Tol);
+        Assert.True(aBS.EndPoint.DistanceTo(anArc.EndPoint) < Tol);
         for (int i = 0; i <= 50; i++)
         {
-            double aU = aBS.FirstParameter() + (aBS.LastParameter() - aBS.FirstParameter()) * i / 50.0;
-            Assert.Equal(2.0, aBS.Value(aU).Distance(new Point2D(0, 0)), Tol);
+            double aU = aBS.FirstParameter + (aBS.LastParameter - aBS.FirstParameter) * i / 50.0;
+            Assert.Equal(2.0, aBS.Value(aU).DistanceTo(new Point2D(0, 0)), Tol);
         }
     }
 
@@ -96,21 +96,21 @@ public class Geom2dConvertTests
     {
         LineCurve2D aLine = new(new Point2D(1, 1), new Direction2D(1, 2));
         BSplineCurve2D aBS = Geom2dConvert2D.CurveToBSplineCurve(new TrimmedCurve2D(aLine, -2.0, 3.0));
-        Assert.Equal(1, aBS.Degree());
+        Assert.Equal(1, aBS.Degree);
         Assert.Equal(2, aBS.PoleCount);
         AssertSamePoints(aLine, -2.0, 3.0, aBS, -2.0, 3.0, Tol);
 
         HyperbolaCurve2D aHyp = new(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 3.0, 2.0);
         TrimmedCurve2D aHypTrimmed = new(aHyp, -1.0, 1.5);
         aBS = Geom2dConvert2D.CurveToBSplineCurve(aHypTrimmed);
-        Assert.True(aBS.StartPoint().Distance(aHypTrimmed.StartPoint()) < Tol);
-        Assert.True(aBS.EndPoint().Distance(aHypTrimmed.EndPoint()) < Tol);
+        Assert.True(aBS.StartPoint.DistanceTo(aHypTrimmed.StartPoint) < Tol);
+        Assert.True(aBS.EndPoint.DistanceTo(aHypTrimmed.EndPoint) < Tol);
 
         ParabolaCurve2D aParab = new(new Axis2D(new Point2D(0, 0), new Direction2D(0, 1)), 1.5);
         TrimmedCurve2D aParabTrimmed = new(aParab, -2.0, 4.0);
         aBS = Geom2dConvert2D.CurveToBSplineCurve(aParabTrimmed);
-        Assert.Equal(2, aBS.Degree());
-        AssertSamePoints(aParabTrimmed, -2.0, 4.0, aBS, aBS.FirstParameter(), aBS.LastParameter(), Tol);
+        Assert.Equal(2, aBS.Degree);
+        AssertSamePoints(aParabTrimmed, -2.0, 4.0, aBS, aBS.FirstParameter, aBS.LastParameter, Tol);
 
         BezierCurve2D aBez = new(NCollection_Array1<Point2D>.From([new Point2D(0, 0), new Point2D(1, 3), new Point2D(4, 2)]),
                                       NCollection_Array1<double>.From([1.0, 2.0, 1.0]));
@@ -129,10 +129,10 @@ public class Geom2dConvertTests
         TrimmedCurve2D aTrimmed = new(aCubic, 0.5, 2.5);
         BSplineCurve2D aBS = Geom2dConvert2D.CurveToBSplineCurve(aTrimmed);
         Assert.False(aBS.IsFrozen);
-        Assert.Equal(0.5, aBS.FirstParameter());
-        Assert.Equal(2.5, aBS.LastParameter());
+        Assert.Equal(0.5, aBS.FirstParameter);
+        Assert.Equal(2.5, aBS.LastParameter);
         AssertSamePoints(aCubic, 0.5, 2.5, aBS, 0.5, 2.5, Tol);
-        Assert.Equal(0.0, aCubic.FirstParameter());
+        Assert.Equal(0.0, aCubic.FirstParameter);
     }
 
     [Fact]
@@ -144,8 +144,8 @@ public class Geom2dConvertTests
         Assert.False(aBS.IsFrozen);
         for (int i = 0; i <= 20; i++)
         {
-            double aU = aBS.FirstParameter() + (aBS.LastParameter() - aBS.FirstParameter()) * i / 20.0;
-            Assert.Equal(2.5, aBS.Value(aU).Distance(new Point2D(0, 0)), 1e-4);
+            double aU = aBS.FirstParameter + (aBS.LastParameter - aBS.FirstParameter) * i / 20.0;
+            Assert.Equal(2.5, aBS.Value(aU).DistanceTo(new Point2D(0, 0)), 1e-4);
         }
     }
 
@@ -162,17 +162,17 @@ public class Geom2dConvertTests
     {
         BSplineCurve2D aC = Cubic();
         BSplineCurve2D aPart = Geom2dConvert2D.SplitBSplineCurve(aC, 2, 3);
-        Assert.Equal(1.0, aPart.FirstParameter());
-        Assert.Equal(2.0, aPart.LastParameter());
+        Assert.Equal(1.0, aPart.FirstParameter);
+        Assert.Equal(2.0, aPart.LastParameter);
         AssertSamePoints(aC, 1.0, 2.0, aPart, 1.0, 2.0, Tol);
 
         BSplineCurve2D aReversed = Geom2dConvert2D.SplitBSplineCurve(aC, 3, 2);
-        Assert.True(aReversed.StartPoint().Distance(aC.Value(2.0)) < Tol);
-        Assert.True(aReversed.EndPoint().Distance(aC.Value(1.0)) < Tol);
+        Assert.True(aReversed.StartPoint.DistanceTo(aC.Value(2.0)) < Tol);
+        Assert.True(aReversed.EndPoint.DistanceTo(aC.Value(1.0)) < Tol);
 
         BSplineCurve2D aByParams = Geom2dConvert2D.SplitBSplineCurve(aC, 2.5, 0.5, 1e-9);
-        Assert.True(aByParams.StartPoint().Distance(aC.Value(2.5)) < Tol);
-        Assert.True(aByParams.EndPoint().Distance(aC.Value(0.5)) < Tol);
+        Assert.True(aByParams.StartPoint.DistanceTo(aC.Value(2.5)) < Tol);
+        Assert.True(aByParams.EndPoint.DistanceTo(aC.Value(0.5)) < Tol);
 
         Assert.ThrowsAny<DomainErrorException>(() => Geom2dConvert2D.SplitBSplineCurve(aC, 2, 2));
         Assert.ThrowsAny<OutOfRangeException>(() => Geom2dConvert2D.SplitBSplineCurve(aC, 0, 2));
@@ -211,7 +211,7 @@ public class Geom2dConvertTests
         Assert.Equal([0.0, 1.0, 2.0, 3.0], aKnots.AsSpan().ToArray());
         for (int i = 1; i <= 3; i++)
         {
-            Assert.Equal(3, anArcs[i].Degree());
+            Assert.Equal(3, anArcs[i].Degree);
             AssertSamePoints(aC, i - 1.0, i, anArcs[i], 0.0, 1.0, Tol);
             Assert.NotSame(anArcs[i], aConv.Arc(i));
         }
@@ -241,12 +241,12 @@ public class Geom2dConvertTests
 
         Assert.True(aComp.Add(aLast, 1e-7, true));
         Assert.True(aComp.Add(aFirst, 1e-7));
-        Assert.Equal(1.0, aHandedOut.FirstParameter());
-        Assert.Equal(2.0, aHandedOut.LastParameter());
+        Assert.Equal(1.0, aHandedOut.FirstParameter);
+        Assert.Equal(2.0, aHandedOut.LastParameter);
 
         BSplineCurve2D aResult = aComp.BSplineCurve()!;
-        Assert.True(aResult.StartPoint().Distance(aC.StartPoint()) < Tol);
-        Assert.True(aResult.EndPoint().Distance(aC.EndPoint()) < Tol);
+        Assert.True(aResult.StartPoint.DistanceTo(aC.StartPoint) < Tol);
+        Assert.True(aResult.EndPoint.DistanceTo(aC.EndPoint) < Tol);
         // The C2 junctions are merged back: the original knots
         Assert.Equal(4, aResult.KnotCount);
 
@@ -294,8 +294,8 @@ public class Geom2dConvertTests
         Assert.True(aResult[0].IsPeriodic);
         for (int i = 0; i <= 40; i++)
         {
-            double aU = aResult[0].FirstParameter() + (aResult[0].LastParameter() - aResult[0].FirstParameter()) * i / 40.0;
-            Assert.Equal(2.0, aResult[0].Value(aU).Distance(new Point2D(0, 0)), 1e-7);
+            double aU = aResult[0].FirstParameter + (aResult[0].LastParameter - aResult[0].FirstParameter) * i / 40.0;
+            Assert.Equal(2.0, aResult[0].Value(aU).DistanceTo(new Point2D(0, 0)), 1e-7);
         }
     }
 
@@ -357,8 +357,8 @@ public class Geom2dConvertTests
                                out NCollection_HArray1<BSplineCurve2D> aResult, ref isClosed, 1e-4);
         Assert.Equal(2, aResult.Length());
         Assert.Same(aSegments[2], aResult[0]);
-        Assert.True(aResult[1].StartPoint().Distance(new Point2D(2, 1)) < Tol);
-        Assert.True(aResult[1].EndPoint().Distance(new Point2D(2, 0)) < Tol);
+        Assert.True(aResult[1].StartPoint.DistanceTo(new Point2D(2, 1)) < Tol);
+        Assert.True(aResult[1].EndPoint.DistanceTo(new Point2D(2, 0)) < Tol);
     }
 
     [Fact]
@@ -381,8 +381,8 @@ public class Geom2dConvertTests
         Assert.Equal(0, anIndices[0]);
         Assert.Equal(2, anIndices[1]);
         Assert.Equal(0, anIndices[2]);
-        Assert.True(aResult[0].StartPoint().Distance(aPts[0]) < Tol);
-        Assert.True(aResult[0].EndPoint().Distance(aPts[2]) < Tol);
+        Assert.True(aResult[0].StartPoint.DistanceTo(aPts[0]) < Tol);
+        Assert.True(aResult[0].EndPoint.DistanceTo(aPts[2]) < Tol);
         Assert.Same(aCurves[2], aResult[1]);
     }
 
@@ -416,8 +416,8 @@ public class Geom2dConvertTests
         Assert.Equal(2.0, anOriginals[0].Weight(1));
         Assert.Equal(1.0, aCurves[0].Weight(1));
         Assert.Equal(0.5, aCurves[0].Weight(3));
-        Assert.True(aResult[0].StartPoint().Distance(new Point2D(0, 0)) < Tol);
-        Assert.True(aResult[0].EndPoint().Distance(new Point2D(8, 0)) < Tol);
+        Assert.True(aResult[0].StartPoint.DistanceTo(new Point2D(0, 0)) < Tol);
+        Assert.True(aResult[0].EndPoint.DistanceTo(new Point2D(8, 0)) < Tol);
         Assert.True(MinDistance(aResult[0], anOriginals[0].Value(0.5)) < 1e-2);
         Assert.True(MinDistance(aResult[0], anOriginals[1].Value(0.5)) < 1e-2);
     }
@@ -434,9 +434,9 @@ public class Geom2dConvertTests
         Geom2dConvert2D.C0BSplineToC1BSplineCurve(ref aResult, 1e-7);
         Assert.NotSame(aC0, aResult);
         Assert.Equal(3, aC0.Multiplicity(2));
-        Assert.True(aResult.Continuity() >= C1);
-        Assert.True(aResult.StartPoint().Distance(aC.StartPoint()) < Tol);
-        Assert.True(aResult.EndPoint().Distance(aC.EndPoint()) < Tol);
+        Assert.True(aResult.Continuity >= C1);
+        Assert.True(aResult.StartPoint.DistanceTo(aC.StartPoint) < Tol);
+        Assert.True(aResult.EndPoint.DistanceTo(aC.EndPoint) < Tol);
 
         // Nothing to do
         BSplineCurve2D aSmooth = aC;
@@ -451,8 +451,8 @@ public class Geom2dConvertTests
                                             NCollection_Array1<double>.From([0.0, 1.0, 2.0]), NCollection_Array1<int>.From([2, 1, 2]), 1);
         Geom2dConvert2D.C0BSplineToArrayOfC1BSplineCurve(aPolyline, out NCollection_HArray1<BSplineCurve2D> aTab, 1e-7);
         Assert.Equal(2, aTab.Length());
-        Assert.True(aTab[0].EndPoint().Distance(new Point2D(1, 0)) < Tol);
-        Assert.True(aTab[1].StartPoint().Distance(new Point2D(1, 0)) < Tol);
+        Assert.True(aTab[0].EndPoint.DistanceTo(new Point2D(1, 0)) < Tol);
+        Assert.True(aTab[1].StartPoint.DistanceTo(new Point2D(1, 0)) < Tol);
 
         BSplineCurve2D aC = Cubic();
         Geom2dConvert2D.C0BSplineToArrayOfC1BSplineCurve(aC, out aTab, 1e-7);
@@ -472,15 +472,15 @@ public class Geom2dConvertTests
         BSplineCurve2D aResult = anApprox.Curve()!;
         Assert.True(aResult.IsFrozen);
         Assert.Same(aResult, anApprox.Curve());
-        Assert.True(aResult.Degree() <= 9);
-        AssertSamePoints(anOffset, 0.0, 3.0, aResult, aResult.FirstParameter(), aResult.LastParameter(), 1e-4);
+        Assert.True(aResult.Degree <= 9);
+        AssertSamePoints(anOffset, 0.0, 3.0, aResult, aResult.FirstParameter, aResult.LastParameter, 1e-4);
         Assert.Contains("Dump of ApproxCurve", anApprox.ToString());
 
         // Through an adaptor on part of the curve
         ApproxCurve2D aPart = new(new CurveAdaptor2D(anOffset, 0.5, 2.5), 1e-5, C1, 50, 9);
         Assert.True(aPart.HasResult);
-        Assert.Equal(0.5, aPart.Curve()!.FirstParameter());
-        Assert.Equal(2.5, aPart.Curve()!.LastParameter());
+        Assert.Equal(0.5, aPart.Curve()!.FirstParameter);
+        Assert.Equal(2.5, aPart.Curve()!.LastParameter);
     }
 
     [Fact]
@@ -491,7 +491,7 @@ public class Geom2dConvertTests
         Schematiq.Collections.ISchematiqList<Curve2D> aResult = aLineApprox.GetResult();
         Assert.Single(aResult);
         Assert.True(aResult[0].IsFrozen);
-        Assert.True(aResult[0].Value(aResult[0].LastParameter()).Distance(aLine.Value(5.0)) < 1e-9);
+        Assert.True(aResult[0].Value(aResult[0].LastParameter).DistanceTo(aLine.Value(5.0)) < 1e-9);
 
         CircleCurve2D aCircle = new(new Axis2D(new Point2D(1, 1), new Direction2D(1, 0)), 2.0);
         ApproxArcsSegments2D aCircleApprox = new(new CurveAdaptor2D(aCircle, 0.0, 3.0), 1e-3, 0.01);
@@ -499,8 +499,8 @@ public class Geom2dConvertTests
         Assert.Equal(2, aResult.Count);
         foreach (Curve2D aCurve in aResult)
         {
-            CircleCurve2D aBasis = (CircleCurve2D)((TrimmedCurve2D)aCurve).BasisCurve();
-            Assert.Equal(2.0, aBasis.Radius(), 1e-9);
+            CircleCurve2D aBasis = (CircleCurve2D)((TrimmedCurve2D)aCurve).BasisCurve;
+            Assert.Equal(2.0, aBasis.Radius, 1e-9);
         }
     }
 
@@ -512,23 +512,23 @@ public class Geom2dConvertTests
         ApproxArcsSegments2D anApprox = new(new CurveAdaptor2D(aC), aTol, 0.1);
         Schematiq.Collections.ISchematiqList<Curve2D> aResult = anApprox.GetResult();
         Assert.True(aResult.Count > 1);
-        Assert.True(aResult[0].Value(aResult[0].FirstParameter()).Distance(aC.StartPoint()) < 1e-7);
+        Assert.True(aResult[0].Value(aResult[0].FirstParameter).DistanceTo(aC.StartPoint) < 1e-7);
         Curve2D aLastCurve = aResult[aResult.Count - 1];
-        Assert.True(aLastCurve.Value(aLastCurve.LastParameter()).Distance(aC.EndPoint()) < 1e-7);
+        Assert.True(aLastCurve.Value(aLastCurve.LastParameter).DistanceTo(aC.EndPoint) < 1e-7);
         for (int i = 0; i < aResult.Count; i++)
         {
             Curve2D aCurve = aResult[i];
-            Assert.True(aCurve is TrimmedCurve2D { } aTrimmed && (aTrimmed.BasisCurve() is LineCurve2D or CircleCurve2D));
+            Assert.True(aCurve is TrimmedCurve2D { } aTrimmed && (aTrimmed.BasisCurve is LineCurve2D or CircleCurve2D));
             if (i > 0)
             {
                 Curve2D aPrev = aResult[i - 1];
-                Assert.True(aPrev.Value(aPrev.LastParameter()).Distance(aCurve.Value(aCurve.FirstParameter())) < 1e-6);
+                Assert.True(aPrev.Value(aPrev.LastParameter).DistanceTo(aCurve.Value(aCurve.FirstParameter)) < 1e-6);
             }
 
             // Every piece lies within the tolerance of the curve
             for (int k = 0; k <= 10; k++)
             {
-                Point2D aP = aCurve.Value(aCurve.FirstParameter() + (aCurve.LastParameter() - aCurve.FirstParameter()) * k / 10.0);
+                Point2D aP = aCurve.Value(aCurve.FirstParameter + (aCurve.LastParameter - aCurve.FirstParameter) * k / 10.0);
                 Assert.True(MinDistance(aC, aP) < aTol + 2e-3, $"piece {i} point {k}");
             }
         }
@@ -548,7 +548,7 @@ public class Geom2dConvertTests
 
         CircleCurve2D aCircle = new(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 2.0);
         PPoint2D anOnCurve = new(M_PI / 2, new CurveAdaptor2D(aCircle));
-        Assert.True(new Point2D(anOnCurve.Point()).Distance(new Point2D(0, 2)) < 1e-15);
+        Assert.True(new Point2D(anOnCurve.Point()).DistanceTo(new Point2D(0, 2)) < 1e-15);
         Assert.True(new Vector2D(anOnCurve.D1()).IsParallel(new Vector2D(-1, 0), 1e-12));
     }
 }

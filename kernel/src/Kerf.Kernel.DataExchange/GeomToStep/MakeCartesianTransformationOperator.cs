@@ -29,12 +29,12 @@ public sealed class MakeCartesianTransformationOperator : GeometryRoot
     {
         Transform3D invTrsf = trsf;
         invTrsf = invTrsf.Inverted();
-        double scale = invTrsf.ScaleFactor();
+        double scale = invTrsf.ScaleFactor;
 
-        Matrix3x3 invMat = invTrsf.HVectorialPart();
+        Matrix3x3 invMat = invTrsf.RotationPart;
 
-        Matrix3x3 mat = trsf.HVectorialPart();
-        Xyz translation = invTrsf.TranslationPart().Multiplied(mat);
+        Matrix3x3 mat = trsf.RotationPart;
+        Xyz translation = invTrsf.TranslationXyz().Multiplied(mat);
         translation.Reverse();
 
         MakeCartesianPoint mkPoint = new MakeCartesianPoint(new Point3D(translation), localFactors.LengthFactor());

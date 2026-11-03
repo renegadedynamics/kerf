@@ -35,7 +35,7 @@ public static class Hermit
         bool periodic;
 
         global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(0.0, 1.0, knots); // affinity on the nodal vector
-        degree = bs.Degree();
+        degree = bs.Degree;
         periodic = bs.IsPeriodic;
         index0 = bs.FirstUKnotIndex();
         index1 = bs.LastUKnotIndex() - 1;
@@ -64,7 +64,7 @@ public static class Hermit
         bool periodic;
 
         global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(0.0, 1.0, knots); // affinity on the nodal vector
-        degree = bs.Degree();
+        degree = bs.Degree;
         periodic = bs.IsPeriodic;
         index0 = bs.FirstUKnotIndex();
         index1 = bs.LastUKnotIndex() - 1;
@@ -86,7 +86,7 @@ public static class Hermit
     {
         bool result;
 
-        result = poles[0].Y() >= 0;
+        result = poles[0].Y >= 0;
         return result;
     }
 
@@ -98,18 +98,18 @@ public static class Hermit
         min = 0;         // initialisation of the indices
         max = 0;
 
-        Min = poles[0].Y(); // initialisation of the intermediate value
-        Max = poles[0].Y();
+        Min = poles[0].Y; // initialisation of the intermediate value
+        Max = poles[0].Y;
         for (i = 1; i <= (poles.Length() - 1); i++)
         {
-            if (poles[i].Y() < Min)
+            if (poles[i].Y < Min)
             {
-                Min = poles[i].Y();
+                Min = poles[i].Y;
                 min = i;
             }
-            if (poles[i].Y() > Max)
+            if (poles[i].Y > Max)
             {
-                Max = poles[i].Y();
+                Max = poles[i].Y;
                 max = i;
             }
         }
@@ -203,13 +203,13 @@ public static class Hermit
         if (tolPoles != 0.0)
         {
             global::Kerf.Engine.Approximation.Hermit.Polemax(polesinit, out min, out max);
-            double polemin = polesinit[min].Y();
-            double polemax = polesinit[max].Y();
+            double polemin = polesinit[min].Y;
+            double polemax = polesinit[max].Y;
             if (((polemax) >= ((1 / tolPoles) * polemin))
                 || ((polemin == 0.0) && (polemax >= (1 / tolPoles))))
             {
-                if (polesinit[0].Y() >= (1 / tolPoles) * polesinit[3].Y()
-                    || polesinit[0].Y() <= tolPoles * polesinit[3].Y())
+                if (polesinit[0].Y >= (1 / tolPoles) * polesinit[3].Y
+                    || polesinit[0].Y <= tolPoles * polesinit[3].Y)
                 {
                     throw new DimensionErrorException("Hermit Impossible Tolerance");
                 }
@@ -217,7 +217,7 @@ public static class Hermit
                 {
                     for (i = 0; i <= 3; i++)
                     {
-                        polesinit[i] = polesinit[i].WithCoord(0.0, (polesinit[i].Y() - tolPoles * polemax));
+                        polesinit[i] = polesinit[i].WithCoord(0.0, (polesinit[i].Y - tolPoles * polemax));
                     }
                 }
                 else if ((max == 1) || (max == 2))
@@ -226,33 +226,33 @@ public static class Hermit
                     {
                         for (i = 0; i <= 3; i++)
                         {
-                            polesinit[i] = polesinit[i].WithCoord(0.0, (polesinit[i].Y() - (1 / tolPoles) * polemin));
+                            polesinit[i] = polesinit[i].WithCoord(0.0, (polesinit[i].Y - (1 / tolPoles) * polemin));
                         }
                     }
                     else
                     {
-                        if ((tolPoles * polemax < polesinit[0].Y()) && (tolPoles * polemax < polesinit[3].Y()))
+                        if ((tolPoles * polemax < polesinit[0].Y) && (tolPoles * polemax < polesinit[3].Y))
                         {
                             for (i = 0; i <= 3; i++)
                             {
-                                polesinit[i] = polesinit[i].WithCoord(0.0, (polesinit[i].Y() - tolPoles * polemax));
+                                polesinit[i] = polesinit[i].WithCoord(0.0, (polesinit[i].Y - tolPoles * polemax));
                             }
                             mark = 1;
                         }
-                        if ((1 / tolPoles * polemin > polesinit[0].Y())
-                            && (1 / tolPoles * polemin > polesinit[3].Y()) && (mark == 0))
+                        if ((1 / tolPoles * polemin > polesinit[0].Y)
+                            && (1 / tolPoles * polemin > polesinit[3].Y) && (mark == 0))
                         {
                             for (i = 0; i <= 3; i++)
                             {
-                                polesinit[i] = polesinit[i].WithCoord(0.0, (polesinit[i].Y() - 1 / tolPoles * polemin));
+                                polesinit[i] = polesinit[i].WithCoord(0.0, (polesinit[i].Y - 1 / tolPoles * polemin));
                             }
                             mark = 1;
                         }
                         if (mark == 0)
                         {
                             double pole0, pole3;
-                            pole0 = polesinit[0].Y();
-                            pole3 = polesinit[3].Y();
+                            pole0 = polesinit[0].Y;
+                            pole3 = polesinit[3].Y;
                             if (pole0 < pole3)
                             {
                                 a = Math.Log10(pole3 / pole0);
@@ -262,7 +262,7 @@ public static class Hermit
                                     {
                                         polesinit[i] = polesinit[i].WithCoord(
                                             0.0,
-                                            polesinit[i].Y()
+                                            polesinit[i].Y
                                                 - (pole3 * (Math.Pow(10.0, (-0.5 * Math.Log10(tolPoles) - a / 2.0)))));
                                     }
                                 }
@@ -272,7 +272,7 @@ public static class Hermit
                                     {
                                         polesinit[i] = polesinit[i].WithCoord(
                                             0.0,
-                                            polesinit[i].Y()
+                                            polesinit[i].Y
                                                 - (pole0 * (Math.Pow(10.0, (a / 2.0 + 0.5 * Math.Log10(tolPoles))))));
                                     }
                                     dercas = 1;
@@ -287,7 +287,7 @@ public static class Hermit
                                     {
                                         polesinit[i] = polesinit[i].WithCoord(
                                             0.0,
-                                            polesinit[i].Y()
+                                            polesinit[i].Y
                                                 - (pole0 * (Math.Pow(10.0, (-0.5 * Math.Log10(tolPoles) - a / 2.0)))));
                                     }
                                 }
@@ -297,7 +297,7 @@ public static class Hermit
                                     {
                                         polesinit[i] = polesinit[i].WithCoord(
                                             0.0,
-                                            polesinit[i].Y()
+                                            polesinit[i].Y
                                                 - (pole3 * (Math.Pow(10.0, (a / 2.0 + 0.5 * Math.Log10(tolPoles))))));
                                     }
                                     dercas = 1;
@@ -313,14 +313,14 @@ public static class Hermit
         {
             for (index = 0; index <= 3; index++)
             {
-                polesinit[index] = polesinit[index].WithCoord(0.0, -polesinit[index].Y());
+                polesinit[index] = polesinit[index].WithCoord(0.0, -polesinit[index].Y);
             }
         }
 
         // loop of positivity
-        if ((polesinit[1].Y() < 0.0) && (polesinit[2].Y() >= 0.0))
+        if ((polesinit[1].Y < 0.0) && (polesinit[2].Y >= 0.0))
         {
-            us1 = polesinit[0].Y() / (polesinit[0].Y() - polesinit[1].Y());
+            us1 = polesinit[0].Y / (polesinit[0].Y - polesinit[1].Y);
             if (boucle == 2)
             {
                 us1 = us1 * knots[2];
@@ -343,9 +343,9 @@ public static class Hermit
             }
         }
 
-        if ((polesinit[1].Y() >= 0.0) && (polesinit[2].Y() < 0.0))
+        if ((polesinit[1].Y >= 0.0) && (polesinit[2].Y < 0.0))
         {
-            us2 = polesinit[2].Y() / (polesinit[2].Y() - polesinit[3].Y());
+            us2 = polesinit[2].Y / (polesinit[2].Y - polesinit[3].Y);
             if (boucle == 2)
             {
                 us2 = knots[knots.Length() - 1] + us2 * (1 - knots[knots.Length() - 1]);
@@ -373,10 +373,10 @@ public static class Hermit
             boucle++;
         }
 
-        if ((polesinit[1].Y() < 0.0) && (polesinit[2].Y() < 0.0))
+        if ((polesinit[1].Y < 0.0) && (polesinit[2].Y < 0.0))
         {
-            us1 = polesinit[0].Y() / (polesinit[0].Y() - polesinit[1].Y());
-            us2 = polesinit[2].Y() / (polesinit[2].Y() - polesinit[3].Y());
+            us1 = polesinit[0].Y / (polesinit[0].Y - polesinit[1].Y);
+            us2 = polesinit[2].Y / (polesinit[2].Y - polesinit[3].Y);
             if (boucle != 0)
             {
                 if (ux != 0.0)
@@ -522,13 +522,13 @@ public static class Hermit
         if (tolPoles != 0.0)
         {
             global::Kerf.Engine.Approximation.Hermit.Polemax(polesinit, out min, out max);
-            double polemin = polesinit[min].Y();
-            double polemax = polesinit[max].Y();
+            double polemin = polesinit[min].Y;
+            double polemax = polesinit[max].Y;
             if (((polemax) >= ((1 / tolPoles) * polemin))
                 || ((polemin == 0.0) && (polemax >= (1 / tolPoles))))
             {
-                if (polesinit[0].Y() >= (1 / tolPoles) * polesinit[3].Y()
-                    || polesinit[0].Y() <= tolPoles * polesinit[3].Y())
+                if (polesinit[0].Y >= (1 / tolPoles) * polesinit[3].Y
+                    || polesinit[0].Y <= tolPoles * polesinit[3].Y)
                 {
                     throw new DimensionErrorException("Hermit Impossible Tolerance");
                 }
@@ -536,7 +536,7 @@ public static class Hermit
                 {
                     for (i = 0; i <= 3; i++)
                     {
-                        polesinit[i] = polesinit[i].WithCoord(0.0, (polesinit[i].Y() - tolPoles * polemax));
+                        polesinit[i] = polesinit[i].WithCoord(0.0, (polesinit[i].Y - tolPoles * polemax));
                     }
                 }
                 else if ((max == 1) || (max == 2))
@@ -545,33 +545,33 @@ public static class Hermit
                     {
                         for (i = 0; i <= 3; i++)
                         {
-                            polesinit[i] = polesinit[i].WithCoord(0.0, (polesinit[i].Y() - (1 / tolPoles) * polemin));
+                            polesinit[i] = polesinit[i].WithCoord(0.0, (polesinit[i].Y - (1 / tolPoles) * polemin));
                         }
                     }
                     else
                     {
-                        if ((tolPoles * polemax < polesinit[0].Y()) && (tolPoles * polemax < polesinit[3].Y()))
+                        if ((tolPoles * polemax < polesinit[0].Y) && (tolPoles * polemax < polesinit[3].Y))
                         {
                             for (i = 0; i <= 3; i++)
                             {
-                                polesinit[i] = polesinit[i].WithCoord(0.0, (polesinit[i].Y() - tolPoles * polemax));
+                                polesinit[i] = polesinit[i].WithCoord(0.0, (polesinit[i].Y - tolPoles * polemax));
                             }
                             mark = 1;
                         }
-                        if ((1 / tolPoles * polemin > polesinit[0].Y())
-                            && (1 / tolPoles * polemin > polesinit[3].Y()) && (mark == 0))
+                        if ((1 / tolPoles * polemin > polesinit[0].Y)
+                            && (1 / tolPoles * polemin > polesinit[3].Y) && (mark == 0))
                         {
                             for (i = 0; i <= 3; i++)
                             {
-                                polesinit[i] = polesinit[i].WithCoord(0.0, (polesinit[i].Y() - 1 / tolPoles * polemin));
+                                polesinit[i] = polesinit[i].WithCoord(0.0, (polesinit[i].Y - 1 / tolPoles * polemin));
                             }
                             mark = 1;
                         }
                         if (mark == 0)
                         {
                             double pole0, pole3;
-                            pole0 = polesinit[0].Y();
-                            pole3 = polesinit[3].Y();
+                            pole0 = polesinit[0].Y;
+                            pole3 = polesinit[3].Y;
                             if (pole0 < pole3)
                             {
                                 a = Math.Log10(pole3 / pole0);
@@ -581,7 +581,7 @@ public static class Hermit
                                     {
                                         polesinit[i] = polesinit[i].WithCoord(
                                             0.0,
-                                            polesinit[i].Y()
+                                            polesinit[i].Y
                                                 - (pole3 * (Math.Pow(10.0, (-0.5 * Math.Log10(tolPoles) - a / 2.0)))));
                                     }
                                 }
@@ -591,7 +591,7 @@ public static class Hermit
                                     {
                                         polesinit[i] = polesinit[i].WithCoord(
                                             0.0,
-                                            polesinit[i].Y()
+                                            polesinit[i].Y
                                                 - (pole0 * (Math.Pow(10.0, (a / 2.0 + 0.5 * Math.Log10(tolPoles))))));
                                     }
                                     dercas = 1;
@@ -606,7 +606,7 @@ public static class Hermit
                                     {
                                         polesinit[i] = polesinit[i].WithCoord(
                                             0.0,
-                                            polesinit[i].Y()
+                                            polesinit[i].Y
                                                 - (pole0 * (Math.Pow(10.0, (-0.5 * Math.Log10(tolPoles) - a / 2.0)))));
                                     }
                                 }
@@ -616,7 +616,7 @@ public static class Hermit
                                     {
                                         polesinit[i] = polesinit[i].WithCoord(
                                             0.0,
-                                            polesinit[i].Y()
+                                            polesinit[i].Y
                                                 - (pole3 * (Math.Pow(10.0, (a / 2.0 + 0.5 * Math.Log10(tolPoles))))));
                                     }
                                     dercas = 1;
@@ -632,14 +632,14 @@ public static class Hermit
         {
             for (index = 0; index <= 3; index++)
             {
-                polesinit[index] = polesinit[index].WithCoord(0.0, -polesinit[index].Y());
+                polesinit[index] = polesinit[index].WithCoord(0.0, -polesinit[index].Y);
             }
         }
 
         // loop of positivity
-        if ((polesinit[1].Y() < 0.0) && (polesinit[2].Y() >= 0.0))
+        if ((polesinit[1].Y < 0.0) && (polesinit[2].Y >= 0.0))
         {
-            us1 = polesinit[0].Y() / (polesinit[0].Y() - polesinit[1].Y());
+            us1 = polesinit[0].Y / (polesinit[0].Y - polesinit[1].Y);
             if (boucle == 2)
             {
                 us1 = us1 * knots[2];
@@ -662,9 +662,9 @@ public static class Hermit
             }
         }
 
-        if ((polesinit[1].Y() >= 0.0) && (polesinit[2].Y() < 0.0))
+        if ((polesinit[1].Y >= 0.0) && (polesinit[2].Y < 0.0))
         {
-            us2 = polesinit[2].Y() / (polesinit[2].Y() - polesinit[3].Y());
+            us2 = polesinit[2].Y / (polesinit[2].Y - polesinit[3].Y);
             if (boucle == 2)
             {
                 us2 = knots[knots.Length() - 1] + us2 * (1 - knots[knots.Length() - 1]);
@@ -692,10 +692,10 @@ public static class Hermit
             boucle++;
         }
 
-        if ((polesinit[1].Y() < 0.0) && (polesinit[2].Y() < 0.0))
+        if ((polesinit[1].Y < 0.0) && (polesinit[2].Y < 0.0))
         {
-            us1 = polesinit[0].Y() / (polesinit[0].Y() - polesinit[1].Y());
-            us2 = polesinit[2].Y() / (polesinit[2].Y() - polesinit[3].Y());
+            us1 = polesinit[0].Y / (polesinit[0].Y - polesinit[1].Y);
+            us2 = polesinit[2].Y / (polesinit[2].Y - polesinit[3].Y);
             if (boucle != 0)
             {
                 if (ux != 0.0)
@@ -830,20 +830,20 @@ public static class Hermit
             uy = upos2;
         }
 
-        herm[0] = bs2.Pole(1).Y();                         // computation of the Hermite coefficient on the
-        herm[1] = 3 * (bs2.Pole(2).Y() - bs2.Pole(1).Y()); // positive BSpline
-        herm[2] = 3 * (bs2.Pole(bs2.PoleCount).Y() - bs2.Pole(bs2.PoleCount - 1).Y());
-        herm[3] = bs2.Pole(bs2.PoleCount).Y();
+        herm[0] = bs2.Pole(1).Y;                         // computation of the Hermite coefficient on the
+        herm[1] = 3 * (bs2.Pole(2).Y - bs2.Pole(1).Y); // positive BSpline
+        herm[2] = 3 * (bs2.Pole(bs2.PoleCount).Y - bs2.Pole(bs2.PoleCount - 1).Y);
+        herm[3] = bs2.Pole(bs2.PoleCount).Y;
 
         PolyTest(herm, bs, out utol1, out utol2, ref boucle, tolPoles, tolKnots, ux, uy); // computation of the tolerance knots
         InsertKnots(bs2, utol1, utol2); // and insertion
 
         if (boucle == 2)
         { // insertion of two knots
-            herm[0] = bs2.Pole(1).Y();
-            herm[1] = 3 * (bs2.Pole(2).Y() - bs2.Pole(1).Y());
-            herm[2] = 3 * (bs2.Pole(bs2.PoleCount).Y() - bs2.Pole(bs2.PoleCount - 1).Y());
-            herm[3] = bs2.Pole(bs2.PoleCount).Y();
+            herm[0] = bs2.Pole(1).Y;
+            herm[1] = 3 * (bs2.Pole(2).Y - bs2.Pole(1).Y);
+            herm[2] = 3 * (bs2.Pole(bs2.PoleCount).Y - bs2.Pole(bs2.PoleCount - 1).Y);
+            herm[3] = bs2.Pole(bs2.PoleCount).Y;
             if (utol1 == 0.0)
             {
                 uint2 = utol2;
@@ -932,20 +932,20 @@ public static class Hermit
             uy = upos2;
         }
 
-        herm[0] = bs2.Pole(1).Y();                         // computation of the Hermite coefficient on the
-        herm[1] = 3 * (bs2.Pole(2).Y() - bs2.Pole(1).Y()); // positive BSpline
-        herm[2] = 3 * (bs2.Pole(bs2.PoleCount).Y() - bs2.Pole(bs2.PoleCount - 1).Y());
-        herm[3] = bs2.Pole(bs2.PoleCount).Y();
+        herm[0] = bs2.Pole(1).Y;                         // computation of the Hermite coefficient on the
+        herm[1] = 3 * (bs2.Pole(2).Y - bs2.Pole(1).Y); // positive BSpline
+        herm[2] = 3 * (bs2.Pole(bs2.PoleCount).Y - bs2.Pole(bs2.PoleCount - 1).Y);
+        herm[3] = bs2.Pole(bs2.PoleCount).Y;
 
         PolyTest(herm, bs, out utol1, out utol2, ref boucle, tolPoles, tolKnots, ux, uy); // computation of the tolerance knots
         InsertKnots(bs2, utol1, utol2); // and insertion
 
         if (boucle == 2)
         { // insertion of two knots
-            herm[0] = bs2.Pole(1).Y();
-            herm[1] = 3 * (bs2.Pole(2).Y() - bs2.Pole(1).Y());
-            herm[2] = 3 * (bs2.Pole(bs2.PoleCount).Y() - bs2.Pole(bs2.PoleCount - 1).Y());
-            herm[3] = bs2.Pole(bs2.PoleCount).Y();
+            herm[0] = bs2.Pole(1).Y;
+            herm[1] = 3 * (bs2.Pole(2).Y - bs2.Pole(1).Y);
+            herm[2] = 3 * (bs2.Pole(bs2.PoleCount).Y - bs2.Pole(bs2.PoleCount - 1).Y);
+            herm[3] = bs2.Pole(bs2.PoleCount).Y;
             if (utol1 == 0.0)
             {
                 uint2 = utol2;
@@ -1041,20 +1041,20 @@ public static class Hermit
             uy = upos2;
         }
 
-        herm[0] = bs2.Pole(1).Y();                         // computation of the Hermite coefficient on the
-        herm[1] = 3 * (bs2.Pole(2).Y() - bs2.Pole(1).Y()); // positive BSpline
-        herm[2] = 3 * (bs2.Pole(bs2.PoleCount).Y() - bs2.Pole(bs2.PoleCount - 1).Y());
-        herm[3] = bs2.Pole(bs2.PoleCount).Y();
+        herm[0] = bs2.Pole(1).Y;                         // computation of the Hermite coefficient on the
+        herm[1] = 3 * (bs2.Pole(2).Y - bs2.Pole(1).Y); // positive BSpline
+        herm[2] = 3 * (bs2.Pole(bs2.PoleCount).Y - bs2.Pole(bs2.PoleCount - 1).Y);
+        herm[3] = bs2.Pole(bs2.PoleCount).Y;
 
         PolyTest(herm, bs, out utol1, out utol2, ref boucle, tolPoles, tolKnots, ux, uy); // computation of the tolerance knots
         InsertKnots(bs2, utol1, utol2); // and insertion
 
         if (boucle == 2)
         { // insertion of two knots
-            herm[0] = bs2.Pole(1).Y();
-            herm[1] = 3 * (bs2.Pole(2).Y() - bs2.Pole(1).Y());
-            herm[2] = 3 * (bs2.Pole(bs2.PoleCount).Y() - bs2.Pole(bs2.PoleCount - 1).Y());
-            herm[3] = bs2.Pole(bs2.PoleCount).Y();
+            herm[0] = bs2.Pole(1).Y;
+            herm[1] = 3 * (bs2.Pole(2).Y - bs2.Pole(1).Y);
+            herm[2] = 3 * (bs2.Pole(bs2.PoleCount).Y - bs2.Pole(bs2.PoleCount - 1).Y);
+            herm[3] = bs2.Pole(bs2.PoleCount).Y;
             if (utol1 == 0.0)
             {
                 uint2 = utol2;

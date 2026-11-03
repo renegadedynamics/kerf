@@ -59,9 +59,9 @@ public class VectorWithMagnitude2 : GeometryVector2D
         _gpVec2d = _gpVec2d.WithY(y);
     }
 
-    public override double Magnitude() => _gpVec2d.Magnitude();
+    public override double Magnitude() => _gpVec2d.Magnitude;
 
-    public override double SquareMagnitude() => _gpVec2d.SquareMagnitude();
+    public override double SquareMagnitude() => _gpVec2d.SquareMagnitude;
 
     internal void Add(GeometryVector2D other)
     {

@@ -57,55 +57,55 @@ public readonly partial struct Line2D : IEquatable<Line2D>
     /// <summary>The coefficients of the line's equation <c>A * X + B * Y + C = 0</c>.</summary>
     public readonly void Coefficients(out double a, out double b, out double c)
     {
-        a = _pos.Direction().Y();
-        b = -_pos.Direction().X();
-        c = -(a * _pos.Location().X() + b * _pos.Location().Y());
+        a = _pos.Direction.Y;
+        b = -_pos.Direction.X;
+        c = -(a * _pos.Location.X + b * _pos.Location.Y);
     }
 
-    public readonly Direction2D Direction() => _pos.Direction();
+    public readonly Direction2D Direction => _pos.Direction;
 
-    public readonly Point2D Location() => _pos.Location();
+    public readonly Point2D Location => _pos.Location;
 
-    public readonly Axis2D Position() => _pos;
+    public readonly Axis2D Position => _pos;
 
     /// <summary>The signed angle between the directions of the two lines, in ]-PI, PI].</summary>
-    public readonly double Angle(in Line2D other) => _pos.Direction().Angle(other._pos.Direction());
+    public readonly double AngleTo(in Line2D other) => _pos.Direction.AngleTo(other._pos.Direction);
 
-    public readonly bool Contains(in Point2D p, double linearTolerance) => Distance(p) <= linearTolerance;
+    public readonly bool Contains(in Point2D p, double linearTolerance) => DistanceTo(p) <= linearTolerance;
 
-    public readonly double Distance(in Point2D p)
+    public readonly double DistanceTo(in Point2D p)
     {
         Xy coord = p.XY();
-        coord.Subtract((_pos.Location()).XY());
-        return Math.Abs(coord.Crossed(_pos.Direction().XY()));
+        coord.Subtract((_pos.Location).XY());
+        return Math.Abs(coord.Crossed(_pos.Direction.XY()));
     }
 
     /// <summary>The distance between the lines: zero unless they are parallel.</summary>
-    public readonly double Distance(in Line2D other)
+    public readonly double DistanceTo(in Line2D other)
     {
         double d = 0.0;
         if (_pos.IsParallel(other._pos, Constants.Resolution()))
         {
-            d = other.Distance(_pos.Location());
+            d = other.DistanceTo(_pos.Location);
         }
 
         return d;
     }
 
-    public readonly double SquareDistance(in Point2D p)
+    public readonly double SquareDistanceTo(in Point2D p)
     {
         Xy coord = p.XY();
-        coord.Subtract((_pos.Location()).XY());
-        double d = coord.Crossed(_pos.Direction().XY());
+        coord.Subtract((_pos.Location).XY());
+        double d = coord.Crossed(_pos.Direction.XY());
         return d * d;
     }
 
-    public readonly double SquareDistance(in Line2D other)
+    public readonly double SquareDistanceTo(in Line2D other)
     {
         double d = 0.0;
         if (_pos.IsParallel(other._pos, Constants.Resolution()))
         {
-            d = other.SquareDistance(_pos.Location());
+            d = other.SquareDistanceTo(_pos.Location);
         }
 
         return d;
@@ -113,7 +113,7 @@ public readonly partial struct Line2D : IEquatable<Line2D>
 
     /// <summary>The line through <paramref name="p"/> normal to this one.</summary>
     public readonly Line2D Normal(in Point2D p)
-        => new(new Axis2D(p, new Direction2D(-(_pos.Direction().Y()), _pos.Direction().X())));
+        => new(new Axis2D(p, new Direction2D(-(_pos.Direction.Y), _pos.Direction.X)));
 
     public readonly Line2D Reversed()
     {
@@ -181,5 +181,5 @@ public readonly partial struct Line2D : IEquatable<Line2D>
 
     public static bool operator !=(in Line2D left, in Line2D right) => !left.Equals(right);
 
-    public override readonly string ToString() => $"gp_Lin2d({_pos.Location()}, {_pos.Direction()})";
+    public override readonly string ToString() => $"gp_Lin2d({_pos.Location}, {_pos.Direction})";
 }

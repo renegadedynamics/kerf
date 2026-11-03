@@ -76,7 +76,7 @@ public static class Tangence
         //
         for (i = 0; i < 4; ++i)
         {
-            normDuv[i] = dPuv[i].SquareMagnitude();
+            normDuv[i] = dPuv[i].SquareMagnitude;
             if (normDuv[i] <= tol2)
             {
                 return true;
@@ -87,7 +87,7 @@ public static class Tangence
         Vector3D n1 = dPuv[0];
         n1 = n1.Crossed(dPuv[1]);
         //
-        m2 = n1.SquareMagnitude();
+        m2 = n1.SquareMagnitude;
         if (m2 < tol2)
         {
             return true;
@@ -96,7 +96,7 @@ public static class Tangence
         //-------------------------------------------------
         Vector3D n2 = dPuv[2];
         n2 = n2.Crossed(dPuv[3]);
-        m2 = n2.SquareMagnitude();
+        m2 = n2.SquareMagnitude;
         if (m2 < tol2)
         {
             return true;

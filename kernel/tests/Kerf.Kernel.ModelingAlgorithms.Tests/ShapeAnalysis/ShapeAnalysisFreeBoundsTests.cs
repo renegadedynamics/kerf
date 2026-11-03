@@ -147,7 +147,7 @@ public class ShapeAnalysisFreeBoundsTests
         NCollection_HSequence<Shape> aWires = FreeBounds.ConnectEdgesToWires(aEdges, 1e-7, false);
         Assert.Equal(1, aWires.Length());
         Assert.Equal(3, Count(aWires.Value(1), ShapeType.Edge));
-        Assert.False(aWires.Value(1).Closed());
+        Assert.False(aWires.Value(1).IsClosed);
         Assert.True(aWires.Value(1).TShape()!.IsFrozen);
 
         // dispatch into the caller's frozen compounds: new compounds
@@ -241,6 +241,6 @@ public class ShapeAnalysisFreeBoundsTests
         aData.Clear();
         Assert.Equal(-1.0, aData.Area());
         Assert.Equal(0, aData.NotchCount);
-        Assert.Equal(Forward, aW.Orientation());
+        Assert.Equal(Forward, aW.Orientation);
     }
 }

@@ -150,8 +150,8 @@ public class Draft7GUnitTests
         Edge aCircle = new MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 5), new Direction3D(0, 0, 1)), 2)).Edge();
         var aCurve = new CurveOnEdge(aCircle, anEdge);
         Assert.Equal(CurveKind.Circle, aCurve.GetType());
-        Assert.Equal(0.0, aCurve.Circle().Radius());
-        Assert.True(aCurve.Value(1.0).Distance(new Point3D(0, 0, 5)) < 1.0e-9);
+        Assert.Equal(0.0, aCurve.Circle().Radius);
+        Assert.True(aCurve.Value(1.0).DistanceTo(new Point3D(0, 0, 5)) < 1.0e-9);
         Assert.Throws<MethodNotImplementedException>(() => aCurve.Continuity());
 
         Vertex aV = new MakeVertex(new Point3D(1, 2, 3)).Vertex();

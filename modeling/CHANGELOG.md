@@ -119,3 +119,7 @@ The first packages, for Bento's 3D-models extension.
   worked around OCCT's merging of a holed face's wires into one (the kernel keeps them apart now): a chamfer on a face
   with holes is one operation, and its history comes from the kernel. `Face.Fillet2D` keeps build123d's wire-by-wire
   fillet.
+- Kerf's unit 10L1: the kernel's geometry and topology getters became properties (`X`, `Direction`, `Type`,
+  `Placement`…) and `Distance`/`Angle` became `DistanceTo`/`AngleTo`; the layer's call sites follow, rewritten by
+  the same tool. The layer reaches the kernel's now-internal engine through `InternalsVisibleTo` until 10M. No
+  behaviour changes.

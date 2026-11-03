@@ -14,16 +14,16 @@ public class gp_Pnt2dTests
     public void DefaultConstructor()
     {
         Point2D aPnt = new();
-        Assert.Equal(0.0, aPnt.X());
-        Assert.Equal(0.0, aPnt.Y());
+        Assert.Equal(0.0, aPnt.X);
+        Assert.Equal(0.0, aPnt.Y);
     }
 
     [Fact]
     public void CoordinateConstructor()
     {
         Point2D aPnt = new(1.0, 2.0);
-        Assert.Equal(1.0, aPnt.X());
-        Assert.Equal(2.0, aPnt.Y());
+        Assert.Equal(1.0, aPnt.X);
+        Assert.Equal(2.0, aPnt.Y);
     }
 
     [Fact]
@@ -31,8 +31,8 @@ public class gp_Pnt2dTests
     {
         Xy aXY = new(3.0, 4.0);
         Point2D aPnt = new(aXY);
-        Assert.Equal(3.0, aPnt.X());
-        Assert.Equal(4.0, aPnt.Y());
+        Assert.Equal(3.0, aPnt.X);
+        Assert.Equal(4.0, aPnt.Y);
     }
 
     [Fact]
@@ -40,12 +40,12 @@ public class gp_Pnt2dTests
     {
         Point2D aPnt = new Point2D().WithX(10.0);
         aPnt = aPnt.WithY(20.0);
-        Assert.Equal(10.0, aPnt.X());
-        Assert.Equal(20.0, aPnt.Y());
+        Assert.Equal(10.0, aPnt.X);
+        Assert.Equal(20.0, aPnt.Y);
 
         aPnt = aPnt.WithCoord(7.0, 8.0);
-        Assert.Equal(7.0, aPnt.X());
-        Assert.Equal(8.0, aPnt.Y());
+        Assert.Equal(7.0, aPnt.X);
+        Assert.Equal(8.0, aPnt.Y);
     }
 
     [Fact]
@@ -53,7 +53,7 @@ public class gp_Pnt2dTests
     {
         Point2D aP1 = new(0.0, 0.0);
         Point2D aP2 = new(3.0, 4.0);
-        Assert.Equal(5.0, aP1.Distance(aP2), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(5.0, aP1.DistanceTo(aP2), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -62,7 +62,7 @@ public class gp_Pnt2dTests
         Point2D aP1 = new(1.0, 2.0);
         Point2D aP2 = new(4.0, 6.0);
         // (4-1)^2 + (6-2)^2 = 9 + 16 = 25
-        Assert.Equal(25.0, aP1.SquareDistance(aP2), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(25.0, aP1.SquareDistanceTo(aP2), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -81,8 +81,8 @@ public class gp_Pnt2dTests
         Point2D aPnt = new(1.0, 2.0);
         Vector2D aVec = new(10.0, 20.0);
         Point2D aResult = aPnt.Translated(aVec);
-        Assert.Equal(11.0, aResult.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(22.0, aResult.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(11.0, aResult.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(22.0, aResult.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -91,8 +91,8 @@ public class gp_Pnt2dTests
         Point2D aPnt = new(2.0, 4.0);
         Point2D aCenter = new(0.0, 0.0);
         Point2D aResult = aPnt.Scaled(aCenter, 2.0);
-        Assert.Equal(4.0, aResult.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(8.0, aResult.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(4.0, aResult.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(8.0, aResult.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -101,8 +101,8 @@ public class gp_Pnt2dTests
         Point2D aPnt = new(1.0, 0.0);
         Point2D aCenter = new(0.0, 0.0);
         Point2D aResult = aPnt.Rotated(aCenter, M_PI_2);
-        Assert.Equal(0.0, aResult.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(1.0, aResult.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aResult.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aResult.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -111,8 +111,8 @@ public class gp_Pnt2dTests
         Point2D aPnt = new(1.0, 0.0);
         Point2D aCenter = new(0.0, 0.0);
         Point2D aResult = aPnt.Mirrored(aCenter);
-        Assert.Equal(-1.0, aResult.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aResult.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(-1.0, aResult.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aResult.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -122,8 +122,8 @@ public class gp_Pnt2dTests
         // Mirror through the X axis
         Axis2D anAxis = new(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0));
         Point2D aResult = aPnt.Mirrored(anAxis);
-        Assert.Equal(1.0, aResult.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(-1.0, aResult.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aResult.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(-1.0, aResult.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -132,8 +132,8 @@ public class gp_Pnt2dTests
         Point2D aPnt = new(1.0, 0.0);
         Transform2D aTrsf = new Transform2D().WithTranslation(new Vector2D(0.0, 5.0));
         Point2D aResult = aPnt.Transformed(aTrsf);
-        Assert.Equal(1.0, aResult.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(5.0, aResult.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aResult.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(5.0, aResult.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     // OCC22736: Verifies that composing two identical mirror transformations through the same axis
@@ -154,18 +154,18 @@ public class gp_Pnt2dTests
 
         // Applying M1 to p1 should give p2
         Point2D aP1MirrorM1 = aP1.Transformed(aM1);
-        Assert.Equal(aP2.X(), aP1MirrorM1.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(aP2.Y(), aP1MirrorM1.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aP2.X, aP1MirrorM1.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aP2.Y, aP1MirrorM1.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // Applying M2 to the mirrored point should give back p1
         Point2D aP1MirrorM1M2 = aP1MirrorM1.Transformed(aM2);
-        Assert.Equal(aP1.X(), aP1MirrorM1M2.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(aP1.Y(), aP1MirrorM1M2.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aP1.X, aP1MirrorM1M2.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aP1.Y, aP1MirrorM1M2.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // Composing M2*M1 must also be identity on p1
         Transform2D aComp = aM2.Multiplied(aM1);
         Point2D aP1Comp = aP1.Transformed(aComp);
-        Assert.Equal(aP1.X(), aP1Comp.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(aP1.Y(), aP1Comp.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aP1.X, aP1Comp.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aP1.Y, aP1Comp.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 }

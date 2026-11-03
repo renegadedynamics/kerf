@@ -58,7 +58,7 @@ internal static partial class Builder_0
         {
             if (pcf1 is TrimmedCurve2D tr1)
             {
-                pcf1 = tr1.BasisCurve();
+                pcf1 = tr1.BasisCurve;
             }
             c1.Load(pcf1);
         }
@@ -66,7 +66,7 @@ internal static partial class Builder_0
         {
             c1.Load(pcf1, first - delta, last + delta);
         }
-        double first1 = pcf1.FirstParameter(), last1 = pcf1.LastParameter();
+        double first1 = pcf1.FirstParameter, last1 = pcf1.LastParameter;
 
         first = fd2.Interference(jf2).FirstParameter();
         last = fd2.Interference(jf2).LastParameter();
@@ -88,7 +88,7 @@ internal static partial class Builder_0
         {
             if (pcf2 is TrimmedCurve2D tr2)
             {
-                pcf2 = tr2.BasisCurve();
+                pcf2 = tr2.BasisCurve;
             }
             c2.Load(pcf2);
         }
@@ -96,7 +96,7 @@ internal static partial class Builder_0
         {
             c2.Load(fd2.Interference(jf2).PCurveOnFace()!, first - delta, last + delta);
         }
-        double first2 = pcf2.FirstParameter(), last2 = pcf2.LastParameter();
+        double first2 = pcf2.FirstParameter, last2 = pcf2.LastParameter;
 
         IntersectionPoint2D int2d;
         GInter intersection = new();
@@ -153,7 +153,7 @@ internal static partial class Builder_0
                                 p2d = int2d.Value();
                             }
                             //  Modified by skv - Mon Jun 16 15:51:21 2003 OCC615 Begin
-                            else if (check2dDistance && refP2d.Distance(int2d.Value()) < refP2d.Distance(p2d))
+                            else if (check2dDistance && refP2d.DistanceTo(int2d.Value()) < refP2d.DistanceTo(p2d))
                             {
                                 double pp2 = int2d.ParamOnSecond();
 
@@ -179,7 +179,7 @@ internal static partial class Builder_0
                                 p2d = int2d.Value();
                             }
                             //  Modified by skv - Mon Jun 16 15:51:21 2003 OCC615 Begin
-                            else if (check2dDistance && refP2d.Distance(int2d.Value()) < refP2d.Distance(p2d))
+                            else if (check2dDistance && refP2d.DistanceTo(int2d.Value()) < refP2d.DistanceTo(p2d))
                             {
                                 double pp1 = int2d.ParamOnFirst();
 
@@ -208,7 +208,7 @@ internal static partial class Builder_0
                             p2 = int2d.ParamOnSecond();
                             p2d = int2d.Value();
                         }
-                        else if (check2dDistance && refP2d.Distance(int2d.Value()) < refP2d.Distance(p2d))
+                        else if (check2dDistance && refP2d.DistanceTo(int2d.Value()) < refP2d.DistanceTo(p2d))
                         {
                             p1 = int2d.ParamOnFirst();
                             p2 = int2d.ParamOnSecond();
@@ -246,30 +246,30 @@ internal static partial class Builder_0
         {
             return;
         }
-        double upcf = pcurv.FirstParameter();
-        double upcl = pcurv.LastParameter();
+        double upcf = pcurv.FirstParameter;
+        double upcl = pcurv.LastParameter;
         Curve2D basis = pcurv;
         if (pcurv is TrimmedCurve2D trpc)
         {
-            basis = trpc.BasisCurve();
+            basis = trpc.BasisCurve;
         }
         if (basis is not BSplineCurve2D pc)
         {
             return;
         }
-        if (Math.Abs(upcf - pc.FirstParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion()
-            || Math.Abs(upcl - pc.LastParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion())
+        if (Math.Abs(upcf - pc.FirstParameter) > global::Kerf.Engine.Foundation.Precision.PConfusion()
+            || Math.Abs(upcl - pc.LastParameter) > global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             pc = Writable(pc); // OCCT.NET: OCCT segments in place; a frozen curve is segmented on a copy (10204)
             pc.Segment(upcf, upcl);
         }
-        if (Math.Abs(uf - pc.FirstParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion()
-            || Math.Abs(ul - pc.LastParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion())
+        if (Math.Abs(uf - pc.FirstParameter) > global::Kerf.Engine.Foundation.Precision.PConfusion()
+            || Math.Abs(ul - pc.LastParameter) > global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             NCollection_Array1<Point2D> pol = pc.InternalPoles();
             NCollection_Array1<double> kn = new(pc.InternalKnots());
             NCollection_Array1<int> mu = pc.InternalMultiplicities();
-            int deg = pc.Degree();
+            int deg = pc.Degree;
             global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(uf, ul, kn);
             pc = new BSplineCurve2D(pol, kn, mu, deg);
         }
@@ -358,7 +358,7 @@ internal static partial class Builder_0
             pcurv.Value(t).Coord(out u, out v);
             Point3D pS = s.Value(u, v);
             Point3D pC = c3d.Value(t);
-            double d2 = pS.SquareDistance(pC);
+            double d2 = pS.SquareDistanceTo(pC);
             tolreached = Math.Max(tolreached, d2);
         }
         tolreached = Math.Sqrt(tolreached);
@@ -476,24 +476,24 @@ internal static partial class Builder_0
             p2 = uv1;
         }
 
-        if (Math.Abs(p1.X() - p2.X()) <= tol && Math.Abs((p2.Y() - p1.Y()) - (parfin - pardeb)) <= tol)
+        if (Math.Abs(p1.X - p2.X) <= tol && Math.Abs((p2.Y - p1.Y) - (parfin - pardeb)) <= tol)
         {
-            Point2D ppp = new(p1.X(), p1.Y() - pardeb);
+            Point2D ppp = new(p1.X, p1.Y - pardeb);
             pcurv = new LineCurve2D(ppp, Constants.DY2d());
         }
-        else if (Math.Abs(p1.X() - p2.X()) <= tol && Math.Abs((p1.Y() - p2.Y()) - (parfin - pardeb)) <= tol)
+        else if (Math.Abs(p1.X - p2.X) <= tol && Math.Abs((p1.Y - p2.Y) - (parfin - pardeb)) <= tol)
         {
-            Point2D ppp = new(p1.X(), p1.Y() + pardeb);
+            Point2D ppp = new(p1.X, p1.Y + pardeb);
             pcurv = new LineCurve2D(ppp, Constants.DY2d().Reversed());
         }
-        else if (Math.Abs(p1.Y() - p2.Y()) <= tol && Math.Abs((p2.X() - p1.X()) - (parfin - pardeb)) <= tol)
+        else if (Math.Abs(p1.Y - p2.Y) <= tol && Math.Abs((p2.X - p1.X) - (parfin - pardeb)) <= tol)
         {
-            Point2D ppp = new(p1.X() - pardeb, p1.Y());
+            Point2D ppp = new(p1.X - pardeb, p1.Y);
             pcurv = new LineCurve2D(ppp, Constants.DX2d());
         }
-        else if (Math.Abs(p1.Y() - p2.Y()) <= tol && Math.Abs((p1.X() - p2.X()) - (parfin - pardeb)) <= tol)
+        else if (Math.Abs(p1.Y - p2.Y) <= tol && Math.Abs((p1.X - p2.X) - (parfin - pardeb)) <= tol)
         {
-            Point2D ppp = new(p1.X() + pardeb, p1.Y());
+            Point2D ppp = new(p1.X + pardeb, p1.Y);
             pcurv = new LineCurve2D(ppp, Constants.DX2d().Reversed());
         }
         else
@@ -620,7 +620,7 @@ internal static partial class Builder_0
     {
         Vector2D vref = new(p1, p2);
         Direction2D dref = new(vref);
-        double mref = vref.Magnitude();
+        double mref = vref.Magnitude;
         if (redresse)
         {
             if (d1.Dot(dref) < 0.0)
@@ -658,14 +658,14 @@ internal static partial class Builder_0
         double vres = surf.VResolution(1.0);
         double invures = 1.0 / ures;
         double invvres = 1.0 / vres;
-        pp1 = pp1.WithX(invures * pp1.X());
-        pp1 = pp1.WithY(invvres * pp1.Y());
-        pp2 = pp2.WithX(invures * pp2.X());
-        pp2 = pp2.WithY(invvres * pp2.Y());
-        vv1 = vv1.WithX(invures * vv1.X());
-        vv1 = vv1.WithY(invvres * vv1.Y());
-        vv2 = vv2.WithX(invures * vv2.X());
-        vv2 = vv2.WithY(invvres * vv2.Y());
+        pp1 = pp1.WithX(invures * pp1.X);
+        pp1 = pp1.WithY(invvres * pp1.Y);
+        pp2 = pp2.WithX(invures * pp2.X);
+        pp2 = pp2.WithY(invvres * pp2.Y);
+        vv1 = vv1.WithX(invures * vv1.X);
+        vv1 = vv1.WithY(invvres * vv1.Y);
+        vv2 = vv2.WithX(invures * vv2.X);
+        vv2 = vv2.WithY(invvres * vv2.Y);
         Direction2D d1 = new(vv1), d2 = new(vv2);
         Curve2D g2dc = ChFi3d_BuildPCurve(pp1, ref d1, pp2, ref d2, redresse);
         BezierCurve2D pc = (BezierCurve2D)g2dc;
@@ -673,8 +673,8 @@ internal static partial class Builder_0
         for (int ip = 1; ip <= nbp; ip++)
         {
             Point2D pol = pc.Pole(ip);
-            pol = pol.WithX(ures * pol.X());
-            pol = pol.WithY(vres * pol.Y());
+            pol = pol.WithX(ures * pol.X);
+            pol = pol.WithY(vres * pol.Y);
             pc.SetPole(ip, pol);
         }
         return pc;
@@ -690,10 +690,10 @@ internal static partial class Builder_0
         Vector3D d1u, d1v;
         Point3D pp1, pp2;
         double du, dv;
-        surf.D1(p1.X(), p1.Y(), out pp1, out d1u, out d1v);
+        surf.D1(p1.X, p1.Y, out pp1, out d1u, out d1v);
         ChFi3d_Coefficient(v1, d1u, d1v, out du, out dv);
         Vector2D vv1 = new(du, dv);
-        surf.D1(p2.X(), p2.Y(), out pp2, out d1u, out d1v);
+        surf.D1(p2.X, p2.Y, out pp2, out d1u, out d1v);
         ChFi3d_Coefficient(v2, d1u, d1v, out du, out dv);
         Vector2D vv2 = new(du, dv);
         Vector3D vref = new(pp1, pp2);

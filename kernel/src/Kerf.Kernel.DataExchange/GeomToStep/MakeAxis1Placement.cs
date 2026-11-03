@@ -29,7 +29,7 @@ public sealed class MakeAxis1Placement : GeometryRoot
     /// <summary>A 3D axis, its location divided by the length factor.</summary>
     public MakeAxis1Placement(in Axis3D a, in Factors localFactors)
     {
-        Make(new MakeCartesianPoint(a.Location(), localFactors.LengthFactor()), new MakeDirection(a.Direction()));
+        Make(new MakeCartesianPoint(a.Location, localFactors.LengthFactor()), new MakeDirection(a.Direction));
     }
 
     /// <summary>A 3D axis (default factors).</summary>
@@ -44,7 +44,7 @@ public sealed class MakeAxis1Placement : GeometryRoot
     /// <summary>A 2D axis.</summary>
     public MakeAxis1Placement(in Axis2D a, in Factors localFactors)
     {
-        Make(new MakeCartesianPoint(a.Location(), localFactors.LengthFactor()), new MakeDirection(a.Direction()));
+        Make(new MakeCartesianPoint(a.Location, localFactors.LengthFactor()), new MakeDirection(a.Direction));
     }
 
     /// <summary>A 2D axis.</summary>
@@ -62,7 +62,7 @@ public sealed class MakeAxis1Placement : GeometryRoot
     {
         Axis3D a;
         a = axis1.Ax1();
-        Make(new MakeCartesianPoint(a.Location(), localFactors.LengthFactor()), new MakeDirection(a.Direction()));
+        Make(new MakeCartesianPoint(a.Location, localFactors.LengthFactor()), new MakeDirection(a.Direction));
     }
 
     /// <summary>A 3D axis (default factors).</summary>
@@ -80,7 +80,7 @@ public sealed class MakeAxis1Placement : GeometryRoot
     {
         Axis2D a;
         a = axis1.Ax2d();
-        Make(new MakeCartesianPoint(a.Location(), localFactors.LengthFactor()), new MakeDirection(a.Direction()));
+        Make(new MakeCartesianPoint(a.Location, localFactors.LengthFactor()), new MakeDirection(a.Direction));
     }
 
     /// <summary>A 2D axis.</summary>

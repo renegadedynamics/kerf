@@ -121,10 +121,10 @@ internal sealed class ShapeSnapshot
         }
 
         theObjects.Add(aT);
-        return $"T{anIndex} {theShape.Orientation()} {Loc(theShape.Location())}";
+        return $"T{anIndex} {theShape.Orientation} {Loc(theShape.Placement)}";
     }
 
-    private static string Loc(in Placement theLoc) => theLoc.IsIdentity ? "I" : theLoc.Transformation().ToString();
+    private static string Loc(in Placement theLoc) => theLoc.IsIdentity ? "I" : theLoc.Transformation.ToString();
 
     /// <summary>
     /// Asserts that another shape graph has this one's values: the same structure, flags (apart from the frozen state),

@@ -19,7 +19,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// <c>Box</c>, sampling + PSO/Powell numerical optimization for <c>BoxOptimal</c>.
 /// </summary>
 /// <remarks>Keeps a reference to the adaptor, as OCCT does (its <c>std::reference_wrapper</c>).</remarks>
-public sealed class OtherSurfaceBounds : SurfaceBounds.ISurfaceEvaluator
+internal sealed class OtherSurfaceBounds : SurfaceBounds.ISurfaceEvaluator
 {
     private readonly SurfaceAdaptorBase _surf;
 

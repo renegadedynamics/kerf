@@ -76,8 +76,8 @@ public class BinToolsRoundTripTests
     private static void AssertSameStructure(in Shape theExpected, in Shape theActual)
     {
         Assert.False(theActual.IsNull);
-        Assert.Equal(theExpected.ShapeType(), theActual.ShapeType());
-        Assert.Equal(theExpected.Orientation(), theActual.Orientation());
+        Assert.Equal(theExpected.Type, theActual.Type);
+        Assert.Equal(theExpected.Orientation, theActual.Orientation);
         foreach (ShapeType aType in new[] { ShapeType.Vertex, ShapeType.Edge, ShapeType.Wire, ShapeType.Face, ShapeType.Shell, ShapeType.Solid, ShapeType.CompSolid })
         {
             Assert.Equal(CountSubShapes(theExpected, aType), CountSubShapes(theActual, aType));
@@ -91,7 +91,7 @@ public class BinToolsRoundTripTests
             Assert.True(anA.More());
             Point3D aP1 = Tool.Pnt(ShapeCasts.Vertex(anE.Current()));
             Point3D aP2 = Tool.Pnt(ShapeCasts.Vertex(anA.Current()));
-            Assert.True(aP1.Distance(aP2) < 1e-12, $"{aP1} {aP2}");
+            Assert.True(aP1.DistanceTo(aP2) < 1e-12, $"{aP1} {aP2}");
         }
     }
 
@@ -209,7 +209,7 @@ public class BinToolsRoundTripTests
         Shape[] aRead = ReadShapes(aBytes, 3);
         Shape aReadFace = new Explorer(aRead[0], ShapeType.Face).Current();
         Assert.True(aRead[1].IsPartner(aReadFace));
-        Assert.Equal(aMoved.Location().Transformation().TranslationPart().Z(), aRead[1].Location().Transformation().TranslationPart().Z());
+        Assert.Equal(aMoved.Placement.Transformation.TranslationXyz().Z(), aRead[1].Placement.Transformation.TranslationXyz().Z());
         Assert.True(aRead[2].IsSame(aRead[0]));
         Assert.True(aRead[2].IsEqual(aRead[0]));
 
@@ -259,7 +259,7 @@ public class BinToolsRoundTripTests
             Assert.Equal(2, aTri.TriangleCount);
             Assert.True(aTri.HasUVNodes);
             Assert.Equal(anExpectNormals, aTri.HasNormals);
-            Assert.Equal(new Point2D(1, 0.5).X(), aTri.UVNode(2).X());
+            Assert.Equal(new Point2D(1, 0.5).X, aTri.UVNode(2).X);
 
             // version 3 writes no normals
             Shape aV3 = ReadSet(WriteSet(aShape, 3, true, aWithNormals));
@@ -379,8 +379,8 @@ public class BinToolsRoundTripTests
     {
         for (var anIt = new Iterator(theCompound); anIt.More(); anIt.Next())
         {
-            if (anIt.Value().ShapeType() == ShapeType.Vertex
-                && Tool.Pnt(ShapeCasts.Vertex(anIt.Value())).Distance(new Point3D(0.25, 0.5, 0.75)) < 1e-12)
+            if (anIt.Value().Type == ShapeType.Vertex
+                && Tool.Pnt(ShapeCasts.Vertex(anIt.Value())).DistanceTo(new Point3D(0.25, 0.5, 0.75)) < 1e-12)
             {
                 return ShapeCasts.Vertex(anIt.Value());
             }
@@ -396,7 +396,7 @@ public class BinToolsRoundTripTests
         var aExpected = new List<Transform3D>();
         for (var anIt = new Iterator(aShape); anIt.More(); anIt.Next())
         {
-            aExpected.Add(anIt.Value().Location().Transformation());
+            aExpected.Add(anIt.Value().Placement.Transformation);
         }
 
         foreach (Shape aRead in new[] { ReadSet(WriteSet(aShape, 4)), ReadShapes(WriteShapes(true, false, aShape), 1)[0] })
@@ -404,7 +404,7 @@ public class BinToolsRoundTripTests
             int i = 0;
             for (var anIt = new Iterator(aRead); anIt.More(); anIt.Next(), i++)
             {
-                Transform3D aT = anIt.Value().Location().Transformation();
+                Transform3D aT = anIt.Value().Placement.Transformation;
                 for (int r = 1; r <= 3; r++)
                 {
                     for (int c = 1; c <= 4; c++)

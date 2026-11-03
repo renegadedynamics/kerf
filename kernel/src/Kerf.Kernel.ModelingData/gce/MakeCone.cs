@@ -53,28 +53,28 @@ public sealed class MakeCone : Root
         // P1 and P2 define the cone axis. The distance from P3 to the axis gives
         // the base radius, and the distance from P4 to the axis gives the radius
         // of the section passing through P4.
-        if (p1.Distance(p2) < Constants.Resolution() || p3.Distance(p4) < Constants.Resolution())
+        if (p1.DistanceTo(p2) < Constants.Resolution() || p3.DistanceTo(p4) < Constants.Resolution())
         {
             _theError = ConfusedPoints;
             return;
         }
         Direction3D d1 = new(p2.XYZ() - p1.XYZ());
         double cos = d1.Dot(new Direction3D(p4.XYZ() - p1.XYZ()));
-        double dist = p1.Distance(p4);
+        double dist = p1.DistanceTo(p4);
         Point3D pp4 = new(p1.XYZ() + cos * dist * d1.XYZ());
         cos = d1.Dot(new Direction3D(p3.XYZ() - p1.XYZ()));
-        dist = p1.Distance(p3);
+        dist = p1.DistanceTo(p3);
         Point3D pp3 = new(p1.XYZ() + cos * dist * d1.XYZ());
-        double dist13 = pp3.Distance(p1);
-        double dist14 = pp4.Distance(p1);
+        double dist13 = pp3.DistanceTo(p1);
+        double dist14 = pp4.DistanceTo(p1);
         if (Math.Abs(dist13 - dist14) < Constants.Resolution())
         {
             _theError = NullAngle;
             return;
         }
         Line3D l1 = new(p1, d1);
-        double dist3 = l1.Distance(p3);
-        double dist4 = l1.Distance(p4);
+        double dist3 = l1.DistanceTo(p3);
+        double dist4 = l1.DistanceTo(p4);
         double difRad = dist3 - dist4;
         double angle = Math.Abs(Math.Atan(difRad / (dist13 - dist14)));
         if (Math.Abs(M_PI / 2.0 - angle) < Constants.Resolution() || Math.Abs(angle) < Constants.Resolution())
@@ -82,8 +82,8 @@ public sealed class MakeCone : Root
             _theError = NullRadius;
             return;
         }
-        double r1 = pp3.Distance(p3);
-        double r2 = pp4.Distance(p4);
+        double r1 = pp3.DistanceTo(p3);
+        double r2 = pp4.DistanceTo(p4);
         if (r1 < 0.0 || r2 < 0.0)
         {
             _theError = NegativeRadius;
@@ -91,9 +91,9 @@ public sealed class MakeCone : Root
         }
         Direction3D dd1 = new(pp4.XYZ() - pp3.XYZ());
         Direction3D d2 = new();
-        double x = dd1.X();
-        double y = dd1.Y();
-        double z = dd1.Z();
+        double x = dd1.X;
+        double y = dd1.Y;
+        double z = dd1.Z;
         if (Math.Abs(x) > Constants.Resolution())
         {
             d2 = new Direction3D(-y, x, 0.0);
@@ -122,8 +122,8 @@ public sealed class MakeCone : Root
     {
         // The distance from P1 to the axis gives the base radius, and
         // the distance from P2 to the axis gives the section radius at P2.
-        Point3D p3 = axis.Location();
-        Point3D p4 = new(p3.XYZ() + axis.Direction().XYZ());
+        Point3D p3 = axis.Location;
+        Point3D p4 = new(p3.XYZ() + axis.Direction.XYZ());
         MakeCone cone = new(p3, p4, p1, p2);
         if (cone.IsDone)
         {
@@ -142,11 +142,11 @@ public sealed class MakeCone : Root
     /// </summary>
     public MakeCone(in Cone cone, in Point3D p)
     {
-        Xyz vecToPoint = p.XYZ() - cone.Location().XYZ();
-        double vParam = vecToPoint.Dot(cone.Axis().Direction().XYZ());
-        double radius = new Line3D(cone.Axis()).Distance(p);
-        double tan = Math.Tan(cone.SemiAngle());
-        double cos = Math.Cos(cone.SemiAngle());
+        Xyz vecToPoint = p.XYZ() - cone.Location.XYZ();
+        double vParam = vecToPoint.Dot(cone.Axis.Direction.XYZ());
+        double radius = new Line3D(cone.Axis).DistanceTo(p);
+        double tan = Math.Tan(cone.SemiAngle);
+        double cos = Math.Cos(cone.SemiAngle);
         double candidate1 = radius - vParam * tan;
         double candidate2 = -radius - vParam * tan;
         // Accept tiny negative values as zero (rounding noise from analytic formulas),
@@ -159,8 +159,8 @@ public sealed class MakeCone : Root
             // Keep the nearest parallel cone to preserve predictable behavior.
             double cand1 = ClampToZero(candidate1);
             double cand2 = ClampToZero(candidate2);
-            double dist1 = Math.Abs((cand1 - cone.RefRadius()) * cos);
-            double dist2 = Math.Abs((cand2 - cone.RefRadius()) * cos);
+            double dist1 = Math.Abs((cand1 - cone.RefRadius) * cos);
+            double dist2 = Math.Abs((cand2 - cone.RefRadius) * cos);
             resultRadius = (dist1 <= dist2) ? cand1 : cand2;
         }
         else if (IsNonNegativeWithTol(candidate1))
@@ -176,7 +176,7 @@ public sealed class MakeCone : Root
             _theError = NegativeRadius;
             return;
         }
-        _theCone = new Cone(cone.Position(), cone.SemiAngle(), resultRadius);
+        _theCone = new Cone(cone.Position, cone.SemiAngle, resultRadius);
         _theError = Done;
     }
 
@@ -188,19 +188,19 @@ public sealed class MakeCone : Root
     {
         // gp_Cone keeps |SemiAngle| in ]gp::Resolution(), PI/2 - gp::Resolution()[,
         // thus aCos is expected to be positive and not too small.
-        double cos = Math.Cos(cone.SemiAngle());
+        double cos = Math.Cos(cone.SemiAngle);
         if (Math.Abs(cos) <= Constants.Resolution())
         {
             _theError = NullAngle;
             return;
         }
-        double radius = cone.RefRadius() + dist / cos;
+        double radius = cone.RefRadius + dist / cos;
         if (radius < 0.0)
         {
             _theError = NegativeRadius;
             return;
         }
-        _theCone = new Cone(cone.Position(), cone.SemiAngle(), radius);
+        _theCone = new Cone(cone.Position, cone.SemiAngle, radius);
         _theError = Done;
     }
 
@@ -210,8 +210,8 @@ public sealed class MakeCone : Root
     /// </summary>
     public MakeCone(in Line3D axis, in Point3D p1, in Point3D p2)
     {
-        Point3D p3 = axis.Location();
-        Point3D p4 = new(p3.XYZ() + axis.Direction().XYZ());
+        Point3D p3 = axis.Location;
+        Point3D p4 = new(p3.XYZ() + axis.Direction.XYZ());
         MakeCone cone = new(p3, p4, p1, p2);
         if (cone.IsDone)
         {
@@ -231,7 +231,7 @@ public sealed class MakeCone : Root
     public MakeCone(in Point3D p1, in Point3D p2, double r1, double r2)
     {
         // Cone defined by two points (axis) and two radii (section radii at each point).
-        double dist = p1.Distance(p2);
+        double dist = p1.DistanceTo(p2);
         if (dist < Constants.Resolution())
         {
             _theError = NullAxis;
@@ -253,9 +253,9 @@ public sealed class MakeCone : Root
                 {
                     Direction3D d1 = new(p2.XYZ() - p1.XYZ());
                     Direction3D d2 = new();
-                    double x = d1.X();
-                    double y = d1.Y();
-                    double z = d1.Z();
+                    double x = d1.X;
+                    double y = d1.Y;
+                    double z = d1.Z;
                     if (Math.Abs(x) > Constants.Resolution())
                     {
                         d2 = new Direction3D(-y, x, 0.0);

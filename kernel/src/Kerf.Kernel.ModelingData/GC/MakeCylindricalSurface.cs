@@ -75,7 +75,7 @@ public sealed class MakeCylindricalSurface : Root
     public MakeCylindricalSurface(in Cylinder cyl, double dist)
     {
         _theError = Done;
-        double r = Math.Abs(cyl.Radius() - dist);
+        double r = Math.Abs(cyl.Radius - dist);
         _theCylinder = new CylindricalSurface(cyl);
         _theCylinder.SetRadius(r);
     }
@@ -85,8 +85,8 @@ public sealed class MakeCylindricalSurface : Root
     {
         _theError = Done;
         Cylinder c = cyl;
-        Line3D l = new Line3D(c.Axis());
-        double r = l.Distance(point);
+        Line3D l = new Line3D(c.Axis);
+        double r = l.DistanceTo(point);
         c = c.WithRadius(r);
         _theCylinder = new CylindricalSurface(c);
     }

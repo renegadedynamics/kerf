@@ -19,7 +19,7 @@ namespace Kerf.Engine.Geometry.Evaluation;
 /// v in [-Pi/2, Pi/2]. Implicit equation in local coordinates: <c>X^2/A^2 + Y^2/B^2 + Z^2/C^2 - 1 = 0</c>.
 /// Reversal, transformation and iso curves are not supported (they throw <see cref="MethodNotImplementedException"/>).
 /// </summary>
-public sealed class EllipsoidSurface : ElementarySurface
+internal sealed class EllipsoidSurface : ElementarySurface
 {
     private double _a; // Semi-axis along XDir
     private double _b; // Semi-axis along YDir
@@ -135,7 +135,7 @@ public sealed class EllipsoidSurface : ElementarySurface
     }
 
     /// <summary>U in [0, 2*Pi], V in [-Pi/2, Pi/2].</summary>
-    public override void Bounds(out double u1, out double u2, out double v1, out double v2)
+    internal override void ParameterBounds(out double u1, out double u2, out double v1, out double v2)
     {
         u1 = 0.0;
         u2 = 2.0 * M_PI;
@@ -165,32 +165,32 @@ public sealed class EllipsoidSurface : ElementarySurface
         throw new MethodNotImplementedException("GeomEval_EllipsoidSurface::VIso");
     }
 
-    public override Point3D EvalD0(double u, double v)
+    internal override Point3D EvalD0(double u, double v)
     {
         double cosU = Math.Cos(u);
         double sinU = Math.Sin(u);
         double cosV = Math.Cos(v);
         double sinV = Math.Sin(v);
 
-        Xyz o = _pos.Location().XYZ();
-        Xyz xd = _pos.XDirection().XYZ();
-        Xyz yd = _pos.YDirection().XYZ();
-        Xyz zd = _pos.Direction().XYZ();
+        Xyz o = _pos.Location.XYZ();
+        Xyz xd = _pos.XDirection.XYZ();
+        Xyz yd = _pos.YDirection.XYZ();
+        Xyz zd = _pos.Direction.XYZ();
 
         return new Point3D(o + _a * cosV * cosU * xd + _b * cosV * sinU * yd + _c * sinV * zd);
     }
 
-    public override ResD1 EvalD1(double u, double v)
+    internal override ResD1 EvalD1(double u, double v)
     {
         double cosU = Math.Cos(u);
         double sinU = Math.Sin(u);
         double cosV = Math.Cos(v);
         double sinV = Math.Sin(v);
 
-        Xyz o = _pos.Location().XYZ();
-        Xyz xd = _pos.XDirection().XYZ();
-        Xyz yd = _pos.YDirection().XYZ();
-        Xyz zd = _pos.Direction().XYZ();
+        Xyz o = _pos.Location.XYZ();
+        Xyz xd = _pos.XDirection.XYZ();
+        Xyz yd = _pos.YDirection.XYZ();
+        Xyz zd = _pos.Direction.XYZ();
 
         ResD1 result;
         result.Point =
@@ -206,17 +206,17 @@ public sealed class EllipsoidSurface : ElementarySurface
         return result;
     }
 
-    public override ResD2 EvalD2(double u, double v)
+    internal override ResD2 EvalD2(double u, double v)
     {
         double cosU = Math.Cos(u);
         double sinU = Math.Sin(u);
         double cosV = Math.Cos(v);
         double sinV = Math.Sin(v);
 
-        Xyz o = _pos.Location().XYZ();
-        Xyz xd = _pos.XDirection().XYZ();
-        Xyz yd = _pos.YDirection().XYZ();
-        Xyz zd = _pos.Direction().XYZ();
+        Xyz o = _pos.Location.XYZ();
+        Xyz xd = _pos.XDirection.XYZ();
+        Xyz yd = _pos.YDirection.XYZ();
+        Xyz zd = _pos.Direction.XYZ();
 
         ResD2 result;
         result.Point =
@@ -242,17 +242,17 @@ public sealed class EllipsoidSurface : ElementarySurface
         return result;
     }
 
-    public override ResD3 EvalD3(double u, double v)
+    internal override ResD3 EvalD3(double u, double v)
     {
         double cosU = Math.Cos(u);
         double sinU = Math.Sin(u);
         double cosV = Math.Cos(v);
         double sinV = Math.Sin(v);
 
-        Xyz o = _pos.Location().XYZ();
-        Xyz xd = _pos.XDirection().XYZ();
-        Xyz yd = _pos.YDirection().XYZ();
-        Xyz zd = _pos.Direction().XYZ();
+        Xyz o = _pos.Location.XYZ();
+        Xyz xd = _pos.XDirection.XYZ();
+        Xyz yd = _pos.YDirection.XYZ();
+        Xyz zd = _pos.Direction.XYZ();
 
         ResD3 result;
 
@@ -294,16 +294,16 @@ public sealed class EllipsoidSurface : ElementarySurface
     }
 
     /// <exception cref="UndefinedDerivative3DException">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
-    public override Vector3D EvalDN(double u, double v, int nu, int nv)
+    internal override Vector3D EvalDN(double u, double v, int nu, int nv)
     {
         if (nu + nv < 1 || nu < 0 || nv < 0)
         {
             throw new UndefinedDerivative3DException("GeomEval_EllipsoidSurface::EvalDN: invalid derivative order");
         }
 
-        Xyz xd = _pos.XDirection().XYZ();
-        Xyz yd = _pos.YDirection().XYZ();
-        Xyz zd = _pos.Direction().XYZ();
+        Xyz xd = _pos.XDirection.XYZ();
+        Xyz yd = _pos.YDirection.XYZ();
+        Xyz zd = _pos.Direction.XYZ();
 
         // Using phase-shift identities:
         // d^n/du^n[cos(u)] = cos(u + n*Pi/2)

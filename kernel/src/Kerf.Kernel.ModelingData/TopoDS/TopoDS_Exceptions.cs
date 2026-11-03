@@ -10,7 +10,7 @@ using Occt;
 namespace Kerf.Engine.Topology;
 
 /// <summary>An attempt was made to modify a shape already shared or protected (OCCT's Free flag is off).</summary>
-public class FrozenShapeException : DomainErrorException
+internal class FrozenShapeException : DomainErrorException
 {
     public FrozenShapeException() { }
     public FrozenShapeException(string? message) : base(message) { }
@@ -20,14 +20,14 @@ public class FrozenShapeException : DomainErrorException
 /// An attempt was made to modify a geometry of a shape already shared or protected: the shape is Locked, which in
 /// the port includes every frozen shape (docs/phase3-design.md, section 4.3).
 /// </summary>
-public class LockedShapeException : DomainErrorException
+internal class LockedShapeException : DomainErrorException
 {
     public LockedShapeException() { }
     public LockedShapeException(string? message) : base(message) { }
 }
 
 /// <summary>An attempt was made to add a shape to a shape of a type that can't contain it.</summary>
-public class IncompatibleShapesException : DomainErrorException
+internal class IncompatibleShapesException : DomainErrorException
 {
     public IncompatibleShapesException() { }
     public IncompatibleShapesException(string? message) : base(message) { }

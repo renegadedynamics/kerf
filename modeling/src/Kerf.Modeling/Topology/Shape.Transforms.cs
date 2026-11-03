@@ -50,7 +50,7 @@ public abstract partial class Shape
     {
         if (IsEmpty)
             return this;
-        var trsf = matrix.GTrsf.Trsf();
+        var trsf = matrix.GTrsf.ToTransform();
         var builder = new Transform(_wrapped, trsf);
         return Rewrapped(builder.Shape());
     }
@@ -147,7 +147,7 @@ public abstract partial class Shape
         if (IsEmpty)
             return this;
         global::Kerf.Topology.Shape result;
-        if (matrix.GTrsf.Form() == TransformForm.Other)
+        if (matrix.GTrsf.Form == TransformForm.Other)
         {
             // A general affine transform (stretch, shear): only GTransform can apply it, converting geometry to splines
             var builder = new GTransform(_wrapped, matrix.GTrsf, true);
@@ -157,7 +157,7 @@ public abstract partial class Shape
         {
             // A similarity: Transform applies it exactly and keeps the geometry types; GTransform would drop its
             // scale factor, which a gp_GTrsf of any recognised form keeps apart from its matrix
-            var trsf = matrix.GTrsf.Trsf();
+            var trsf = matrix.GTrsf.ToTransform();
             var builder = new Transform(_wrapped, trsf, true);
             result = builder.Shape();
         }
@@ -168,7 +168,7 @@ public abstract partial class Shape
     {
         if (IsEmpty)
             return this;
-        var trsf = matrix.GTrsf.Trsf();
+        var trsf = matrix.GTrsf.ToTransform();
         var builder = new Transform(_wrapped, trsf);
         return Rewrapped(builder.Shape());
     }

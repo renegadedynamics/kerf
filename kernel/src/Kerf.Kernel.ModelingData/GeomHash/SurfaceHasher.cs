@@ -19,7 +19,7 @@ namespace Kerf.Engine.Geometry.Hashing;
 /// equal within the tolerance can still hash differently across a rounding boundary); Bezier and B-spline objects
 /// hash their degrees and counts only. The hash values themselves are not OCCT's.
 /// </remarks>
-public sealed class SurfaceHasher : IEqualityComparer<Surface?>
+internal sealed class SurfaceHasher : IEqualityComparer<Surface?>
 {
     /// <summary>The tolerance of the comparison of numeric fields.</summary>
     public readonly double CompTolerance;

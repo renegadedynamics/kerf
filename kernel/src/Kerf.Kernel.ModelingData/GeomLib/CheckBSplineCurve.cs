@@ -15,7 +15,7 @@ namespace Kerf.Engine.Geometry.Library;
 /// Checks the end tangents of a B-spline curve: whether they are reversed with respect to the third or n-3rd pole,
 /// and builds a curve with fixed tangents.
 /// </summary>
-public sealed class CheckBSplineCurve
+internal sealed class CheckBSplineCurve
 {
     private readonly BSplineCurve3D _curve;
     private bool _done;
@@ -52,7 +52,7 @@ public sealed class CheckBSplineCurve
 
             // Near first
             tangent = new Vector3D(_curve.Pole(1), _curve.Pole(2));
-            tangent_magnitude = tangent.Magnitude();
+            tangent_magnitude = tangent.Magnitude;
             if (tangent_magnitude > _tolerance)
             {
                 tangent_normalized = tangent / tangent_magnitude;
@@ -61,14 +61,14 @@ public sealed class CheckBSplineCurve
             for (ii = 3; ii <= num_poles; ii++)
             {
                 a_vector = new Vector3D(_curve.Pole(1), _curve.Pole(ii));
-                vector_magnitude = a_vector.Magnitude();
+                vector_magnitude = a_vector.Magnitude;
 
                 if (tangent_magnitude > _tolerance && vector_magnitude > _tolerance)
                 {
                     avector_normalized = a_vector / vector_magnitude;
 
                     Vector3D crossProd = tangent_normalized ^ avector_normalized;
-                    double crossProdSqLength = crossProd.SquareMagnitude();
+                    double crossProdSqLength = crossProd.SquareMagnitude;
                     if (crossProdSqLength > crossProdSqTol)
                     {
                         break;
@@ -86,7 +86,7 @@ public sealed class CheckBSplineCurve
 
             // Near last
             tangent = new Vector3D(_curve.Pole(num_poles), _curve.Pole(num_poles - 1));
-            tangent_magnitude = tangent.Magnitude();
+            tangent_magnitude = tangent.Magnitude;
             if (tangent_magnitude > _tolerance)
             {
                 tangent_normalized = tangent / tangent_magnitude;
@@ -95,14 +95,14 @@ public sealed class CheckBSplineCurve
             for (ii = num_poles - 2; ii >= 1; ii--)
             {
                 a_vector = new Vector3D(_curve.Pole(num_poles), _curve.Pole(ii));
-                vector_magnitude = a_vector.Magnitude();
+                vector_magnitude = a_vector.Magnitude;
 
                 if (tangent_magnitude > _tolerance && vector_magnitude > _tolerance)
                 {
                     avector_normalized = a_vector / vector_magnitude;
 
                     Vector3D crossProd = tangent_normalized ^ avector_normalized;
-                    double crossProdSqLength = crossProd.SquareMagnitude();
+                    double crossProdSqLength = crossProd.SquareMagnitude;
                     if (crossProdSqLength > crossProdSqTol)
                     {
                         break;

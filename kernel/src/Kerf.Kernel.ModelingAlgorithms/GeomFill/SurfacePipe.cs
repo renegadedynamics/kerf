@@ -55,7 +55,7 @@ public sealed class SurfacePipe
         seq2.Clear();
 
         Curve3D c1 = seq1.Value(1);
-        double f = c1.FirstParameter(), l = c1.LastParameter();
+        double f = c1.FirstParameter, l = c1.LastParameter;
         int iP, np = 21;
         NCollection_Array1<Point3D> tab = new(1, np);
         double u = f, h = Math.Abs(f - l) / 20.0;
@@ -79,30 +79,30 @@ public sealed class SurfacePipe
             no_sing = false;
         }
 
-        pos = axeRef.Location();
+        pos = axeRef.Location;
         double alpha1, alpha2, alpha3;
         Point3D p1, p2;
         u = (f + l - h) / 2 - h;
         c1.D0(u, out p1);
         u += h;
         c1.D0(u, out p2);
-        alpha1 = new Vector3D(pos, p1).AngleWithRef(new Vector3D(pos, p2), new Vector3D(axeRef.Direction()));
+        alpha1 = new Vector3D(pos, p1).AngleWithRef(new Vector3D(pos, p2), new Vector3D(axeRef.Direction));
         p1 = p2;
         u += h;
         c1.D0(u, out p2);
-        alpha2 = new Vector3D(pos, p1).AngleWithRef(new Vector3D(pos, p2), new Vector3D(axeRef.Direction()));
+        alpha2 = new Vector3D(pos, p1).AngleWithRef(new Vector3D(pos, p2), new Vector3D(axeRef.Direction));
         p1 = p2;
         u += h;
         c1.D0(u, out p2);
-        alpha3 = new Vector3D(pos, p1).AngleWithRef(new Vector3D(pos, p2), new Vector3D(axeRef.Direction()));
+        alpha3 = new Vector3D(pos, p1).AngleWithRef(new Vector3D(pos, p2), new Vector3D(axeRef.Direction));
         seq2.Append(c1);
 
         for (int iseq = 2; iseq <= seq1.Length(); iseq++)
         {
             // discretisation de C2
             Curve3D c2 = seq1.Value(iseq);
-            f = c2.FirstParameter();
-            l = c2.LastParameter();
+            f = c2.FirstParameter;
+            l = c2.LastParameter;
             u = f;
             for (iP = 1; iP <= np; iP++)
             {
@@ -121,21 +121,21 @@ public sealed class SurfacePipe
                 no_sing = false;
             }
 
-            pos = axe.Location();
+            pos = axe.Location;
             double beta1, beta2, beta3;
             u = (f + l - h) / 2 - h;
             c2.D0(u, out p1);
             u += h;
             c2.D0(u, out p2);
-            beta1 = new Vector3D(pos, p1).AngleWithRef(new Vector3D(pos, p2), new Vector3D(axeRef.Direction()));
+            beta1 = new Vector3D(pos, p1).AngleWithRef(new Vector3D(pos, p2), new Vector3D(axeRef.Direction));
             p1 = p2;
             u += h;
             c2.D0(u, out p2);
-            beta2 = new Vector3D(pos, p1).AngleWithRef(new Vector3D(pos, p2), new Vector3D(axeRef.Direction()));
+            beta2 = new Vector3D(pos, p1).AngleWithRef(new Vector3D(pos, p2), new Vector3D(axeRef.Direction));
             p1 = p2;
             u += h;
             c2.D0(u, out p2);
-            beta3 = new Vector3D(pos, p1).AngleWithRef(new Vector3D(pos, p2), new Vector3D(axeRef.Direction()));
+            beta3 = new Vector3D(pos, p1).AngleWithRef(new Vector3D(pos, p2), new Vector3D(axeRef.Direction));
 
             // meme sens ?
             bool ok = true,
@@ -342,7 +342,7 @@ public sealed class SurfacePipe
         CircleCurve3D c = new CircleCurve3D(Constants.XOY(), radius);
         c.Rotate(Constants.OZ(), M_PI / 2.0);
 
-        _sec = new UniformSection(c, path.FirstParameter(), path.LastParameter());
+        _sec = new UniformSection(c, path.FirstParameter, path.LastParameter);
         CorrectedFrenet tLaw = new CorrectedFrenet();
         _loc = new CurveAndTrihedron(tLaw);
         _loc.SetCurve(_adpPath);
@@ -353,7 +353,7 @@ public sealed class SurfacePipe
         Curve3D sect;
         TrihedronLaw? tLaw = null;
         _adpPath = new CurveAdaptor((Curve3D)path.Copy());
-        double param = path.FirstParameter();
+        double param = path.FirstParameter;
 
         // Construction de la loi de triedre
         switch (option)
@@ -392,7 +392,7 @@ public sealed class SurfacePipe
                         {
                             Point3D p0 = new Point3D(0.0, 0.0, 0.0);
                             Frame3D axe = new Frame3D(p0, d);
-                            d = axe.XDirection();
+                            d = axe.XDirection;
                             v2 = v2.WithXYZ(d.XYZ());
                             v2 = v2.Normalized();
                         }
@@ -427,7 +427,7 @@ public sealed class SurfacePipe
                         {
                             Point3D p0 = new Point3D(0.0, 0.0, 0.0);
                             Frame3D axe = new Frame3D(p0, d);
-                            d = axe.XDirection();
+                            d = axe.XDirection;
                             v = v.WithXYZ(d.XYZ());
                             v = v.Normalized();
                         }
@@ -451,7 +451,7 @@ public sealed class SurfacePipe
             param = place.ParameterOnPath();
             sect = place.Section(false);
 
-            _sec = new UniformSection(sect, path.FirstParameter(), path.LastParameter());
+            _sec = new UniformSection(sect, path.FirstParameter, path.LastParameter);
         }
     }
 
@@ -490,7 +490,7 @@ public sealed class SurfacePipe
         place.Perform(global::Kerf.Engine.Foundation.Precision.Confusion());
         sect = place.Section(false);
 
-        _sec = new UniformSection(sect, path.FirstParameter(), path.LastParameter());
+        _sec = new UniformSection(sect, path.FirstParameter, path.LastParameter);
     }
 
     public void Init(Curve3D path, NCollection_Sequence<Curve3D> nSections)
@@ -553,10 +553,10 @@ public sealed class SurfacePipe
             }
 
             // creation de la NSections
-            double first = path.FirstParameter(), last = path.LastParameter();
+            double first = path.FirstParameter, last = path.LastParameter;
             double deb, fin;
-            deb = seqC.First().FirstParameter();
-            fin = seqC.First().LastParameter();
+            deb = seqC.First().FirstParameter;
+            fin = seqC.First().LastParameter;
             _sec = new SurfaceNSections(seqC, seqP, deb, fin, first, last);
         }
     }
@@ -566,7 +566,7 @@ public sealed class SurfacePipe
         _type = 3;
         _error = 0;
         _radius = 0;
-        double first = path.FirstParameter(), last = path.LastParameter();
+        double first = path.FirstParameter, last = path.LastParameter;
         TrihedronLaw? tLaw;
         tLaw = new CorrectedFrenet();
         _adpPath = new CurveAdaptor((Curve3D)path.Copy());
@@ -603,8 +603,8 @@ public sealed class SurfacePipe
 
             // creation of the NSections
             double deb, fin;
-            deb = seqC.First().FirstParameter();
-            fin = seqC.First().LastParameter();
+            deb = seqC.First().FirstParameter;
+            fin = seqC.First().LastParameter;
             _sec = new SurfaceNSections(seqC, seqP, deb, fin, first, last);
         }
     }
@@ -750,13 +750,13 @@ public sealed class SurfacePipe
             && _adpLastSect!.GetType() == Line)
         {
             // try to generate a cylinder.
-            Axis3D a0 = _adpPath.Line().Position();
-            Axis3D a1 = _adpFirstSect.Line().Position();
-            Axis3D a2 = _adpLastSect.Line().Position();
+            Axis3D a0 = _adpPath.Line().Position;
+            Axis3D a1 = _adpFirstSect.Line().Position;
+            Axis3D a2 = _adpLastSect.Line().Position;
             // direction must be the same.
-            Direction3D d0 = a0.Direction();
-            Direction3D d1 = a1.Direction();
-            Direction3D d2 = a2.Direction();
+            Direction3D d0 = a0.Direction;
+            Direction3D d1 = a1.Direction;
+            Direction3D d2 = a2.Direction;
             if (!d0.IsEqual(d1, global::Kerf.Engine.Foundation.Precision.Angular()) || !d1.IsEqual(d2, global::Kerf.Engine.Foundation.Precision.Angular()))
             {
                 return ok;
@@ -786,7 +786,7 @@ public sealed class SurfacePipe
             Direction3D x = v1, y = v2, zRef;
             zRef = x.Crossed(y);
 
-            CoordinateSystem axis = new CoordinateSystem(a0.Location(), d0, x);
+            CoordinateSystem axis = new CoordinateSystem(a0.Location, d0, x);
             if (zRef.Dot(d0) < 0.0)
             {
                 axis = axis.YReversed();
@@ -820,12 +820,12 @@ public sealed class SurfacePipe
                 return ok;
             }
 
-            Frame3D a0 = _adpPath.Circle().Position();
-            Frame3D a1 = _adpFirstSect.Circle().Position();
-            Frame3D a2 = _adpLastSect.Circle().Position();
-            Direction3D d0 = a0.Direction();
-            Direction3D d1 = a1.Direction();
-            Direction3D d2 = a2.Direction();
+            Frame3D a0 = _adpPath.Circle().Position;
+            Frame3D a1 = _adpFirstSect.Circle().Position;
+            Frame3D a2 = _adpLastSect.Circle().Position;
+            Direction3D d0 = a0.Direction;
+            Direction3D d1 = a1.Direction;
+            Direction3D d2 = a2.Direction;
             Point3D p0 = _adpPath.Value(_adpPath.FirstParameter());
             Point3D p1 = _adpFirstSect.Value(_adpFirstSect.FirstParameter());
             Point3D p2 = _adpLastSect.Value(_adpLastSect.FirstParameter());
@@ -837,8 +837,8 @@ public sealed class SurfacePipe
             }
 
             // les 3 ax1 doivent etre confondus.
-            Line3D l = new Line3D(a0.Axis());
-            if (!l.Contains(a1.Location(), global::Kerf.Engine.Foundation.Precision.Confusion()) || !l.Contains(a2.Location(), global::Kerf.Engine.Foundation.Precision.Confusion()))
+            Line3D l = new Line3D(a0.Axis);
+            if (!l.Contains(a1.Location, global::Kerf.Engine.Foundation.Precision.Confusion()) || !l.Contains(a2.Location, global::Kerf.Engine.Foundation.Precision.Confusion()))
             {
                 return ok;
             }
@@ -847,7 +847,7 @@ public sealed class SurfacePipe
             Direction3D v1 = new Direction3D(new Vector3D(p0, p1));
             Direction3D v2 = new Direction3D(new Vector3D(p0, p2));
             Circle3D ci = _adpPath.Circle();
-            Vector3D yRef = global::Kerf.Engine.Geometry.ElCLib.CircleDN(_adpPath.FirstParameter(), a0, ci.Radius(), 1);
+            Vector3D yRef = global::Kerf.Engine.Geometry.ElCLib.CircleDN(_adpPath.FirstParameter(), a0, ci.Radius, 1);
             if (Math.Abs(v1.Dot(new Direction3D(yRef))) > global::Kerf.Engine.Foundation.Precision.Confusion()
                 || Math.Abs(v2.Dot(new Direction3D(yRef))) > global::Kerf.Engine.Foundation.Precision.Confusion())
             {
@@ -855,8 +855,8 @@ public sealed class SurfacePipe
             }
 
             // OK it`s a Toroidal Surface !!  OUF !!
-            Torus t = new Torus(new CoordinateSystem(a0), ci.Radius(), _radius);
-            Vector3D xRef = new Vector3D(a0.Location(), p0);
+            Torus t = new Torus(new CoordinateSystem(a0), ci.Radius, _radius);
+            Vector3D xRef = new Vector3D(a0.Location, p0);
             // au maximum on fait un tore d`ouverture en V = PI
             double vv1 = v1.AngleWithRef(new Direction3D(xRef), new Direction3D(yRef));
             double vv2 = v2.AngleWithRef(new Direction3D(xRef), new Direction3D(yRef));

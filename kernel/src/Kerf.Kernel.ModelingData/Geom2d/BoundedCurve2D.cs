@@ -14,9 +14,14 @@ namespace Kerf.Geometry;
 /// </summary>
 public abstract class BoundedCurve2D : Curve2D
 {
+    /// <summary>Only the kernel derives from it (unit 10L1).</summary>
+    private protected BoundedCurve2D()
+    {
+    }
+
     /// <summary>The end point of the curve.</summary>
-    public abstract Point2D EndPoint();
+    public abstract Point2D EndPoint { get; }
 
     /// <summary>The start point of the curve.</summary>
-    public abstract Point2D StartPoint();
+    public abstract Point2D StartPoint { get; }
 }

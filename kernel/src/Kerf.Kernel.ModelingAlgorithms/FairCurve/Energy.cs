@@ -129,7 +129,7 @@ public abstract class Energy : MultipleVarFunctionWithHessian
         if (_myContrOrder1 == 2)
         {
             double lambda0 =
-              _myPoles.Value(_myPoles.Lower()).Distance(_myPoles.Value(_myPoles.Lower() + 1));
+              _myPoles.Value(_myPoles.Lower()).DistanceTo(_myPoles.Value(_myPoles.Lower() + 1));
             Xy dPole = new(vect[vdeb], vect[vdeb + 1]);
             grad[debG - 1] += (_myLinearForm[0] + 2 * lambda0 * _myQuadForm[0]) * dPole;
             grad[debG] = _myLinearForm[0] * dPole;
@@ -150,7 +150,7 @@ public abstract class Energy : MultipleVarFunctionWithHessian
         if (_myContrOrder2 == 2)
         {
             double lambda1 =
-              _myPoles.Value(_myPoles.Upper()).Distance(_myPoles.Value(_myPoles.Upper() - 1));
+              _myPoles.Value(_myPoles.Upper()).DistanceTo(_myPoles.Value(_myPoles.Upper() - 1));
             Xy dPole = new(vect[vfin - 3], vect[vfin - 2]);
             grad[finG] = grad[finG + 1] + (_myLinearForm[1] + 2 * lambda1 * _myQuadForm[1]) * dPole;
             grad[finG + 1] = _myLinearForm[1] * dPole;
@@ -220,12 +220,12 @@ public abstract class Energy : MultipleVarFunctionWithHessian
 
         if (_myContrOrder1 >= 1)
         {
-            lambda0 = _myPoles.Value(_myPoles.Lower()).Distance(_myPoles.Value(_myPoles.Lower() + 1));
+            lambda0 = _myPoles.Value(_myPoles.Lower()).DistanceTo(_myPoles.Value(_myPoles.Lower() + 1));
         }
 
         if (_myContrOrder2 >= 1)
         {
-            lambda1 = _myPoles.Value(_myPoles.Upper()).Distance(_myPoles.Value(_myPoles.Upper() - 1));
+            lambda1 = _myPoles.Value(_myPoles.Upper()).DistanceTo(_myPoles.Value(_myPoles.Upper() - 1));
         }
 
         if (_myContrOrder1 >= 1)
@@ -450,7 +450,7 @@ public abstract class Energy : MultipleVarFunctionWithHessian
         // calculation of variables of constraints
         if (_myContrOrder1 >= 1)
         {
-            x[indexDeb2] = _myPoles.Value(_myPoles.Lower()).Distance(_myPoles.Value(_myPoles.Lower() + 1));
+            x[indexDeb2] = _myPoles.Value(_myPoles.Lower()).DistanceTo(_myPoles.Value(_myPoles.Lower() + 1));
             indexDeb1 += 1;
             indexDeb2 += 1;
         }
@@ -470,7 +470,7 @@ public abstract class Energy : MultipleVarFunctionWithHessian
         }
         if (_myContrOrder2 >= 1)
         {
-            x[indexFin2] = _myPoles.Value(_myPoles.Upper()).Distance(_myPoles.Value(_myPoles.Upper() - 1));
+            x[indexFin2] = _myPoles.Value(_myPoles.Upper()).DistanceTo(_myPoles.Value(_myPoles.Upper() - 1));
             indexFin1 -= 1;
         }
 
@@ -479,8 +479,8 @@ public abstract class Energy : MultipleVarFunctionWithHessian
         // copy poles to variables
         for (ii = indexDeb1; ii <= indexFin1; ii++)
         {
-            x[indexDeb2] = _myPoles.Value(ii).X();
-            x[indexDeb2 + 1] = _myPoles.Value(ii).Y();
+            x[indexDeb2] = _myPoles.Value(ii).X;
+            x[indexDeb2 + 1] = _myPoles.Value(ii).Y;
             indexDeb2 += 2;
         }
         return true;

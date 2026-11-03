@@ -58,13 +58,13 @@ public sealed class DrawLitePrimitivesOracleTests(ITestOutputHelper output) : ID
 
     private static string R(double theValue) => theValue.ToString("R", CultureInfo.InvariantCulture);
 
-    private static string R(in Point3D theP) => $"{R(theP.X())} {R(theP.Y())} {R(theP.Z())}";
+    private static string R(in Point3D theP) => $"{R(theP.X)} {R(theP.Y)} {R(theP.Z)}";
 
-    private static string R(in Direction3D theD) => $"{R(theD.X())} {R(theD.Y())} {R(theD.Z())}";
+    private static string R(in Direction3D theD) => $"{R(theD.X)} {R(theD.Y)} {R(theD.Z)}";
 
     private const double DegToRad = Math.PI / 180.0;
 
-    private static bool Same(N.gp_Dir theN, in Direction3D theP) => theN.X() == theP.X() && theN.Y() == theP.Y() && theN.Z() == theP.Z();
+    private static bool Same(N.gp_Dir theN, in Direction3D theP) => theN.X() == theP.X && theN.Y() == theP.Y && theN.Z() == theP.Z;
 
     private static bool Same(N.gp_Ax2 theN, in Frame3D theP)
     {
@@ -72,8 +72,8 @@ public sealed class DrawLitePrimitivesOracleTests(ITestOutputHelper output) : ID
         using N.gp_Dir aD = theN.Direction();
         using N.gp_Dir aX = theN.XDirection();
         using N.gp_Dir aY = theN.YDirection();
-        return aL.X() == theP.Location().X() && aL.Y() == theP.Location().Y() && aL.Z() == theP.Location().Z()
-               && Same(aD, theP.Direction()) && Same(aX, theP.XDirection()) && Same(aY, theP.YDirection());
+        return aL.X() == theP.Location.X && aL.Y() == theP.Location.Y && aL.Z() == theP.Location.Z
+               && Same(aD, theP.Direction) && Same(aX, theP.XDirection) && Same(aY, theP.YDirection);
     }
 
     // A direction that native OCCT and the port normalise to the same numbers.
@@ -631,7 +631,7 @@ public sealed class DrawLitePrimitivesOracleTests(ITestOutputHelper output) : ID
         using N.gp_Pln aNPln = aNPlane.Pln();
         using N.gp_Ax3 aNPos = aNPln.Position();
         theNative = aNPos.Ax2();
-        if (!Same(theNative, aPlane.Pln().Position().Ax2()))
+        if (!Same(theNative, aPlane.Plane.Position.Frame))
         {
             theNative.Dispose();
             theNative = null;
@@ -685,11 +685,11 @@ public sealed class DrawLitePrimitivesOracleTests(ITestOutputHelper output) : ID
     private static N.TopoDS_Shape NativePreview(in Point3D theOrigin, double dx, double dy, double dz)
     {
         // BRepPreviewAPI_MakeBox isn't bound: its Build for each thin case, with the makers it calls
-        Point3D aMin = new(theOrigin.X() + Math.Min(dx, 0), theOrigin.Y() + Math.Min(dy, 0), theOrigin.Z() + Math.Min(dz, 0));
+        Point3D aMin = new(theOrigin.X + Math.Min(dx, 0), theOrigin.Y + Math.Min(dy, 0), theOrigin.Z + Math.Min(dz, 0));
         double ax = Math.Abs(dx), ay = Math.Abs(dy), az = Math.Abs(dz);
-        var aF = new Point3D(aMin.X(), aMin.Y(), aMin.Z());
-        var aS = new Point3D(aMin.X() + ax, aMin.Y() + ay, aMin.Z() + az);
-        bool tx = Math.Abs(aF.X() - aS.X()) < 1e-7, ty = Math.Abs(aF.Y() - aS.Y()) < 1e-7, tz = Math.Abs(aF.Z() - aS.Z()) < 1e-7;
+        var aF = new Point3D(aMin.X, aMin.Y, aMin.Z);
+        var aS = new Point3D(aMin.X + ax, aMin.Y + ay, aMin.Z + az);
+        bool tx = Math.Abs(aF.X - aS.X) < 1e-7, ty = Math.Abs(aF.Y - aS.Y) < 1e-7, tz = Math.Abs(aF.Z - aS.Z) < 1e-7;
         int aType = (tx ? 1 : 0) + (ty ? 1 : 0) + (tz ? 1 : 0);
         if (aType == 3)
         {
@@ -708,15 +708,15 @@ public sealed class DrawLitePrimitivesOracleTests(ITestOutputHelper output) : ID
             Point3D p1, p2, p3, p4;
             if (tx)
             {
-                p1 = new(aF.X(), aF.Y(), aF.Z()); p2 = new(aF.X(), aS.Y(), aF.Z()); p3 = new(aF.X(), aS.Y(), aS.Z()); p4 = new(aF.X(), aF.Y(), aS.Z());
+                p1 = new(aF.X, aF.Y, aF.Z); p2 = new(aF.X, aS.Y, aF.Z); p3 = new(aF.X, aS.Y, aS.Z); p4 = new(aF.X, aF.Y, aS.Z);
             }
             else if (ty)
             {
-                p1 = new(aF.X(), aF.Y(), aF.Z()); p2 = new(aS.X(), aF.Y(), aF.Z()); p3 = new(aS.X(), aF.Y(), aS.Z()); p4 = new(aF.X(), aF.Y(), aS.Z());
+                p1 = new(aF.X, aF.Y, aF.Z); p2 = new(aS.X, aF.Y, aF.Z); p3 = new(aS.X, aF.Y, aS.Z); p4 = new(aF.X, aF.Y, aS.Z);
             }
             else
             {
-                p1 = new(aF.X(), aF.Y(), aF.Z()); p2 = new(aS.X(), aF.Y(), aF.Z()); p3 = new(aS.X(), aS.Y(), aF.Z()); p4 = new(aF.X(), aS.Y(), aF.Z());
+                p1 = new(aF.X, aF.Y, aF.Z); p2 = new(aS.X, aF.Y, aF.Z); p3 = new(aS.X, aS.Y, aF.Z); p4 = new(aF.X, aS.Y, aF.Z);
             }
 
             using var e1 = new N.BRepBuilderAPI_MakeEdge(P(p1), P(p2));

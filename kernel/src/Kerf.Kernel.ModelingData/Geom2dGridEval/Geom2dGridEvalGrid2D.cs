@@ -17,7 +17,7 @@ namespace Kerf.Engine.Geometry.Evaluation.Grid;
 /// <see cref="ICurveEvaluator"/> is an addition, as <see cref="GeomGridEvalGrid.ICurveEvaluator"/>: every evaluator
 /// implements it, and <see cref="CurveGrid2D"/> dispatches through it.
 /// </remarks>
-public static class Geom2dGridEvalGrid2D
+internal static class Geom2dGridEvalGrid2D
 {
     /// <summary>A grid evaluator of a 2D curve: what every Geom2dGridEval_* evaluator offers.</summary>
     public interface ICurveEvaluator

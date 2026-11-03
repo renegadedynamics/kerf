@@ -142,13 +142,13 @@ public class ChAsymInv : FuncInv
 
         if (_first)
         {
-            _surf1.D1(pt2d.X(), pt2d.Y(), out pts1, out d1u1, out d1v1);
+            _surf1.D1(pt2d.X, pt2d.Y, out pts1, out d1u1, out d1v1);
             pts2 = _surf2.Value(sol[3], sol[4]);
         }
         else
         {
             _surf1.D1(sol[3], sol[4], out pts1, out d1u1, out d1v1);
-            pts2 = _surf2.Value(pt2d.X(), pt2d.Y());
+            pts2 = _surf2.Value(pt2d.X, pt2d.Y);
         }
 
         nsurf1 = d1u1.Crossed(d1v1);
@@ -156,9 +156,9 @@ public class ChAsymInv : FuncInv
 
         Vector3D s1s2 = new Vector3D(pts1, pts2);
         double pScaInv = 1.0 / tsurf1.Dot(s1s2), temp;
-        double nordu1 = d1u1.Magnitude(), nordv1 = d1v1.Magnitude();
+        double nordu1 = d1u1.Magnitude, nordv1 = d1v1.Magnitude;
 
-        temp = 2.0 * (nordu1 + nordv1) * s1s2.Magnitude() + 2.0 * nordu1 * nordv1;
+        temp = 2.0 * (nordu1 + nordv1) * s1s2.Magnitude + 2.0 * nordu1 * nordv1;
 
         Value(sol, valsol);
 
@@ -197,20 +197,20 @@ public class ChAsymInv : FuncInv
 
             if (_first)
             {
-                _surf1.D1(pt2d.X(), pt2d.Y(), out pts1, out d1u1, out d1v1);
+                _surf1.D1(pt2d.X, pt2d.Y, out pts1, out d1u1, out d1v1);
                 pts2 = _surf2.Value(x[3], x[4]);
             }
             else
             {
                 _surf1.D1(x[3], x[4], out pts1, out d1u1, out d1v1);
-                pts2 = _surf2.Value(pt2d.X(), pt2d.Y());
+                pts2 = _surf2.Value(pt2d.X, pt2d.Y);
             }
         }
         else
         {
             _curv.D2(x[2], out ptgui, out d1gui, out d2gui);
             nplan = d1gui.Normalized();
-            normg = d1gui.Magnitude();
+            normg = d1gui.Magnitude;
             dnplan = (d2gui - nplan.Dot(d2gui) * nplan) / normg;
 
             if (_choix % 2 != 0)
@@ -224,13 +224,13 @@ public class ChAsymInv : FuncInv
 
             if (_first)
             {
-                _surf1.D2(pt2d.X(), pt2d.Y(), out pts1, out d1u1, out d1v1, out d2u1, out d2v1, out d2uv1);
+                _surf1.D2(pt2d.X, pt2d.Y, out pts1, out d1u1, out d1v1, out d2u1, out d2v1, out d2uv1);
                 _surf2.D1(x[3], x[4], out pts2, out d1u2, out d1v2);
             }
             else
             {
                 _surf1.D2(x[3], x[4], out pts1, out d1u1, out d1v1, out d2u1, out d2v1, out d2uv1);
-                _surf2.D1(pt2d.X(), pt2d.Y(), out pts2, out d1u2, out d1v2);
+                _surf2.D1(pt2d.X, pt2d.Y, out pts2, out d1u2, out d1v2);
             }
         }
 
@@ -247,7 +247,7 @@ public class ChAsymInv : FuncInv
 
             _fx[1] = pts1.XYZ().Dot(nplan.XYZ()) - dist;
             _fx[2] = pts2.XYZ().Dot(nplan.XYZ()) - dist;
-            _fx[3] = _dist1 * _dist1 - nps1.SquareMagnitude();
+            _fx[3] = _dist1 * _dist1 - nps1.SquareMagnitude;
             _fx[4] = _tgang - f4;
         }
 
@@ -260,9 +260,9 @@ public class ChAsymInv : FuncInv
             if (_first)
             {
                 Vector3D dw1du1, dw1dv1, dw1csurf, dw1pts1;
-                dw1pts1 = v2d.X() * d1u1 + v2d.Y() * d1v1;
-                dw1du1 = v2d.X() * d2u1 + v2d.Y() * d2uv1;
-                dw1dv1 = v2d.X() * d2uv1 + v2d.Y() * d2v1;
+                dw1pts1 = v2d.X * d1u1 + v2d.Y * d1v1;
+                dw1du1 = v2d.X * d2u1 + v2d.Y * d2uv1;
+                dw1dv1 = v2d.X * d2uv1 + v2d.Y * d2v1;
                 dw1csurf = (dw1du1.Crossed(d1v1) + d1u1.Crossed(dw1dv1)).Crossed(nplan);
                 dwtsurf1 = nsurf1.Crossed(dnplan);
 
@@ -302,7 +302,7 @@ public class ChAsymInv : FuncInv
                 Vector3D d1utsurf1, d1vtsurf1, dw2pts2;
                 d1utsurf1 = (d2u1.Crossed(d1v1) + d1u1.Crossed(d2uv1)).Crossed(nplan);
                 d1vtsurf1 = (d2uv1.Crossed(d1v1) + d1u1.Crossed(d2v1)).Crossed(nplan);
-                dw2pts2 = v2d.X() * d1u2 + v2d.Y() * d1v2;
+                dw2pts2 = v2d.X * d1u2 + v2d.Y * d1v2;
                 dwtsurf1 = nsurf1.Crossed(dnplan);
 
                 _dx[1, 1] = 0.0;

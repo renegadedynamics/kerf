@@ -43,7 +43,7 @@ internal static class TrihedronOracle
                 (N.Geom_Curve aNC, Curve3D aPC, double aRange) = RandomCurve(anOracle, aKind);
                 using (aNC)
                 {
-                    double aF = aPC.FirstParameter(), aL = aPC.LastParameter();
+                    double aF = aPC.FirstParameter, aL = aPC.LastParameter;
                     if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aF) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aL))
                     {
                         aF = anOracle.Real(-aRange, 0);
@@ -199,8 +199,8 @@ internal static class TrihedronOracle
                 Same(nB, pB, aWhat + " D0 B", theMode != Mode.Tangent);
                 if (theMode == Mode.Tangent && aPR)
                 {
-                    Assert.True(Math.Abs(pN.Magnitude() - 1) < 1e-9 && Math.Abs(pN.Dot(pT)) < 1e-9
-                                && (pT.Crossed(pN) - pB).Magnitude() < 1e-9, aWhat + " D0: not an orthonormal frame");
+                    Assert.True(Math.Abs(pN.Magnitude - 1) < 1e-9 && Math.Abs(pN.Dot(pT)) < 1e-9
+                                && (pT.Crossed(pN) - pB).Magnitude < 1e-9, aWhat + " D0: not an orthonormal frame");
                 }
             }
         }
@@ -337,7 +337,7 @@ internal static class TrihedronOracle
             if (!theCompare)
             {
                 _ = (nT.X(), nT.Y(), nT.Z(), nN.X(), nN.Y(), nN.Z(), nB.X(), nB.Y(), nB.Z());
-                Assert.True(double.IsFinite(pT.Magnitude() + pN.Magnitude() + pB.Magnitude()), theWhat + " GetAverageLaw: not finite");
+                Assert.True(double.IsFinite(pT.Magnitude + pN.Magnitude + pB.Magnitude), theWhat + " GetAverageLaw: not finite");
                 return;
             }
             theO.Same(nT, pT, theWhat + " GetAverageLaw T");

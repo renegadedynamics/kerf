@@ -334,7 +334,7 @@ public class WLine : PointLine, IWLine<WLine>
 
     private static bool CompareVertexAndPoint(in Point3D v, in Point3D p, double tol)
     {
-        double sqDist = v.SquareDistance(p);
+        double sqDist = v.SquareDistanceTo(p);
         double sqTol = tol * tol;
         return (sqDist <= sqTol);
     }
@@ -507,7 +507,7 @@ public class WLine : PointLine, IWLine<WLine>
                     {
                         if (_svtx[i].ParameterOnLine() != _svtx[j].ParameterOnLine())
                         {
-                            double d = _svtx[i].Value().Distance(_svtx[j].Value());
+                            double d = _svtx[i].Value().DistanceTo(_svtx[j].Value());
                             double toli = _svtx[i].Tolerance();
                             double tolj = _svtx[j].Tolerance();
                             double maxtol = Max(toli, tolj);
@@ -732,7 +732,7 @@ public class WLine : PointLine, IWLine<WLine>
         {
             PntOn2S pnt1 = _curv.Value(i - 1);
             PntOn2S pnt2 = _curv.Value(i);
-            double d = (pnt1.Value()).SquareDistance((pnt2.Value()));
+            double d = (pnt1.Value()).SquareDistanceTo((pnt2.Value()));
             if (d < dmini)
             {
                 _curv.RemovePoint(i);
@@ -873,7 +873,7 @@ public class WLine : PointLine, IWLine<WLine>
                     int ind_point;
                     for (ind_point = 2; (ind_point <= nbponline && nbponline > 1); ind_point++)
                     {
-                        double d = (_curv.Value(ind_point - 1).Value()).SquareDistance((_curv.Value(ind_point).Value()));
+                        double d = (_curv.Value(ind_point - 1).Value()).SquareDistanceTo((_curv.Value(ind_point).Value()));
                         if (d < dmini)
                         {
                             _curv.RemovePoint(ind_point);
@@ -1320,8 +1320,8 @@ public class WLine : PointLine, IWLine<WLine>
                 {
                     PntOn2S p = line.Point(i);
                     p.Parameters(out double u1, out double v1, out double u2, out double v2);
-                    theOut.Write($"{i.ToString(CultureInfo.InvariantCulture),4}  [{F(p.Value().X())} {F(p.Value().Y())} "
-                                 + $"{F(p.Value().Z())}]  [{F(u1)} {F(v1)}]  [{F(u2)} {F(v2)}]\n");
+                    theOut.Write($"{i.ToString(CultureInfo.InvariantCulture),4}  [{F(p.Value().X)} {F(p.Value().Y)} "
+                                 + $"{F(p.Value().Z)}]  [{F(u1)} {F(v1)}]  [{F(u2)} {F(v2)}]\n");
                 }
 
                 for (int i = 1; i <= nbVertex; i++)
@@ -1335,8 +1335,8 @@ public class WLine : PointLine, IWLine<WLine>
                     if (pol >= 1 && pol <= nbVertex)
                     {
                         Point3D v = line.Vertex(pol).Value();
-                        theOut.Write("----> IntSurf_PntOn2S : " + R(polr) + ", Pnt (" + R(v.X()) + "," + R(v.Y())
-                                     + "," + R(v.Z()) + ")" + '\n');
+                        theOut.Write("----> IntSurf_PntOn2S : " + R(polr) + ", Pnt (" + R(v.X) + "," + R(v.Y)
+                                     + "," + R(v.Z) + ")" + '\n');
                     }
                 }
                 break;
@@ -1344,7 +1344,7 @@ public class WLine : PointLine, IWLine<WLine>
                 for (int i = 1; i <= nbPoints; i++)
                 {
                     Point3D p = line.Point(i).Value();
-                    theOut.Write($"point p{i.ToString(CultureInfo.InvariantCulture)} {F(p.X())} {F(p.Y())} {F(p.Z())}\n");
+                    theOut.Write($"point p{i.ToString(CultureInfo.InvariantCulture)} {F(p.X)} {F(p.Y)} {F(p.Z)}\n");
                 }
                 break;
             case 2:

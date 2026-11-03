@@ -779,7 +779,7 @@ internal static class XDEDRAWColorsLayersCommands
             double Ares = G.Mass();
             aDoc.SetArea(aLabel, Ares);
             di.Append(argv[2]).Append(": Volume = ").Append(Vres).Append(", Area = ").Append(Ares)
-              .Append(", Centroid is (").Append(aPoint.X()).Append(", ").Append(aPoint.Y()).Append(", ").Append(aPoint.Z()).Append(")");
+              .Append(", Centroid is (").Append(aPoint.X).Append(", ").Append(aPoint.Y).Append(", ").Append(aPoint.Z).Append(")");
         }
         return 0;
     }
@@ -910,7 +910,7 @@ internal static class XDEDRAWColorsLayersCommands
         Label aLabel = labelOrShape(theDI, aDoc, argv[2]);
         if (!aLabel.IsNull && aDoc.GetValidationProps(aLabel)?.Centroid is Point3D aPoint)
         {
-            di.Append(aPoint.X()).Append(" ").Append(aPoint.Y()).Append(" ").Append(aPoint.Z());
+            di.Append(aPoint.X).Append(" ").Append(aPoint.Y).Append(" ").Append(aPoint.Z);
         }
         return 0;
     }

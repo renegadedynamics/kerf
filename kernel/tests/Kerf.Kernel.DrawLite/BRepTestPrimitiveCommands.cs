@@ -263,7 +263,7 @@ internal static class BRepTestPrimitiveCommands
             }
             else
             {
-                S = new ApiMakeCylinder(P.Pln().Position().Ax2(), theDI.Atof(a[3]), theDI.Atof(a[4])).Solid();
+                S = new ApiMakeCylinder(P.Plane.Position.Frame, theDI.Atof(a[3]), theDI.Atof(a[4])).Solid();
             }
         }
         else if (n == 6)
@@ -273,7 +273,7 @@ internal static class BRepTestPrimitiveCommands
                 return 1;
             }
 
-            S = new ApiMakeCylinder(P.Pln().Position().Ax2(), theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]) * DegToRad).Solid();
+            S = new ApiMakeCylinder(P.Plane.Position.Frame, theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5]) * DegToRad).Solid();
         }
         else
         {
@@ -307,12 +307,12 @@ internal static class BRepTestPrimitiveCommands
             }
             else
             {
-                S = new ApiMakeCone(P.Pln().Position().Ax2(), theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5])).Solid();
+                S = new ApiMakeCone(P.Plane.Position.Frame, theDI.Atof(a[3]), theDI.Atof(a[4]), theDI.Atof(a[5])).Solid();
             }
         }
         else if (n == 7)
         {
-            S = new ApiMakeCone(NonNull(P).Pln().Position().Ax2(),
+            S = new ApiMakeCone(NonNull(P).Plane.Position.Frame,
                                          theDI.Atof(a[3]),
                                          theDI.Atof(a[4]),
                                          theDI.Atof(a[5]),
@@ -350,7 +350,7 @@ internal static class BRepTestPrimitiveCommands
             }
             else
             {
-                S = new MakeSphere(P.Pln().Position().Ax2(), theDI.Atof(a[3])).Solid();
+                S = new MakeSphere(P.Plane.Position.Frame, theDI.Atof(a[3])).Solid();
             }
         }
         else if (n == 5)
@@ -361,7 +361,7 @@ internal static class BRepTestPrimitiveCommands
             }
             else
             {
-                S = new MakeSphere(P.Pln().Position().Ax2(), theDI.Atof(a[3]), theDI.Atof(a[4]) * DegToRad).Solid();
+                S = new MakeSphere(P.Plane.Position.Frame, theDI.Atof(a[3]), theDI.Atof(a[4]) * DegToRad).Solid();
             }
         }
         else if (n == 6)
@@ -375,7 +375,7 @@ internal static class BRepTestPrimitiveCommands
             }
             else
             {
-                S = new MakeSphere(P.Pln().Position().Ax2(),
+                S = new MakeSphere(P.Plane.Position.Frame,
                                                theDI.Atof(a[3]),
                                                theDI.Atof(a[4]) * DegToRad,
                                                theDI.Atof(a[5]) * DegToRad).Solid();
@@ -383,7 +383,7 @@ internal static class BRepTestPrimitiveCommands
         }
         else if (n == 7)
         {
-            S = new MakeSphere(NonNull(P).Pln().Position().Ax2(),
+            S = new MakeSphere(NonNull(P).Plane.Position.Frame,
                                            theDI.Atof(a[3]),
                                            theDI.Atof(a[4]) * DegToRad,
                                            theDI.Atof(a[5]) * DegToRad,
@@ -421,7 +421,7 @@ internal static class BRepTestPrimitiveCommands
             }
             else
             {
-                S = new MakeTorus(P.Pln().Position().Ax2(), theDI.Atof(a[3]), theDI.Atof(a[4])).Solid();
+                S = new MakeTorus(P.Plane.Position.Frame, theDI.Atof(a[3]), theDI.Atof(a[4])).Solid();
             }
         }
         else if (n == 6)
@@ -435,7 +435,7 @@ internal static class BRepTestPrimitiveCommands
             }
             else
             {
-                S = new MakeTorus(P.Pln().Position().Ax2(),
+                S = new MakeTorus(P.Plane.Position.Frame,
                                               theDI.Atof(a[3]),
                                               theDI.Atof(a[4]),
                                               theDI.Atof(a[5]) * DegToRad).Solid();
@@ -453,7 +453,7 @@ internal static class BRepTestPrimitiveCommands
             }
             else
             {
-                S = new MakeTorus(P.Pln().Position().Ax2(),
+                S = new MakeTorus(P.Plane.Position.Frame,
                                               theDI.Atof(a[3]),
                                               theDI.Atof(a[4]),
                                               theDI.Atof(a[5]) * DegToRad,
@@ -462,7 +462,7 @@ internal static class BRepTestPrimitiveCommands
         }
         else if (n == 8)
         {
-            S = new MakeTorus(NonNull(P).Pln().Position().Ax2(),
+            S = new MakeTorus(NonNull(P).Plane.Position.Frame,
                                           theDI.Atof(a[3]),
                                           theDI.Atof(a[4]),
                                           theDI.Atof(a[5]) * DegToRad,

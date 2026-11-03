@@ -45,7 +45,7 @@ public class BRepTools_TShapeDataTests
         {
             Shape aNew = Assert.Single(aH.Modified(anExp.Current()));
             Assert.False(aNew.IsSame(anExp.Current()));
-            Assert.Equal(anExp.Current().Location(), aNew.Location());
+            Assert.Equal(anExp.Current().Placement, aNew.Placement);
         }
     }
 

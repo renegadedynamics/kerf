@@ -165,8 +165,8 @@ public class Geom2dAPIOracleTests(ITestOutputHelper output)
             default:
             {
                 BSplineCurve2D aC = Geom2dOracle.ToPort(theS.BSpline!);
-                aFirst = aC.FirstParameter();
-                aLast = aC.LastParameter();
+                aFirst = aC.FirstParameter;
+                aLast = aC.LastParameter;
                 break;
             }
         }
@@ -217,17 +217,17 @@ public class Geom2dAPIOracleTests(ITestOutputHelper output)
             return aSame;
         }
 
-        double aF = thePort.FirstParameter(), aL = thePort.LastParameter();
+        double aF = thePort.FirstParameter, aL = thePort.LastParameter;
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aF) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aL))
         {
             (aF, aL) = (-10, 10);
         }
         thePort.D1(theO.Real(aF, aL), out Point2D aP, out Vector2D aV);
-        bool isTangent = aMode >= 7 && aV.Magnitude() > 1e-6;
+        bool isTangent = aMode >= 7 && aV.Magnitude > 1e-6;
         double aDx, aDy;
         if (isTangent)
         {
-            (aDx, aDy) = (aV.X(), aV.Y());
+            (aDx, aDy) = (aV.X, aV.Y);
         }
         else
         {
@@ -237,8 +237,8 @@ public class Geom2dAPIOracleTests(ITestOutputHelper output)
         if (theO.Bool())
         {
             aS.Kind = 0;
-            aS.Px = aP.X();
-            aS.Py = aP.Y();
+            aS.Px = aP.X;
+            aS.Py = aP.Y;
             aS.Name = isTangent ? "tangent line" : "line through";
             if (theO.Bool())
             {
@@ -253,8 +253,8 @@ public class Geom2dAPIOracleTests(ITestOutputHelper output)
             double aLen = Math.Sqrt(aNx * aNx + aNy * aNy);
             aS.Kind = 1;
             aS.R1 = aR;
-            aS.Px = aP.X() + aR * aNx / aLen;
-            aS.Py = aP.Y() + aR * aNy / aLen;
+            aS.Px = aP.X + aR * aNx / aLen;
+            aS.Py = aP.Y + aR * aNy / aLen;
             (aS.Dx, aS.Dy) = RawDir(theO);
             aS.Sense = theO.Bool();
             aS.Name = isTangent ? "tangent circle" : "circle through";
@@ -377,7 +377,7 @@ public class Geom2dAPIOracleTests(ITestOutputHelper output)
             (N.Geom2d_Curve aNC, Curve2D aPC) = aS.Build();
             using (aNC)
             {
-                double aF = aPC.FirstParameter(), aL = aPC.LastParameter();
+                double aF = aPC.FirstParameter, aL = aPC.LastParameter;
                 bool aWithRange = anOracle.Bool() || global::Kerf.Engine.Foundation.Precision.IsInfinite(aF) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aL);
                 if (aWithRange)
                 {
@@ -395,7 +395,7 @@ public class Geom2dAPIOracleTests(ITestOutputHelper output)
                     if (k > 0)
                     {
                         double aScale = k == 1 ? anOracle.Real(1e-3, 1) : anOracle.Real(1, 30);
-                        aP = new Point2D(aP.X() + aScale * anOracle.Real(-1, 1), aP.Y() + aScale * anOracle.Real(-1, 1));
+                        aP = new Point2D(aP.X + aScale * anOracle.Real(-1, 1), aP.Y + aScale * anOracle.Real(-1, 1));
                     }
                     string aW = $"#{c} {aS.Name} [{aF:R}, {aL:R}] point {k}";
                     using N.gp_Pnt2d aNP = Oracle.ToNative(aP);

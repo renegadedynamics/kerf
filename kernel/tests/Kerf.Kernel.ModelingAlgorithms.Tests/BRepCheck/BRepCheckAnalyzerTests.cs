@@ -48,7 +48,7 @@ public class BRepCheckAnalyzerTests
         Point3D aP1 = Tool.Pnt(theV1), aP2 = Tool.Pnt(theV2);
         Edge anE = TestShapes.Edge(theV1, theV2);
         aB.UpdateEdge(anE,
-                      new LineCurve2D(new Point2D(aP1.X(), aP1.Y() + theShift), new Direction2D(aP2.X() - aP1.X(), aP2.Y() - aP1.Y())),
+                      new LineCurve2D(new Point2D(aP1.X, aP1.Y + theShift), new Direction2D(aP2.X - aP1.X, aP2.Y - aP1.Y)),
                       theFace, Tol);
         return anE;
     }
@@ -153,7 +153,7 @@ public class BRepCheckAnalyzerTests
         for (int i = 1; i <= aMap.Count; i++)
         {
             ResultCheck? aR = theA.Result(aMap[i - 1]);
-            aText.Append($"{i} {aMap[i - 1].ShapeType()} valid={theA.IsValid(aMap[i - 1])}");
+            aText.Append($"{i} {aMap[i - 1].Type} valid={theA.IsValid(aMap[i - 1])}");
             if (aR is null)
             {
                 aText.AppendLine();

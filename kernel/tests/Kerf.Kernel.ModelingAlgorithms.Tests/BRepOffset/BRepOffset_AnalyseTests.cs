@@ -36,7 +36,7 @@ public class BRepOffset_AnalyseTests
         var aCounts = new Dictionary<TypeOfConcavity, int>();
         foreach (Shape anE in SubShapes(theShape, ShapeType.Edge))
         {
-            foreach (Interval anI in theA.Type(ShapeCasts.Edge(anE)))
+            foreach (OffsetInterval anI in theA.Type(ShapeCasts.Edge(anE)))
             {
                 aCounts[anI.Type()] = aCounts.GetValueOrDefault(anI.Type()) + 1;
             }
@@ -93,8 +93,8 @@ public class BRepOffset_AnalyseTests
         Edge aConcave = ShapeCasts.Edge(SubShapes(aShape, ShapeType.Edge).Single(e => anA.Type(ShapeCasts.Edge(e)).First().Type() == TypeOfConcavity.Concave));
         var aC = new EdgeCurveAdaptor(aConcave);
         Point3D aMid = aC.Value(0.5 * (aC.FirstParameter() + aC.LastParameter()));
-        Assert.Equal(10.0, aMid.Y(), 9);
-        Assert.Equal(5.0, aMid.Z(), 9);
+        Assert.Equal(10.0, aMid.Y, 9);
+        Assert.Equal(5.0, aMid.Z, 9);
     }
 
     [Fact]
@@ -147,7 +147,7 @@ public class BRepOffset_AnalyseTests
         {
             if (anA.HasGenerated(anE))
             {
-                Assert.Equal(ShapeType.Face, anA.Generated(anE).ShapeType());
+                Assert.Equal(ShapeType.Face, anA.Generated(anE).Type);
             }
         }
     }

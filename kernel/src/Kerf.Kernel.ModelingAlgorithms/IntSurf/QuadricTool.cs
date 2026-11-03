@@ -32,9 +32,9 @@ public static class QuadricTool
         switch (q.TypeQuadric())
         {
             case SurfaceKind.Sphere:
-                return 2.0e-6 * q.Sphere().Radius();
+                return 2.0e-6 * q.Sphere().Radius;
             case SurfaceKind.Cylinder:
-                return 2.0e-6 * q.Cylinder().Radius();
+                return 2.0e-6 * q.Cylinder().Radius;
             default:
                 break;
         }

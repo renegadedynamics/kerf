@@ -95,12 +95,12 @@ public sealed class Projection
         // if theShape is compound, extract only faces -- section algorithm
         // may refuse to work if e.g. vertex is present
         Shape aShape = new();
-        if (shape.ShapeType() == ShapeType.Face || shape.ShapeType() == ShapeType.Shell
-            || shape.ShapeType() == ShapeType.Solid || shape.ShapeType() == ShapeType.CompSolid)
+        if (shape.Type == ShapeType.Face || shape.Type == ShapeType.Shell
+            || shape.Type == ShapeType.Solid || shape.Type == ShapeType.CompSolid)
         {
             aShape = shape;
         }
-        else if (shape.ShapeType() == ShapeType.Compound)
+        else if (shape.Type == ShapeType.Compound)
         {
             Compound c = new();
             BrepBuilder b = new();
@@ -189,7 +189,7 @@ public sealed class Projection
         _itr = 0;
         // Check the input
         Standard_NullObject_Raise_if((wire.IsNull || shape.IsNull), "BRepProj_Projection.cxx: null input shape");
-        if (wire.ShapeType() != ShapeType.Edge && wire.ShapeType() != global::Kerf.Topology.ShapeType.Wire)
+        if (wire.Type != ShapeType.Edge && wire.Type != global::Kerf.Topology.ShapeType.Wire)
         {
             throw new ConstructionErrorException("BRepProj_Projection.cxx: projected shape is neither wire nor edge");
         }
@@ -228,14 +228,14 @@ public sealed class Projection
         _itr = 0;
         // Check the input
         Standard_NullObject_Raise_if((wire.IsNull || shape.IsNull), "BRepProj_Projection.cxx: null input shape");
-        if (wire.ShapeType() != ShapeType.Edge && wire.ShapeType() != global::Kerf.Topology.ShapeType.Wire)
+        if (wire.Type != ShapeType.Edge && wire.Type != global::Kerf.Topology.ShapeType.Wire)
         {
             throw new ConstructionErrorException("BRepProj_Projection.cxx: projected shape is neither wire nor edge");
         }
 
         // if Wire is only an edge, transform it into a Wire
         Wire aWire = new();
-        if (wire.ShapeType() == ShapeType.Edge)
+        if (wire.Type == ShapeType.Edge)
         {
             BrepBuilder bb = new();
             bb.MakeWire(ref aWire);
@@ -257,7 +257,7 @@ public sealed class Projection
         Point3D pc = Tool.Pnt(ShapeCasts.Vertex(expWire.Current()));
 
         // compute the ratio of the scale transformation
-        double scale = pc.Distance(p);
+        double scale = pc.DistanceTo(p);
         if (Math.Abs(scale) < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             throw new ConstructionErrorException("Projection");

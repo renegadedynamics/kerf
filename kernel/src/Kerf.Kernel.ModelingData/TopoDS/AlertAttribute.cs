@@ -16,7 +16,7 @@ namespace Kerf.Engine.Topology;
 /// shape's <see cref="Shape.ToString"/> ("Solid Forward", ...). OCCT's <c>operator&lt;&lt;</c> of a messenger and
 /// a shape is <see cref="Send"/>. <see cref="GetShape"/> freezes, as <see cref="AlertWithShape.GetShape"/>.
 /// </remarks>
-public class AlertAttribute : AttributeStream
+internal class AlertAttribute : AttributeStream
 {
     private readonly Shape _shape;
 

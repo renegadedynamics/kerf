@@ -14,7 +14,7 @@ namespace Kerf.Engine.Geometry.Evaluation.Grid;
 /// Adaptor3d_Surface or a Geom_Surface. The slowest evaluator, but it handles any surface.
 /// </summary>
 /// <remarks>The evaluator keeps the adaptor or surface it is given (OCCT keeps a pointer or a handle).</remarks>
-public sealed class OtherSurfaceGrid : GeomGridEvalGrid.ISurfaceEvaluator
+internal sealed class OtherSurfaceGrid : GeomGridEvalGrid.ISurfaceEvaluator
 {
     // OCCT's std::variant<const Adaptor3d_Surface*, occ::handle<Geom_Surface>>: one of the two.
     private readonly object _surface;

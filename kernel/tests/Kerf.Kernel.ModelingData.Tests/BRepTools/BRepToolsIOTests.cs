@@ -131,7 +131,7 @@ public class BRepToolsIOTests
         var aRead = new LocationSet();
         aRead.Read(new StringReader(aText));
         Assert.Equal(3, aRead.LocationCount);
-        Assert.True(aRead.Location(3).Transformation().TranslationPart().IsEqual(aComplex.Transformation().TranslationPart(), 1e-14));
+        Assert.True(aRead.Location(3).Transformation.TranslationXyz().IsEqual(aComplex.Transformation.TranslationXyz(), 1e-14));
         Assert.Equal(2, aRead.Location(3).FirstPower());
         Assert.Equal(1, aRead.Location(3).NextLocation().FirstPower());
         Assert.True(aRead.Location(3).NextLocation().NextLocation().IsIdentity);
@@ -182,12 +182,12 @@ public class BRepToolsIOTests
             Assert.True(anOriginal.Count == aCopy.Count, aName);
             for (int i = 0; i < anOriginal.Count; i++)
             {
-                Assert.Equal(anOriginal[i].ShapeType(), aCopy[i].ShapeType());
-                Assert.Equal(anOriginal[i].Orientation(), aCopy[i].Orientation());
-                Assert.True(anOriginal[i].Location().Transformation().TranslationPart()
-                                .IsEqual(aCopy[i].Location().Transformation().TranslationPart(), 1e-12));
-                Assert.Equal(anOriginal[i].Closed(), aCopy[i].Closed());
-                if (anOriginal[i].ShapeType() == ShapeType.Vertex)
+                Assert.Equal(anOriginal[i].Type, aCopy[i].Type);
+                Assert.Equal(anOriginal[i].Orientation, aCopy[i].Orientation);
+                Assert.True(anOriginal[i].Placement.Transformation.TranslationXyz()
+                                .IsEqual(aCopy[i].Placement.Transformation.TranslationXyz(), 1e-12));
+                Assert.Equal(anOriginal[i].IsClosed, aCopy[i].IsClosed);
+                if (anOriginal[i].Type == ShapeType.Vertex)
                 {
                     Assert.True(Tool.Pnt(ShapeCasts.Vertex(anOriginal[i])).IsEqual(Tool.Pnt(ShapeCasts.Vertex(aCopy[i])), 1e-12));
                 }
@@ -247,7 +247,7 @@ public class BRepToolsIOTests
                                   .Replace("\n0101101\n", "\n1101101\n", StringComparison.Ordinal);
         Shape aRead = Read(aText);
         Assert.True(aRead.Free());
-        foreach (Shape aSub in SubShapes(aRead).Where(s => s.ShapeType() != ShapeType.Solid))
+        foreach (Shape aSub in SubShapes(aRead).Where(s => s.Type != ShapeType.Solid))
         {
             Assert.False(aSub.Free());
         }
@@ -273,8 +273,8 @@ public class BRepToolsIOTests
                 Edge anEdge = ShapeCasts.Edge(anExp.Current());
                 Tool.UVPoints(anEdge, aF, out Point2D aP1, out Point2D aP2);
                 Curve2D aPC = Tool.CurveOnSurface(anEdge, aF, out double aFirst, out double aLast)!;
-                Assert.True(aP1.Distance(aPC.Value(aFirst)) < 1e-12, aWhich);
-                Assert.True(aP2.Distance(aPC.Value(aLast)) < 1e-12, aWhich);
+                Assert.True(aP1.DistanceTo(aPC.Value(aFirst)) < 1e-12, aWhich);
+                Assert.True(aP2.DistanceTo(aPC.Value(aLast)) < 1e-12, aWhich);
             }
         }
     }
@@ -290,12 +290,12 @@ public class BRepToolsIOTests
         Assert.DoesNotContain("Triangulations 0\n", aWithout, StringComparison.Ordinal);
         Assert.True(aWith.Length > aWithout.Length);
         // version 2 has no normals
-        Assert.False(Tool.Triangulation(ShapeCasts.Face(SubShapes(Read(aV2)).First(s => s.ShapeType() == ShapeType.Face)), out _)!.HasNormals);
+        Assert.False(Tool.Triangulation(ShapeCasts.Face(SubShapes(Read(aV2)).First(s => s.Type == ShapeType.Face)), out _)!.HasNormals);
 
-        Triangulation aTri = Tool.Triangulation(ShapeCasts.Face(SubShapes(Read(aWith)).First(s => s.ShapeType() == ShapeType.Face)), out _)!;
+        Triangulation aTri = Tool.Triangulation(ShapeCasts.Face(SubShapes(Read(aWith)).First(s => s.Type == ShapeType.Face)), out _)!;
         Assert.True(aTri.HasNormals);
         Assert.True(aTri.HasUVNodes);
-        aTri = Tool.Triangulation(ShapeCasts.Face(SubShapes(Read(aWithout)).First(s => s.ShapeType() == ShapeType.Face)), out _)!;
+        aTri = Tool.Triangulation(ShapeCasts.Face(SubShapes(Read(aWithout)).First(s => s.Type == ShapeType.Face)), out _)!;
         Assert.False(aTri.HasNormals);
 
         // a face with only a triangulation is always written with its triangulation and normals

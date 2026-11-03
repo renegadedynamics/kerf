@@ -136,7 +136,7 @@ public sealed class QuasiAngularConvertor
         v1 = v1.WithXYZ(aux);
         v2 = dir ^ v1;
 
-        Matrix3x3 m = new Matrix3x3(v1.X(), v2.X(), 0, v1.Y(), v2.Y(), 0, v1.Z(), v2.Z(), 0);
+        Matrix3x3 m = new Matrix3x3(v1.X, v2.X, 0, v1.Y, v2.Y, 0, v1.Z, v2.Z, 0);
 
         // Calcul des coeffs  -----------
         beta = angle / 4;
@@ -245,9 +245,9 @@ public sealed class QuasiAngularConvertor
         aux.Multiply(rot);
         v1 = v1.WithXYZ(aux);
         v2 = dir ^ v1;
-        Matrix3x3 m = new Matrix3x3(v1.X(), v2.X(), 0, v1.Y(), v2.Y(), 0, v1.Z(), v2.Z(), 0);
+        Matrix3x3 m = new Matrix3x3(v1.X, v2.X, 0, v1.Y, v2.Y, 0, v1.Z, v2.Z, 0);
         v2 = (dDir.Crossed(v1)).Added(dir.Crossed(v1Prim));
-        Matrix3x3 mPrim = new Matrix3x3(v1Prim.X(), v2.X(), 0, v1Prim.Y(), v2.Y(), 0, v1Prim.Z(), v2.Z(), 0);
+        Matrix3x3 mPrim = new Matrix3x3(v1Prim.X, v2.X, 0, v1Prim.Y, v2.Y, 0, v1Prim.Z, v2.Z, 0);
 
         // Calcul des constante  -----------
         beta = angle / 4;
@@ -414,14 +414,14 @@ public sealed class QuasiAngularConvertor
         v1 = v1.WithXYZ(auxyz);
         v2 = dir ^ v1;
 
-        Matrix3x3 m = new Matrix3x3(v1.X(), v2.X(), 0, v1.Y(), v2.Y(), 0, v1.Z(), v2.Z(), 0);
+        Matrix3x3 m = new Matrix3x3(v1.X, v2.X, 0, v1.Y, v2.Y, 0, v1.Z, v2.Z, 0);
         v2 = (dDir.Crossed(v1)).Added(dir.Crossed(v1Prim));
-        Matrix3x3 mPrim = new Matrix3x3(v1Prim.X(), v2.X(), 0, v1Prim.Y(), v2.Y(), 0, v1Prim.Z(), v2.Z(), 0);
+        Matrix3x3 mPrim = new Matrix3x3(v1Prim.X, v2.X, 0, v1Prim.Y, v2.Y, 0, v1Prim.Z, v2.Z, 0);
 
         v2 = dDir ^ v1Prim;
         v2 *= 2;
         v2 += (d2Dir.Crossed(v1)).Added(dir.Crossed(v1Secn));
-        Matrix3x3 mSecn = new Matrix3x3(v1Secn.X(), v2.X(), 0, v1Secn.Y(), v2.Y(), 0, v1Secn.Z(), v2.Z(), 0);
+        Matrix3x3 mSecn = new Matrix3x3(v1Secn.X, v2.X, 0, v1Secn.Y, v2.Y, 0, v1Secn.Z, v2.Z, 0);
 
         // Calcul des coeff  -----------
         double tan_b, dtan_b, d2tan_b;

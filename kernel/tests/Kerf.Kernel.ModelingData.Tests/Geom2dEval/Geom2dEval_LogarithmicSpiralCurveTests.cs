@@ -42,7 +42,7 @@ public class Geom2dEval_LogarithmicSpiralCurveTest
         // C(t+k) should be a scaled version of C(t) by factor e^(b*k)
         double aK = 2.0;
         double aScaleFactor = Math.Exp(aB * aK);
-        Point2D anO = anAx2d.Location();
+        Point2D anO = anAx2d.Location;
 
         double[] aParams = [0.0, 1.0, 2.0, M_PI];
         foreach (double aT in aParams)
@@ -51,8 +51,8 @@ public class Geom2dEval_LogarithmicSpiralCurveTest
             Point2D aP2 = aCurve.EvalD0(aT + aK);
 
             // |P2 - O| / |P1 - O| should equal e^(b*k)
-            double aDist1 = anO.Distance(aP1);
-            double aDist2 = anO.Distance(aP2);
+            double aDist1 = anO.DistanceTo(aP1);
+            double aDist2 = anO.DistanceTo(aP2);
             if (aDist1 > global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 Assert.Equal(aScaleFactor, aDist2 / aDist1, 1e-10);
@@ -69,7 +69,7 @@ public class Geom2dEval_LogarithmicSpiralCurveTest
 
         // Angle between tangent and radial direction = atan(1/b)
         double aExpAngle = Math.Atan(1.0 / aB);
-        Point2D anO = anAx2d.Location();
+        Point2D anO = anAx2d.Location;
 
         double[] aParams = [1.0, 2.0, M_PI, 5.0];
         foreach (double aT in aParams)
@@ -95,8 +95,8 @@ public class Geom2dEval_LogarithmicSpiralCurveTest
         Point2D aP2 = aCurve.EvalD0(aT - global::Kerf.Engine.Foundation.Precision.Confusion());
         Vector2D aFD = new((aP1.XY() - aP2.XY()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
 
-        Assert.Equal(aFD.X(), aD1.D1.X(), THE_FD_TOL);
-        Assert.Equal(aFD.Y(), aD1.D1.Y(), THE_FD_TOL);
+        Assert.Equal(aFD.X, aD1.D1.X, THE_FD_TOL);
+        Assert.Equal(aFD.Y, aD1.D1.Y, THE_FD_TOL);
     }
 
     [Fact]
@@ -111,8 +111,8 @@ public class Geom2dEval_LogarithmicSpiralCurveTest
         Curve2D.ResD1 aD1m = aCurve.EvalD1(aT - global::Kerf.Engine.Foundation.Precision.Confusion());
         Vector2D aFD = new((aD1p.D1.XY() - aD1m.D1.XY()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
 
-        Assert.Equal(aFD.X(), aD2.D2.X(), THE_FD_TOL);
-        Assert.Equal(aFD.Y(), aD2.D2.Y(), THE_FD_TOL);
+        Assert.Equal(aFD.X, aD2.D2.X, THE_FD_TOL);
+        Assert.Equal(aFD.Y, aD2.D2.Y, THE_FD_TOL);
     }
 
     [Fact]
@@ -127,8 +127,8 @@ public class Geom2dEval_LogarithmicSpiralCurveTest
         Curve2D.ResD2 aD2m = aCurve.EvalD2(aT - global::Kerf.Engine.Foundation.Precision.Confusion());
         Vector2D aFD = new((aD2p.D2.XY() - aD2m.D2.XY()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
 
-        Assert.Equal(aFD.X(), aD3.D3.X(), THE_FD_TOL);
-        Assert.Equal(aFD.Y(), aD3.D3.Y(), THE_FD_TOL);
+        Assert.Equal(aFD.X, aD3.D3.X, THE_FD_TOL);
+        Assert.Equal(aFD.Y, aD3.D3.Y, THE_FD_TOL);
     }
 
     [Fact]
@@ -144,8 +144,8 @@ public class Geom2dEval_LogarithmicSpiralCurveTest
         Vector2D aDNm1M = aCurve.EvalDN(aT - global::Kerf.Engine.Foundation.Precision.Confusion(), aN - 1);
         Vector2D aFD = new((aDNm1P.XY() - aDNm1M.XY()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
 
-        Assert.Equal(aFD.X(), aDN.X(), THE_FD_TOL_DN);
-        Assert.Equal(aFD.Y(), aDN.Y(), THE_FD_TOL_DN);
+        Assert.Equal(aFD.X, aDN.X, THE_FD_TOL_DN);
+        Assert.Equal(aFD.Y, aDN.Y, THE_FD_TOL_DN);
     }
 
     [Fact]
@@ -155,7 +155,7 @@ public class Geom2dEval_LogarithmicSpiralCurveTest
         LogarithmicSpiralCurve2D aCurve = new(anAx2d, 1.0, 0.2);
         Assert.False(aCurve.IsClosed);
         Assert.False(aCurve.IsPeriodic);
-        Assert.Equal(Continuity.CN, aCurve.Continuity());
+        Assert.Equal(Continuity.CN, aCurve.Continuity);
     }
 
     [Fact]

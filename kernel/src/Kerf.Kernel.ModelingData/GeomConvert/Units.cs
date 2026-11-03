@@ -14,7 +14,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// Conversions of 2D curves (pcurves) between angle units (radians and degrees) and length units, according to
 /// the parameterisation of the surface they lie on. Each function returns a new curve; the input is not modified.
 /// </summary>
-public static class Units
+internal static class Units
 {
     /// <summary>
     /// The pcurve theCurve2d on theSurf converted from radians to degrees (theFactorRadianDegree, for example
@@ -57,7 +57,7 @@ public static class Units
         else if (surf is ConicalSurface)
         {
             ConicalSurface conicS = (ConicalSurface)surf;
-            double semAng = conicS.SemiAngle();
+            double semAng = conicS.SemiAngle;
             uFact = angleFact;
             vFact = lengthFact * Math.Cos(semAng);
         }
@@ -81,12 +81,12 @@ public static class Units
         if (aCurve2d is LineCurve2D)
         {
             LineCurve2D line2d = (LineCurve2D)aCurve2d;
-            Point2D myLoc = line2d.Location();
-            Direction2D myDir = line2d.Direction();
+            Point2D myLoc = line2d.Location;
+            Direction2D myDir = line2d.Direction;
             var myNewLoc = new Point2D();
-            myNewLoc = myNewLoc.WithCoord(myLoc.X() * uFact, myLoc.Y() * vFact);
+            myNewLoc = myNewLoc.WithCoord(myLoc.X * uFact, myLoc.Y * vFact);
             var myNewDir = new Direction2D();
-            myNewDir = myNewDir.WithCoord(myDir.X() * uFact, myDir.Y() * vFact);
+            myNewDir = myNewDir.WithCoord(myDir.X * uFact, myDir.Y * vFact);
             LineCurve2D myNewLine2d = (LineCurve2D)line2d.Copy();
             myNewLine2d.SetLocation(myNewLoc);
             myNewLine2d.SetDirection(myNewDir);
@@ -174,7 +174,7 @@ public static class Units
         else if (surface is ConicalSurface)
         {
             ConicalSurface conicS = (ConicalSurface)surface;
-            double semAng = conicS.SemiAngle();
+            double semAng = conicS.SemiAngle;
             uFact = angleFact;
             vFact = lengthFact / Math.Cos(semAng);
         }
@@ -224,14 +224,14 @@ public static class Units
         {
             LineCurve2D line2d = (LineCurve2D)aPcurve;
 
-            Point2D myLoc = line2d.Location();
-            Direction2D myDir = line2d.Direction();
+            Point2D myLoc = line2d.Location;
+            Direction2D myDir = line2d.Direction;
 
             var myNewLoc = new Point2D();
-            myNewLoc = myNewLoc.WithCoord(myLoc.X() * uFact, myLoc.Y() * vFact);
+            myNewLoc = myNewLoc.WithCoord(myLoc.X * uFact, myLoc.Y * vFact);
 
             var myNewDir = new Direction2D();
-            myNewDir = myNewDir.WithCoord(myDir.X() * uFact, myDir.Y() * vFact);
+            myNewDir = myNewDir.WithCoord(myDir.X * uFact, myDir.Y * vFact);
 
             line2d.SetLocation(myNewLoc);
             line2d.SetDirection(myNewDir);

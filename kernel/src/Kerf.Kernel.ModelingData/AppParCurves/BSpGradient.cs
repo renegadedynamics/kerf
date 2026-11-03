@@ -262,9 +262,9 @@ public class BSpGradient<MultiLine, ToolLine>
                     for (l = indexdeb; l <= indexfin; l++)
                     {
                         pt = thePoles[l + i2];
-                        px = pt.X();
-                        py = pt.Y();
-                        pz = pt.Z();
+                        px = pt.X;
+                        py = pt.Y;
+                        pz = pt.Z;
                         aa = A[j, l];
                         da = DA[j, l];
                         a += aa * px;
@@ -280,7 +280,7 @@ public class BSpGradient<MultiLine, ToolLine>
 
                     myV = new Vector3D(pt, tabP[k]);
                     fu += myV * v1;
-                    dfu += v1.SquareMagnitude();
+                    dfu += v1.SquareMagnitude;
                 }
                 i2 = 0;
                 for (k = 1; k <= nbP2d; k++)
@@ -289,8 +289,8 @@ public class BSpGradient<MultiLine, ToolLine>
                     for (l = indexdeb; l <= indexfin; l++)
                     {
                         pt2d = thePoles2d[l + i2];
-                        px = pt2d.X();
-                        py = pt2d.Y();
+                        px = pt2d.X;
+                        py = pt2d.Y;
                         aa = A[j, l];
                         da = DA[j, l];
                         a += aa * px;
@@ -304,7 +304,7 @@ public class BSpGradient<MultiLine, ToolLine>
 
                     myV2d = new Vector2D(pt2d, tabP2d[k]);
                     fu += myV2d * v12d;
-                    dfu += v12d.SquareMagnitude();
+                    dfu += v12d.SquareMagnitude;
                 }
 
                 if (dfu >= RealEpsilon())

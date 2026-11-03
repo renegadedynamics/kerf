@@ -20,7 +20,7 @@ namespace Kerf.Engine.Geometry;
 /// template's formula <c>(1 - t) * start + t * end</c>.
 /// <c>new gp_TrsfNLerp()</c> holds identities; <c>default(gp_TrsfNLerp)</c> is not valid.
 /// </remarks>
-public partial struct TransformNLerp : IEquatable<TransformNLerp>
+internal partial struct TransformNLerp : IEquatable<TransformNLerp>
 {
     private Xyz _locLerpStart;
     private Xyz _locLerpEnd;
@@ -58,11 +58,11 @@ public partial struct TransformNLerp : IEquatable<TransformNLerp>
     {
         _trsfStart = start;
         _trsfEnd = end;
-        _locLerpStart = start.TranslationPart();
-        _locLerpEnd = end.TranslationPart();
+        _locLerpStart = start.TranslationXyz();
+        _locLerpEnd = end.TranslationXyz();
         _rotLerp.Init(start.GetRotation(), end.GetRotation());
-        _scaleLerpStart = start.ScaleFactor();
-        _scaleLerpEnd = end.ScaleFactor();
+        _scaleLerpStart = start.ScaleFactor;
+        _scaleLerpEnd = end.ScaleFactor;
     }
 
     // Queries

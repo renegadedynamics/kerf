@@ -235,10 +235,10 @@ internal static class BRepTestFillet2DCommands
         Point3D p22 = Tool.Pnt(v22);
 
         Point3D common = new();
-        double d1121 = p11.SquareDistance(p21);
-        double d1122 = p11.SquareDistance(p22);
-        double d1221 = p12.SquareDistance(p21);
-        double d1222 = p12.SquareDistance(p22);
+        double d1121 = p11.SquareDistanceTo(p21);
+        double d1122 = p11.SquareDistanceTo(p22);
+        double d1221 = p12.SquareDistanceTo(p21);
+        double d1222 = p12.SquareDistanceTo(p22);
         if (d1121 < d1122 && d1121 < d1221 && d1121 < d1222)
         {
             common = p11;
@@ -316,7 +316,7 @@ internal static class BRepTestFillet2DCommands
 
         // Algo.
         var algo = new FilletApi();
-        Plane3D plane = hPlane.Pln();
+        Plane3D plane = hPlane.Plane;
         if (n == 5)
         {
             Edge e1 = ShapeCasts.Edge(E1);

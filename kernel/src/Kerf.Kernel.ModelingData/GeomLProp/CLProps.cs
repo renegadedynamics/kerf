@@ -19,7 +19,7 @@ namespace Kerf.Engine.Geometry.Properties;
 /// <see cref="CLProps2d"/> and <see cref="CLProps3d"/>, with identical bodies). A working object: its
 /// setters are public. The resolution is the linear tolerance used to decide that a vector is null.
 /// </remarks>
-public class CLProps
+internal class CLProps
 {
     private Curve3D? _curve;
     private double _u;
@@ -139,7 +139,7 @@ public class CLProps
                         return false;
                 }
 
-                if (v.SquareMagnitude() > tolSq)
+                if (v.SquareMagnitude > tolSq)
                 {
                     _significantFirstDerivativeOrder = order;
                     _tangentStatus = Defined;
@@ -264,8 +264,8 @@ public class CLProps
         const double THE_DIVISION_FACTOR = 1.0e-3;
         const double THE_MIN_STEP = 1.0e-7;
 
-        double usupremum = _curve!.LastParameter();
-        double uinfimum = _curve.FirstParameter();
+        double usupremum = _curve!.LastParameter;
+        double uinfimum = _curve.FirstParameter;
 
         double du;
         if ((usupremum >= RealLast()) || (uinfimum <= RealFirst()))

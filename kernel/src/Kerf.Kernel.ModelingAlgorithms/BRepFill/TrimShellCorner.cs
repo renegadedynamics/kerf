@@ -428,14 +428,14 @@ internal sealed class TrimShellCorner
 
             int faceIndex = (fit == 1) ? faceIndex1 : faceIndex2;
             Shape face = ds.Shape(faceIndex);
-            Orientation faceOri = face.Orientation();
-            face.Orientation(Forward);
+            Orientation faceOri = face.Orientation;
+            face.Orient(Forward);
 
             Explorer expE = new(face, ShapeType.Edge);
 
             if (bHasNewEdge)
             {
-                newEdge.Orientation(Forward);
+                newEdge.Orient(Forward);
 
                 // Refer to BrepFill_Sweep.cxx BuildEdge Construct an edge via an iso
                 Point3D p1, p2;
@@ -444,10 +444,10 @@ internal sealed class TrimShellCorner
                 p2 = Tool.Pnt(Exploration.LastVertex(ShapeCasts.Edge(newEdge)));
 
                 Edge eRef = ShapeCasts.Edge(fit == 1 ? e1 : e2);
-                p11 = p1.Distance(Tool.Pnt(Exploration.FirstVertex(eRef)));
-                p22 = p2.Distance(Tool.Pnt(Exploration.LastVertex(eRef)));
-                p12 = p1.Distance(Tool.Pnt(Exploration.LastVertex(eRef)));
-                p21 = p2.Distance(Tool.Pnt(Exploration.FirstVertex(eRef)));
+                p11 = p1.DistanceTo(Tool.Pnt(Exploration.FirstVertex(eRef)));
+                p22 = p2.DistanceTo(Tool.Pnt(Exploration.LastVertex(eRef)));
+                p12 = p1.DistanceTo(Tool.Pnt(Exploration.LastVertex(eRef)));
+                p21 = p2.DistanceTo(Tool.Pnt(Exploration.FirstVertex(eRef)));
 
                 if (p11 > p12 && p22 > p21)
                 {
@@ -523,12 +523,12 @@ internal sealed class TrimShellCorner
                         aparam1 = aparam2;
                         aparam2 = tmp;
                     }
-                    v1.Orientation(Forward);
-                    v2.Orientation(Reversed);
+                    v1.Orient(Forward);
+                    v2.Orient(Reversed);
                     bb.Add(newBoundE, v1);
                     bb.Add(newBoundE, v2);
                     bb.Range(newBoundE, aparam1, aparam2);
-                    newBoundE.Orientation(Forward);
+                    newBoundE.Orient(Forward);
 
                     orderedList.Append(newBoundE);
 
@@ -590,7 +590,7 @@ internal sealed class TrimShellCorner
 
             substitutor.InternalApply(face);
             Shape newFace = substitutor.InternalValue(face);
-            newFace.Orientation(faceOri);
+            newFace.Orient(faceOri);
             NCollection_List<Shape> atmpList = new();
             atmpList.Append(newFace);
             _histMap[face] = atmpList;
@@ -695,9 +695,9 @@ internal sealed class TrimShellCorner
         {
             int faceIndex = (fit == 0) ? faceIndex1 : faceIndex2;
             Face face = ShapeCasts.Face(ds.Shape(faceIndex));
-            Orientation faceOri = face.Orientation();
+            Orientation faceOri = face.Orientation;
             Face faceF = face;
-            faceF.Orientation(Forward);
+            faceF.Orient(Forward);
             Edge boundEdge = ShapeCasts.Edge(_bounds!.Value(index, _bounds.LowerCol() + fit));
             int boundEdgeIndex = ds.Index(boundEdge);
 
@@ -715,7 +715,7 @@ internal sealed class TrimShellCorner
 
                 if (!lst.IsEmpty())
                 {
-                    Shape edge = lst.First().Oriented(ue1.Orientation());
+                    Shape edge = lst.First().Oriented(ue1.Orientation);
 
                     if (!ue1.IsSame(edge))
                     {
@@ -731,7 +731,7 @@ internal sealed class TrimShellCorner
 
                 if (!lst.IsEmpty())
                 {
-                    Shape edge = lst.First().Oriented(ue2.Orientation());
+                    Shape edge = lst.First().Oriented(ue2.Orientation);
 
                     if (!ue2.IsSame(edge))
                     {
@@ -810,7 +810,7 @@ internal sealed class TrimShellCorner
 
             substitutor.InternalApply(face);
             Shape newFace = substitutor.InternalValue(face);
-            newFace.Orientation(faceOri);
+            newFace.Orient(faceOri);
             NCollection_List<Shape> atmpList = new();
             atmpList.Append(newFace);
             _histMap[face] = atmpList;
@@ -872,7 +872,7 @@ internal sealed class TrimShellCorner
                 bb.Add(oldComp, iter.Value());
             }
 
-            Edge firstEdge = FindEdgeCloseToBisectorPlane(firstVertex, oldComp, _axeOfBisPlane.Axis());
+            Edge firstEdge = FindEdgeCloseToBisectorPlane(firstVertex, oldComp, _axeOfBisPlane.Axis);
             if (firstEdge.IsNull)
             {
                 return false;
@@ -884,7 +884,7 @@ internal sealed class TrimShellCorner
                 iter.Initialize(comp);
                 bb.Add(oldComp, iter.Value());
             }
-            Edge lastEdge = FindEdgeCloseToBisectorPlane(lastVertex, oldComp, _axeOfBisPlane.Axis());
+            Edge lastEdge = FindEdgeCloseToBisectorPlane(lastVertex, oldComp, _axeOfBisPlane.Axis);
             if (lastEdge.IsNull)
             {
                 return false;
@@ -914,7 +914,7 @@ internal sealed class TrimShellCorner
                     vertex2 = (lastVertex.IsSame(v1)) ? v2 : v1;
 
                     NCollection_List<Shape> middleEdges = new();
-                    if (FindMiddleEdges(vertex1, vertex2, _axeOfBisPlane.Axis(), oldComp, middleEdges))
+                    if (FindMiddleEdges(vertex1, vertex2, _axeOfBisPlane.Axis, oldComp, middleEdges))
                     {
                         NCollection_List<Shape>.Iterator itl = new(middleEdges);
                         for (; itl.More(); itl.Next())
@@ -984,7 +984,7 @@ internal sealed class TrimShellCorner
             Edge firstEdge = ShapeCasts.Edge(explo.Current());
             Wire newWire = new LibraryMakeWire(firstEdge).InternalWire();
             b.Remove(oldComp2, firstEdge);
-            if (newWire.Closed())
+            if (newWire.IsClosed)
             {
                 wseq.Append(newWire);
                 continue;
@@ -1050,7 +1050,7 @@ internal sealed class TrimShellCorner
                     newWire = new LibraryMakeWire(newWire, ShapeCasts.Edge(edges[theind])).InternalWire();
                     b.Remove(oldComp2, edges[theind]);
                 }
-                if (newWire.Closed())
+                if (newWire.IsClosed)
                 {
                     break;
                 }
@@ -1084,7 +1084,7 @@ internal sealed class TrimShellCorner
                         continue;
                     }
 
-                    double angle = pln.Axis().Angle(_axeOfBisPlane.Axis());
+                    double angle = pln.Axis.AngleTo(_axeOfBisPlane.Axis);
                     if (angle > M_PI / 2)
                     {
                         angle = M_PI - angle;
@@ -1175,10 +1175,10 @@ internal sealed class TrimShellCorner
                 //
                 Edge newE1 = ShapeCasts.Edge(e1.EmptyCopied());
                 Exploration.Vertices(ShapeCasts.Edge(e1), out v1, out v2);
-                newE1.Orientation(Forward);
-                v1.Orientation(Forward);
+                newE1.Orient(Forward);
+                v1.Orient(Forward);
                 bb.Add(newE1, v1);
-                commonVertex.Orientation(Reversed);
+                commonVertex.Orient(Reversed);
                 bb.Add(newE1, commonVertex);
                 Tool.Range(ShapeCasts.Edge(e1), out f, out l);
                 bb.Range(newE1, f, apar1);
@@ -1186,8 +1186,8 @@ internal sealed class TrimShellCorner
                 //
                 Edge newE2 = ShapeCasts.Edge(e2.EmptyCopied());
                 Exploration.Vertices(ShapeCasts.Edge(e2), out v1, out v2);
-                newE2.Orientation(Forward);
-                commonVertex.Orientation(Forward);
+                newE2.Orient(Forward);
+                commonVertex.Orient(Forward);
                 bb.Add(newE2, commonVertex);
                 bb.Add(newE2, v2);
                 Tool.Range(ShapeCasts.Edge(e2), out f, out l);
@@ -1333,7 +1333,7 @@ internal sealed class TrimShellCorner
         Shape ue2 = uEdges.Value(index + 1, uEdges.LowerCol() + rank);
 
         Face aFace = face;
-        aFace.Orientation(Forward);
+        aFace.Orient(Forward);
         Edge e1 = new(), e2 = new();
         Explorer exp = new(aFace, ShapeType.Edge);
 
@@ -1373,7 +1373,7 @@ internal sealed class TrimShellCorner
         double tolerance = Tool.Tolerance(v);
         FaceSurfaceAdaptor bas = new(aFace, false);
 
-        if (pf.Distance(pu1) > bas.UResolution(tolerance))
+        if (pf.DistanceTo(pu1) > bas.UResolution(tolerance))
         {
             Edge atmpE = e1;
             e1 = e2;
@@ -1539,7 +1539,7 @@ internal sealed class TrimShellCorner
         bool bFirstFound = false;
         bool bLastFound = false;
 
-        if (ap.Distance(firstPoint) < tolerance1)
+        if (ap.DistanceTo(firstPoint) < tolerance1)
         {
             if (orientedList.IsEmpty())
             {
@@ -1547,7 +1547,7 @@ internal sealed class TrimShellCorner
             }
             bFirstFound = true;
         }
-        else if (ap.Distance(lastPoint) < tolerance1)
+        else if (ap.DistanceTo(lastPoint) < tolerance1)
         {
             if (orientedList.IsEmpty())
             {
@@ -1557,7 +1557,7 @@ internal sealed class TrimShellCorner
         }
         ap = curve.Value(l);
 
-        if (ap.Distance(lastPoint) < tolerance2)
+        if (ap.DistanceTo(lastPoint) < tolerance2)
         {
             if (orientedList.IsEmpty())
             {
@@ -1565,7 +1565,7 @@ internal sealed class TrimShellCorner
             }
             bLastFound = true;
         }
-        else if (ap.Distance(firstPoint) < tolerance2)
+        else if (ap.DistanceTo(firstPoint) < tolerance2)
         {
             if (orientedList.IsEmpty())
             {
@@ -1600,21 +1600,21 @@ internal sealed class TrimShellCorner
             curve = Tool.CurveOnSurface(e, face, out f, out l)!;
             ap = curve.Value(f);
 
-            if (ap.Distance(firstPoint) < tolerance1)
+            if (ap.DistanceTo(firstPoint) < tolerance1)
             {
                 bFirstFound = true;
             }
-            else if (ap.Distance(lastPoint) < tolerance1)
+            else if (ap.DistanceTo(lastPoint) < tolerance1)
             {
                 bLastFound = true;
             }
             ap = curve.Value(l);
 
-            if (ap.Distance(firstPoint) < tolerance2)
+            if (ap.DistanceTo(firstPoint) < tolerance2)
             {
                 bFirstFound = true;
             }
-            else if (ap.Distance(lastPoint) < tolerance2)
+            else if (ap.DistanceTo(lastPoint) < tolerance2)
             {
                 bLastFound = true;
             }
@@ -1769,7 +1769,7 @@ internal sealed class TrimShellCorner
         isOnUEdge = true;
 
         Face faceF = face;
-        faceF.Orientation(Forward);
+        faceF.Orient(Forward);
         Vertex prevVertex = new(), nextVertex = new();
         Compound compOfSecEdges = secEdges;
         NCollection_List<Shape> aListOfWireEdges = new();
@@ -1892,7 +1892,7 @@ internal sealed class TrimShellCorner
         isSectionFound = false;
         //
         Face faceF = face;
-        faceF.Orientation(Forward);
+        faceF.Orient(Forward);
         Vertex prevVertex, nextVertex = new();
         Compound compOfSecEdges = secEdges;
         NCollection_List<Shape> aListOfWireEdges = new();
@@ -2095,7 +2095,7 @@ internal sealed class TrimShellCorner
                         double vtol = bas.VResolution(tolerance);
                         tolerance = (utol > vtol) ? utol : vtol;
 
-                        if (p2.Distance(p3) < tolerance)
+                        if (p2.DistanceTo(p3) < tolerance)
                         {
                             blin = true;
                         }
@@ -2390,7 +2390,7 @@ internal sealed class TrimShellCorner
         double maxDeviation = 0;
         for (i = 1; i <= pnts.Length(); i++)
         {
-            double dist = plane.Distance(pnts[i]);
+            double dist = plane.DistanceTo(pnts[i]);
             if (dist > maxDeviation)
             {
                 maxDeviation = dist;
@@ -2405,7 +2405,7 @@ internal sealed class TrimShellCorner
                                           double param)
     {
         Edge F_Edge = edge;
-        F_Edge.Orientation(Forward);
+        F_Edge.Orient(Forward);
 
         Orientation orOfVertex;
         Vertex anotherVertex;
@@ -2435,7 +2435,7 @@ internal sealed class TrimShellCorner
 
         F_Edge.Free(true);
         bb.Remove(F_Edge, anotherVertex);
-        vertex.Orientation(orOfVertex);
+        vertex.Orient(orOfVertex);
         bb.Add(F_Edge, vertex);
     }
 
@@ -2484,7 +2484,7 @@ internal sealed class TrimShellCorner
                     Point3D lastPnt = bAcurve.Value(bAcurve.LastParameter());
                     Vector3D edgeVec = new(firstPnt, lastPnt);
                     Axis3D edgeAxis = new(firstPnt, new Direction3D(edgeVec));
-                    angle = edgeAxis.Direction().Angle(axis.Direction());
+                    angle = edgeAxis.Direction.AngleTo(axis.Direction);
                     if (angle > M_PI / 2)
                     {
                         angle = M_PI - angle;
@@ -2493,7 +2493,7 @@ internal sealed class TrimShellCorner
                 }
                 else
                 {
-                    angle = pln.Axis().Angle(axis);
+                    angle = pln.Axis.AngleTo(axis);
                     if (angle > M_PI / 2)
                     {
                         angle = M_PI - angle;

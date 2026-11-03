@@ -11,7 +11,7 @@ namespace Kerf.Engine.Geometry.Bvh;
 /// A box set that reaches its elements and boxes through an index array, so building the tree swaps indices only:
 /// faster to build with heavy elements, a little slower to select from.
 /// </summary>
-public class IndexedBoxSet<T, TVec, TData> : BoxSet<T, TVec, TData>
+internal class IndexedBoxSet<T, TVec, TData> : BoxSet<T, TVec, TData>
     where T : unmanaged, INumber<T>, IMinMaxValue<T>
     where TVec : unmanaged, INCollection_Vec<T, TVec>
 {
@@ -61,7 +61,7 @@ public class IndexedBoxSet<T, TVec, TData> : BoxSet<T, TVec, TData>
 }
 
 /// <summary>An indexed box set of integer elements (OCCT's default <c>DataType = int</c>).</summary>
-public class IndexedBoxSet<T, TVec> : IndexedBoxSet<T, TVec, int>
+internal class IndexedBoxSet<T, TVec> : IndexedBoxSet<T, TVec, int>
     where T : unmanaged, INumber<T>, IMinMaxValue<T>
     where TVec : unmanaged, INCollection_Vec<T, TVec>
 {

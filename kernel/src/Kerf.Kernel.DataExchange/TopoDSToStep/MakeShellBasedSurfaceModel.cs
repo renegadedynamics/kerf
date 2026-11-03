@@ -119,7 +119,7 @@ public sealed class MakeShellBasedSurfaceModel : ExportRoot
             if (stepB.Value() is not null)
             {
                 sbsmBoundary = new NCollection_HArray1<StepShell>(1, 1);
-                if (aShell.Closed())
+                if (aShell.IsClosed)
                 {
                     closedShell = stepB.Value() as StepClosedShell;
                     shellSelect.SetValue(closedShell);
@@ -183,7 +183,7 @@ public sealed class MakeShellBasedSurfaceModel : ExportRoot
         int nbshapes = 0;
         for (it.Initialize(aSolid); it.More(); it.Next())
         {
-            if (it.Value().ShapeType() == ShapeType.Shell)
+            if (it.Value().Type == ShapeType.Shell)
             {
                 nbshapes++;
             }
@@ -192,7 +192,7 @@ public sealed class MakeShellBasedSurfaceModel : ExportRoot
         using var ps = new ProgressScope(progress, null, nbshapes);
         for (it.Initialize(aSolid); it.More() && ps.More(); it.Next())
         {
-            if (it.Value().ShapeType() == ShapeType.Shell)
+            if (it.Value().Type == ShapeType.Shell)
             {
                 shell = ShapeCasts.Shell(it.Value());
                 var tool = new ExportTool(map, false, stepModel.InternalParameters.WriteSurfaceCurMode ? 1 : 0);

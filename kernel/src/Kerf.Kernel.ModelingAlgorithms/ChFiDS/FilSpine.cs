@@ -641,7 +641,7 @@ public sealed class FilSpine : Spine
                     pr[l] = pr[l].WithXY(_parandrad[l]);
                 }
 
-                pr[nbp] = pr[nbp].WithCoord(fin, pr[1].Y());
+                pr[nbp] = pr[nbp].WithCoord(fin, pr[1].Y);
                 Interpol curloi = new();
                 curloi.Set(pr, true);
                 list.Append(curloi);

@@ -65,11 +65,11 @@ public sealed class IntersectionToolFixer
             Curve3D? conS = Tool.Curve(edge, out Placement l, out _, out _);
             if (conS is not null)
             {
-                return conS.Value(param).Transformed(l.Transformation());
+                return conS.Value(param).Transformed(l.Transformation);
             }
         }
         Point2D p2d = crv2d.Value(param);
-        return surf.Adaptor3d()!.Value(p2d.X(), p2d.Y());
+        return surf.Adaptor3d()!.Value(p2d.X, p2d.Y);
     }
 
     /// <summary>
@@ -107,7 +107,7 @@ public sealed class IntersectionToolFixer
             p1 = c3d.Value(param);
             if (!l.IsIdentity)
             {
-                p1 = p1.Transformed(l.Transformation());
+                p1 = p1.Transformed(l.Transformation);
             }
         }
         else
@@ -117,15 +117,15 @@ public sealed class IntersectionToolFixer
             p1                 = sas.Value(c2d!.Value(param));
             if (!l.IsIdentity)
             {
-                p1 = p1.Transformed(l.Transformation());
+                p1 = p1.Transformed(l.Transformation);
             }
         }
         Point3D p2 = Tool.Pnt(vert);
-        if (p1.Distance(p2) > preci)
+        if (p1.DistanceTo(p2) > preci)
         {
             // return false;
             var b0 = new BrepBuilder();
-            b0.UpdateVertex(vert, p1.Distance(p2));
+            b0.UpdateVertex(vert, p1.DistanceTo(p2));
         }
 
         var transferParameters = new TransferParametersProjAnalysis();
@@ -144,10 +144,10 @@ public sealed class IntersectionToolFixer
         }
 
         var                sbe    = new BuildEdgeBuilder();
-        Orientation orient = edge.Orientation();
+        Orientation orient = edge.Orientation;
         var                B      = new BrepBuilder();
         Edge        wE     = edge;
-        wE.Orientation(Forward);
+        wE.Orient(Forward);
         Shape tmpShape = vert.Oriented(Reversed); // for porting
         newE1 = sbe.InternalCopyReplaceVertices(wE, sae.FirstVertex(wE), ShapeCasts.Vertex(tmpShape));
         sbe.CopyPCurves(newE1, wE);
@@ -161,8 +161,8 @@ public sealed class IntersectionToolFixer
         B.SameRange(newE2, false);
         B.SameParameter(newE2, false);
 
-        newE1.Orientation(orient);
-        newE2.Orientation(orient);
+        newE1.Orient(orient);
+        newE2.Orient(orient);
         if (orient == Reversed)
         {
             Edge tmp = newE2;
@@ -198,7 +198,7 @@ public sealed class IntersectionToolFixer
             {
                 if (crv is TrimmedCurve2D tc)
                 {
-                    if (tc.BasisCurve() is LineCurve2D)
+                    if (tc.BasisCurve is LineCurve2D)
                     {
                         var b0 = new BrepBuilder();
                         b0.Range(edge, Min(pend, cut), Max(pend, cut));
@@ -289,8 +289,8 @@ public sealed class IntersectionToolFixer
         {
             var    box    = new Box2d();
             var    gac    = new CurveAdaptor2D();
-            double first = c2d!.FirstParameter();
-            double last  = c2d.LastParameter();
+            double first = c2d!.FirstParameter;
+            double last  = c2d.LastParameter;
             if (c2d is BSplineCurve2D && (cf < first || cl > last))
             {
                 // pdn avoiding problems with segment in Bnd_Box
@@ -307,8 +307,8 @@ public sealed class IntersectionToolFixer
         {
             var    box    = new Box2d();
             var    gac    = new CurveAdaptor2D();
-            double first = c2d!.FirstParameter();
-            double last  = c2d.LastParameter();
+            double first = c2d!.FirstParameter;
+            double last  = c2d.LastParameter;
             if (c2d is BSplineCurve2D && (cf < first || cl > last))
             {
                 // pdn avoiding problems with segment in Bnd_Box
@@ -406,8 +406,8 @@ public sealed class IntersectionToolFixer
         {
             var    box    = new Box2d();
             var    gac    = new CurveAdaptor2D();
-            double first = c2d!.FirstParameter();
-            double last  = c2d.LastParameter();
+            double first = c2d!.FirstParameter;
+            double last  = c2d.LastParameter;
             if (c2d is BSplineCurve2D && (cf < first || cl > last))
             {
                 // pdn avoiding problems with segment in Bnd_Box
@@ -424,8 +424,8 @@ public sealed class IntersectionToolFixer
         {
             var    box    = new Box2d();
             var    gac    = new CurveAdaptor2D();
-            double first = c2d!.FirstParameter();
-            double last  = c2d.LastParameter();
+            double first = c2d!.FirstParameter;
+            double last  = c2d.LastParameter;
             if (c2d is BSplineCurve2D && (cf < first || cl > last))
             {
                 // pdn avoiding problems with segment in Bnd_Box
@@ -458,10 +458,10 @@ public sealed class IntersectionToolFixer
         Point3D        pv2F = Tool.Pnt(v2F);
         Vertex v2L  = sae.LastVertex(edge2);
         Point3D        pv2L = Tool.Pnt(v2L);
-        double        d11  = pv1F.Distance(pv2F);
-        double        d12  = pv1F.Distance(pv2L);
-        double        d21  = pv1L.Distance(pv2F);
-        double        d22  = pv1L.Distance(pv2L);
+        double        d11  = pv1F.DistanceTo(pv2F);
+        double        d12  = pv1F.DistanceTo(pv2L);
+        double        d21  = pv1L.DistanceTo(pv2F);
+        double        d22  = pv1L.DistanceTo(pv2L);
         if (d11 < d12 && d11 < d21 && d11 < d22)
         {
             double tolv = Max(Tool.Tolerance(v1F), Tool.Tolerance(v2F));
@@ -796,8 +796,8 @@ public sealed class IntersectionToolFixer
             {
                 var    box    = new Box2d();
                 var    gac    = new CurveAdaptor2D();
-                double first = c2d!.FirstParameter();
-                double last  = c2d.LastParameter();
+                double first = c2d!.FirstParameter;
+                double last  = c2d.LastParameter;
                 if (c2d is BSplineCurve2D && (cf < first || cl > last))
                 {
                     // pdn avoiding problems with segment in Bnd_Box
@@ -872,14 +872,14 @@ public sealed class IntersectionToolFixer
         Vertex v11       = sae.FirstVertex(edge1);
         Vertex v12       = sae.LastVertex(edge1);
         bool          needSplit = true;
-        if (pi1.Distance(pv1) < pi1.Distance(pv2))
+        if (pi1.DistanceTo(pv1) < pi1.DistanceTo(pv2))
         {
             if (v1.IsSame(v11) || v1.IsSame(v12))
             {
                 needSplit = false;
             }
             v    = v1;
-            tolV = Max((pi1.Distance(pv1) / 2) * 1.00001, Tool.Tolerance(v1));
+            tolV = Max((pi1.DistanceTo(pv1) / 2) * 1.00001, Tool.Tolerance(v1));
         }
         else
         {
@@ -888,7 +888,7 @@ public sealed class IntersectionToolFixer
                 needSplit = false;
             }
             v    = v2;
-            tolV = Max((pi1.Distance(pv2) / 2) * 1.00001, Tool.Tolerance(v2));
+            tolV = Max((pi1.DistanceTo(pv2) / 2) * 1.00001, Tool.Tolerance(v2));
         }
         if (needSplit || aTmpKey)
         {
@@ -1010,8 +1010,8 @@ public sealed class IntersectionToolFixer
                             Point3D        pvf1    = Tool.Pnt(vf1);
                             Vertex vl1     = sae.LastVertex(edge1);
                             Point3D        pvl1    = Tool.Pnt(vl1);
-                            double        dist1   = pi1.Distance(pvf1);
-                            double        dist2   = pi1.Distance(pvl1);
+                            double        dist1   = pi1.DistanceTo(pvf1);
+                            double        dist2   = pi1.DistanceTo(pvl1);
                             double        distmin = Min(dist1, dist2);
                             if (dist1 != dist2 && distmin < maxTolVert)
                             {
@@ -1045,8 +1045,8 @@ public sealed class IntersectionToolFixer
                             Point3D        pvf2    = Tool.Pnt(vf2);
                             Vertex vl2     = sae.LastVertex(edge2);
                             Point3D        pvl2    = Tool.Pnt(vl2);
-                            dist1                 = pi2.Distance(pvf2);
-                            dist2                 = pi2.Distance(pvl2);
+                            dist1                 = pi2.DistanceTo(pvf2);
+                            dist2                 = pi2.DistanceTo(pvl2);
                             distmin               = Min(dist1, dist2);
                             if (dist1 != dist2 && distmin < maxTolVert)
                             {
@@ -1094,8 +1094,8 @@ public sealed class IntersectionToolFixer
                             }
                             if (!modifE1 && !modifE2)
                             {
-                                var p0 = new Point3D((pi1.X() + pi2.X()) / 2, (pi1.Y() + pi2.Y()) / 2, (pi1.Z() + pi2.Z()) / 2);
-                                tolV = Max((pi1.Distance(pi2) / 2) * 1.00001, global::Kerf.Engine.Foundation.Precision.Confusion());
+                                var p0 = new Point3D((pi1.X + pi2.X) / 2, (pi1.Y + pi2.Y) / 2, (pi1.Z + pi2.Z) / 2);
+                                tolV = Max((pi1.DistanceTo(pi2) / 2) * 1.00001, global::Kerf.Engine.Foundation.Precision.Confusion());
                                 B.MakeVertex(ref v, p0, tolV);
                                 maxTolVert        = Max(maxTolVert, tolV);
                                 bool isEdgeSplit2 = SplitEdge1(sewd, face, num2, param2, v, tolV, boxes);
@@ -1170,7 +1170,7 @@ public sealed class IntersectionToolFixer
                             Point3D                     pnt22       = GetPointOnEdge(edge2, sas, c2, p22);
                             // next string commented by skl 29.12.2004 for OCC7624
                             // if( Pnt11.Distance(Pnt21)>myPreci || Pnt12.Distance(Pnt22)>myPreci ) continue;
-                            if (pnt11.Distance(pnt21) > maxTolVert || pnt12.Distance(pnt22) > maxTolVert)
+                            if (pnt11.DistanceTo(pnt21) > maxTolVert || pnt12.DistanceTo(pnt22) > maxTolVert)
                             {
                                 continue;
                             }
@@ -1179,11 +1179,11 @@ public sealed class IntersectionToolFixer
                             Point3D        pv1 = Tool.Pnt(v1);
                             Vertex v2  = sae.LastVertex(edge1);
                             Point3D        pv2 = Tool.Pnt(v2);
-                            double        dist1   = pnt11.Distance(pv1);
-                            double        dist2   = pnt12.Distance(pv1);
+                            double        dist1   = pnt11.DistanceTo(pv1);
+                            double        dist2   = pnt12.DistanceTo(pv1);
                             double        maxdist = Max(dist1, dist2);
                             double        pdist;
-                            if (edge1.Orientation() == Reversed)
+                            if (edge1.Orientation == Reversed)
                             {
                                 pdist = Max(Math.Abs(b1 - p11), Math.Abs(b1 - p12));
                             }
@@ -1197,10 +1197,10 @@ public sealed class IntersectionToolFixer
                                 newV        = v1;
                                 isModified1 = true;
                             }
-                            dist1   = pnt11.Distance(pv2);
-                            dist2   = pnt12.Distance(pv2);
+                            dist1   = pnt11.DistanceTo(pv2);
+                            dist2   = pnt12.DistanceTo(pv2);
                             maxdist = Max(dist1, dist2);
-                            if (edge1.Orientation() == Reversed)
+                            if (edge1.Orientation == Reversed)
                             {
                                 pdist = Max(Math.Abs(a1 - p11), Math.Abs(a1 - p12));
                             }
@@ -1258,10 +1258,10 @@ public sealed class IntersectionToolFixer
                             Point3D        pv12 = Tool.Pnt(v12);
                             Vertex v22  = sae.LastVertex(edge2);
                             Point3D        pv22 = Tool.Pnt(v22);
-                            dist1   = pnt21.Distance(pv12);
-                            dist2   = pnt22.Distance(pv12);
+                            dist1   = pnt21.DistanceTo(pv12);
+                            dist2   = pnt22.DistanceTo(pv12);
                             maxdist = Max(dist1, dist2);
-                            if (edge2.Orientation() == Reversed)
+                            if (edge2.Orientation == Reversed)
                             {
                                 pdist = Max(Math.Abs(b2 - p21), Math.Abs(b2 - p22));
                             }
@@ -1275,10 +1275,10 @@ public sealed class IntersectionToolFixer
                                 newV        = v12;
                                 isModified2 = true;
                             }
-                            dist1   = pnt21.Distance(pv22);
-                            dist2   = pnt22.Distance(pv22);
+                            dist1   = pnt21.DistanceTo(pv22);
+                            dist2   = pnt22.DistanceTo(pv22);
                             maxdist = Max(dist1, dist2);
-                            if (edge2.Orientation() == Reversed)
+                            if (edge2.Orientation == Reversed)
                             {
                                 pdist = Max(Math.Abs(a2 - p21), Math.Abs(a2 - p22));
                             }
@@ -1356,13 +1356,13 @@ public sealed class IntersectionToolFixer
                                 double param2 = (p21 + p22) / 2;
                                 Point3D pnt10  = GetPointOnEdge(edge1, sas, c1, param1);
                                 Point3D pnt20  = GetPointOnEdge(edge2, sas, c2, param2);
-                                var    p0     = new Point3D((pnt10.X() + pnt20.X()) / 2,
-                                                           (pnt10.Y() + pnt20.Y()) / 2,
-                                                           (pnt10.Z() + pnt20.Z()) / 2);
-                                dist1           = Max(pnt11.Distance(p0), pnt12.Distance(p0));
-                                dist2           = Max(pnt21.Distance(p0), pnt22.Distance(p0));
+                                var    p0     = new Point3D((pnt10.X + pnt20.X) / 2,
+                                                           (pnt10.Y + pnt20.Y) / 2,
+                                                           (pnt10.Z + pnt20.Z) / 2);
+                                dist1           = Max(pnt11.DistanceTo(p0), pnt12.DistanceTo(p0));
+                                dist2           = Max(pnt21.DistanceTo(p0), pnt22.DistanceTo(p0));
                                 double tolV     = Max(dist1, dist2);
-                                tolV            = Max(tolV, pnt10.Distance(pnt20)) * 1.00001;
+                                tolV            = Max(tolV, pnt10.DistanceTo(pnt20)) * 1.00001;
                                 bool fixSegment = true;
                                 if (tolV < maxTolVert)
                                 {
@@ -1385,15 +1385,15 @@ public sealed class IntersectionToolFixer
                                     //  segment is big and we have to split each intersecting edge
                                     //  on 3 edges --> middle edge - edge based on segment
                                     //  after we can remove edges made from segment
-                                    var p01 = new Point3D((pnt11.X() + pnt21.X()) / 2,
-                                                         (pnt11.Y() + pnt21.Y()) / 2,
-                                                         (pnt11.Z() + pnt21.Z()) / 2);
-                                    var p02 = new Point3D((pnt12.X() + pnt22.X()) / 2,
-                                                         (pnt12.Y() + pnt22.Y()) / 2,
-                                                         (pnt12.Z() + pnt22.Z()) / 2);
-                                    double tolV1 = Max(pnt11.Distance(p01), pnt21.Distance(p01));
+                                    var p01 = new Point3D((pnt11.X + pnt21.X) / 2,
+                                                         (pnt11.Y + pnt21.Y) / 2,
+                                                         (pnt11.Z + pnt21.Z) / 2);
+                                    var p02 = new Point3D((pnt12.X + pnt22.X) / 2,
+                                                         (pnt12.Y + pnt22.Y) / 2,
+                                                         (pnt12.Z + pnt22.Z) / 2);
+                                    double tolV1 = Max(pnt11.DistanceTo(p01), pnt21.DistanceTo(p01));
                                     tolV1        = Max(tolV1, global::Kerf.Engine.Foundation.Precision.Confusion()) * 1.00001;
-                                    double tolV2 = Max(pnt12.Distance(p02), pnt22.Distance(p02));
+                                    double tolV2 = Max(pnt12.DistanceTo(p02), pnt22.DistanceTo(p02));
                                     tolV2        = Max(tolV2, global::Kerf.Engine.Foundation.Precision.Confusion()) * 1.00001;
                                     if (tolV1 > maxTolVert || tolV2 > maxTolVert)
                                     {
@@ -1406,32 +1406,32 @@ public sealed class IntersectionToolFixer
                                     double newTolerance;
                                     // analysis fo P01
                                     newTolerance = Max(tolV1, Tool.Tolerance(v1));
-                                    if (p01.Distance(pv1) < newTolerance)
+                                    if (p01.DistanceTo(pv1) < newTolerance)
                                     {
                                         B.MakeVertex(ref newV1, Tool.Pnt(v1), newTolerance);
-                                        newV1.Orientation(v1.Orientation());
+                                        newV1.Orient(v1.Orientation);
                                         akey1++;
                                     }
                                     newTolerance = Max(tolV1, Tool.Tolerance(v2));
-                                    if (p01.Distance(pv2) < newTolerance)
+                                    if (p01.DistanceTo(pv2) < newTolerance)
                                     {
                                         B.MakeVertex(ref newV1, Tool.Pnt(v2), newTolerance);
-                                        newV1.Orientation(v2.Orientation());
+                                        newV1.Orient(v2.Orientation);
                                         akey1++;
                                     }
                                     // analysis fo P02
                                     newTolerance = Max(tolV2, Tool.Tolerance(v1));
-                                    if (p02.Distance(pv1) < newTolerance)
+                                    if (p02.DistanceTo(pv1) < newTolerance)
                                     {
                                         B.MakeVertex(ref newV2, Tool.Pnt(v1), newTolerance);
-                                        newV2.Orientation(v1.Orientation());
+                                        newV2.Orient(v1.Orientation);
                                         akey2++;
                                     }
                                     newTolerance = Max(tolV2, Tool.Tolerance(v2));
-                                    if (p02.Distance(pv2) < newTolerance)
+                                    if (p02.DistanceTo(pv2) < newTolerance)
                                     {
                                         B.MakeVertex(ref newV2, Tool.Pnt(v2), newTolerance);
-                                        newV2.Orientation(v2.Orientation());
+                                        newV2.Orient(v2.Orientation);
                                         akey2++;
                                     }
                                     if (akey1 > 1 || akey2 > 1)
@@ -1502,11 +1502,11 @@ public sealed class IntersectionToolFixer
                                     akey1 = 0;
                                     akey2 = 0;
 
-                                    if (p01.Distance(pv12) < tolV1)
+                                    if (p01.DistanceTo(pv12) < tolV1)
                                     {
-                                        tolV1 += p01.Distance(pv12);
+                                        tolV1 += p01.DistanceTo(pv12);
                                         B.UpdateVertex(newV1, tolV1);
-                                        if (v12.Orientation() == newV1.Orientation())
+                                        if (v12.Orientation == newV1.Orientation)
                                         {
                                             _context.Replace(v12, newV1);
                                             v12 = newV1;
@@ -1524,11 +1524,11 @@ public sealed class IntersectionToolFixer
                                         edge2 = newE;
                                         akey1 = 1;
                                     }
-                                    if (p01.Distance(pv22) < tolV1)
+                                    if (p01.DistanceTo(pv22) < tolV1)
                                     {
-                                        tolV1 += p01.Distance(pv22);
+                                        tolV1 += p01.DistanceTo(pv22);
                                         B.UpdateVertex(newV1, tolV1);
-                                        if (v22.Orientation() == newV1.Orientation())
+                                        if (v22.Orientation == newV1.Orientation)
                                         {
                                             _context.Replace(v22, newV1);
                                             v22 = newV1;
@@ -1546,11 +1546,11 @@ public sealed class IntersectionToolFixer
                                         edge2 = newE;
                                         akey1 = 2;
                                     }
-                                    if (p02.Distance(pv12) < tolV2)
+                                    if (p02.DistanceTo(pv12) < tolV2)
                                     {
-                                        tolV2 += p02.Distance(pv12);
+                                        tolV2 += p02.DistanceTo(pv12);
                                         B.UpdateVertex(newV2, tolV2);
-                                        if (v12.Orientation() == newV2.Orientation())
+                                        if (v12.Orientation == newV2.Orientation)
                                         {
                                             _context.Replace(v12, newV2);
                                             v12 = newV2;
@@ -1568,11 +1568,11 @@ public sealed class IntersectionToolFixer
                                         edge2 = newE;
                                         akey2 = 1;
                                     }
-                                    if (p02.Distance(pv22) < tolV2)
+                                    if (p02.DistanceTo(pv22) < tolV2)
                                     {
-                                        tolV2 += p02.Distance(pv22);
+                                        tolV2 += p02.DistanceTo(pv22);
                                         B.UpdateVertex(newV2, tolV2);
-                                        if (v22.Orientation() == newV2.Orientation())
+                                        if (v22.Orientation == newV2.Orientation)
                                         {
                                             _context.Replace(v22, newV2);
                                             v22 = newV2;
@@ -1671,13 +1671,13 @@ public sealed class IntersectionToolFixer
         // TopoDS_Shape S = context->Apply(face);
         // TopoDS_Shape SF = TopoDS::Face(S);
         Shape       sf          = face;
-        Orientation ori         = face.Orientation();
+        Orientation ori         = face.Orientation;
         var                seqWir      = new NCollection_Sequence<Shape>();
         var                seqNMShapes = new NCollection_Sequence<Shape>();
         for (var iter = new Iterator(sf, false); iter.More(); iter.Next())
         {
-            if (iter.Value().ShapeType() != ShapeType.Wire
-                || (iter.Value().Orientation() != Forward && iter.Value().Orientation() != Reversed))
+            if (iter.Value().Type != ShapeType.Wire
+                || (iter.Value().Orientation != Forward && iter.Value().Orientation != Reversed))
             {
                 seqNMShapes.Append(iter.Value());
                 continue;
@@ -1790,12 +1790,12 @@ public sealed class IntersectionToolFixer
                                     double        param2 = ip.ParamOnSecond();
                                     Point3D        pi1    = GetPointOnEdge(edge1, sas, c1, param1);
                                     Point3D        pi2    = GetPointOnEdge(edge2, sas, c2, param2);
-                                    var           p0     = new Point3D((pi1.X() + pi2.X()) / 2,
-                                                                      (pi1.Y() + pi2.Y()) / 2,
-                                                                      (pi1.Z() + pi2.Z()) / 2);
+                                    var           p0     = new Point3D((pi1.X + pi2.X) / 2,
+                                                                      (pi1.Y + pi2.Y) / 2,
+                                                                      (pi1.Z + pi2.Z) / 2);
                                     var           B      = new BrepBuilder();
                                     Vertex v      = new();
-                                    double tolV = Max((pi1.Distance(pi2) / 2) * 1.00001, global::Kerf.Engine.Foundation.Precision.Confusion());
+                                    double tolV = Max((pi1.DistanceTo(pi2) / 2) * 1.00001, global::Kerf.Engine.Foundation.Precision.Confusion());
                                     B.MakeVertex(ref v, p0, tolV);
                                     maxTolVert        = Max(maxTolVert, tolV);
                                     bool isSplitEdge2 = SplitEdge1(sewd2, face, num2, param2, v, tolV, boxes2);
@@ -1874,11 +1874,11 @@ public sealed class IntersectionToolFixer
                                     Point3D        pv1     = Tool.Pnt(v1);
                                     Vertex v2      = sae.LastVertex(edge1);
                                     Point3D        pv2     = Tool.Pnt(v2);
-                                    double        dist1   = pnt11.Distance(pv1);
-                                    double        dist2   = pnt12.Distance(pv1);
+                                    double        dist1   = pnt11.DistanceTo(pv1);
+                                    double        dist2   = pnt12.DistanceTo(pv1);
                                     double        maxdist = Max(dist1, dist2);
                                     double        pdist;
-                                    if (edge1.Orientation() == Reversed)
+                                    if (edge1.Orientation == Reversed)
                                     {
                                         pdist = Max(Math.Abs(b1 - p11), Math.Abs(b1 - p12));
                                     }
@@ -1892,10 +1892,10 @@ public sealed class IntersectionToolFixer
                                         newV        = v1;
                                         isModified1 = true;
                                     }
-                                    dist1   = pnt11.Distance(pv2);
-                                    dist2   = pnt12.Distance(pv2);
+                                    dist1   = pnt11.DistanceTo(pv2);
+                                    dist2   = pnt12.DistanceTo(pv2);
                                     maxdist = Max(dist1, dist2);
-                                    if (edge1.Orientation() == Reversed)
+                                    if (edge1.Orientation == Reversed)
                                     {
                                         pdist = Max(Math.Abs(a1 - p11), Math.Abs(a1 - p12));
                                     }
@@ -1951,10 +1951,10 @@ public sealed class IntersectionToolFixer
                                     Point3D        pv12 = Tool.Pnt(v12);
                                     Vertex v22  = sae.LastVertex(edge2);
                                     Point3D        pv22 = Tool.Pnt(v22);
-                                    dist1   = pnt21.Distance(pv12);
-                                    dist2   = pnt22.Distance(pv12);
+                                    dist1   = pnt21.DistanceTo(pv12);
+                                    dist2   = pnt22.DistanceTo(pv12);
                                     maxdist = Max(dist1, dist2);
-                                    if (edge2.Orientation() == Reversed)
+                                    if (edge2.Orientation == Reversed)
                                     {
                                         pdist = Max(Math.Abs(b2 - p21), Math.Abs(b2 - p22));
                                     }
@@ -1968,10 +1968,10 @@ public sealed class IntersectionToolFixer
                                         newV        = v12;
                                         isModified2 = true;
                                     }
-                                    dist1   = pnt21.Distance(pv22);
-                                    dist2   = pnt22.Distance(pv22);
+                                    dist1   = pnt21.DistanceTo(pv22);
+                                    dist2   = pnt22.DistanceTo(pv22);
                                     maxdist = Max(dist1, dist2);
-                                    if (edge2.Orientation() == Reversed)
+                                    if (edge2.Orientation == Reversed)
                                     {
                                         pdist = Max(Math.Abs(a2 - p21), Math.Abs(a2 - p22));
                                     }
@@ -2038,15 +2038,15 @@ public sealed class IntersectionToolFixer
                                         {
                                             // segment is big and we have to split each intersecting edge
                                             // on 3 edges --> middle edge - edge based on segment
-                                            var p01 = new Point3D((pnt11.X() + pnt21.X()) / 2,
-                                                                 (pnt11.Y() + pnt21.Y()) / 2,
-                                                                 (pnt11.Z() + pnt21.Z()) / 2);
-                                            var p02 = new Point3D((pnt12.X() + pnt22.X()) / 2,
-                                                                 (pnt12.Y() + pnt22.Y()) / 2,
-                                                                 (pnt12.Z() + pnt22.Z()) / 2);
-                                            double tolV1 = Max(pnt11.Distance(p01), pnt21.Distance(p01));
+                                            var p01 = new Point3D((pnt11.X + pnt21.X) / 2,
+                                                                 (pnt11.Y + pnt21.Y) / 2,
+                                                                 (pnt11.Z + pnt21.Z) / 2);
+                                            var p02 = new Point3D((pnt12.X + pnt22.X) / 2,
+                                                                 (pnt12.Y + pnt22.Y) / 2,
+                                                                 (pnt12.Z + pnt22.Z) / 2);
+                                            double tolV1 = Max(pnt11.DistanceTo(p01), pnt21.DistanceTo(p01));
                                             tolV1        = Max(tolV1, global::Kerf.Engine.Foundation.Precision.Confusion()) * 1.00001;
-                                            double tolV2 = Max(pnt12.Distance(p02), pnt22.Distance(p02));
+                                            double tolV2 = Max(pnt12.DistanceTo(p02), pnt22.DistanceTo(p02));
                                             tolV2        = Max(tolV2, global::Kerf.Engine.Foundation.Precision.Confusion()) * 1.00001;
                                             if (tolV1 > maxTolVert || tolV2 > maxTolVert)
                                             {
@@ -2059,7 +2059,7 @@ public sealed class IntersectionToolFixer
                                             // split edge1
                                             int akey1 = 0, akey2 = 0;
                                             // analysis fo P01
-                                            if (p01.Distance(pv1) < Max(tolV1, Tool.Tolerance(v1)))
+                                            if (p01.DistanceTo(pv1) < Max(tolV1, Tool.Tolerance(v1)))
                                             {
                                                 newV1 = v1;
                                                 if (tolV1 > Tool.Tolerance(v1))
@@ -2068,7 +2068,7 @@ public sealed class IntersectionToolFixer
                                                 }
                                                 akey1++;
                                             }
-                                            if (p01.Distance(pv2) < Max(tolV1, Tool.Tolerance(v2)))
+                                            if (p01.DistanceTo(pv2) < Max(tolV1, Tool.Tolerance(v2)))
                                             {
                                                 newV1 = v2;
                                                 if (tolV1 > Tool.Tolerance(v2))
@@ -2078,7 +2078,7 @@ public sealed class IntersectionToolFixer
                                                 akey1++;
                                             }
                                             // analysis fo P02
-                                            if (p02.Distance(pv1) < Max(tolV2, Tool.Tolerance(v1)))
+                                            if (p02.DistanceTo(pv1) < Max(tolV2, Tool.Tolerance(v1)))
                                             {
                                                 newV2 = v1;
                                                 if (tolV2 > Tool.Tolerance(v1))
@@ -2087,7 +2087,7 @@ public sealed class IntersectionToolFixer
                                                 }
                                                 akey2++;
                                             }
-                                            if (p02.Distance(pv2) < Max(tolV2, Tool.Tolerance(v2)))
+                                            if (p02.DistanceTo(pv2) < Max(tolV2, Tool.Tolerance(v2)))
                                             {
                                                 newV2 = v2;
                                                 if (tolV2 > Tool.Tolerance(v2))
@@ -2152,9 +2152,9 @@ public sealed class IntersectionToolFixer
                                             var sbe = new BuildEdgeBuilder();
                                             akey1 = 0;
                                             akey2 = 0;
-                                            if (p01.Distance(pv12) < tolV1)
+                                            if (p01.DistanceTo(pv12) < tolV1)
                                             {
-                                                tolV1 += p01.Distance(pv12);
+                                                tolV1 += p01.DistanceTo(pv12);
                                                 B.UpdateVertex(newV1, tolV1);
                                                 v12              = newV1;
                                                 Edge newE = sbe.InternalCopyReplaceVertices(edge2, newV1, v22);
@@ -2164,9 +2164,9 @@ public sealed class IntersectionToolFixer
                                                 edge2 = newE;
                                                 akey1 = 1;
                                             }
-                                            if (p01.Distance(pv22) < tolV1)
+                                            if (p01.DistanceTo(pv22) < tolV1)
                                             {
-                                                tolV1 += p01.Distance(pv22);
+                                                tolV1 += p01.DistanceTo(pv22);
                                                 B.UpdateVertex(newV1, tolV1);
                                                 v22              = newV1;
                                                 Edge newE = sbe.InternalCopyReplaceVertices(edge2, v12, newV1);
@@ -2176,9 +2176,9 @@ public sealed class IntersectionToolFixer
                                                 edge2 = newE;
                                                 akey1 = 2;
                                             }
-                                            if (p02.Distance(pv12) < tolV2)
+                                            if (p02.DistanceTo(pv12) < tolV2)
                                             {
-                                                tolV2 += p02.Distance(pv12);
+                                                tolV2 += p02.DistanceTo(pv12);
                                                 B.UpdateVertex(newV2, tolV2);
                                                 v12              = newV2;
                                                 Edge newE = sbe.InternalCopyReplaceVertices(edge2, newV2, v22);
@@ -2188,9 +2188,9 @@ public sealed class IntersectionToolFixer
                                                 edge2 = newE;
                                                 akey2 = 1;
                                             }
-                                            if (p02.Distance(pv22) < tolV2)
+                                            if (p02.DistanceTo(pv22) < tolV2)
                                             {
-                                                tolV2 += p02.Distance(pv22);
+                                                tolV2 += p02.DistanceTo(pv22);
                                                 B.UpdateVertex(newV2, tolV2);
                                                 v22              = newV2;
                                                 Edge newE = sbe.InternalCopyReplaceVertices(edge2, v12, newV2);
@@ -2252,17 +2252,17 @@ public sealed class IntersectionToolFixer
                                         else
                                         {
                                             // split each intersecting edge on two edges
-                                            var p0 = new Point3D((pnt11.X() + pnt12.X()) / 2,
-                                                                (pnt11.Y() + pnt12.Y()) / 2,
-                                                                (pnt11.Z() + pnt12.Z()) / 2);
+                                            var p0 = new Point3D((pnt11.X + pnt12.X) / 2,
+                                                                (pnt11.Y + pnt12.Y) / 2,
+                                                                (pnt11.Z + pnt12.Z) / 2);
                                             double param1 = (p11 + p12) / 2;
                                             double param2 = (p21 + p22) / 2;
                                             Point3D pnt10  = GetPointOnEdge(edge1, sas, c1, param1);
                                             Point3D pnt20  = GetPointOnEdge(edge2, sas, c2, param2);
-                                            dist1         = Max(pnt11.Distance(p0), pnt12.Distance(pnt10));
-                                            dist2         = Max(pnt21.Distance(p0), pnt22.Distance(pnt10));
+                                            dist1         = Max(pnt11.DistanceTo(p0), pnt12.DistanceTo(pnt10));
+                                            dist2         = Max(pnt21.DistanceTo(p0), pnt22.DistanceTo(pnt10));
                                             double tolV   = Max(dist1, dist2);
-                                            tolV          = Max(tolV, pnt10.Distance(pnt20)) * 1.00001;
+                                            tolV          = Max(tolV, pnt10.DistanceTo(pnt20)) * 1.00001;
                                             B.MakeVertex(ref newV, pnt10, tolV);
                                             maxTolVert   = Max(maxTolVert, tolV);
                                             hasModifWire = true;
@@ -2312,7 +2312,7 @@ public sealed class IntersectionToolFixer
             // update face
             Shape emptyCopied = face.EmptyCopied();
             Face  newface     = ShapeCasts.Face(emptyCopied);
-            newface.Orientation(Forward);
+            newface.Orient(Forward);
             var B = new BrepBuilder();
             int i;
             for (i = 1; i <= seqWir.Length(); i++)
@@ -2325,7 +2325,7 @@ public sealed class IntersectionToolFixer
                 Shape nms = seqNMShapes.Value(i);
                 B.Add(newface, nms);
             }
-            newface.Orientation(ori);
+            newface.Orient(ori);
             _context.Replace(face, newface);
             face = newface;
         }

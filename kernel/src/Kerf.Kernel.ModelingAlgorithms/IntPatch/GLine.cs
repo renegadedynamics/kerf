@@ -39,7 +39,7 @@ public class GLine : PatchLine
         _par1 = 0.0;
         _par2 = 0.0;
         _typ = PatchLineType.Lin;
-        _pos = new Plane3D(l.Location(), l.Direction()).Position().Ax2();
+        _pos = new Plane3D(l.Location, l.Direction).Position.Frame;
     }
 
     /// <summary>Creates a line as intersection line when the transitions are touch.</summary>
@@ -49,7 +49,7 @@ public class GLine : PatchLine
         _par1 = 0.0;
         _par2 = 0.0;
         _typ = PatchLineType.Lin;
-        _pos = new Plane3D(l.Location(), l.Direction()).Position().Ax2();
+        _pos = new Plane3D(l.Location, l.Direction).Position.Frame;
     }
 
     /// <summary>Creates a line as intersection line when the transitions are undecided.</summary>
@@ -59,15 +59,15 @@ public class GLine : PatchLine
         _par1 = 0.0;
         _par2 = 0.0;
         _typ = PatchLineType.Lin;
-        _pos = new Plane3D(l.Location(), l.Direction()).Position().Ax2();
+        _pos = new Plane3D(l.Location, l.Direction).Position.Frame;
     }
 
     /// <summary>Creates a circle as intersection line when the transitions are in or out.</summary>
     public GLine(in Circle3D c, bool tang, WalkingTypeTrans trans1, WalkingTypeTrans trans2)
         : base(tang, trans1, trans2)
     {
-        _pos = c.Position();
-        _par1 = c.Radius();
+        _pos = c.Position;
+        _par1 = c.Radius;
         _par2 = 0.0;
         _typ = PatchLineType.Circle;
     }
@@ -76,8 +76,8 @@ public class GLine : PatchLine
     public GLine(in Circle3D c, bool tang, WalkingSituation situ1, WalkingSituation situ2)
         : base(tang, situ1, situ2)
     {
-        _pos = c.Position();
-        _par1 = c.Radius();
+        _pos = c.Position;
+        _par1 = c.Radius;
         _par2 = 0.0;
         _typ = PatchLineType.Circle;
     }
@@ -86,8 +86,8 @@ public class GLine : PatchLine
     public GLine(in Circle3D c, bool tang)
         : base(tang)
     {
-        _pos = c.Position();
-        _par1 = c.Radius();
+        _pos = c.Position;
+        _par1 = c.Radius;
         _par2 = 0.0;
         _typ = PatchLineType.Circle;
     }
@@ -96,9 +96,9 @@ public class GLine : PatchLine
     public GLine(in Ellipse3D e, bool tang, WalkingTypeTrans trans1, WalkingTypeTrans trans2)
         : base(tang, trans1, trans2)
     {
-        _pos = e.Position();
-        _par1 = e.MajorRadius();
-        _par2 = e.MinorRadius();
+        _pos = e.Position;
+        _par1 = e.MajorRadius;
+        _par2 = e.MinorRadius;
         _typ = PatchLineType.Ellipse;
     }
 
@@ -106,9 +106,9 @@ public class GLine : PatchLine
     public GLine(in Ellipse3D e, bool tang, WalkingSituation situ1, WalkingSituation situ2)
         : base(tang, situ1, situ2)
     {
-        _pos = e.Position();
-        _par1 = e.MajorRadius();
-        _par2 = e.MinorRadius();
+        _pos = e.Position;
+        _par1 = e.MajorRadius;
+        _par2 = e.MinorRadius;
         _typ = PatchLineType.Ellipse;
     }
 
@@ -116,9 +116,9 @@ public class GLine : PatchLine
     public GLine(in Ellipse3D e, bool tang)
         : base(tang)
     {
-        _pos = e.Position();
-        _par1 = e.MajorRadius();
-        _par2 = e.MinorRadius();
+        _pos = e.Position;
+        _par1 = e.MajorRadius;
+        _par2 = e.MinorRadius;
         _typ = PatchLineType.Ellipse;
     }
 
@@ -126,8 +126,8 @@ public class GLine : PatchLine
     public GLine(in Parabola3D p, bool tang, WalkingTypeTrans trans1, WalkingTypeTrans trans2)
         : base(tang, trans1, trans2)
     {
-        _pos = p.Position();
-        _par1 = p.Focal();
+        _pos = p.Position;
+        _par1 = p.Focal;
         _par2 = 0.0;
         _typ = PatchLineType.Parabola;
     }
@@ -136,8 +136,8 @@ public class GLine : PatchLine
     public GLine(in Parabola3D p, bool tang, WalkingSituation situ1, WalkingSituation situ2)
         : base(tang, situ1, situ2)
     {
-        _pos = p.Position();
-        _par1 = p.Focal();
+        _pos = p.Position;
+        _par1 = p.Focal;
         _par2 = 0.0;
         _typ = PatchLineType.Parabola;
     }
@@ -146,8 +146,8 @@ public class GLine : PatchLine
     public GLine(in Parabola3D p, bool tang)
         : base(tang)
     {
-        _pos = p.Position();
-        _par1 = p.Focal();
+        _pos = p.Position;
+        _par1 = p.Focal;
         _par2 = 0.0;
         _typ = PatchLineType.Parabola;
     }
@@ -156,9 +156,9 @@ public class GLine : PatchLine
     public GLine(in Hyperbola3D h, bool tang, WalkingTypeTrans trans1, WalkingTypeTrans trans2)
         : base(tang, trans1, trans2)
     {
-        _pos = h.Position();
-        _par1 = h.MajorRadius();
-        _par2 = h.MinorRadius();
+        _pos = h.Position;
+        _par1 = h.MajorRadius;
+        _par2 = h.MinorRadius;
         _typ = PatchLineType.Hyperbola;
     }
 
@@ -166,9 +166,9 @@ public class GLine : PatchLine
     public GLine(in Hyperbola3D h, bool tang, WalkingSituation situ1, WalkingSituation situ2)
         : base(tang, situ1, situ2)
     {
-        _pos = h.Position();
-        _par1 = h.MajorRadius();
-        _par2 = h.MinorRadius();
+        _pos = h.Position;
+        _par1 = h.MajorRadius;
+        _par2 = h.MinorRadius;
         _typ = PatchLineType.Hyperbola;
     }
 
@@ -176,9 +176,9 @@ public class GLine : PatchLine
     public GLine(in Hyperbola3D h, bool tang)
         : base(tang)
     {
-        _pos = h.Position();
-        _par1 = h.MajorRadius();
-        _par2 = h.MinorRadius();
+        _pos = h.Position;
+        _par1 = h.MajorRadius;
+        _par2 = h.MinorRadius;
         _typ = PatchLineType.Hyperbola;
     }
 
@@ -262,7 +262,7 @@ public class GLine : PatchLine
         {
             throw new DomainErrorException();
         }
-        return new Line3D(_pos.Axis());
+        return new Line3D(_pos.Axis);
     }
 
     /// <summary>The circle, when the type is IntPatch_Circle; throws Standard_DomainError otherwise.</summary>

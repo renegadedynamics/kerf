@@ -99,9 +99,9 @@ public class BRepMeshFaceMeshingTests
             {
                 Point3D p = aT.Node(i);
                 Point2D uv = aT.UVNode(i);
-                aBuilder.Append(BitConverter.DoubleToInt64Bits(p.X())).Append(BitConverter.DoubleToInt64Bits(p.Y()))
-                        .Append(BitConverter.DoubleToInt64Bits(p.Z())).Append(BitConverter.DoubleToInt64Bits(uv.X()))
-                        .Append(BitConverter.DoubleToInt64Bits(uv.Y())).Append(';');
+                aBuilder.Append(BitConverter.DoubleToInt64Bits(p.X)).Append(BitConverter.DoubleToInt64Bits(p.Y))
+                        .Append(BitConverter.DoubleToInt64Bits(p.Z)).Append(BitConverter.DoubleToInt64Bits(uv.X))
+                        .Append(BitConverter.DoubleToInt64Bits(uv.Y)).Append(';');
             }
             for (int i = 1; i <= aT.TriangleCount; i++)
             {

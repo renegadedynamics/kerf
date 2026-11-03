@@ -33,7 +33,7 @@ public class HelixGeom_ToolsTests
         Assert.True(aMaxError <= myTolerance);
 
         // Test curve properties
-        Assert.True(aBSpline.Degree() > 0);
+        Assert.True(aBSpline.Degree > 0);
         Assert.True(aBSpline.PoleCount > 0);
     }
 
@@ -69,12 +69,12 @@ public class HelixGeom_ToolsTests
             Point3D aOrigPnt = aHelix.Value(aParam);
 
             // Map parameter to B-spline parameter space
-            double aBSplineParam = aBSpline.FirstParameter()
-                                   + i * (aBSpline.LastParameter() - aBSpline.FirstParameter()) / aNbSamples;
+            double aBSplineParam = aBSpline.FirstParameter
+                                   + i * (aBSpline.LastParameter - aBSpline.FirstParameter) / aNbSamples;
 
             aBSpline.D0(aBSplineParam, out Point3D aApproxPnt);
 
-            double aDistance = aOrigPnt.Distance(aApproxPnt);
+            double aDistance = aOrigPnt.DistanceTo(aApproxPnt);
             Assert.True(aDistance <= aMaxError * 2); // Allow some margin
         }
     }
@@ -103,6 +103,6 @@ public class HelixGeom_ToolsTests
         Assert.NotNull(aBSplineC2);
 
         // C2 curve should generally have higher degree
-        Assert.True(aBSplineC2.Degree() >= aBSplineC0.Degree());
+        Assert.True(aBSplineC2.Degree >= aBSplineC0.Degree);
     }
 }

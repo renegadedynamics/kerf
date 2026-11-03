@@ -282,9 +282,9 @@ public class BSplSLib_SanityTest
             for (int c = 1; c <= aMin + 1; c++)
             {
                 Point3D aP = aPoles[r, c];
-                Assert.Equal(aP.X(), anArray[r, (c - 1) * aDim + 1]);
-                Assert.Equal(aP.Y(), anArray[r, (c - 1) * aDim + 2]);
-                Assert.Equal(aP.Z(), anArray[r, (c - 1) * aDim + 3]);
+                Assert.Equal(aP.X, anArray[r, (c - 1) * aDim + 1]);
+                Assert.Equal(aP.Y, anArray[r, (c - 1) * aDim + 2]);
+                Assert.Equal(aP.Z, anArray[r, (c - 1) * aDim + 3]);
                 if (aWeights != null)
                 {
                     Assert.Equal(aWeights[r, c], anArray[r, (c - 1) * aDim + 4]);
@@ -720,7 +720,7 @@ public class BSplSLib_SanityTest
                             s.VDegree, s.Rational, s.Rational, s.UPeriodic, s.VPeriodic, out Point3D P);
                 global::Kerf.Engine.Geometry.Splines.SurfaceBSplSLib.D0(u + 0.5 * aUTol, v + 0.5 * aVTol, 0, 0, s.Poles, s.Weights, s.UKnots, s.VKnots, s.UMults,
                             s.VMults, s.UDegree, s.VDegree, s.Rational, s.Rational, s.UPeriodic, s.VPeriodic, out Point3D Q);
-                Assert.True(P.Distance(Q) < 1e-3);
+                Assert.True(P.DistanceTo(Q) < 1e-3);
             }
         }
     }

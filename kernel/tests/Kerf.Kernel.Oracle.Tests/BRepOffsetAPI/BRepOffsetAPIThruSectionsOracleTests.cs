@@ -338,7 +338,7 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
             aP.SetMutableInput(theO.Mutable);
             foreach (int k in theSections)
             {
-                if (thePIn[k].ShapeType() == ShapeType.Vertex)
+                if (thePIn[k].Type == ShapeType.Vertex)
                 {
                     aP.AddVertex(ShapeCasts.Vertex(thePIn[k]));
                 }
@@ -400,7 +400,7 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
 
         N.TopoDS_Shape aNRes = aN.Shape();
         Shape aPRes = aP.Shape();
-        mySolids += aPRes.ShapeType() == ShapeType.Solid ? 1 : 0;
+        mySolids += aPRes.Type == ShapeType.Solid ? 1 : 0;
         if (!CompareShapes(aWhat + " result", aNRes, aPRes, true))
         {
             return;
@@ -431,7 +431,7 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
             {
                 N.TopoDS_Shape aNS = aNInMap.FindKey(i);
                 Shape aPS = aPInMap[i - 1];
-                if (aPS.ShapeType() != ShapeType.Edge && aPS.ShapeType() != ShapeType.Vertex)
+                if (aPS.Type != ShapeType.Edge && aPS.Type != ShapeType.Vertex)
                 {
                     continue;
                 }
@@ -454,7 +454,7 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
                 }
                 aNH.Add($"{k}.{i}:{aNG}");
                 aPH.Add($"{k}.{i}:{(aNG.StartsWith(aPG, StringComparison.Ordinal) ? aNG : aPG)}");
-                if (aPS.ShapeType() == ShapeType.Edge)
+                if (aPS.Type == ShapeType.Edge)
                 {
                     aNH.Add($"{k}.{i}f:{aNResMap.FindIndex(aN.GeneratedFace(aNS))}");
                     aPH.Add($"{k}.{i}f:{(aPResMap.IndexOf(aP.GeneratedFace(aPS)) + 1)}");
@@ -545,7 +545,7 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
     }
 
     private static Point3D OnPlane(in Frame3D theAx, double theU, double theV) =>
-        theAx.Location().Translated(new Vector3D(theAx.XDirection()) * theU + new Vector3D(theAx.YDirection()) * theV);
+        theAx.Location.Translated(new Vector3D(theAx.XDirection) * theU + new Vector3D(theAx.YDirection) * theV);
 
     private static Wire Polyline(bool theClosed, params Point3D[] thePoints)
     {
@@ -607,14 +607,14 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
                 for (int i = 0; i < 4; i++)
                 {
                     (double x, double y, double a) = aCorners[i];
-                    Frame3D aCAx = new(OnPlane(theAx, x, y), theAx.Direction(), theAx.XDirection());
+                    Frame3D aCAx = new(OnPlane(theAx, x, y), theAx.Direction, theAx.XDirection);
                     TrimmedCurve3D anArc = new MakeArcOfCircle(new Circle3D(aCAx, c), a, a + 0.5 * Math.PI, true).Value();
                     aMW.Add(new MakeEdge(anArc).Edge());
                     (double nx, double ny, double na) = aCorners[(i + 1) % 4];
-                    Point3D aFrom = anArc.EndPoint();
-                    Frame3D aNAx = new(OnPlane(theAx, nx, ny), theAx.Direction(), theAx.XDirection());
-                    Point3D aTo = new Circle3D(aNAx, c).Position().Location().Translated(
-                        new Vector3D(aNAx.XDirection()) * (c * Math.Cos(na)) + new Vector3D(aNAx.YDirection()) * (c * Math.Sin(na)));
+                    Point3D aFrom = anArc.EndPoint;
+                    Frame3D aNAx = new(OnPlane(theAx, nx, ny), theAx.Direction, theAx.XDirection);
+                    Point3D aTo = new Circle3D(aNAx, c).Position.Location.Translated(
+                        new Vector3D(aNAx.XDirection) * (c * Math.Cos(na)) + new Vector3D(aNAx.YDirection) * (c * Math.Sin(na)));
                     aMW.Add(new MakeEdge(aFrom, aTo).Edge());
                 }
                 return (aMW.Wire(), "rounded");
@@ -676,7 +676,7 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
         Point3D aLoc = new(theTilted ? theOracle.Real(-0.5, 0.5) : 0, theTilted ? theOracle.Real(-0.5, 0.5) : 0, 3.0 * theIndex + (theTilted ? theOracle.Real(-0.5, 0.5) : 0));
         Direction3D aN = theTilted ? new Direction3D(theOracle.Real(-0.2, 0.2), theOracle.Real(-0.2, 0.2), 1) : new Direction3D(0, 0, 1);
         Frame3D anAx = new(aLoc, Oracle.Settled(aN));
-        return theTilted ? anAx.Rotated(new Axis3D(aLoc, anAx.Direction()), theOracle.Real(-0.3, 0.3)) : anAx;
+        return theTilted ? anAx.Rotated(new Axis3D(aLoc, anAx.Direction), theOracle.Real(-0.3, 0.3)) : anAx;
     }
 
     private static Shape Varied(Oracle theOracle, Shape theWire)
@@ -1035,13 +1035,13 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
                         {
                             return false;
                         }
-                        bool isWire = aS.Item2.ShapeType() == global::Kerf.Topology.ShapeType.Wire;
-                        if (!isWire && aS.Item2.ShapeType() != ShapeType.Vertex)
+                        bool isWire = aS.Item2.Type == global::Kerf.Topology.ShapeType.Wire;
+                        if (!isWire && aS.Item2.Type != ShapeType.Vertex)
                         {
                             return false;
                         }
-                        int aPos = aList.FindIndex(p => p.Item2.IsSame(aS.Item2) && p.Item2.Orientation() == aS.Item2.Orientation()
-                                                        && p.Item2.Location().IsEqual(aS.Item2.Location()));
+                        int aPos = aList.FindIndex(p => p.Item2.IsSame(aS.Item2) && p.Item2.Orientation == aS.Item2.Orientation
+                                                        && p.Item2.Placement.IsEqual(aS.Item2.Placement));
                         if (aPos < 0)
                         {
                             aPos = aList.Count;

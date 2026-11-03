@@ -23,7 +23,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// P(U) = Loc + R * (cos(U) * XDir + sin(U) * YDir), U in [0, 2 Pi]; the B-spline's parametrisation range is not
 /// [0, 2 Pi].
 /// </summary>
-public class CircleToBSplineCurve : ConicToBSplineCurve
+internal class CircleToBSplineCurve : ConicToBSplineCurve
 {
     /// <summary>
     /// The periodic B-spline curve equivalent to the whole circle, with its orientation. Parameterisations other
@@ -38,7 +38,7 @@ public class CircleToBSplineCurve : ConicToBSplineCurve
         double r, value;
         NCollection_Array1<double> cosNumerator, sinNumerator;
 
-        r = c.Radius();
+        r = c.Radius;
         if (parameterisation != TgtThetaOver2 && parameterisation != RationalC1)
         {
             // In case if BuildCosAndSin does not know how to manage the periodicity
@@ -68,10 +68,10 @@ public class CircleToBSplineCurve : ConicToBSplineCurve
 
         _poles = new NCollection_Array1<Point2D>(1, cosNumerator.Length());
 
-        Direction2D ox = c.XAxis().Direction();
-        Direction2D oy = c.YAxis().Direction();
-        Transform2D trsf = new Transform2D().WithTransformation(c.XAxis(), Constants.OX2d());
-        if (ox.X() * oy.Y() - ox.Y() * oy.X() > 0.0e0)
+        Direction2D ox = c.XAxis.Direction;
+        Direction2D oy = c.YAxis.Direction;
+        Transform2D trsf = new Transform2D().WithTransformation(c.XAxis, Constants.OX2d());
+        if (ox.X * oy.Y - ox.Y * oy.X > 0.0e0)
         {
             value = r;
         }
@@ -114,7 +114,7 @@ public class CircleToBSplineCurve : ConicToBSplineCurve
         double r, value;
         NCollection_Array1<double> cosNumerator, sinNumerator;
 
-        r = c.Radius();
+        r = c.Radius;
         _isPeriodic = false;
         BuildCosAndSin(parameterisation,
                        uFirst,
@@ -128,10 +128,10 @@ public class CircleToBSplineCurve : ConicToBSplineCurve
 
         _poles = new NCollection_Array1<Point2D>(1, cosNumerator.Length());
 
-        Direction2D ox = c.XAxis().Direction();
-        Direction2D oy = c.YAxis().Direction();
-        Transform2D trsf = new Transform2D().WithTransformation(c.XAxis(), Constants.OX2d());
-        if (ox.X() * oy.Y() - ox.Y() * oy.X() > 0.0e0)
+        Direction2D ox = c.XAxis.Direction;
+        Direction2D oy = c.YAxis.Direction;
+        Transform2D trsf = new Transform2D().WithTransformation(c.XAxis, Constants.OX2d());
+        if (ox.X * oy.Y - ox.Y * oy.X > 0.0e0)
         {
             value = r;
         }

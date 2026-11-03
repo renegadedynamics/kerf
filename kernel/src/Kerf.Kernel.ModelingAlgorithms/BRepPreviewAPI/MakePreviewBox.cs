@@ -26,16 +26,16 @@ public class MakePreviewBox : MakeBox
     /// <summary>Creates a preview depending on point values.</summary>
     public override void Build(ProgressRange range = default)
     {
-        Point3D location = _wedge.Axes().Location();
+        Point3D location = _wedge.Axes().Location;
 
-        Point3D firstPoint = new(location.X(), location.Y(), location.Z());
-        Point3D secondPoint = new(location.X() + _wedge.GetXMax(),
-                                  location.Y() + _wedge.GetYMax(),
-                                  location.Z() + _wedge.GetZMax());
+        Point3D firstPoint = new(location.X, location.Y, location.Z);
+        Point3D secondPoint = new(location.X + _wedge.GetXMax(),
+                                  location.Y + _wedge.GetYMax(),
+                                  location.Z + _wedge.GetZMax());
 
-        bool thinOnX = Math.Abs(firstPoint.X() - secondPoint.X()) < global::Kerf.Engine.Foundation.Precision.Confusion();
-        bool thinOnY = Math.Abs(firstPoint.Y() - secondPoint.Y()) < global::Kerf.Engine.Foundation.Precision.Confusion();
-        bool thinOnZ = Math.Abs(firstPoint.Z() - secondPoint.Z()) < global::Kerf.Engine.Foundation.Precision.Confusion();
+        bool thinOnX = Math.Abs(firstPoint.X - secondPoint.X) < global::Kerf.Engine.Foundation.Precision.Confusion();
+        bool thinOnY = Math.Abs(firstPoint.Y - secondPoint.Y) < global::Kerf.Engine.Foundation.Precision.Confusion();
+        bool thinOnZ = Math.Abs(firstPoint.Z - secondPoint.Z) < global::Kerf.Engine.Foundation.Precision.Confusion();
 
         int previewType = (thinOnX ? 1 : 0) + (thinOnY ? 1 : 0) + (thinOnZ ? 1 : 0);
 
@@ -53,24 +53,24 @@ public class MakePreviewBox : MakeBox
             Point3D pnt1 = new(), pnt2 = new(), pnt3 = new(), pnt4 = new();
             if (thinOnX)
             {
-                pnt1 = new Point3D(firstPoint.X(), firstPoint.Y(), firstPoint.Z());
-                pnt2 = new Point3D(firstPoint.X(), secondPoint.Y(), firstPoint.Z());
-                pnt3 = new Point3D(firstPoint.X(), secondPoint.Y(), secondPoint.Z());
-                pnt4 = new Point3D(firstPoint.X(), firstPoint.Y(), secondPoint.Z());
+                pnt1 = new Point3D(firstPoint.X, firstPoint.Y, firstPoint.Z);
+                pnt2 = new Point3D(firstPoint.X, secondPoint.Y, firstPoint.Z);
+                pnt3 = new Point3D(firstPoint.X, secondPoint.Y, secondPoint.Z);
+                pnt4 = new Point3D(firstPoint.X, firstPoint.Y, secondPoint.Z);
             }
             else if (thinOnY)
             {
-                pnt1 = new Point3D(firstPoint.X(), firstPoint.Y(), firstPoint.Z());
-                pnt2 = new Point3D(secondPoint.X(), firstPoint.Y(), firstPoint.Z());
-                pnt3 = new Point3D(secondPoint.X(), firstPoint.Y(), secondPoint.Z());
-                pnt4 = new Point3D(firstPoint.X(), firstPoint.Y(), secondPoint.Z());
+                pnt1 = new Point3D(firstPoint.X, firstPoint.Y, firstPoint.Z);
+                pnt2 = new Point3D(secondPoint.X, firstPoint.Y, firstPoint.Z);
+                pnt3 = new Point3D(secondPoint.X, firstPoint.Y, secondPoint.Z);
+                pnt4 = new Point3D(firstPoint.X, firstPoint.Y, secondPoint.Z);
             }
             else if (thinOnZ)
             {
-                pnt1 = new Point3D(firstPoint.X(), firstPoint.Y(), firstPoint.Z());
-                pnt2 = new Point3D(secondPoint.X(), firstPoint.Y(), firstPoint.Z());
-                pnt3 = new Point3D(secondPoint.X(), secondPoint.Y(), firstPoint.Z());
-                pnt4 = new Point3D(firstPoint.X(), secondPoint.Y(), firstPoint.Z());
+                pnt1 = new Point3D(firstPoint.X, firstPoint.Y, firstPoint.Z);
+                pnt2 = new Point3D(secondPoint.X, firstPoint.Y, firstPoint.Z);
+                pnt3 = new Point3D(secondPoint.X, secondPoint.Y, firstPoint.Z);
+                pnt4 = new Point3D(firstPoint.X, secondPoint.Y, firstPoint.Z);
             }
 
             MakeRectangle(pnt1, pnt2, pnt3, pnt4);

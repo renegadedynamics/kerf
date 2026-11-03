@@ -420,7 +420,7 @@ public class MakerVolume : BooleanBuilder
         for (; itLA.More(); itLA.Next())
         {
             Shape s = itLA.Value();
-            ShapeType type = s.ShapeType();
+            ShapeType type = s.Type;
             if (type == ShapeType.Wire)
             {
                 for (Iterator it = new(s); it.More(); it.Next())
@@ -444,9 +444,9 @@ public class MakerVolume : BooleanBuilder
     private static void AddFace(in Shape f, NCollection_List<Shape> lf)
     {
         Shape ff = f;
-        ff.Orientation(Forward);
+        ff.Orient(Forward);
         lf.Append(ff);
-        ff.Orientation(Reversed);
+        ff.Orient(Reversed);
         lf.Append(ff);
     }
 }

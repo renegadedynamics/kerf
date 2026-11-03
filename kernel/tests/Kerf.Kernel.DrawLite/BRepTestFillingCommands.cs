@@ -149,7 +149,7 @@ internal static class BRepTestFillingCommands
         }
         Wire W;
         W = MW.Wire();
-        if (!(W.Closed()))
+        if (!(W.IsClosed))
         {
             throw new global::Kerf.Engine.Foundation.FailureException("Wire is not closed");
         }
@@ -266,7 +266,7 @@ internal static class BRepTestFillingCommands
         var Mapp = new MakeApprox(gpPlate, critere, 0.0001, nbcarreau, degmax);
         Surface Surf = Mapp.Surface()!;
 
-        Henri.Surface()!.Bounds(out double Umin, out double Umax, out double Vmin, out double Vmax);
+        Henri.Surface()!.ParameterBounds(out double Umin, out double Umax, out double Vmin, out double Vmax);
 
         var MF = new MakeFace(Surf, Umin, Umax, Vmin, Vmax, global::Kerf.Engine.Foundation.Precision.Confusion());
 
@@ -391,7 +391,7 @@ internal static class BRepTestFillingCommands
         }
         Wire W;
         W = MW.Wire();
-        if (!(W.Closed()))
+        if (!(W.IsClosed))
         {
             throw new global::Kerf.Engine.Foundation.FailureException("Wire is not closed");
         }

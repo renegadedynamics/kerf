@@ -19,8 +19,8 @@ internal readonly struct BSplineSurfaceHasher(double theCompTolerance, double th
     {
         ReadOnlySpan<ulong> hashes =
         [
-            HashUtils.Hash(surface.UDegree()),
-            HashUtils.Hash(surface.VDegree()),
+            HashUtils.Hash(surface.UDegree),
+            HashUtils.Hash(surface.VDegree),
             HashUtils.Hash(surface.UPoleCount),
             HashUtils.Hash(surface.VPoleCount),
             HashUtils.Hash(surface.UKnotCount),
@@ -34,7 +34,7 @@ internal readonly struct BSplineSurfaceHasher(double theCompTolerance, double th
     public bool IsEqual(BSplineSurface surface1, BSplineSurface surface2)
     {
         // Compare degrees
-        if (surface1.UDegree() != surface2.UDegree() || surface1.VDegree() != surface2.VDegree())
+        if (surface1.UDegree != surface2.UDegree || surface1.VDegree != surface2.VDegree)
         {
             return false;
         }

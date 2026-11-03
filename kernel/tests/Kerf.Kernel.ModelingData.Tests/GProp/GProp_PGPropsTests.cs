@@ -25,9 +25,9 @@ public class GProp_PGPropsTest
         aProps.AddPoint(new Point3D(1.0, 2.0, 3.0));
 
         Assert.Equal(1.0, aProps.Mass(), Conf);
-        Assert.Equal(1.0, aProps.CentreOfMass().X(), Conf);
-        Assert.Equal(2.0, aProps.CentreOfMass().Y(), Conf);
-        Assert.Equal(3.0, aProps.CentreOfMass().Z(), Conf);
+        Assert.Equal(1.0, aProps.CentreOfMass().X, Conf);
+        Assert.Equal(2.0, aProps.CentreOfMass().Y, Conf);
+        Assert.Equal(3.0, aProps.CentreOfMass().Z, Conf);
     }
 
     [Fact]
@@ -38,9 +38,9 @@ public class GProp_PGPropsTest
         aProps.AddPoint(new Point3D(2.0, 4.0, 6.0));
 
         Assert.Equal(2.0, aProps.Mass(), Conf);
-        Assert.Equal(1.0, aProps.CentreOfMass().X(), Conf);
-        Assert.Equal(2.0, aProps.CentreOfMass().Y(), Conf);
-        Assert.Equal(3.0, aProps.CentreOfMass().Z(), Conf);
+        Assert.Equal(1.0, aProps.CentreOfMass().X, Conf);
+        Assert.Equal(2.0, aProps.CentreOfMass().Y, Conf);
+        Assert.Equal(3.0, aProps.CentreOfMass().Z, Conf);
     }
 
     [Fact]
@@ -52,9 +52,9 @@ public class GProp_PGPropsTest
 
         Assert.Equal(4.0, aProps.Mass(), Conf);
         // Weighted centroid: (0*1 + 4*3) / 4 = 3
-        Assert.Equal(3.0, aProps.CentreOfMass().X(), Conf);
-        Assert.Equal(0.0, aProps.CentreOfMass().Y(), Conf);
-        Assert.Equal(0.0, aProps.CentreOfMass().Z(), Conf);
+        Assert.Equal(3.0, aProps.CentreOfMass().X, Conf);
+        Assert.Equal(0.0, aProps.CentreOfMass().Y, Conf);
+        Assert.Equal(0.0, aProps.CentreOfMass().Z, Conf);
     }
 
     [Fact]
@@ -68,9 +68,9 @@ public class GProp_PGPropsTest
 
         var aProps = new PGProps(aPnts);
         Assert.Equal(4.0, aProps.Mass(), Conf);
-        Assert.Equal(0.0, aProps.CentreOfMass().X(), Conf);
-        Assert.Equal(0.0, aProps.CentreOfMass().Y(), Conf);
-        Assert.Equal(0.0, aProps.CentreOfMass().Z(), Conf);
+        Assert.Equal(0.0, aProps.CentreOfMass().X, Conf);
+        Assert.Equal(0.0, aProps.CentreOfMass().Y, Conf);
+        Assert.Equal(0.0, aProps.CentreOfMass().Z, Conf);
     }
 
     [Fact]
@@ -82,9 +82,9 @@ public class GProp_PGPropsTest
         aPnts[3] = new Point3D(0.0, 6.0, 0.0);
 
         Point3D aG = PGProps.Barycentre(aPnts);
-        Assert.Equal(1.0, aG.X(), Conf);
-        Assert.Equal(2.0, aG.Y(), Conf);
-        Assert.Equal(0.0, aG.Z(), Conf);
+        Assert.Equal(1.0, aG.X, Conf);
+        Assert.Equal(2.0, aG.Y, Conf);
+        Assert.Equal(0.0, aG.Z, Conf);
     }
 
     [Fact]

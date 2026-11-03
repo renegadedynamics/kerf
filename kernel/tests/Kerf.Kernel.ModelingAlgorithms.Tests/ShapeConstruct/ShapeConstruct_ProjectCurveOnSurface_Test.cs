@@ -50,8 +50,8 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
     private static void verifyProjection(Curve3D theCurve, Curve2D thePCurve, SurfaceAnalysis theSurface,
                                          double theTolerance)
     {
-        double aFirst = theCurve.FirstParameter();
-        double aLast = theCurve.LastParameter();
+        double aFirst = theCurve.FirstParameter;
+        double aLast = theCurve.LastParameter;
 
         for (double t = 0.0; t <= 1.0; t += 0.25)
         {
@@ -61,7 +61,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
             Point2D a2DPnt = thePCurve.Value(aParam);
             Point3D aSurfPnt = theSurface.Value(a2DPnt);
 
-            Assert.Equal(0.0, a3DPnt.Distance(aSurfPnt), theTolerance);
+            Assert.Equal(0.0, a3DPnt.DistanceTo(aSurfPnt), theTolerance);
         }
     }
 
@@ -83,8 +83,8 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         SurfaceAnalysis aSAS = new(aPlane);
         myProjector.Init(aSAS, myTolerance);
 
-        double aFirst = aLine.FirstParameter();
-        double aLast = aLine.LastParameter();
+        double aFirst = aLine.FirstParameter;
+        double aLast = aLine.LastParameter;
         bool aResult = myProjector.Perform(aLine, aFirst, aLast, out Curve2D? aPCurve);
 
         Assert.True(aResult, "Projection should succeed");
@@ -93,10 +93,10 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         // Verify start point maps to (0,0) and end point maps to (10,10)
         Point2D aStart = aPCurve.Value(aFirst);
         Point2D aEnd = aPCurve.Value(aLast);
-        Assert.Equal(0.0, aStart.X(), 0.01);
-        Assert.Equal(0.0, aStart.Y(), 0.01);
-        Assert.Equal(10.0, aEnd.X(), 0.01);
-        Assert.Equal(10.0, aEnd.Y(), 0.01);
+        Assert.Equal(0.0, aStart.X, 0.01);
+        Assert.Equal(0.0, aStart.Y, 0.01);
+        Assert.Equal(10.0, aEnd.X, 0.01);
+        Assert.Equal(10.0, aEnd.Y, 0.01);
     }
 
     // Test: Project circle lying on cylinder surface, V-coordinate should be constant
@@ -119,7 +119,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
 
         // On cylinder parametrization, V = Z, so circle at Z=3 should have V=3
         Point2D aMid = aPCurve.Value(Math.PI);
-        Assert.Equal(3.0, aMid.Y(), 0.01);
+        Assert.Equal(3.0, aMid.Y, 0.01);
     }
 
     // Test: Project vertical line on cylinder (isoparametric case), U should be constant
@@ -135,8 +135,8 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         SurfaceAnalysis aSAS = new(aCylinder);
         myProjector.Init(aSAS, myTolerance);
 
-        double aFirst = aLine.FirstParameter();
-        double aLast = aLine.LastParameter();
+        double aFirst = aLine.FirstParameter;
+        double aLast = aLine.LastParameter;
         bool aResult = myProjector.Perform(aLine, aFirst, aLast, out Curve2D? aPCurve);
 
         Assert.True(aResult, "Projection should succeed");
@@ -145,7 +145,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         // U should be constant (isoparametric curve)
         Point2D aStart = aPCurve.Value(aFirst);
         Point2D aEnd = aPCurve.Value(aLast);
-        Assert.Equal(aEnd.X(), aStart.X(), 0.01);
+        Assert.Equal(aEnd.X, aStart.X, 0.01);
     }
 
     //=============================================================================================
@@ -162,19 +162,19 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
 
         myProjector.Init(new SurfaceAnalysis(aPlane), myTolerance);
 
-        bool aResult = myProjector.Perform(aBSpline, aBSpline.FirstParameter(), aBSpline.LastParameter(),
+        bool aResult = myProjector.Perform(aBSpline, aBSpline.FirstParameter, aBSpline.LastParameter,
                                            out Curve2D? aPCurve);
 
         Assert.True(aResult, "Projection should succeed");
         Assert.NotNull(aPCurve);
 
         // Verify endpoints
-        Point2D aStart = aPCurve.Value(aBSpline.FirstParameter());
-        Point2D aEnd = aPCurve.Value(aBSpline.LastParameter());
-        Assert.Equal(0.0, aStart.X(), 0.1);
-        Assert.Equal(0.0, aStart.Y(), 0.1);
-        Assert.Equal(10.0, aEnd.X(), 0.1);
-        Assert.Equal(0.0, aEnd.Y(), 0.1);
+        Point2D aStart = aPCurve.Value(aBSpline.FirstParameter);
+        Point2D aEnd = aPCurve.Value(aBSpline.LastParameter);
+        Assert.Equal(0.0, aStart.X, 0.1);
+        Assert.Equal(0.0, aStart.Y, 0.1);
+        Assert.Equal(10.0, aEnd.X, 0.1);
+        Assert.Equal(0.0, aEnd.Y, 0.1);
     }
 
     // Test: Project helical B-spline on cylinder, verify all sample points lie on surface
@@ -190,7 +190,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         SurfaceAnalysis aSAS = new(aCylinder);
         myProjector.Init(aSAS, myTolerance);
 
-        bool aResult = myProjector.Perform(aBSpline, aBSpline.FirstParameter(), aBSpline.LastParameter(),
+        bool aResult = myProjector.Perform(aBSpline, aBSpline.FirstParameter, aBSpline.LastParameter,
                                            out Curve2D? aPCurve);
 
         Assert.True(aResult, "Projection should succeed");
@@ -222,7 +222,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         SurfaceAnalysis aSAS = new(aPlane);
         myProjector.Init(aSAS, myTolerance);
 
-        bool aResult = myProjector.Perform(aBSpline, aBSpline.FirstParameter(), aBSpline.LastParameter(),
+        bool aResult = myProjector.Perform(aBSpline, aBSpline.FirstParameter, aBSpline.LastParameter,
                                            out Curve2D? aPCurve);
 
         Assert.True(aResult, "Projection should succeed");
@@ -278,7 +278,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         // V should be constant for latitude circle
         Point2D aStart = aPCurve.Value(0.0);
         Point2D aMid = aPCurve.Value(Math.PI);
-        Assert.Equal(aMid.Y(), aStart.Y(), 0.01);
+        Assert.Equal(aMid.Y, aStart.Y, 0.01);
     }
 
     // Test: Project on toroidal surface (both U and V periodic)
@@ -344,8 +344,8 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         SurfaceAnalysis aSAS = new(aPlane);
         myProjector.Init(aSAS, myTolerance);
 
-        double aFirst = aArc.FirstParameter();
-        double aLast = aArc.LastParameter();
+        double aFirst = aArc.FirstParameter;
+        double aLast = aArc.LastParameter;
         bool aResult = myProjector.Perform(aArc, aFirst, aLast, out Curve2D? aPCurve);
 
         Assert.True(aResult, "Projection should succeed");
@@ -354,10 +354,10 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         // Arc from (5,0) to (0,5)
         Point2D aStart = aPCurve.Value(aFirst);
         Point2D aEnd = aPCurve.Value(aLast);
-        Assert.Equal(5.0, aStart.X(), 0.01);
-        Assert.Equal(0.0, aStart.Y(), 0.01);
-        Assert.Equal(0.0, aEnd.X(), 0.01);
-        Assert.Equal(5.0, aEnd.Y(), 0.01);
+        Assert.Equal(5.0, aStart.X, 0.01);
+        Assert.Equal(0.0, aStart.Y, 0.01);
+        Assert.Equal(0.0, aEnd.X, 0.01);
+        Assert.Equal(5.0, aEnd.Y, 0.01);
     }
 
     // Test: Project doubly-trimmed curve (tests recursive unwrapping of trimmed curves)
@@ -369,20 +369,20 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         Assert.NotNull(aBSpline);
 
         // First trim: take first half
-        double aFirst1 = aBSpline.FirstParameter();
-        double aLast1 = aBSpline.LastParameter();
+        double aFirst1 = aBSpline.FirstParameter;
+        double aLast1 = aBSpline.LastParameter;
         double aMid = (aFirst1 + aLast1) / 2.0;
         TrimmedCurve3D aTrim1 = new(aBSpline, aFirst1, aMid);
 
         // Second trim (nested): take first quarter of the first trim
-        double aFirst2 = aTrim1.FirstParameter();
-        double aLast2 = aTrim1.LastParameter();
+        double aFirst2 = aTrim1.FirstParameter;
+        double aLast2 = aTrim1.LastParameter;
         double aQuart = aFirst2 + (aLast2 - aFirst2) / 4.0;
         TrimmedCurve3D aTrim2 = new(aTrim1, aFirst2, aQuart);
 
         myProjector.Init(new SurfaceAnalysis(aPlane), myTolerance);
 
-        bool aResult = myProjector.Perform(aTrim2, aTrim2.FirstParameter(), aTrim2.LastParameter(), out Curve2D? aPCurve);
+        bool aResult = myProjector.Perform(aTrim2, aTrim2.FirstParameter, aTrim2.LastParameter, out Curve2D? aPCurve);
 
         Assert.True(aResult, "Projection of doubly-trimmed curve should succeed");
         Assert.NotNull(aPCurve);
@@ -412,13 +412,13 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
 
         // At parameter 0, ellipse is at (10, 0)
         Point2D aP0 = aPCurve.Value(0.0);
-        Assert.Equal(10.0, aP0.X(), 0.01);
-        Assert.Equal(0.0, aP0.Y(), 0.01);
+        Assert.Equal(10.0, aP0.X, 0.01);
+        Assert.Equal(0.0, aP0.Y, 0.01);
 
         // At parameter PI/2, ellipse is at (0, 5)
         Point2D aP1 = aPCurve.Value(Math.PI / 2.0);
-        Assert.Equal(0.0, aP1.X(), 0.01);
-        Assert.Equal(5.0, aP1.Y(), 0.01);
+        Assert.Equal(0.0, aP1.X, 0.01);
+        Assert.Equal(5.0, aP1.Y, 0.01);
     }
 
     //=============================================================================================
@@ -434,7 +434,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
 
         myProjector.Init(aPlane, global::Kerf.Engine.Foundation.Precision.Confusion());
 
-        bool aResult = myProjector.Perform(aLine, aLine.FirstParameter(), aLine.LastParameter(), out Curve2D? aPCurve);
+        bool aResult = myProjector.Perform(aLine, aLine.FirstParameter, aLine.LastParameter, out Curve2D? aPCurve);
 
         Assert.True(aResult, "Init with Geom_Surface should work");
         Assert.NotNull(aPCurve);
@@ -450,7 +450,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         myProjector.SetSurface(aPlane);
         myProjector.SetPrecision(global::Kerf.Engine.Foundation.Precision.Confusion());
 
-        bool aResult = myProjector.Perform(aLine, aLine.FirstParameter(), aLine.LastParameter(), out Curve2D? aPCurve);
+        bool aResult = myProjector.Perform(aLine, aLine.FirstParameter, aLine.LastParameter, out Curve2D? aPCurve);
 
         Assert.True(aResult, "SetSurface + SetPrecision should work");
         Assert.NotNull(aPCurve);
@@ -481,7 +481,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
 
         myProjector.Init(new SurfaceAnalysis(aPlane), myTolerance);
 
-        myProjector.Perform(aLine, aLine.FirstParameter(), aLine.LastParameter(), out _);
+        myProjector.Perform(aLine, aLine.FirstParameter, aLine.LastParameter, out _);
 
         // Status should indicate OK or DONE
         Assert.True(myProjector.Status(ExtendStatus.OK) || myProjector.Status(ExtendStatus.Done),
@@ -501,7 +501,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
 
         myProjector.Init(new SurfaceAnalysis(aPlane), 1e-15);
 
-        bool aResult = myProjector.Perform(aLine, aLine.FirstParameter(), aLine.LastParameter(), out Curve2D? aPCurve);
+        bool aResult = myProjector.Perform(aLine, aLine.FirstParameter, aLine.LastParameter, out Curve2D? aPCurve);
 
         Assert.True(aResult, "Tight tolerance should work for exact curve");
         Assert.NotNull(aPCurve);
@@ -527,7 +527,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
 
         double aTolFirst = 0.01;
         double aTolLast = 0.2;
-        bool aResult = myProjector.Perform(aBSpline, aBSpline.FirstParameter(), aBSpline.LastParameter(),
+        bool aResult = myProjector.Perform(aBSpline, aBSpline.FirstParameter, aBSpline.LastParameter,
                                            out Curve2D? aPCurve, aTolFirst, aTolLast);
 
         Assert.True(aResult, "Projection with different endpoint tolerances should succeed");
@@ -559,10 +559,10 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         // Verify endpoints: (5,0) to (0,5)
         Point2D aStart = aPCurve.Value(0.0);
         Point2D aEnd = aPCurve.Value(Math.PI / 2.0);
-        Assert.Equal(5.0, aStart.X(), 0.01);
-        Assert.Equal(0.0, aStart.Y(), 0.01);
-        Assert.Equal(0.0, aEnd.X(), 0.01);
-        Assert.Equal(5.0, aEnd.Y(), 0.01);
+        Assert.Equal(5.0, aStart.X, 0.01);
+        Assert.Equal(0.0, aStart.Y, 0.01);
+        Assert.Equal(0.0, aEnd.X, 0.01);
+        Assert.Equal(5.0, aEnd.Y, 0.01);
     }
 
     // Test: Project middle portion of B-spline
@@ -575,8 +575,8 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
 
         myProjector.Init(new SurfaceAnalysis(aPlane), myTolerance);
 
-        double aFirst = aBSpline.FirstParameter();
-        double aLast = aBSpline.LastParameter();
+        double aFirst = aBSpline.FirstParameter;
+        double aLast = aBSpline.LastParameter;
         double aRange = aLast - aFirst;
 
         // Project middle 50%
@@ -604,7 +604,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
             double aOffset = i * 10.0;
             TrimmedCurve3D aLine = Segment(new Point3D(aOffset, 0, 0), new Point3D(aOffset + 5, 5, 0));
 
-            bool aResult = myProjector.Perform(aLine, aLine.FirstParameter(), aLine.LastParameter(), out Curve2D? aPCurve);
+            bool aResult = myProjector.Perform(aLine, aLine.FirstParameter, aLine.LastParameter, out Curve2D? aPCurve);
 
             Assert.True(aResult, $"Projection {i} should succeed");
             Assert.NotNull(aPCurve);
@@ -620,7 +620,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         myProjector.Init(new SurfaceAnalysis(aPlane1), myTolerance);
 
         TrimmedCurve3D aLine1 = Segment(new Point3D(0, 0, 0), new Point3D(10, 10, 0));
-        myProjector.Perform(aLine1, aLine1.FirstParameter(), aLine1.LastParameter(), out Curve2D? aPCurve1);
+        myProjector.Perform(aLine1, aLine1.FirstParameter, aLine1.LastParameter, out Curve2D? aPCurve1);
         Assert.NotNull(aPCurve1);
 
         // Second surface (different plane)
@@ -628,7 +628,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         myProjector.Init(new SurfaceAnalysis(aPlane2), myTolerance);
 
         TrimmedCurve3D aLine2 = Segment(new Point3D(0, 0, 5), new Point3D(10, 10, 5));
-        myProjector.Perform(aLine2, aLine2.FirstParameter(), aLine2.LastParameter(), out Curve2D? aPCurve2);
+        myProjector.Perform(aLine2, aLine2.FirstParameter, aLine2.LastParameter, out Curve2D? aPCurve2);
         Assert.NotNull(aPCurve2);
     }
 
@@ -676,7 +676,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         myProjector.Init(new SurfaceAnalysis(aPlane), 1e-4);
 
         // Result may vary but should not crash
-        _ = myProjector.Perform(aLine, aLine.FirstParameter(), aLine.LastParameter(), out _);
+        _ = myProjector.Perform(aLine, aLine.FirstParameter, aLine.LastParameter, out _);
     }
 
     // Test: Curve far from surface still projects
@@ -690,7 +690,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
 
         myProjector.Init(new SurfaceAnalysis(aPlane), myTolerance);
 
-        _ = myProjector.Perform(aLine, aLine.FirstParameter(), aLine.LastParameter(), out Curve2D? aPCurve);
+        _ = myProjector.Perform(aLine, aLine.FirstParameter, aLine.LastParameter, out Curve2D? aPCurve);
 
         // Projection should still produce result (it projects onto the surface)
         Assert.NotNull(aPCurve);
@@ -707,7 +707,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
 
         myProjector.Init(new SurfaceAnalysis(aPlane), 1.0);
 
-        bool aResult = myProjector.Perform(aLine, aLine.FirstParameter(), aLine.LastParameter(), out Curve2D? aPCurve);
+        bool aResult = myProjector.Perform(aLine, aLine.FirstParameter, aLine.LastParameter, out Curve2D? aPCurve);
 
         Assert.True(aResult, "Large tolerance projection should succeed");
         Assert.NotNull(aPCurve);
@@ -760,7 +760,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         // Test projection onto plane
         myProjector.Init(aPlane, global::Kerf.Engine.Foundation.Precision.Confusion());
 
-        bool aResult = myProjector.Perform(aBSplineCurve, aBSplineCurve.FirstParameter(), aBSplineCurve.LastParameter(),
+        bool aResult = myProjector.Perform(aBSplineCurve, aBSplineCurve.FirstParameter, aBSplineCurve.LastParameter,
                                            out Curve2D? aPCurve);
 
         Assert.True(aResult, "Projection should succeed for B-spline with many knots");
@@ -888,8 +888,8 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
             PlaneSurface aPlane = new(new Point3D(70, 0, 30), new Direction3D(0, 1, 0));
             myProjector.Init(aPlane, global::Kerf.Engine.Foundation.Precision.Confusion());
 
-            bool aResult1 = myProjector.Perform(aBSplineCurve, aBSplineCurve.FirstParameter(),
-                                                aBSplineCurve.LastParameter(), out Curve2D? aPCurve1);
+            bool aResult1 = myProjector.Perform(aBSplineCurve, aBSplineCurve.FirstParameter,
+                                                aBSplineCurve.LastParameter, out Curve2D? aPCurve1);
 
             // This test documents expected behavior - projection should succeed
             Assert.True(aResult1, "Projection should succeed");
@@ -899,7 +899,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
 
         myProjector.Init(aBSplineSurface, global::Kerf.Engine.Foundation.Precision.Confusion());
 
-        bool aResult = myProjector.Perform(aBSplineCurve, aBSplineCurve.FirstParameter(), aBSplineCurve.LastParameter(),
+        bool aResult = myProjector.Perform(aBSplineCurve, aBSplineCurve.FirstParameter, aBSplineCurve.LastParameter,
                                            out Curve2D? aPCurve);
 
         // This is the key assertion - the projection SHOULD succeed but currently may fail

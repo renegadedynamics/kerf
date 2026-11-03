@@ -194,7 +194,7 @@ public partial class ChBuilder : FilletBuilderBase
             ChamfSpine? spine = (sp as ChamfSpine);
 
             Edge E_wnt = E;
-            E_wnt.Orientation(Forward);
+            E_wnt.Orient(Forward);
             spine.SetEdges(E_wnt);
             if (PerformElement(spine, -1, dummy))
             {
@@ -222,7 +222,7 @@ public partial class ChBuilder : FilletBuilderBase
             Face dummy = new();
 
             Edge E_wnt = E;
-            E_wnt.Orientation(Forward);
+            E_wnt.Orient(Forward);
 
             Stripe? stripe = new Stripe();
             ref Spine? sp = ref stripe.ChangeSpine();
@@ -317,7 +317,7 @@ public partial class ChBuilder : FilletBuilderBase
         {
 
             Edge E_wnt = E;
-            E_wnt.Orientation(Forward);
+            E_wnt.Orient(Forward);
 
             Stripe? stripe = new Stripe();
             ref Spine? sp = ref stripe.ChangeSpine();
@@ -433,7 +433,7 @@ public partial class ChBuilder : FilletBuilderBase
         {
 
             Edge E_wnt = E;
-            E_wnt.Orientation(Forward);
+            E_wnt.Orient(Forward);
 
             Stripe? stripe = new Stripe();
             ref Spine? sp = ref stripe.ChangeSpine();
@@ -630,26 +630,26 @@ public partial class ChBuilder : FilletBuilderBase
         switch (typ)
         {
             case Plane: {
-                v1 = p1f.Y();
-                v2 = p2f.Y();
-                u1 = Max(p1f.X(), p2f.X());
-                u2 = Min(p1l.X(), p2l.X());
+                v1 = p1f.Y;
+                v2 = p2f.Y;
+                u1 = Max(p1f.X, p2f.X);
+                u2 = Min(p1l.X, p2l.X);
                 sec = new NCollection_HArray1<CircSection>(1, 2);
                 Plane3D pl = AS.Plane();
                 ref CircSection sec1 = ref sec.ChangeValue(1);
                 ref CircSection sec2 = ref sec.ChangeValue(2);
-                sec1.Set(global::Kerf.Engine.Geometry.ElSLib.PlaneUIso(pl.Position(), u1), v1, v2);
-                sec2.Set(global::Kerf.Engine.Geometry.ElSLib.PlaneUIso(pl.Position(), u2), v1, v2);
+                sec1.Set(global::Kerf.Engine.Geometry.ElSLib.PlaneUIso(pl.Position, u1), v1, v2);
+                sec2.Set(global::Kerf.Engine.Geometry.ElSLib.PlaneUIso(pl.Position, u2), v1, v2);
             }
             break;
             case SurfaceKind.Cone: {
-                v1 = p1f.Y();
-                v2 = p2f.Y();
-                u1 = Max(p1f.X(), p2f.X());
-                u2 = Min(p1l.X(), p2l.X());
+                v1 = p1f.Y;
+                v2 = p2f.Y;
+                u1 = Max(p1f.X, p2f.X);
+                u2 = Min(p1l.X, p2l.X);
                 double ang = (u2 - u1);
                 Cone co = AS.Cone();
-                double rad = co.RefRadius(), sang = co.SemiAngle();
+                double rad = co.RefRadius, sang = co.SemiAngle;
                 int n = (int)(36.0 * ang / M_PI + 1);
                 if (n < 2)
                 {
@@ -660,7 +660,7 @@ public partial class ChBuilder : FilletBuilderBase
                 {
                     ref CircSection isec = ref sec.ChangeValue(i);
                     double u = u1 + (i - 1) * (u2 - u1) / (n - 1);
-                    isec.Set(global::Kerf.Engine.Geometry.ElSLib.ConeUIso(co.Position(), rad, sang, u), v1, v2);
+                    isec.Set(global::Kerf.Engine.Geometry.ElSLib.ConeUIso(co.Position, rad, sang, u), v1, v2);
                 }
             }
             break;
@@ -698,7 +698,7 @@ public partial class ChBuilder : FilletBuilderBase
         {
             w = fi + i * maxStep;
             hGuide.D2(w, out pbid, out d1, out d2);
-            double temp = d2.SquareMagnitude();
+            double temp = d2.SquareMagnitude;
             if (temp > radiusspine)
             {
                 radiusspine = temp;
@@ -1383,7 +1383,7 @@ public partial class ChBuilder : FilletBuilderBase
 
         bool gd1 = false, gd2 = false, gf1 = false, gf2 = false;
         global::Kerf.Engine.Fillets.Blend.Line? lin = null;
-        Orientation or = s1.Face().Orientation();
+        Orientation or = s1.Face().Orientation;
         double pFirst = first;
         if (intf != 0)
         {
@@ -1838,11 +1838,11 @@ public partial class ChBuilder : FilletBuilderBase
                         s.D1(u, v, out p, out du, out dv);
                         n2 = du.Crossed(dv);
 
-                        if (n1.SquareMagnitude() > 1.0e-14 && n2.SquareMagnitude() > 1.0e-14)
+                        if (n1.SquareMagnitude > 1.0e-14 && n2.SquareMagnitude > 1.0e-14)
                         {
                             n1 = n1.Normalized();
                             n2 = n2.Normalized();
-                            double sina2 = n1.Crossed(n2).SquareMagnitude();
+                            double sina2 = n1.Crossed(n2).SquareMagnitude;
                             if (sina2 < seuil2)
                             {
                                 Continuity cont = ChFi3d_evalconti(e, f1, f2);
@@ -1870,9 +1870,9 @@ public partial class ChBuilder : FilletBuilderBase
         // calculate the reference orientation
         //  ChFi3d_Builder::StripeOrientations is private
         SearchCommonFaces(_efMap, spine.Edges(1), ref ff1, ref ff2);
-        ff1.Orientation(Forward);
+        ff1.Orient(Forward);
         sb1.Initialize(ff1);
-        ff2.Orientation(Forward);
+        ff2.Orient(Forward);
         sb2.Initialize(ff2);
         rc = global::Kerf.Engine.Fillets.ChFi3d.ConcaveSide(sb1, sb2, spine.Edges(1), out tmp1, out tmp2);
 

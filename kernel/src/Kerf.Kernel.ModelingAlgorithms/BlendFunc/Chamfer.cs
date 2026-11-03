@@ -56,7 +56,7 @@ public class Chamfer : GenChamfer
         _tol = tol;
         if (issol)
         {
-            _distmin = Min(_distmin, _corde1.PointOnS().Distance(_corde2.PointOnS()));
+            _distmin = Min(_distmin, _corde1.PointOnS().DistanceTo(_corde2.PointOnS()));
         }
 
         return issol;

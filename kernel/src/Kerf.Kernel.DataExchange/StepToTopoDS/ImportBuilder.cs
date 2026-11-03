@@ -615,9 +615,9 @@ public sealed class ImportBuilder : ImportRoot
 
         if (rs is not null)
         {
-            theSurf.Bounds(out double umin, out double umax, out double vmin, out double vmax);
+            theSurf.ParameterBounds(out double umin, out double umax, out double vmin, out double vmax);
 
-            myMkFace.Init(rs.BasisSurface(), umin, umax, vmin, vmax, tolDegen);
+            myMkFace.Init(rs.BasisSurface, umin, umax, vmin, vmax, tolDegen);
         }
         else
         {
@@ -715,7 +715,7 @@ public sealed class ImportBuilder : ImportRoot
 
                     if (geomCrv is not null)
                     {
-                        var edge = new MakeEdge(geomCrv, geomCrv.FirstParameter(), geomCrv.LastParameter());
+                        var edge = new MakeEdge(geomCrv, geomCrv.FirstParameter, geomCrv.LastParameter);
                         if (edge.IsDone)
                         {
                             res = edge.InternalEdge();

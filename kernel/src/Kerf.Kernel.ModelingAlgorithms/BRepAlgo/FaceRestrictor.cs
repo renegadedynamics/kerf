@@ -108,7 +108,7 @@ public sealed class FaceRestrictor
         TrimmedCurve3D ct = new(c, f, l);
 
         Placement ll = L.Inverted().Multiplied(le);
-        ct.Transform(ll.Transformation());
+        ct.Transform(ll.Transformation);
 
         Curve2D? c2 = global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(ct, s);
         bb.UpdateEdge(e, c2, s, L, global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -223,7 +223,7 @@ public sealed class FaceRestrictor
     // Whether the wire is closed (flag or same end vertices)
     private static bool IsClosed(in Wire w)
     {
-        if (w.Closed())
+        if (w.IsClosed)
         {
             return true;
         }
@@ -375,7 +375,7 @@ public sealed class FaceRestrictor
             ref Shape w = ref it.ChangeValue();
             Shape localShape = _face.EmptyCopied();
             Face nf = ShapeCasts.Face(localShape);
-            nf.Orientation(Forward);
+            nf.Orient(Forward);
             b.Add(nf, w);
 
             if (IsClosed(ShapeCasts.Wire(w)))
@@ -399,7 +399,7 @@ public sealed class FaceRestrictor
             {
                 Shape localShape = _face.EmptyCopied();
                 Face nf = ShapeCasts.Face(localShape);
-                nf.Orientation(Forward);
+                nf.Orient(Forward);
                 b.Add(nf, w1);
 
                 while (it2.More())
@@ -431,7 +431,7 @@ public sealed class FaceRestrictor
             {
                 Shape localShape = _face.EmptyCopied();
                 Face newFace = ShapeCasts.Face(localShape);
-                newFace.Orientation(Forward);
+                newFace.Orient(Forward);
                 b.Add(newFace, w);
                 _faces.Append(newFace);
                 //--------------------------------------------

@@ -56,8 +56,8 @@ public class IntTools_ContextTests
             double du = u2 - u1, dv = v2 - v1;
             var aUV = new Point2D(u1 - 0.1 * du + 1.2 * du * aRandom.NextDouble(), v1 - 0.1 * dv + 1.2 * dv * aRandom.NextDouble());
             Surface aS = Tool.Surface(aF)!;
-            Point3D aP = aS.Value(aUV.X(), aUV.Y());
-            aP = new Point3D(aP.X() + Noise(1e-3), aP.Y() + Noise(1e-3), aP.Z() + Noise(1e-3));
+            Point3D aP = aS.Value(aUV.X, aUV.Y);
+            aP = new Point3D(aP.X + Noise(1e-3), aP.Y + Noise(1e-3), aP.Z + Noise(1e-3));
             aQueries.Add(c => $"S {c.StatePointFace(aF, aUV)} {c.IsPointInFace(aF, aUV)} {c.IsPointInOnFace(aF, aUV)}");
             aQueries.Add(c => $"F {c.FClass2d(aF).TestOnRestriction(aUV, 1e-3)} {c.FClass2d(aF).PerformInfinitePoint()}");
             aQueries.Add(c => $"V {c.IsValidPointForFace(aP, aF, 1e-3)} {c.IsPointInFace(aP, aF, 1e-3)}");
@@ -78,7 +78,7 @@ public class IntTools_ContextTests
             Tool.Range(anE, out double t1, out double t2);
             Curve3D aC = Tool.Curve(anE, out _, out _)!;
             Point3D aPE = aC.Value(t1 + (t2 - t1) * (aRandom.NextDouble() * 1.2 - 0.1));
-            aPE = new Point3D(aPE.X() + Noise(1e-4), aPE.Y() + Noise(1e-4), aPE.Z() + Noise(1e-4));
+            aPE = new Point3D(aPE.X + Noise(1e-4), aPE.Y + Noise(1e-4), aPE.Z + Noise(1e-4));
             aQueries.Add(c =>
             {
                 double aT = -1, aD = -1;
@@ -204,7 +204,7 @@ public class IntTools_ContextTests
         Vertex aVF = ShapeCasts.Vertex(new Explorer(aFs[0], ShapeType.Vertex).Current());
         Assert.Equal(-3, aContext.ComputeVF(aVF, aFs[0], ref u, ref v, ref aTolF));
         // A vertex far from an edge: -4
-        Vertex aFar = aVs.First(x => Tool.Pnt(x).Distance(Tool.Pnt(aV1)) > 1);
+        Vertex aFar = aVs.First(x => Tool.Pnt(x).DistanceTo(Tool.Pnt(aV1)) > 1);
         Assert.True(aContext.ComputeVE(aFar, anEs[0], ref aT, ref aTol) is 0 or -4);
         // The solid classifier
         Solid aSo = ShapeCasts.Solid(aBox);

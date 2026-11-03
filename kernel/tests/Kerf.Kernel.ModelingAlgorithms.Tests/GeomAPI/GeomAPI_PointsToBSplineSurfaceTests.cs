@@ -64,15 +64,15 @@ public class GeomAPI_PointsToBSplineSurfaceTests
         Assert.True(anApprox.IsDone);
         BSplineSurface aSurface = anApprox.Surface();
         Assert.True(aSurface.IsFrozen);
-        Assert.Equal(3, aSurface.UDegree());
-        Assert.Equal(3, aSurface.VDegree());
+        Assert.Equal(3, aSurface.UDegree);
+        Assert.Equal(3, aSurface.VDegree);
         Assert.Same(aSurface, (BSplineSurface)anApprox);
 
         // The corners are interpolated at the corners of the parameter domain
-        aSurface.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
-        Assert.True(aSurface.Value(aU1, aV1).Distance(aPoints[1, 1]) < 1e-9);
-        Assert.True(aSurface.Value(aU2, aV2).Distance(aPoints[7, 5]) < 1e-9);
-        Assert.True(aSurface.Value(aU2, aV1).Distance(aPoints[7, 1]) < 1e-9);
+        aSurface.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
+        Assert.True(aSurface.Value(aU1, aV1).DistanceTo(aPoints[1, 1]) < 1e-9);
+        Assert.True(aSurface.Value(aU2, aV2).DistanceTo(aPoints[7, 5]) < 1e-9);
+        Assert.True(aSurface.Value(aU2, aV1).DistanceTo(aPoints[7, 1]) < 1e-9);
     }
 
     [Fact]
@@ -86,8 +86,8 @@ public class GeomAPI_PointsToBSplineSurfaceTests
             PointsToBSplineSurface anApprox = new(aPoints, aParType, 3, 8, Continuity.C2, 1.0e-3);
             Assert.True(anApprox.IsDone);
             BSplineSurface aSurface = anApprox.Surface();
-            aSurface.Bounds(out double aU1, out _, out double aV1, out _);
-            Assert.True(aSurface.Value(aU1, aV1).Distance(aPoints[1, 1]) < 1e-2);
+            aSurface.ParameterBounds(out double aU1, out _, out double aV1, out _);
+            Assert.True(aSurface.Value(aU1, aV1).DistanceTo(aPoints[1, 1]) < 1e-2);
         }
 
         PointsToBSplineSurface aVariational = new(aPoints, 1.0, 0.0, 0.0, 8, Continuity.C2, 1.0e-3);
@@ -133,15 +133,15 @@ public class GeomAPI_PointsToBSplineSurfaceTests
         anApprox.Interpolate(aZ, 1.0, 0.5, -2.0, 0.25);
         Assert.True(anApprox.IsDone);
         BSplineSurface aSurface = anApprox.Surface();
-        aSurface.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+        aSurface.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
         Assert.Equal(1.0, aU1, 1e-12);
         Assert.Equal(3.5, aU2, 1e-12);
         Assert.Equal(-2.0, aV1, 1e-12);
         Assert.Equal(-1.0, aV2, 1e-12);
         Point3D aCorner = aSurface.Value(aU2, aV2);
-        Assert.Equal(3.5, aCorner.X(), 1e-9);
-        Assert.Equal(-1.0, aCorner.Y(), 1e-9);
-        Assert.Equal(aZ[6, 5], aCorner.Z(), 1e-9);
+        Assert.Equal(3.5, aCorner.X, 1e-9);
+        Assert.Equal(-1.0, aCorner.Y, 1e-9);
+        Assert.Equal(aZ[6, 5], aCorner.Z, 1e-9);
 
         PointsToBSplineSurface anApprox2 = new(aZ, 1.0, 0.5, -2.0, 0.25);
         Assert.True(anApprox2.IsDone);

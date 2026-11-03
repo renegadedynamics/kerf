@@ -13,78 +13,78 @@ namespace Kerf.Engine.Topology;
 /// Narrows a <see cref="Shape"/> to one of the eight shape types, checking the type: <c>TopoDS.Edge(S)</c>
 /// throws <see cref="TypeMismatchException"/> unless S is null or an edge.
 /// </summary>
-public static class ShapeCasts
+internal static class ShapeCasts
 {
     /// <summary>Casts <paramref name="shape"/> to a TopoDS_Vertex.</summary>
     /// <exception cref="TypeMismatchException">The shape is neither null nor of type VERTEX.</exception>
     public static Vertex Vertex(in Shape shape)
     {
-        Standard_TypeMismatch_Raise_if(shape.IsNull ? false : shape.ShapeType() != ShapeType.Vertex,
+        Standard_TypeMismatch_Raise_if(shape.IsNull ? false : shape.Type != ShapeType.Vertex,
                                        "TopoDS::Vertex");
-        return new Vertex(shape.TShape(), shape.Location(), shape.Orientation());
+        return new Vertex(shape.TShape(), shape.Placement, shape.Orientation);
     }
 
     /// <summary>Casts <paramref name="shape"/> to a TopoDS_Edge.</summary>
     /// <exception cref="TypeMismatchException">The shape is neither null nor of type EDGE.</exception>
     public static Edge Edge(in Shape shape)
     {
-        Standard_TypeMismatch_Raise_if(shape.IsNull ? false : shape.ShapeType() != ShapeType.Edge,
+        Standard_TypeMismatch_Raise_if(shape.IsNull ? false : shape.Type != ShapeType.Edge,
                                        "TopoDS::Edge");
-        return new Edge(shape.TShape(), shape.Location(), shape.Orientation());
+        return new Edge(shape.TShape(), shape.Placement, shape.Orientation);
     }
 
     /// <summary>Casts <paramref name="shape"/> to a TopoDS_Wire.</summary>
     /// <exception cref="TypeMismatchException">The shape is neither null nor of type WIRE.</exception>
     public static Wire Wire(in Shape shape)
     {
-        Standard_TypeMismatch_Raise_if(shape.IsNull ? false : shape.ShapeType() != ShapeType.Wire,
+        Standard_TypeMismatch_Raise_if(shape.IsNull ? false : shape.Type != ShapeType.Wire,
                                        "TopoDS::Wire");
-        return new Wire(shape.TShape(), shape.Location(), shape.Orientation());
+        return new Wire(shape.TShape(), shape.Placement, shape.Orientation);
     }
 
     /// <summary>Casts <paramref name="shape"/> to a TopoDS_Face.</summary>
     /// <exception cref="TypeMismatchException">The shape is neither null nor of type FACE.</exception>
     public static Face Face(in Shape shape)
     {
-        Standard_TypeMismatch_Raise_if(shape.IsNull ? false : shape.ShapeType() != ShapeType.Face,
+        Standard_TypeMismatch_Raise_if(shape.IsNull ? false : shape.Type != ShapeType.Face,
                                        "TopoDS::Face");
-        return new Face(shape.TShape(), shape.Location(), shape.Orientation());
+        return new Face(shape.TShape(), shape.Placement, shape.Orientation);
     }
 
     /// <summary>Casts <paramref name="shape"/> to a TopoDS_Shell.</summary>
     /// <exception cref="TypeMismatchException">The shape is neither null nor of type SHELL.</exception>
     public static Shell Shell(in Shape shape)
     {
-        Standard_TypeMismatch_Raise_if(shape.IsNull ? false : shape.ShapeType() != ShapeType.Shell,
+        Standard_TypeMismatch_Raise_if(shape.IsNull ? false : shape.Type != ShapeType.Shell,
                                        "TopoDS::Shell");
-        return new Shell(shape.TShape(), shape.Location(), shape.Orientation());
+        return new Shell(shape.TShape(), shape.Placement, shape.Orientation);
     }
 
     /// <summary>Casts <paramref name="shape"/> to a TopoDS_Solid.</summary>
     /// <exception cref="TypeMismatchException">The shape is neither null nor of type SOLID.</exception>
     public static Solid Solid(in Shape shape)
     {
-        Standard_TypeMismatch_Raise_if(shape.IsNull ? false : shape.ShapeType() != ShapeType.Solid,
+        Standard_TypeMismatch_Raise_if(shape.IsNull ? false : shape.Type != ShapeType.Solid,
                                        "TopoDS::Solid");
-        return new Solid(shape.TShape(), shape.Location(), shape.Orientation());
+        return new Solid(shape.TShape(), shape.Placement, shape.Orientation);
     }
 
     /// <summary>Casts <paramref name="shape"/> to a TopoDS_CompSolid.</summary>
     /// <exception cref="TypeMismatchException">The shape is neither null nor of type COMPSOLID.</exception>
     public static CompSolid CompSolid(in Shape shape)
     {
-        Standard_TypeMismatch_Raise_if(shape.IsNull ? false : shape.ShapeType() != ShapeType.CompSolid,
+        Standard_TypeMismatch_Raise_if(shape.IsNull ? false : shape.Type != ShapeType.CompSolid,
                                        "TopoDS::CompSolid");
-        return new CompSolid(shape.TShape(), shape.Location(), shape.Orientation());
+        return new CompSolid(shape.TShape(), shape.Placement, shape.Orientation);
     }
 
     /// <summary>Casts <paramref name="shape"/> to a TopoDS_Compound.</summary>
     /// <exception cref="TypeMismatchException">The shape is neither null nor of type COMPOUND.</exception>
     public static Compound Compound(in Shape shape)
     {
-        Standard_TypeMismatch_Raise_if(shape.IsNull ? false : shape.ShapeType() != ShapeType.Compound,
+        Standard_TypeMismatch_Raise_if(shape.IsNull ? false : shape.Type != ShapeType.Compound,
                                        "TopoDS::Compound");
-        return new Compound(shape.TShape(), shape.Location(), shape.Orientation());
+        return new Compound(shape.TShape(), shape.Placement, shape.Orientation);
     }
 
     // OCCT.NET: C++ passes a derived variable to a non-const TopoDS_Shape& and sees the change in it. C# can't pass

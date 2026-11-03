@@ -67,7 +67,7 @@ public class BRepOffset_MakeOffsetTests
         Assert.True(anAlgo.IsDone, anAlgo.Error().ToString());
         Shape aResult = anAlgo.Shape();
         Assert.True(AllFrozen(aResult));
-        Assert.Equal(ShapeType.Solid, aResult.ShapeType());
+        Assert.Equal(ShapeType.Solid, aResult.Type);
         Assert.Equal(26, SubShapes(aResult, ShapeType.Face).Count);
         double a = 10, b = 20, c = 30, r = 1;
         double anExpected = a * b * c + 2 * (a * b + b * c + c * a) * r + Math.PI * r * r * (a + b + c)
@@ -109,7 +109,7 @@ public class BRepOffset_MakeOffsetTests
         Assert.True(anAlgo.IsDone);
         Shape aResult = anAlgo.Shape();
         Assert.True(AllFrozen(aResult));
-        Assert.Equal(ShapeType.Solid, aResult.ShapeType());
+        Assert.Equal(ShapeType.Solid, aResult.Type);
         Assert.True(new Analyzer(aResult).IsValid());
         Assert.Equal(10.0 * 20.0 * 30.0 - 8.0 * 18.0 * 29.0, Volume(aResult), 3);
 
@@ -145,7 +145,7 @@ public class BRepOffset_MakeOffsetTests
         Assert.True(anAlgo.IsDone, anAlgo.Error().ToString());
         Shape aResult = anAlgo.Shape();
         Assert.True(AllFrozen(aResult));
-        Assert.Equal(ShapeType.Solid, aResult.ShapeType());
+        Assert.Equal(ShapeType.Solid, aResult.Type);
         var anArea = new Properties();
         MassPropertiesBuilder.SurfaceProperties(aFace, anArea);
         Assert.Equal(anArea.Mass() * 2.0, Math.Abs(Volume(aResult)), 6);

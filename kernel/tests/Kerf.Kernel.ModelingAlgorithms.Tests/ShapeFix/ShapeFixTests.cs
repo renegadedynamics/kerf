@@ -118,7 +118,7 @@ public class ShapeFixTests
             Edge anE = ShapeCasts.Edge(anExp.Current());
             Curve3D aCrv = Tool.Curve(anE, out double f, out _)!;
             Vertex aV = Exploration.FirstVertex(anE);
-            Assert.True(Tool.Pnt(aV).Distance(aCrv.Value(f)) < 1e-9);
+            Assert.True(Tool.Pnt(aV).DistanceTo(aCrv.Value(f)) < 1e-9);
             Assert.True(Tool.Tolerance(aV) < 1e-6);
         }
         // the context answers for the caller's edges

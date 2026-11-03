@@ -19,8 +19,8 @@ public class BoundaryParamsRangeSplitter : NurbsRangeSplitter
     public override void AddPoint(in Point2D point)
     {
         base.AddPoint(point);
-        GetParametersU().Add(point.X());
-        GetParametersV().Add(point.Y());
+        GetParametersU().Add(point.X);
+        GetParametersV().Add(point.Y);
     }
 
     /// <summary>The parameters are the border points': nothing to initialise.</summary>

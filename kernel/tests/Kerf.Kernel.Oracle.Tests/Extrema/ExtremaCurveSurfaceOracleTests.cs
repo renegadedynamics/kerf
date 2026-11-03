@@ -47,8 +47,8 @@ public class ExtremaCurveSurfaceOracleTests(ITestOutputHelper output)
             using (aNC)
             using (aNS)
             {
-                (double aF, double aL) = Range(anOracle, aPC.FirstParameter(), aPC.LastParameter(), 1e-3);
-                aPS.Bounds(out double u1, out double u2, out double v1, out double v2);
+                (double aF, double aL) = Range(anOracle, aPC.FirstParameter, aPC.LastParameter, 1e-3);
+                aPS.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
                 (double aU1, double aU2) = Range(anOracle, u1, u2, 1e-2);
                 (double aV1, double aV2) = Range(anOracle, v1, v2, 1e-2);
 
@@ -146,7 +146,7 @@ public class ExtremaCurveSurfaceOracleTests(ITestOutputHelper output)
                     anOracle.Same(aVv, aQV, $"{aW} V");
                     anOracle.Same(aNP1, aQ1.Value(), $"{aW} point on the curve");
                     anOracle.Same(aNP2, aQ2.Value(), $"{aW} point on the surface");
-                    anOracle.Same(Oracle.FromNative(aNP1).SquareDistance(Oracle.FromNative(aNP2)),
+                    anOracle.Same(Oracle.FromNative(aNP1).SquareDistanceTo(Oracle.FromNative(aNP2)),
                         aPort.SquareDistance(aMatch), $"{aW} square distance");
                     aCompared++;
                 }

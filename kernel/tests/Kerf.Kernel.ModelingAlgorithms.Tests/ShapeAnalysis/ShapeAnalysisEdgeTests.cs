@@ -72,15 +72,15 @@ public class ShapeAnalysisEdgeTests
             // the pcurve's ends are the vertices' points on the surface, in the edge's direction
             Assert.True(sae.BoundUV(anE, aF, out Point2D aUV1, out Point2D aUV2));
             Surface aS = Tool.Surface(aF)!;
-            Assert.True(aS.Value(aUV1.X(), aUV1.Y()).Distance(Tool.Pnt(sae.FirstVertex(anE))) < 1e-9);
-            Assert.True(aS.Value(aUV2.X(), aUV2.Y()).Distance(Tool.Pnt(sae.LastVertex(anE))) < 1e-9);
+            Assert.True(aS.Value(aUV1.X, aUV1.Y).DistanceTo(Tool.Pnt(sae.FirstVertex(anE))) < 1e-9);
+            Assert.True(aS.Value(aUV2.X, aUV2.Y).DistanceTo(Tool.Pnt(sae.LastVertex(anE))) < 1e-9);
 
             // the tangent at the start points from the first UV point to the last (straight pcurves)
             Assert.True(sae.GetEndTangent2d(anE, aF, false, out Point2D aPos, out Vector2D aTan));
-            Assert.True(aPos.Distance(aUV1) < 1e-12);
+            Assert.True(aPos.DistanceTo(aUV1) < 1e-12);
             Assert.True(aTan.IsParallel(new Vector2D(aUV1, aUV2), 1e-12) && aTan * new Vector2D(aUV1, aUV2) > 0);
             Assert.True(sae.GetEndTangent2d(anE, aF, true, out aPos, out aTan, 0.1));
-            Assert.True(aPos.Distance(aUV2) < 1e-12);
+            Assert.True(aPos.DistanceTo(aUV2) < 1e-12);
             Assert.True(aTan * new Vector2D(aUV1, aUV2) > 0);
         }
         Assert.Equal(24, aCount);
@@ -106,10 +106,10 @@ public class ShapeAnalysisEdgeTests
 
         Vertex aV1 = sae.FirstVertex(aRev);
         Vertex aV2 = sae.LastVertex(aRev);
-        Assert.Equal(10.0, Tool.Pnt(aV1).X());
-        Assert.Equal(0.0, Tool.Pnt(aV2).X());
-        Assert.Equal(Forward, aV1.Orientation());
-        Assert.Equal(Reversed, aV2.Orientation());
+        Assert.Equal(10.0, Tool.Pnt(aV1).X);
+        Assert.Equal(0.0, Tool.Pnt(aV2).X);
+        Assert.Equal(Forward, aV1.Orientation);
+        Assert.Equal(Reversed, aV2.Orientation);
     }
 
     [Fact]
@@ -121,8 +121,8 @@ public class ShapeAnalysisEdgeTests
         Edge aMoved = ShapeCasts.Edge(anE.Moved(new Placement(aT)));
         var sae = new EdgeAnalysis();
         Assert.True(sae.Curve3d(aMoved, out Curve3D? aC, out double f, out double l));
-        Assert.Equal(5.0, aC!.Value(f).Z());
-        Assert.Equal(5.0, aC.Value(l).Z());
+        Assert.Equal(5.0, aC!.Value(f).Z);
+        Assert.Equal(5.0, aC.Value(l).Z);
     }
 
     [Fact]
@@ -141,7 +141,7 @@ public class ShapeAnalysisEdgeTests
             aSeams++;
             Assert.True(sae.BoundUV(anE, aF, out Point2D aF1, out _));
             Assert.True(sae.BoundUV(ShapeCasts.Edge(anE.Reversed()), aF, out Point2D aR1, out _));
-            Assert.Equal(2 * Math.PI, Math.Abs(aF1.X() - aR1.X()), 1e-12);
+            Assert.Equal(2 * Math.PI, Math.Abs(aF1.X - aR1.X), 1e-12);
             Assert.False(sae.CheckCurve3dWithPCurve(anE, aF));
             Assert.True(sae.Status(ExtendStatus.OK));
             double aMaxDev = 0;
@@ -241,7 +241,7 @@ public class ShapeAnalysisEdgeTests
         Assert.Null(aPC);
         Assert.False(sae.BoundUV(anE, aG, out _, out _));
         Assert.False(sae.GetEndTangent2d(anE, aG, false, out _, out Vector2D aTan));
-        Assert.Equal(0.0, aTan.Magnitude());
+        Assert.Equal(0.0, aTan.Magnitude);
         Assert.False(sae.CheckVerticesWithPCurve(anE, aG));
         Assert.True(sae.Status(ExtendStatus.FAIL1));
     }
@@ -410,7 +410,7 @@ public class ShapeAnalysisEdgeTests
             Assert.Equal(f1, f2);
             Assert.Equal(l1, l2);
             Assert.True(sae.PCurve(anE, aF, out _, out double f3, out double l3, false));
-            if (anE.Orientation() == Reversed)
+            if (anE.Orientation == Reversed)
             {
                 Assert.Equal(f1, l3);
                 Assert.Equal(l1, f3);

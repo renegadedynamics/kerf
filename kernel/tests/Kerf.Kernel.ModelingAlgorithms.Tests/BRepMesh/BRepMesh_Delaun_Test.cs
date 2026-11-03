@@ -33,12 +33,12 @@ public class BRepMesh_DelaunTest
 
         // aCur.Angle(aPrev) where aCur=up, aPrev=right
         // Going from right to up is CCW, angle should be negative in OCCT convention
-        double anAngleCCW = aVecUp.Angle(aVecRight);
+        double anAngleCCW = aVecUp.AngleTo(aVecRight);
         Assert.True(anAngleCCW < 0.0, "CCW rotation should give negative angle in OCCT convention");
         Assert.Equal(-Math.PI / 2, anAngleCCW, global::Kerf.Engine.Foundation.Precision.Angular());
 
         // Test CW rotation: from (0,1) to (1,0) is 90 degrees CW
-        double anAngleCW = aVecRight.Angle(aVecUp);
+        double anAngleCW = aVecRight.AngleTo(aVecUp);
         Assert.True(anAngleCW > 0.0, "CW rotation should give positive angle in OCCT convention");
         Assert.Equal(Math.PI / 2, anAngleCW, global::Kerf.Engine.Foundation.Precision.Angular());
     }
@@ -67,7 +67,7 @@ public class BRepMesh_DelaunTest
         for (int i = 1; i < 5; ++i)
         {
             Vector2D aCurDir = new(aVertices[i] - aCenter);
-            aTotalAngle += aCurDir.Angle(aPrevDir);
+            aTotalAngle += aCurDir.AngleTo(aPrevDir);
             aPrevDir = aCurDir;
         }
 
@@ -106,7 +106,7 @@ public class BRepMesh_DelaunTest
         for (int i = 1; i < 5; ++i)
         {
             Vector2D aCurDir = new(aVertices[i] - aCenter);
-            aTotalAngle += aCurDir.Angle(aPrevDir);
+            aTotalAngle += aCurDir.AngleTo(aPrevDir);
             aPrevDir = aCurDir;
         }
 

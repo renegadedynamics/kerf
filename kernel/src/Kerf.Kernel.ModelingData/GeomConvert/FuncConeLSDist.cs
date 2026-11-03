@@ -17,7 +17,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// squared distances from the points to the cone. The variables are the location (X(1) to X(3)), the semi-angle
 /// X(4) and the reference radius X(5).
 /// </summary>
-public sealed class FuncConeLSDist : MultipleVarFunction
+internal sealed class FuncConeLSDist : MultipleVarFunction
 {
     private NCollection_HArray1<Xyz>? _points;
     private Direction3D _dir = new Direction3D();
@@ -58,7 +58,7 @@ public sealed class FuncConeLSDist : MultipleVarFunction
             global::Kerf.Engine.Geometry.ElSLib.ConeParameters(pos, r, semiAngle, pi, out u, out v);
             Point3D pp;
             global::Kerf.Engine.Geometry.ElSLib.ConeD0(u, v, pos, r, semiAngle, out pp);
-            f += pi.SquareDistance(pp);
+            f += pi.SquareDistanceTo(pp);
         }
 
         return true;

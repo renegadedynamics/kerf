@@ -18,7 +18,7 @@ namespace Kerf.Engine.Geometry.Library;
 /// direction: for a rational surface N/D, the surface (a·N)/(a·D) has a denominator whose first derivative in U
 /// vanishes on the boundaries.
 /// </summary>
-public sealed class DenominatorMultiplier
+internal sealed class DenominatorMultiplier
 {
     // OCCT keeps the handle; the surface is only read.
     private readonly BSplineSurface _surface;
@@ -48,8 +48,8 @@ public sealed class DenominatorMultiplier
         NCollection_Array1<int> surface_u_mults = _surface.InternalUMultiplicities();
         NCollection_Array1<double> surface_v_knots = _surface.InternalVKnots();
         NCollection_Array1<int> surface_v_mults = _surface.InternalVMultiplicities();
-        int udegree = _surface.UDegree();
-        int vdegree = _surface.VDegree();
+        int udegree = _surface.UDegree;
+        int vdegree = _surface.VDegree;
         SurfaceBSplSLib.HomogeneousD1(_surface.UKnot(_surface.LastUKnotIndex()),
                                vParameter,
                                0,

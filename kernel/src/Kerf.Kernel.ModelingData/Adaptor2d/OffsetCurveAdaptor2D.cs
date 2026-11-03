@@ -16,7 +16,7 @@ namespace Kerf.Engine.Geometry.Adaptors;
 /// along its normal (the tangent rotated by -90 degrees).
 /// </summary>
 /// <remarks>An adaptor is a working object: <see cref="Load(Curve2DAdaptorBase)"/> is public, as in OCCT.</remarks>
-public class OffsetCurveAdaptor2D : Curve2DAdaptorBase
+internal class OffsetCurveAdaptor2D : Curve2DAdaptorBase
 {
     private Curve2DAdaptorBase? _curve;
     private double _offset;
@@ -393,11 +393,11 @@ public class OffsetCurveAdaptor2D : Curve2DAdaptorBase
             else
             {
                 Circle2D c1 = _curve!.Circle();
-                double radius = c1.Radius();
-                Frame2D axes = c1.Axis();
-                Direction2D xd = axes.XDirection();
-                Direction2D yd = axes.YDirection();
-                double crossed = xd.X() * yd.Y() - xd.Y() * yd.X();
+                double radius = c1.Radius;
+                Frame2D axes = c1.Axis;
+                Direction2D xd = axes.XDirection;
+                Direction2D yd = axes.YDirection;
+                double crossed = xd.X * yd.Y - xd.Y * yd.X;
                 double signe = (crossed > 0.0) ? 1.0 : -1.0;
 
                 radius += signe * _offset;
@@ -408,7 +408,7 @@ public class OffsetCurveAdaptor2D : Curve2DAdaptorBase
                 else if (radius < 0.0)
                 {
                     radius = -radius;
-                    axes = axes.WithXDirection((axes.XDirection()).Reversed());
+                    axes = axes.WithXDirection((axes.XDirection).Reversed());
                     return new Circle2D(axes, radius);
                 }
                 else

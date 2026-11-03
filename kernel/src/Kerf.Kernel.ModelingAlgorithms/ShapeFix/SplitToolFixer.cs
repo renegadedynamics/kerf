@@ -56,7 +56,7 @@ public sealed class SplitToolFixer
             p1 = c3d.Value(param);
             if (!L.IsIdentity)
             {
-                p1 = p1.Transformed(L.Transformation());
+                p1 = p1.Transformed(L.Transformation);
             }
         }
         else
@@ -66,15 +66,15 @@ public sealed class SplitToolFixer
             p1 = sas.Value(c2d!.Value(param));
             if (!L.IsIdentity)
             {
-                p1 = p1.Transformed(L.Transformation());
+                p1 = p1.Transformed(L.Transformation);
             }
         }
         Point3D p2 = Tool.Pnt(vert);
-        if (p1.Distance(p2) > tol3d)
+        if (p1.DistanceTo(p2) > tol3d)
         {
             // return false;
             var bv = new BrepBuilder();
-            bv.UpdateVertex(vert, p1.Distance(p2));
+            bv.UpdateVertex(vert, p1.DistanceTo(p2));
         }
 
         var transferParameters = new TransferParametersProjAnalysis();
@@ -94,10 +94,10 @@ public sealed class SplitToolFixer
 
         var                sbe    = new BuildEdgeBuilder();
         var                sfe    = new EdgeFixer();
-        Orientation orient = edge.Orientation();
+        Orientation orient = edge.Orientation;
         var                B      = new BrepBuilder();
         Edge        wE     = edge;
-        wE.Orientation(Forward);
+        wE.Orient(Forward);
         Shape tmpShape = vert.Oriented(Reversed); // for porting
         newE1 = sbe.InternalCopyReplaceVertices(wE, sae.FirstVertex(wE), ShapeCasts.Vertex(tmpShape));
         sbe.CopyPCurves(newE1, wE);
@@ -113,8 +113,8 @@ public sealed class SplitToolFixer
         sfe.FixSameParameter(newE2);
         // B.SameParameter(newE2,false);
 
-        newE1.Orientation(orient);
-        newE2.Orientation(orient);
+        newE1.Orient(orient);
+        newE2.Orient(orient);
         if (orient == Reversed)
         {
             Edge tmp = newE2;
@@ -201,7 +201,7 @@ public sealed class SplitToolFixer
             {
                 if (crv is TrimmedCurve2D tc)
                 {
-                    if (tc.BasisCurve() is LineCurve2D)
+                    if (tc.BasisCurve is LineCurve2D)
                     {
                         var bl = new BrepBuilder();
                         bl.Range(edge, Min(pend, cut), Max(pend, cut));
@@ -319,12 +319,12 @@ public sealed class SplitToolFixer
         {
             if (isReverse)
             {
-                double newtol = tolVF + pvf.Distance(pv2);
+                double newtol = tolVF + pvf.DistanceTo(pv2);
                 if (tolV2 < newtol)
                 {
                     B.UpdateVertex(v2, newtol);
                 }
-                if (vf.Orientation() == v2.Orientation())
+                if (vf.Orientation == v2.Orientation)
                 {
                     context.Replace(vf, v2);
                     vf = v2;
@@ -334,12 +334,12 @@ public sealed class SplitToolFixer
                     context.Replace(vf, v2.Reversed());
                     vf = ShapeCasts.Vertex(v2.Reversed());
                 }
-                newtol = tolVL + pvl.Distance(pv1);
+                newtol = tolVL + pvl.DistanceTo(pv1);
                 if (tolV1 < newtol)
                 {
                     B.UpdateVertex(v1, newtol);
                 }
-                if (vl.Orientation() == v1.Orientation())
+                if (vl.Orientation == v1.Orientation)
                 {
                     context.Replace(vl, v1);
                     vl = v1;
@@ -352,12 +352,12 @@ public sealed class SplitToolFixer
             }
             else
             {
-                double newtol = tolVF + pvf.Distance(pv1);
+                double newtol = tolVF + pvf.DistanceTo(pv1);
                 if (tolV1 < newtol)
                 {
                     B.UpdateVertex(v1, newtol);
                 }
-                if (vf.Orientation() == v1.Orientation())
+                if (vf.Orientation == v1.Orientation)
                 {
                     context.Replace(vf, v1);
                     vf = v1;
@@ -367,12 +367,12 @@ public sealed class SplitToolFixer
                     context.Replace(vf, v1.Reversed());
                     vf = ShapeCasts.Vertex(v1.Reversed());
                 }
-                newtol = tolVL + pvl.Distance(pv2);
+                newtol = tolVL + pvl.DistanceTo(pv2);
                 if (tolV2 < newtol)
                 {
                     B.UpdateVertex(v2, newtol);
                 }
-                if (vl.Orientation() == v2.Orientation())
+                if (vl.Orientation == v2.Orientation)
                 {
                     context.Replace(vl, v2);
                     vl = v2;
@@ -396,12 +396,12 @@ public sealed class SplitToolFixer
                 {
                     return false;
                 }
-                double newtol = tolVF + pvf.Distance(pv2);
+                double newtol = tolVF + pvf.DistanceTo(pv2);
                 if (tolV2 < newtol)
                 {
                     B.UpdateVertex(v2, newtol);
                 }
-                if (vf.Orientation() == v2.Orientation())
+                if (vf.Orientation == v2.Orientation)
                 {
                     context.Replace(vf, v2);
                     vf = v2;
@@ -418,12 +418,12 @@ public sealed class SplitToolFixer
                 {
                     return false;
                 }
-                double newtol = tolVF + pvf.Distance(pv1);
+                double newtol = tolVF + pvf.DistanceTo(pv1);
                 if (tolV1 < newtol)
                 {
                     B.UpdateVertex(v1, newtol);
                 }
-                if (vf.Orientation() == v1.Orientation())
+                if (vf.Orientation == v1.Orientation)
                 {
                     context.Replace(vf, v1);
                     vf = v1;
@@ -448,12 +448,12 @@ public sealed class SplitToolFixer
                 {
                     return false;
                 }
-                double newtol = tolVL + pvl.Distance(pv1);
+                double newtol = tolVL + pvl.DistanceTo(pv1);
                 if (tolV1 < newtol)
                 {
                     B.UpdateVertex(v1, newtol);
                 }
-                if (vl.Orientation() == v1.Orientation())
+                if (vl.Orientation == v1.Orientation)
                 {
                     context.Replace(vl, v1);
                     vl = v1;
@@ -470,12 +470,12 @@ public sealed class SplitToolFixer
                 {
                     return false;
                 }
-                double newtol = tolVL + pvl.Distance(pv2);
+                double newtol = tolVL + pvl.DistanceTo(pv2);
                 if (tolV2 < newtol)
                 {
                     B.UpdateVertex(v2, newtol);
                 }
-                if (vl.Orientation() == v2.Orientation())
+                if (vl.Orientation == v2.Orientation)
                 {
                     context.Replace(vl, v2);
                     vl = v2;

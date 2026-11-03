@@ -43,12 +43,12 @@ public class SplitSurfaceAngle : SplitSurface
         if (_surface is TrimmedSurface rts)
         {
             isRect = true;
-            rts.Bounds(out u1, out u2, out _, out _);
-            s = rts.BasisSurface();
+            rts.ParameterBounds(out u1, out u2, out _, out _);
+            s = rts.BasisSurface;
         }
         else if (_surface is OffsetSurface ofs)
         {
-            s = ofs.BasisSurface();
+            s = ofs.BasisSurface;
         }
         else
         {

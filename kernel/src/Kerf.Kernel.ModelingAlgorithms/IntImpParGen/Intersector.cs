@@ -183,7 +183,7 @@ public class Intersector<ImpTool, ParCurve, ParTool, ProjectOnPCurveTool, MyImpP
             {
                 if (param1 < theImpCurveDomain.FirstParameter())
                 {
-                    if (pt.Distance(theImpCurveDomain.FirstPoint()) > theImpCurveDomain.FirstTolerance())
+                    if (pt.DistanceTo(theImpCurveDomain.FirstPoint()) > theImpCurveDomain.FirstTolerance())
                     {
                         isOnTheImpCurveDomain = false;
                     }
@@ -194,7 +194,7 @@ public class Intersector<ImpTool, ParCurve, ParTool, ProjectOnPCurveTool, MyImpP
             {
                 if (param1 > theImpCurveDomain.LastParameter())
                 {
-                    if (pt.Distance(theImpCurveDomain.LastPoint()) > theImpCurveDomain.LastTolerance())
+                    if (pt.DistanceTo(theImpCurveDomain.LastPoint()) > theImpCurveDomain.LastTolerance())
                     {
                         isOnTheImpCurveDomain = false;
                     }
@@ -289,12 +289,12 @@ public class Intersector<ImpTool, ParCurve, ParTool, ProjectOnPCurveTool, MyImpP
 
                 ParTool.D2(theParCurve, param2_inf, out ptemp, out t2, out n2);
                 theImpTool.D2(param1_inf, out ptemp, out t1, out n1);
-                if (t1.Magnitude() <= Constants.Resolution())
+                if (t1.Magnitude <= Constants.Resolution())
                 {
                     t1 = n1;
                 }
 
-                if (t2.Magnitude() <= Constants.Resolution())
+                if (t2.Magnitude <= Constants.Resolution())
                 {
                     t2 = n2;
                 }
@@ -414,9 +414,9 @@ public class Intersector<ImpTool, ParCurve, ParTool, ProjectOnPCurveTool, MyImpP
 
                 if (!theImpCurveDomain.IsClosed)
                 {
-                    if (Pt1_on1.Distance(Pt2_on1) <= Dist_Mini_ImpCurve)
+                    if (Pt1_on1.DistanceTo(Pt2_on1) <= Dist_Mini_ImpCurve)
                     {
-                        if (Pt1_on2.Distance(Pt2_on2) <= Dist_Mini_ImpCurve)
+                        if (Pt1_on2.DistanceTo(Pt2_on2) <= Dist_Mini_ImpCurve)
                         {
                             onlyOnePoint = true;
                         }
@@ -465,9 +465,9 @@ public class Intersector<ImpTool, ParCurve, ParTool, ProjectOnPCurveTool, MyImpP
 
                 if (pos1 != Position2D.Middle && pos2 != Position2D.Middle)
                 {
-                    double m = 0.5 * (Pt1_on1.X() + Pt1_on2.X());
+                    double m = 0.5 * (Pt1_on1.X + Pt1_on2.X);
                     Pt1_on1 = Pt1_on1.WithX(m);
-                    m = 0.5 * (Pt1_on1.Y() + Pt1_on2.Y());
+                    m = 0.5 * (Pt1_on1.Y + Pt1_on2.Y);
                     Pt1_on1 = Pt1_on1.WithY(m);
                 }
 
@@ -524,9 +524,9 @@ public class Intersector<ImpTool, ParCurve, ParTool, ProjectOnPCurveTool, MyImpP
 
                     if (pos1 != Position2D.Middle && pos2 != Position2D.Middle)
                     {
-                        double m = 0.5 * (Pt2_on1.X() + Pt2_on2.X());
+                        double m = 0.5 * (Pt2_on1.X + Pt2_on2.X);
                         Pt2_on1 = Pt2_on1.WithX(m);
-                        m = 0.5 * (Pt2_on1.Y() + Pt2_on2.Y());
+                        m = 0.5 * (Pt2_on1.Y + Pt2_on2.Y);
                         Pt2_on1 = Pt2_on1.WithY(m);
                     }
 
@@ -551,7 +551,7 @@ public class Intersector<ImpTool, ParCurve, ParTool, ProjectOnPCurveTool, MyImpP
         {
             if (!headOnPar)
             {
-                if (theImpCurveDomain.FirstPoint().Distance(theParCurveDomain.FirstPoint())
+                if (theImpCurveDomain.FirstPoint().DistanceTo(theParCurveDomain.FirstPoint())
                     <= Max(theImpCurveDomain.FirstTolerance(), theParCurveDomain.FirstTolerance()))
                 {
                     param1 = theImpCurveDomain.FirstParameter();
@@ -579,7 +579,7 @@ public class Intersector<ImpTool, ParCurve, ParTool, ProjectOnPCurveTool, MyImpP
 
             if (!endOnPar)
             {
-                if (theImpCurveDomain.FirstPoint().Distance(theParCurveDomain.LastPoint())
+                if (theImpCurveDomain.FirstPoint().DistanceTo(theParCurveDomain.LastPoint())
                     <= Max(theImpCurveDomain.FirstTolerance(), theParCurveDomain.LastTolerance()))
                 {
                     param1 = theImpCurveDomain.FirstParameter();
@@ -610,7 +610,7 @@ public class Intersector<ImpTool, ParCurve, ParTool, ProjectOnPCurveTool, MyImpP
         {
             if (!headOnPar)
             {
-                if (theImpCurveDomain.LastPoint().Distance(theParCurveDomain.FirstPoint())
+                if (theImpCurveDomain.LastPoint().DistanceTo(theParCurveDomain.FirstPoint())
                     <= Max(theImpCurveDomain.LastTolerance(), theParCurveDomain.FirstTolerance()))
                 {
                     param1 = theImpCurveDomain.LastParameter();
@@ -638,7 +638,7 @@ public class Intersector<ImpTool, ParCurve, ParTool, ProjectOnPCurveTool, MyImpP
 
             if (!endOnPar)
             {
-                if (theImpCurveDomain.LastPoint().Distance(theParCurveDomain.LastPoint())
+                if (theImpCurveDomain.LastPoint().DistanceTo(theParCurveDomain.LastPoint())
                     <= Max(theImpCurveDomain.LastTolerance(), theParCurveDomain.LastTolerance()))
                 {
                     param1 = theImpCurveDomain.LastParameter();
@@ -768,7 +768,7 @@ public class Intersector<ImpTool, ParCurve, ParTool, ProjectOnPCurveTool, MyImpP
             {
                 if (param1 < theImpCurveDomain.FirstParameter())
                 {
-                    if (pt1.Distance(theImpCurveDomain.FirstPoint()) > theImpCurveDomain.FirstTolerance())
+                    if (pt1.DistanceTo(theImpCurveDomain.FirstPoint()) > theImpCurveDomain.FirstTolerance())
                     {
                         isOnTheImpCurveDomain1 = false;
                     }
@@ -779,7 +779,7 @@ public class Intersector<ImpTool, ParCurve, ParTool, ProjectOnPCurveTool, MyImpP
             {
                 if (param1 > theImpCurveDomain.LastParameter())
                 {
-                    if (pt1.Distance(theImpCurveDomain.LastPoint()) > theImpCurveDomain.LastTolerance())
+                    if (pt1.DistanceTo(theImpCurveDomain.LastPoint()) > theImpCurveDomain.LastTolerance())
                     {
                         isOnTheImpCurveDomain1 = false;
                     }
@@ -791,7 +791,7 @@ public class Intersector<ImpTool, ParCurve, ParTool, ProjectOnPCurveTool, MyImpP
             {
                 if (param2 < theImpCurveDomain.FirstParameter())
                 {
-                    if (pt2.Distance(theImpCurveDomain.FirstPoint()) > theImpCurveDomain.FirstTolerance())
+                    if (pt2.DistanceTo(theImpCurveDomain.FirstPoint()) > theImpCurveDomain.FirstTolerance())
                     {
                         isOnTheImpCurveDomain2 = false;
                     }
@@ -802,7 +802,7 @@ public class Intersector<ImpTool, ParCurve, ParTool, ProjectOnPCurveTool, MyImpP
             {
                 if (param2 > theImpCurveDomain.LastParameter())
                 {
-                    if (pt2.Distance(theImpCurveDomain.LastPoint()) > theImpCurveDomain.LastTolerance())
+                    if (pt2.DistanceTo(theImpCurveDomain.LastPoint()) > theImpCurveDomain.LastTolerance())
                     {
                         isOnTheImpCurveDomain2 = false;
                     }

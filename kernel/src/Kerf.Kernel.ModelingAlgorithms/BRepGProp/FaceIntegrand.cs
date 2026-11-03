@@ -83,7 +83,7 @@ public sealed class FaceIntegrand
         _faceSurface = Tool.Surface(_surface.Face(), out _faceLocation);
         _isFaceContextReady = _faceSurface is not null;
         //  mySurface.Initialize(TopoDS::Face(F.Oriented(TopAbs_FORWARD)));
-        _sReverse = (f.Orientation() == Reversed);
+        _sReverse = (f.Orientation == Reversed);
     }
 
     /// <summary>The number of points for an accurate integration in the U direction.</summary>
@@ -98,14 +98,14 @@ public sealed class FaceIntegrand
 
             case SurfaceKind.BezierSurface:
             {
-                nu = ((global::Kerf.Geometry.BezierSurface)_surface.GeomSurfaceOriginal()!).UDegree() + 1;
+                nu = ((global::Kerf.Geometry.BezierSurface)_surface.GeomSurfaceOriginal()!).UDegree + 1;
                 nu = Max(4, nu);
             }
 
                 break;
             case SurfaceKind.BSplineSurface:
             {
-                int a = ((global::Kerf.Geometry.BSplineSurface)_surface.GeomSurfaceOriginal()!).UDegree() + 1;
+                int a = ((global::Kerf.Geometry.BSplineSurface)_surface.GeomSurfaceOriginal()!).UDegree + 1;
                 int b = ((global::Kerf.Geometry.BSplineSurface)_surface.GeomSurfaceOriginal()!).UKnotCount - 1;
                 nu = Max(4, a * b);
             }
@@ -131,14 +131,14 @@ public sealed class FaceIntegrand
 
             case SurfaceKind.BezierSurface:
             {
-                nv = ((global::Kerf.Geometry.BezierSurface)_surface.GeomSurfaceOriginal()!).VDegree() + 1;
+                nv = ((global::Kerf.Geometry.BezierSurface)_surface.GeomSurfaceOriginal()!).VDegree + 1;
                 nv = Max(4, nv);
             }
 
                 break;
             case SurfaceKind.BSplineSurface:
             {
-                int a = ((global::Kerf.Geometry.BSplineSurface)_surface.GeomSurfaceOriginal()!).VDegree() + 1;
+                int a = ((global::Kerf.Geometry.BSplineSurface)_surface.GeomSurfaceOriginal()!).VDegree + 1;
                 int b = ((global::Kerf.Geometry.BSplineSurface)_surface.GeomSurfaceOriginal()!).VKnotCount - 1;
                 nv = Max(4, a * b);
             }
@@ -184,13 +184,13 @@ public sealed class FaceIntegrand
 
             case BezierCurve:
             {
-                n = ((BezierCurve2D)_curve.Curve()!).Degree() + 1;
+                n = ((BezierCurve2D)_curve.Curve()!).Degree + 1;
             }
 
                 break;
             case BSplineCurve:
             {
-                int a = ((BSplineCurve2D)_curve.Curve()!).Degree() + 1;
+                int a = ((BSplineCurve2D)_curve.Curve()!).Degree + 1;
                 int b = ((BSplineCurve2D)_curve.Curve()!).KnotCount - 1;
                 n = a * b;
             }
@@ -228,7 +228,7 @@ public sealed class FaceIntegrand
             return false;
         }
 
-        if (e.Orientation() == Reversed)
+        if (e.Orientation == Reversed)
         {
             double x = a;
             a = c.ReversedParameter(b);
@@ -287,12 +287,12 @@ public sealed class FaceIntegrand
                 nv = 2;
                 break;
             case SurfaceKind.BezierSurface:
-                nv = ((global::Kerf.Geometry.BezierSurface)_surface.GeomSurfaceOriginal()!).VDegree();
-                nu = ((global::Kerf.Geometry.BezierSurface)_surface.GeomSurfaceOriginal()!).UDegree();
+                nv = ((global::Kerf.Geometry.BezierSurface)_surface.GeomSurfaceOriginal()!).VDegree;
+                nu = ((global::Kerf.Geometry.BezierSurface)_surface.GeomSurfaceOriginal()!).UDegree;
                 break;
             case SurfaceKind.BSplineSurface:
-                nv = ((global::Kerf.Geometry.BSplineSurface)_surface.GeomSurfaceOriginal()!).VDegree();
-                nu = ((global::Kerf.Geometry.BSplineSurface)_surface.GeomSurfaceOriginal()!).UDegree();
+                nv = ((global::Kerf.Geometry.BSplineSurface)_surface.GeomSurfaceOriginal()!).VDegree;
+                nu = ((global::Kerf.Geometry.BSplineSurface)_surface.GeomSurfaceOriginal()!).UDegree;
                 break;
             default:
                 nu = 2;
@@ -485,10 +485,10 @@ public sealed class FaceIntegrand
                 nl = 3 * 3;
                 break;
             case BezierCurve:
-                nl = ((BezierCurve2D)_curve.Curve()!).Degree();
+                nl = ((BezierCurve2D)_curve.Curve()!).Degree;
                 break;
             case BSplineCurve:
-                nl = ((BSplineCurve2D)_curve.Curve()!).Degree();
+                nl = ((BSplineCurve2D)_curve.Curve()!).Degree;
                 break;
             default:
                 nl = 3 * 3;
@@ -721,7 +721,7 @@ public sealed class FaceIntegrand
                 var curve = new CurveAdaptor();
                 Surface surf = _surface.GeomSurfaceOriginal()!;
 
-                curve.Load(((ExtrusionSurface)surf).BasisCurve());
+                curve.Load(((ExtrusionSurface)surf).BasisCurve);
                 isCBSpline = curve.GetType() == BSplineCurve;
             }
         }
@@ -744,7 +744,7 @@ public sealed class FaceIntegrand
                 Surface surf = _surface.GeomSurfaceOriginal()!;
                 BSplineCurve3D bSplCurve;
 
-                curve.Load(((ExtrusionSurface)surf).BasisCurve());
+                curve.Load(((ExtrusionSurface)surf).BasisCurve);
                 bSplCurve = curve.BSpline();
                 knots = new NCollection_HArray1<double>(bSplCurve.InternalKnots());
             }

@@ -44,9 +44,9 @@ public class GeomEval_EllipsoidSurfaceTest
         const double aA = 3.0, aB = 2.0, aC = 1.0;
         EllipsoidSurface aSurf = new(anAx3, aA, aB, aC);
         Point3D aP = aSurf.EvalD0(0.0, 0.0);
-        Assert.Equal(aA, aP.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aP.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aP.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aA, aP.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aP.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aP.Z, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     // Test EvalD0 at u=PI/2, v=0: P = (0, B, 0)
@@ -57,9 +57,9 @@ public class GeomEval_EllipsoidSurfaceTest
         const double aA = 3.0, aB = 2.0, aC = 1.0;
         EllipsoidSurface aSurf = new(anAx3, aA, aB, aC);
         Point3D aP = aSurf.EvalD0(M_PI / 2.0, 0.0);
-        Assert.Equal(0.0, aP.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(aB, aP.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aP.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aP.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aB, aP.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aP.Z, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     // Test EvalD0 at u=0, v=PI/2: P = (0, 0, C)
@@ -70,9 +70,9 @@ public class GeomEval_EllipsoidSurfaceTest
         const double aA = 3.0, aB = 2.0, aC = 1.0;
         EllipsoidSurface aSurf = new(anAx3, aA, aB, aC);
         Point3D aP = aSurf.EvalD0(0.0, M_PI / 2.0);
-        Assert.Equal(0.0, aP.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aP.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(aC, aP.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aP.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aP.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aC, aP.Z, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     // Test derivative consistency: compare EvalD1 vs finite difference of EvalD0
@@ -102,7 +102,7 @@ public class GeomEval_EllipsoidSurfaceTest
     {
         CoordinateSystem anAx3 = new();
         EllipsoidSurface aSurf = new(anAx3, 1.0, 1.0, 1.0);
-        aSurf.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+        aSurf.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
         Assert.Equal(0.0, aU1, global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(2.0 * M_PI, aU2, global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(-M_PI / 2.0, aV1, global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -147,7 +147,7 @@ public class GeomEval_EllipsoidSurfaceTest
             for (double v = -1.0; v <= 1.0; v += 0.5)
             {
                 Point3D aP = aSurf.EvalD0(u, v);
-                double aX = aP.X(), aY = aP.Y(), aZ = aP.Z();
+                double aX = aP.X, aY = aP.Y, aZ = aP.Z;
                 double aVal = aA1 * aX * aX + aA2 * aY * aY + aA3 * aZ * aZ
                               + 2.0 * (aB1 * aX * aY + aB2 * aX * aZ + aB3 * aY * aZ)
                               + 2.0 * (aC1 * aX + aC2 * aY + aC3 * aZ) + aD;

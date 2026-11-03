@@ -11,7 +11,7 @@ using static Kerf.Geometry.Continuity;
 namespace Kerf.Engine.Topology.Properties;
 
 /// <summary>Access to a <see cref="FaceSurfaceAdaptor"/> for the local-property algorithms.</summary>
-public static class SurfaceTool
+internal static class SurfaceTool
 {
     /// <summary>The point of parameters (U, V).</summary>
     public static void Value(FaceSurfaceAdaptor s, double u, double v, out Point3D p)

@@ -69,7 +69,7 @@ public class FixSmallSolidFixer : RootFixer
             return false;
         }
 
-        switch (shape.ShapeType())
+        switch (shape.Type)
         {
             case ShapeType.Compound:
             case ShapeType.CompSolid:
@@ -182,7 +182,7 @@ public class FixSmallSolidFixer : RootFixer
         for (; shellIter.More(); shellIter.Next())
         {
             Shape shell = shellIter.Value();
-            if (shell.ShapeType() != ShapeType.Shell)
+            if (shell.Type != ShapeType.Shell)
             {
                 continue;
             }
@@ -191,7 +191,7 @@ public class FixSmallSolidFixer : RootFixer
             for (; faceIter.More(); faceIter.Next())
             {
                 Shape face = faceIter.Value();
-                if (face.ShapeType() != ShapeType.Face)
+                if (face.Type != ShapeType.Face)
                 {
                     continue;
                 }
@@ -222,7 +222,7 @@ public class FixSmallSolidFixer : RootFixer
         for (; shellIter.More(); shellIter.Next())
         {
             Shape solidShell = shellIter.Value();
-            if (solidShell.ShapeType() != ShapeType.Shell)
+            if (solidShell.Type != ShapeType.Shell)
             {
                 continue;
             }
@@ -233,7 +233,7 @@ public class FixSmallSolidFixer : RootFixer
             for (; faceIter.More(); faceIter.Next())
             {
                 Shape face = faceIter.Value();
-                if (face.ShapeType() != ShapeType.Face)
+                if (face.Type != ShapeType.Face)
                 {
                     continue;
                 }
@@ -317,7 +317,7 @@ public class FixSmallSolidFixer : RootFixer
                 Shape face = faceIter.Value();
 
                 // non-face element in a shell - just add it to the new shell
-                if (face.ShapeType() != ShapeType.Face)
+                if (face.Type != ShapeType.Face)
                 {
                     builder.Add(newShell, face);
                     continue;

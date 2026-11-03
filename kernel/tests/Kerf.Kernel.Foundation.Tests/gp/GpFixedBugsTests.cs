@@ -179,14 +179,14 @@ public class GpFixedBugsTests
         {
             var aFrame = new Frame2D(new Point2D(1, -2), new Direction2D(1, 2), false);
             var aHypr = new Hyperbola2D(aFrame, a, b);
-            Xy x = aFrame.XDirection().XY(), y = aFrame.YDirection().XY();
+            Xy x = aFrame.XDirection.XY(), y = aFrame.YDirection.XY();
             // the chord from the vertex to a far point of the branch, at +-t
-            foreach ((Axis2D anAsymptote, double aSign) in new[] { (aHypr.Asymptote1(), 1.0), (aHypr.Asymptote2(), -1.0) })
+            foreach ((Axis2D anAsymptote, double aSign) in new[] { (aHypr.Asymptote1, 1.0), (aHypr.Asymptote2, -1.0) })
             {
                 double t = 20.0;
                 Xy aFar = x.Multiplied(a * Math.Cosh(t)).Added(y.Multiplied(aSign * b * Math.Sinh(t)));
-                Near(aFar.Normalized(), anAsymptote.Direction().XY(), $"asymptote of a = {a}, b = {b}", 1e-9);
-                Near(aFrame.Location().XY(), anAsymptote.Location().XY(), "through the centre");
+                Near(aFar.Normalized(), anAsymptote.Direction.XY(), $"asymptote of a = {a}, b = {b}", 1e-9);
+                Near(aFrame.Location.XY(), anAsymptote.Location.XY(), "through the centre");
             }
         }
     }
@@ -197,15 +197,15 @@ public class GpFixedBugsTests
     {
         var aFrame = new Frame2D(new Point2D(1, -2), new Direction2D(1, 2), true);
         var aHypr = new Hyperbola2D(aFrame, 3.0, 1.2);
-        Axis2D aD2 = aHypr.Directrix2();
-        Point2D aF2 = aHypr.Focus2();
-        Xy x = aFrame.XDirection().XY(), y = aFrame.YDirection().XY();
+        Axis2D aD2 = aHypr.Directrix2;
+        Point2D aF2 = aHypr.Focus2;
+        Xy x = aFrame.XDirection.XY(), y = aFrame.YDirection.XY();
         foreach (double t in new[] { -2.0, -0.5, 0.0, 0.7, 1.5 })
         {
             // a point of the branch on the side of -X
-            var aP = new Point2D(aFrame.Location().XY().Subtracted(x.Multiplied(3.0 * Math.Cosh(t))).Added(y.Multiplied(1.2 * Math.Sinh(t))));
-            Assert.Equal(aHypr.Eccentricity(), aP.Distance(aF2) / new Line2D(aD2).Distance(aP), 1e-10);
+            var aP = new Point2D(aFrame.Location.XY().Subtracted(x.Multiplied(3.0 * Math.Cosh(t))).Added(y.Multiplied(1.2 * Math.Sinh(t))));
+            Assert.Equal(aHypr.Eccentricity, aP.DistanceTo(aF2) / new Line2D(aD2).DistanceTo(aP), 1e-10);
         }
-        Assert.Equal(0.0, aD2.Direction().XY().Dot(x), Tol);
+        Assert.Equal(0.0, aD2.Direction.XY().Dot(x), Tol);
     }
 }

@@ -103,9 +103,9 @@ public sealed class Circ2dTanCenGeo
         for (i = 1; i <= nbsol; i++)
         {
             ConstraintCurveTool.D1(curve, theParam[i], out Point2D point1, out Vector2D tan1);
-            double   normetan1 = tan1.Magnitude();
+            double   normetan1 = tan1.Magnitude;
             Vector2D vec1      = new(point1, pcenter);
-            double   normevec1 = vec1.Magnitude();
+            double   normevec1 = vec1.Magnitude;
             double   dot1;
             if (normevec1 >= Constants.Resolution() && normetan1 >= Constants.Resolution())
             {
@@ -118,7 +118,7 @@ public sealed class Circ2dTanCenGeo
             tol = 1.0e-12;
             if (dot1 <= tol)
             {
-                double angle1 = vec1.Angle(tan1);
+                double angle1 = vec1.AngleTo(tan1);
                 if (qualified1.IsUnqualified || (qualified1.IsEnclosing && angle1 <= 0.0)
                     || (qualified1.IsOutside && angle1 >= 0.0) || (qualified1.IsEnclosed && angle1 <= 0.0))
                 {

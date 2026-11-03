@@ -36,15 +36,15 @@ public class MakeRevolution : MakeOneAxis
     /// <summary>A revolution body by rotating a curve around Z.</summary>
     public MakeRevolution(Curve3D meridian)
     {
-        _revolution = new Revolution(Constants.XOY(), meridian.FirstParameter(), meridian.LastParameter(), meridian, Project(meridian));
+        _revolution = new Revolution(Constants.XOY(), meridian.FirstParameter, meridian.LastParameter, meridian, Project(meridian));
     }
 
     /// <summary>A revolution body by rotating a curve around Z, by angle.</summary>
     public MakeRevolution(Curve3D meridian, double angle)
     {
         _revolution = new Revolution(new Frame3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X)),
-                                               meridian.FirstParameter(),
-                                               meridian.LastParameter(),
+                                               meridian.FirstParameter,
+                                               meridian.LastParameter,
                                                meridian,
                                                Project(meridian));
         _revolution.Angle(angle);
@@ -74,13 +74,13 @@ public class MakeRevolution : MakeOneAxis
     /// <summary>A revolution body by rotating a curve around the Z axis of the axes.</summary>
     public MakeRevolution(in Frame3D axes, Curve3D meridian)
     {
-        _revolution = new Revolution(axes, meridian.FirstParameter(), meridian.LastParameter(), meridian, Project(meridian));
+        _revolution = new Revolution(axes, meridian.FirstParameter, meridian.LastParameter, meridian, Project(meridian));
     }
 
     /// <summary>A revolution body by rotating a curve around the Z axis of the axes, by angle.</summary>
     public MakeRevolution(in Frame3D axes, Curve3D meridian, double angle)
     {
-        _revolution = new Revolution(axes, meridian.FirstParameter(), meridian.LastParameter(), meridian, Project(meridian));
+        _revolution = new Revolution(axes, meridian.FirstParameter, meridian.LastParameter, meridian, Project(meridian));
         _revolution.Angle(angle);
     }
 

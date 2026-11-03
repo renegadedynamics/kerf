@@ -715,7 +715,7 @@ public partial class WireFixer : RootFixer
             }
             Edge  ePrev   = wireSBWD.Edge(n1Next);
             Shape refresh = Context()!.InternalApply(ePrev);
-            if (refresh.IsNull || refresh.IsSame(ePrev) || refresh.ShapeType() != ShapeType.Edge)
+            if (refresh.IsNull || refresh.IsSame(ePrev) || refresh.Type != ShapeType.Edge)
             {
                 continue;
             }
@@ -852,8 +852,8 @@ public partial class WireFixer : RootFixer
                         }
                         if (seq.Length() > 0)
                         { // supposed that edge is SP
-                            bool isFwd = (e.Orientation() == Forward);
-                            e.Orientation(Forward);
+                            bool isFwd = (e.Orientation == Forward);
+                            e.Orient(Forward);
 
                             // if( BRep_Tool::SameParameter(sbwd->Edge(i)) )
                             //   sbe.RemovePCurve ( E, face );
@@ -893,7 +893,7 @@ public partial class WireFixer : RootFixer
                                 {
                                     B.MakeVertex(ref v, c.Value(split), Tool.Tolerance(e));
                                     // try increase tolerance before splitting
-                                    double dist = Tool.Pnt(v1).Distance(Tool.Pnt(v));
+                                    double dist = Tool.Pnt(v1).DistanceTo(Tool.Pnt(v));
                                     if (dist < Tool.Tolerance(v1) * 1.01)
                                     {
                                         B.UpdateVertex(v1, Max(dist, Tool.Tolerance(v1)));
@@ -903,7 +903,7 @@ public partial class WireFixer : RootFixer
                                     }
                                     else
                                     {
-                                        dist = Tool.Pnt(v2).Distance(Tool.Pnt(v));
+                                        dist = Tool.Pnt(v2).DistanceTo(Tool.Pnt(v));
                                         if (dist < Tool.Tolerance(v2) * 1.01)
                                         {
                                             B.UpdateVertex(v, Max(dist, Tool.Tolerance(v2)));
@@ -939,7 +939,7 @@ public partial class WireFixer : RootFixer
                             if (!isFwd)
                             {
                                 sw.Reverse();
-                                e.Orientation(Reversed);
+                                e.Orient(Reversed);
                             }
                             Context()!.Replace(e, sw.InternalWire());
                             UpdateWire();
@@ -1569,7 +1569,7 @@ public partial class WireFixer : RootFixer
                 v = v2;
                 if (Context() is not null)
                 {
-                    Context()!.Replace(v1, v.Oriented(v1.Orientation()));
+                    Context()!.Replace(v1, v.Oriented(v1.Orientation));
                 }
             }
             else
@@ -1577,7 +1577,7 @@ public partial class WireFixer : RootFixer
                 v = v1;
                 if (Context() is not null)
                 {
-                    Context()!.Replace(v2, v.Oriented(v2.Orientation()));
+                    Context()!.Replace(v2, v.Oriented(v2.Orientation));
                 }
             }
         }
@@ -1595,8 +1595,8 @@ public partial class WireFixer : RootFixer
             v = sbv.InternalCombineVertex(v1, v2, 1.0001);
             if (Context() is not null)
             {
-                Context()!.Replace(v1, v.Oriented(v1.Orientation()));
-                Context()!.Replace(v2, v.Oriented(v2.Orientation()));
+                Context()!.Replace(v1, v.Oriented(v1.Orientation));
+                Context()!.Replace(v2, v.Oriented(v2.Orientation));
             }
         }
 
@@ -1735,22 +1735,22 @@ public partial class WireFixer : RootFixer
         double vRange       = 1.0;
         if (surf.Surface() is RevolutionSurface surOfRev)
         {
-            Curve3D baseCrv = surOfRev.BasisCurve();
+            Curve3D baseCrv = surOfRev.BasisCurve;
             while ((baseCrv is OffsetCurve3D) || (baseCrv is TrimmedCurve3D))
             {
                 if (baseCrv is OffsetCurve3D offset)
                 {
-                    baseCrv = offset.BasisCurve();
+                    baseCrv = offset.BasisCurve;
                 }
                 if (baseCrv is TrimmedCurve3D trimmed)
                 {
-                    baseCrv = trimmed.BasisCurve();
+                    baseCrv = trimmed.BasisCurve;
                 }
             }
             if (baseCrv.IsPeriodic)
             {
                 vclosed      = true;
-                vRange       = baseCrv.Period();
+                vRange       = baseCrv.Period;
                 isVCrvClosed = true;
             }
         }
@@ -1761,7 +1761,7 @@ public partial class WireFixer : RootFixer
         }
 
         double uRange;
-        surf.Surface()!.Bounds(out double suf, out double sul, out double svf, out double svl);
+        surf.Surface()!.ParameterBounds(out double suf, out double sul, out double svf, out double svl);
         double suMid, svMid;
         suMid = 0.5 * (suf + sul);
         svMid = 0.5 * (svf + svl);
@@ -1854,7 +1854,7 @@ public partial class WireFixer : RootFixer
             if (surf.DegeneratedValues(p, Max(Precision(), Tool.Tolerance(v)), ref degP1, ref degP2, ref degT1,
                                        ref degT2))
             {
-                isDeg = (Math.Abs(degP1.X() - degP2.X()) > Math.Abs(degP1.Y() - degP2.Y()) ? 1 : 2);
+                isDeg = (Math.Abs(degP1.X - degP2.X) > Math.Abs(degP1.Y - degP2.Y) ? 1 : 2);
             }
 
             // abv 23 Feb 00: UKI60107-6 210: additional check for near-degenerated case
@@ -1867,8 +1867,8 @@ public partial class WireFixer : RootFixer
                     {
                         continue;
                     }
-                    Point2D p1 = new Point2D(suf, c2d1!.Value(b1).Y());
-                    Point2D p2 = new Point2D(sul, c2d1.Value(b1).Y());
+                    Point2D p1 = new Point2D(suf, c2d1!.Value(b1).Y);
+                    Point2D p2 = new Point2D(sul, c2d1.Value(b1).Y);
                     if (surf.IsDegenerated(p1, p2, MaxTolerance(), 10)
                         && !surf.IsDegenerated(c2d1.Value(a1), c2d1.Value(b1), MaxTolerance(), 10))
                     { // abv 31.07.00: trj4_pm1-ec-214.stp #31274: still allow
@@ -1882,8 +1882,8 @@ public partial class WireFixer : RootFixer
                     {
                         continue;
                     }
-                    Point2D p1 = new Point2D(c2d1!.Value(b1).X(), svf);
-                    Point2D p2 = new Point2D(c2d1.Value(b1).X(), svl);
+                    Point2D p1 = new Point2D(c2d1!.Value(b1).X, svf);
+                    Point2D p2 = new Point2D(c2d1.Value(b1).X, svl);
                     if (surf.IsDegenerated(p1, p2, MaxTolerance(), 10)
                         && !surf.IsDegenerated(c2d1.Value(a1), c2d1.Value(b1), MaxTolerance(), 10))
                     { // abv 31.07.00: trj4_pm1-ec-214.stp #31274: still allow
@@ -1908,7 +1908,7 @@ public partial class WireFixer : RootFixer
                 }
                 else
                 {
-                    if (pdeg.SquareDistance(p) < Precision() * Precision())
+                    if (pdeg.SquareDistanceTo(p) < Precision() * Precision())
                     {
                         degn2 = n2;
                         // if ( stop < n2 ) { stop = n2; degstop = true; }
@@ -2018,10 +2018,10 @@ public partial class WireFixer : RootFixer
             double du = 0.0, dv = 0.0;
             if (uclosed && isDeg != 1)
             {
-                double dx = Math.Abs(p2d2.X() - p2d1.X());
+                double dx = Math.Abs(p2d2.X - p2d1.X);
                 if (dx > uRange - uTol)
                 {
-                    du = ShapeAnalysisAnalysis.AdjustByPeriod(p2d2.X(), p2d1.X(), uRange);
+                    du = ShapeAnalysisAnalysis.AdjustByPeriod(p2d2.X, p2d1.X, uRange);
                 }
                 else if (dx > uTol && stop == nb)
                 {
@@ -2030,10 +2030,10 @@ public partial class WireFixer : RootFixer
             }
             if (vclosed && isDeg != 2)
             {
-                double dy = Math.Abs(p2d2.Y() - p2d1.Y());
+                double dy = Math.Abs(p2d2.Y - p2d1.Y);
                 if (dy > vRange - vTol)
                 {
-                    dv = ShapeAnalysisAnalysis.AdjustByPeriod(p2d2.Y(), p2d1.Y(), vRange);
+                    dv = ShapeAnalysisAnalysis.AdjustByPeriod(p2d2.Y, p2d1.Y, vRange);
                 }
                 else if (dy > vTol && stop == nb)
                 {
@@ -2166,7 +2166,7 @@ public partial class WireFixer : RootFixer
         b.MakeEdge(ref degEdge);
         b.Degenerated(degEdge, true);
         b.UpdateEdge(degEdge, line2d, Face(), Kerf.Engine.Foundation.Precision.Confusion());
-        b.Range(degEdge, Face(), 0.0, vect2d.Magnitude());
+        b.Range(degEdge, Face(), 0.0, vect2d.Magnitude);
 
         ExtendWireData sbwd = WireData()!;
         int                  n2   = (num > 0 ? num : sbwd.EdgeCount);
@@ -2179,11 +2179,11 @@ public partial class WireFixer : RootFixer
         Vertex      v1  = sae.LastVertex(sbwd.Edge(n1));
         Vertex      v2  = sae.FirstVertex(sbwd.Edge(n3));
 
-        v1.Orientation(Forward);
-        v2.Orientation(Reversed);
+        v1.Orient(Forward);
+        v2.Orient(Reversed);
         b.Add(degEdge, v1);
         b.Add(degEdge, v2);
-        degEdge.Orientation(Forward);
+        degEdge.Orient(Forward);
 
         if (lack)
         {
@@ -2318,7 +2318,7 @@ public partial class WireFixer : RootFixer
         Curve3D? pcurve3d   = crv;
         if (planeSurf is not null)
         {
-            pln = planeSurf.Pln();
+            pln = planeSurf.Plane;
         }
         else
         {
@@ -2417,7 +2417,7 @@ public partial class WireFixer : RootFixer
         CurveOnSurface acs = new CurveOnSurface(ac, AS);
         Point3D                   p1  = acs.Value(t1);
         Point3D                   p2  = acs.Value(t2);
-        Point3D pcurPnt = new Point3D((p1.X() + p2.X()) / 2, (p1.Y() + p2.Y()) / 2, (p1.Z() + p2.Z()) / 2);
+        Point3D pcurPnt = new Point3D((p1.X + p2.X) / 2, (p1.Y + p2.Y) / 2, (p1.Z + p2.Z) / 2);
 
         TransferParametersProjAnalysis sftp  = new TransferParametersProjAnalysis(e, face);
         NCollection_HSequence<double>        seq2d = new NCollection_HSequence<double>();
@@ -2426,9 +2426,9 @@ public partial class WireFixer : RootFixer
         seq2d.Append((t1 + t2) / 2);
         NCollection_HSequence<double> seq3d = sftp.Perform(seq2d, false);
 
-        double dist1 = pcurPnt.Distance(crv!.Value(seq3d.Value(1))); // correcting Seq3d already project
-        double dist2 = pcurPnt.Distance(crv.Value(seq3d.Value(2)));
-        double dist3 = pcurPnt.Distance(crv.Value(seq3d.Value(3)));
+        double dist1 = pcurPnt.DistanceTo(crv!.Value(seq3d.Value(1))); // correcting Seq3d already project
+        double dist2 = pcurPnt.DistanceTo(crv.Value(seq3d.Value(2)));
+        double dist3 = pcurPnt.DistanceTo(crv.Value(seq3d.Value(3)));
         double ftrim, ltrim;
         loopRemoved3d = dist3 <= Max(dist1, dist2);
 
@@ -2549,7 +2549,7 @@ public partial class WireFixer : RootFixer
         CurveOnSurface acs = new CurveOnSurface(ac, AS);
         Point3D                   p1  = acs.Value(t1);
         Point3D                   p2  = acs.Value(t2);
-        Point3D pcurPnt = new Point3D((p1.X() + p2.X()) / 2, (p1.Y() + p2.Y()) / 2, (p1.Z() + p2.Z()) / 2);
+        Point3D pcurPnt = new Point3D((p1.X + p2.X) / 2, (p1.Y + p2.Y) / 2, (p1.Z + p2.Z) / 2);
 
         // transfer parameters from pcurve to 3d curve
         TransferParametersProjAnalysis sftp  = new TransferParametersProjAnalysis(e, face);
@@ -2559,9 +2559,9 @@ public partial class WireFixer : RootFixer
         seq2d.Append((t1 + t2) / 2);
         NCollection_HSequence<double> seq3d = sftp.Perform(seq2d, false);
 
-        double dist1 = pcurPnt.Distance(crv!.Value(seq3d.Value(1))); // correcting Seq3d already project
-        double dist2 = pcurPnt.Distance(crv.Value(seq3d.Value(2)));
-        double dist3 = pcurPnt.Distance(crv.Value(seq3d.Value(3)));
+        double dist1 = pcurPnt.DistanceTo(crv!.Value(seq3d.Value(1))); // correcting Seq3d already project
+        double dist2 = pcurPnt.DistanceTo(crv.Value(seq3d.Value(2)));
+        double dist3 = pcurPnt.DistanceTo(crv.Value(seq3d.Value(3)));
         double ftrim, ltrim;
         if (dist3 > Max(dist1, dist2))
         { // is loop in 3d
@@ -2595,7 +2595,7 @@ public partial class WireFixer : RootFixer
         // create a point for middle vertex
         Point3D pnt1 = crv.Value(ftrim);
         Point3D pnt2 = crv.Value(ltrim);
-        Point3D pmid = new Point3D((pnt1.X() + pnt2.X()) / 2, (pnt1.Y() + pnt2.Y()) / 2, (pnt1.Z() + pnt2.Z()) / 2);
+        Point3D pmid = new Point3D((pnt1.X + pnt2.X) / 2, (pnt1.Y + pnt2.Y) / 2, (pnt1.Z + pnt2.Z) / 2);
 
         BrepBuilder B = new BrepBuilder();
 
@@ -2619,7 +2619,7 @@ public partial class WireFixer : RootFixer
         BuildEdgeBuilder sbe = new BuildEdgeBuilder();
 
         // replace verteces for new edges E1 and E2
-        if (e.Orientation() == Forward)
+        if (e.Orientation == Forward)
         {
             if (!e1.IsNull)
             {
@@ -2712,8 +2712,8 @@ public partial class WireFixer : RootFixer
                 for (int i = 1; i <= points2d.Length(); i++)
                 {
                     Point3D pint   = points3d.Value(i);
-                    double dist21 = pnt1.SquareDistance(pint);
-                    double dist22 = pnt2.SquareDistance(pint);
+                    double dist21 = pnt1.SquareDistanceTo(pint);
+                    double dist22 = pnt2.SquareDistanceTo(pint);
                     if (dist21 < tol1 * tol1 || dist22 < tol2 * tol2)
                     {
                         continue;
@@ -2881,7 +2881,7 @@ public partial class WireFixer : RootFixer
         {
             if (crv is TrimmedCurve2D tc)
             {
-                if (tc.BasisCurve() is LineCurve2D)
+                if (tc.BasisCurve is LineCurve2D)
                 {
                     f = a + (f - fp) * (b - a) / (lp - fp);
                     l = a + (l - fp) * (b - a) / (lp - fp);
@@ -2895,7 +2895,7 @@ public partial class WireFixer : RootFixer
         for (int i = 1; i < nseg; i++)
         {
             Point3D p = c3d!.Value(f + i * step);
-            double d = line.Distance(p);
+            double d = line.DistanceTo(p);
             if (dev < d)
             {
                 dev = d;
@@ -2947,8 +2947,8 @@ public partial class WireFixer : RootFixer
             e2 = ShapeCasts.Edge(Context()!.InternalApply(sbwd.Edge(n2)));
         }
 
-        bool isForward1 = (e1.Orientation() == Forward);
-        bool isForward2 = (e2.Orientation() == Forward);
+        bool isForward1 = (e1.Orientation == Forward);
+        bool isForward2 = (e2.Orientation == Forward);
         Tool.Range(e1, Face(), out double a1, out double b1);
         Tool.Range(e2, Face(), out double a2, out double b2);
 
@@ -2984,7 +2984,7 @@ public partial class WireFixer : RootFixer
 
             Point3D pint   = points3d.Value(i);
             double rad    = errors.Value(i);
-            double newtol = 1.0001 * (pnt.Distance(pint) + rad);
+            double newtol = 1.0001 * (pnt.DistanceTo(pint) + rad);
 
             // GeomAdaptor_Surface& Ads = myAnalyzer->Surface()->Adaptor3d()->ChangeSurface();
 
@@ -3061,7 +3061,7 @@ public partial class WireFixer : RootFixer
                 prevRange2 = newRange2;
                 if (locMayEdit)
                 {
-                    newtol = 1.0001 * (pnt.Distance(pint) + rad);
+                    newtol = 1.0001 * (pnt.DistanceTo(pint) + rad);
                     //: j6 abv 7 Dec 98: ProSTEP TR10 r0601_id.stp #57676 & #58586: do not cut edges because of
                     //: influence on adjacent faces
                     SplitToolFixer tool = new SplitToolFixer();
@@ -3270,8 +3270,8 @@ public partial class WireFixer : RootFixer
                 for (vc2 = 3; vc2 <= 4; vc2++)
                 {
 
-                    double vtxIPDist  = pint.Distance(vertexPoints[vc1]);
-                    double vtxVtxDist = vertexPoints[vc1].Distance(vertexPoints[vc2]);
+                    double vtxIPDist  = pint.DistanceTo(vertexPoints[vc1]);
+                    double vtxVtxDist = vertexPoints[vc1].DistanceTo(vertexPoints[vc2]);
                     if (minDist > vtxIPDist && vtxIPDist > vtxVtxDist)
                     {
                         necessaryVtxTole = vtxVtxDist;
@@ -3310,8 +3310,8 @@ public partial class WireFixer : RootFixer
                 {
                     double u  = vtx1Param + pointsC * du1;
                     Point3D p1 = curve1.Value(u);
-                    p1 = p1.Transformed(l1.Transformation());
-                    double d1 = lig.Distance(p1) * 2.0000001;
+                    p1 = p1.Transformed(l1.Transformation);
+                    double d1 = lig.DistanceTo(p1) * 2.0000001;
                     if (d1 > tole1 && d1 > maxEdgeTol1)
                     {
                         maxEdgeTol1 = d1;
@@ -3319,8 +3319,8 @@ public partial class WireFixer : RootFixer
 
                     u         = vtx2Param + pointsC * du2;
                     Point3D p2 = curve2.Value(u);
-                    p2 = p2.Transformed(l2.Transformation());
-                    double d2 = lig.Distance(p2) * 2.0000001;
+                    p2 = p2.Transformed(l2.Transformation);
+                    double d2 = lig.DistanceTo(p2) * 2.0000001;
                     if (d2 > tole2 && d2 > maxEdgeTol2)
                     {
                         maxEdgeTol2 = d2;
@@ -3345,7 +3345,7 @@ public partial class WireFixer : RootFixer
             int    rank   = 1;
             for (int j = 1; j <= 4; j++)
             {
-                double newtol = 1.0001 * (pint.Distance(vertexPoints[j]) + rad);
+                double newtol = 1.0001 * (pint.DistanceTo(vertexPoints[j]) + rad);
                 if (newtol < finTol)
                 {
                     rank   = j;
@@ -3490,26 +3490,26 @@ public partial class WireFixer : RootFixer
                 }
 
                 double par = (end ? last : first);
-                if (Math.Abs(bs.FirstParameter() - par) < Kerf.Engine.Foundation.Precision.PConfusion()
-                    && bs.Multiplicity(1) > bs.Degree())
+                if (Math.Abs(bs.FirstParameter - par) < Kerf.Engine.Foundation.Precision.PConfusion()
+                    && bs.Multiplicity(1) > bs.Degree)
                 {
                     bs.SetPole(1, p2d);
                 }
-                else if (Math.Abs(bs.LastParameter() - par) < Kerf.Engine.Foundation.Precision.PConfusion()
-                         && bs.Multiplicity(bs.KnotCount) > bs.Degree())
+                else if (Math.Abs(bs.LastParameter - par) < Kerf.Engine.Foundation.Precision.PConfusion()
+                         && bs.Multiplicity(bs.KnotCount) > bs.Degree)
                 {
                     bs.SetPole(bs.PoleCount, p2d);
                 }
                 else
                 {
                     bs.Segment(first, last);
-                    if (Math.Abs(bs.FirstParameter() - par) < Kerf.Engine.Foundation.Precision.PConfusion()
-                        && bs.Multiplicity(1) > bs.Degree())
+                    if (Math.Abs(bs.FirstParameter - par) < Kerf.Engine.Foundation.Precision.PConfusion()
+                        && bs.Multiplicity(1) > bs.Degree)
                     {
                         bs.SetPole(1, p2d);
                     }
-                    else if (Math.Abs(bs.LastParameter() - par) < Kerf.Engine.Foundation.Precision.PConfusion()
-                             && bs.Multiplicity(bs.KnotCount) > bs.Degree())
+                    else if (Math.Abs(bs.LastParameter - par) < Kerf.Engine.Foundation.Precision.PConfusion()
+                             && bs.Multiplicity(bs.KnotCount) > bs.Degree)
                     {
                         bs.SetPole(bs.PoleCount, p2d);
                     }
@@ -3595,7 +3595,7 @@ public partial class WireFixer : RootFixer
             bool     ok1 = TryBendingPCurve(e1,
                                         face,
                                         p2d,
-                                        e1.Orientation() == Forward,
+                                        e1.Orientation == Forward,
                                         ref bendc1,
                                         ref bendf1,
                                         ref bendl1,
@@ -3603,7 +3603,7 @@ public partial class WireFixer : RootFixer
             bool     ok2 = TryBendingPCurve(e2,
                                         face,
                                         p2d,
-                                        e2.Orientation() == Reversed,
+                                        e2.Orientation == Reversed,
                                         ref bendc2,
                                         ref bendf2,
                                         ref bendl2,
@@ -3614,7 +3614,7 @@ public partial class WireFixer : RootFixer
                 ok1      = TryBendingPCurve(e1,
                                        face,
                                        p2d2,
-                                       e1.Orientation() == Forward,
+                                       e1.Orientation == Forward,
                                        ref bendc1,
                                        ref bendf1,
                                        ref bendl1,
@@ -3626,7 +3626,7 @@ public partial class WireFixer : RootFixer
                 ok2      = TryBendingPCurve(e2,
                                        face,
                                        p2d1,
-                                       e2.Orientation() == Forward,
+                                       e2.Orientation == Forward,
                                        ref bendc2,
                                        ref bendf2,
                                        ref bendl2,
@@ -3675,20 +3675,20 @@ public partial class WireFixer : RootFixer
                     return false;
                 }
                 p3d1             = c3d!.Value(b);
-                double dist2d3d1 = p3d1.Distance(surf!.Value(p2d1));
+                double dist2d3d1 = p3d1.DistanceTo(surf!.Value(p2d1));
                 if (!sae.Curve3d(e2, out c3d, out a, out b, true))
                 { // cannot work
                     _lastFixStatus |= global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.FAIL1);
                     return false;
                 }
                 p3d2             = c3d!.Value(a);
-                double dist2d3d2 = p3d2.Distance(surf.Value(p2d2));
+                double dist2d3d2 = p3d2.DistanceTo(surf.Value(p2d2));
 
                 tol1 = Max(Tool.Tolerance(e1), dist2d3d1);
                 tol2 = Max(Tool.Tolerance(e2), dist2d3d2);
                 //: c5  double tol0 = Max ( tol1 + tol2, thepreci );
                 double tol0    = tol1 + tol2; //: c5 abv 26 Feb 98: CTS17806 #44418
-                double dist3d2 = p3d1.SquareDistance(p3d2);
+                double dist3d2 = p3d1.SquareDistanceTo(p3d2);
 
                 // is it OK to add a long 3d edge?
                 if (!_analyzer.LastCheckStatus(ExtendStatus.DONE2)
@@ -3721,7 +3721,7 @@ public partial class WireFixer : RootFixer
                 Point3D pV = new Point3D(0.5 * (Tool.Pnt(v1).XYZ() + Tool.Pnt(v2).XYZ()));
                 Point3D pm = _analyzer.Surface()!.Value(new Point2D(0.5 * (p2d1.XY() + p2d2.XY())));
 
-                double dist = pV.Distance(pm);
+                double dist = pV.DistanceTo(pm);
                 if (dist <= tol)
                 {
                     doAddDegen = true;
@@ -3805,10 +3805,10 @@ public partial class WireFixer : RootFixer
                     // actually, this will occur only in context of single face
                     // hence, recording to ReShape is rather for tracking modifications
                     // than for keeping sharing
-                    Context()!.Replace(v1, newV1.Oriented(v1.Orientation()));
+                    Context()!.Replace(v1, newV1.Oriented(v1.Orientation));
                     if (!v1.IsSame(v2))
                     {
-                        Context()!.Replace(v2, newV2.Oriented(v2.Orientation()));
+                        Context()!.Replace(v2, newV2.Oriented(v2.Orientation));
                     }
                 }
                 // replace 2nd edge
@@ -3921,7 +3921,7 @@ public partial class WireFixer : RootFixer
                 EdgeAnalysis sae           = new EdgeAnalysis();
                 sae.PCurve(splitE, face, out Curve2D? c2d, out double a, out double b, true);
                 BuildEdgeBuilder    sbe    = new BuildEdgeBuilder();
-                Orientation orient = splitE.Orientation();
+                Orientation orient = splitE.Orientation;
 
                 // check whether the whole edges should be removed - this is the case
                 // when split point coincides with the end of the edge;
@@ -3963,7 +3963,7 @@ public partial class WireFixer : RootFixer
                                  Analyzer().Surface()!.Value(c2d!.Value(param)),
                                  Kerf.Engine.Foundation.Precision.Confusion());
                     Edge wE = splitE;
-                    wE.Orientation(Forward);
+                    wE.Orient(Forward);
                     Shape tmpShape = vnew.Oriented(Reversed); // for porting
                     Edge newE1 =
                         sbe.InternalCopyReplaceVertices(wE, sae.FirstVertex(wE), ShapeCasts.Vertex(tmpShape));
@@ -3988,8 +3988,8 @@ public partial class WireFixer : RootFixer
                         Context()!.Replace(wE, wire);
                     }
 
-                    newE1.Orientation(orient);
-                    newE2.Orientation(orient);
+                    newE1.Orient(orient);
+                    newE2.Orient(orient);
                     if (orient == Reversed)
                     {
                         Edge tmp = newE2;
@@ -4019,8 +4019,8 @@ public partial class WireFixer : RootFixer
 
     private static void CopyReversePcurves(in Edge toedge, in Edge fromedge, bool reverse)
     {
-        Placement fromLoc = fromedge.Location();
-        Placement toLoc   = toedge.Location();
+        Placement fromLoc = fromedge.Placement;
+        Placement toLoc   = toedge.Placement;
         // OCCT.NET: frozen: the source edge's list is only read (OCCT walks ChangeCurves())
         for (var fromitcr = new NCollection_List<CurveRepresentation>.Iterator(((BrepTEdge)fromedge.TShape()!).Curves());
              fromitcr.More();
@@ -4043,7 +4043,7 @@ public partial class WireFixer : RootFixer
                 {
                     toGC = toitcr.Value() as GCurve;
                     if (toGC is null || !toGC.IsCurveOnSurface() || surface != toGC.Surface()
-                        || l != toGC.Location())
+                        || !l.IsEqual(toGC.Location()))
                     {
                         continue;
                     }
@@ -4106,7 +4106,7 @@ public partial class WireFixer : RootFixer
             vs = vm;
         }
         Edge newEdge = sbe.InternalCopyReplaceVertices(e2, vs, vm);
-        CopyReversePcurves(newEdge, e1, e1.Orientation() == e2.Orientation());
+        CopyReversePcurves(newEdge, e1, e1.Orientation == e2.Orientation);
         BrepBuilder b = new BrepBuilder();
         b.SameRange(newEdge, false);
         b.SameParameter(newEdge, false);
@@ -4123,8 +4123,8 @@ public partial class WireFixer : RootFixer
                 Context()!.Replace(e2, newEdge);
                 Context()!.Replace(e1, newEdge.Reversed());
             }
-            Context()!.Replace(v1, vm.Oriented(v1.Orientation()));
-            Context()!.Replace(v2, vm.Oriented(v2.Orientation()));
+            Context()!.Replace(v1, vm.Oriented(v1.Orientation));
+            Context()!.Replace(v2, vm.Oriented(v2.Orientation));
         }
 
         int         next  = (num1 == NbEdges()) ? 1 : num1 + 1;
@@ -4255,9 +4255,9 @@ public partial class WireFixer : RootFixer
                 }
 
                 // Replace the edge by its parts in the edge wire.
-                Orientation orient = e.Orientation();
-                eParts[ei, 0].Orientation(orient);
-                eParts[ei, 1].Orientation(orient);
+                Orientation orient = e.Orientation;
+                eParts[ei, 0].Orient(orient);
+                eParts[ei, 1].Orient(orient);
                 int firstPI = (orient != Reversed) ? 0 : 1;
                 int add     = (ei == 0 || eNs[1] < eNs[0]) ? 0 : splitCounts[0];
                 sewd.Set(eParts[ei, firstPI], eNs[ei] + add);

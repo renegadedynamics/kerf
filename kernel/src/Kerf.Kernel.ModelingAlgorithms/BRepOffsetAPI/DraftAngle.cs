@@ -192,7 +192,7 @@ public class DraftAngle : ModifyShape
         Standard_NullObject_Raise_if(_initialShape.IsNull, "BRepOffsetAPI_DraftAngle::Generated() - initial shape is not set");
         DraftModification dMod = this.Draft();
 
-        if (s.ShapeType() == ShapeType.Face)
+        if (s.Type == ShapeType.Face)
         {
             if (dMod.NewSurface(ShapeCasts.Face(s), out _, out _, out _, out _, out _))
             {
@@ -217,7 +217,7 @@ public class DraftAngle : ModifyShape
         Standard_NullObject_Raise_if(_initialShape.IsNull, "BRepOffsetAPI_DraftAngle::Modified() - initial shape is not set");
         DraftModification dMod = this.Draft();
 
-        if (s.ShapeType() == ShapeType.Face)
+        if (s.Type == ShapeType.Face)
         {
             if (!dMod.NewSurface(ShapeCasts.Face(s), out _, out _, out _, out _, out _))
             {
@@ -243,7 +243,7 @@ public class DraftAngle : ModifyShape
 
     internal override Shape InternalModifiedShape(in Shape s)
     {
-        if (s.ShapeType() == ShapeType.Vertex)
+        if (s.Type == ShapeType.Vertex)
         {
             if (_vtxToReplace.ContainsKey(s))
             {
@@ -425,7 +425,7 @@ public class DraftAngle : ModifyShape
                         {
                             IntersectionPoint2D p2DInt = gInter.Point(k);
                             Point2D p2D = p2DInt.Value();
-                            Point3D p3D = surf.Value(p2D.X(), p2D.Y());
+                            Point3D p3D = surf.Value(p2D.X, p2D.Y);
                             //
                             // Check if the intersection point is new
                             int ied = 0;
@@ -587,7 +587,7 @@ public class DraftAngle : ModifyShape
                     bb.UpdateVertex(newV, par, newE, 10.0 * global::Kerf.Engine.Foundation.Precision.Confusion());
                 }
                 bb.UpdateVertex(newV, parsSeam[i][j], seamEdge, 10.0 * global::Kerf.Engine.Foundation.Precision.Confusion());
-                newE.Orientation(Forward);
+                newE.Orient(Forward);
                 bb.Add(newE, prevV.Oriented(Forward));
                 bb.Add(newE, newV.Oriented(Reversed));
 
@@ -608,7 +608,7 @@ public class DraftAngle : ModifyShape
                 if (Math.Abs(prevpar - par) > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     bb.Range(newE, prevpar, par);
-                    newE.Orientation(Forward);
+                    newE.Orient(Forward);
                     bb.Add(newE, prevV.Oriented(Forward));
                     bb.Add(newE, vlast.Oriented(Reversed));
                     newEdges.Append(newE);
@@ -720,7 +720,7 @@ public class DraftAngle : ModifyShape
                 newE = ShapeCasts.Edge(localShape);
                 // NewE = TopoDS::Edge( anEdge.EmptyCopied() );
                 bb.Range(newE, fpar, lpar);
-                newE.Orientation(Forward);
+                newE.Orient(Forward);
                 if (firstind == 1)
                 {
                     bb.Add(newE, vfirst.Oriented(Forward));
@@ -756,7 +756,7 @@ public class DraftAngle : ModifyShape
                             break;
                         }
                     }
-                    newE.Orientation(Forward);
+                    newE.Orient(Forward);
                     Shape localShapeCur = seqVer[j].Oriented(Forward);
                     bb.Add(newE, ShapeCasts.Vertex(localShapeCur));
                     localShapeCur = seqVer[j + 1].Oriented(Reversed);
@@ -779,7 +779,7 @@ public class DraftAngle : ModifyShape
                 newE = ShapeCasts.Edge(localShape);
                 // NewE = TopoDS::Edge( anEdge.EmptyCopied() );
                 bb.Range(newE, fpar, lpar);
-                newE.Orientation(Forward);
+                newE.Orient(Forward);
                 localShape = seqVer[seqVer.Length()].Oriented(Forward);
                 bb.Add(newE, ShapeCasts.Vertex(localShape));
                 // BB.Add( NewE, TopoDS::Vertex( SeqVer(SeqVer.Length()).Oriented(TopAbs_FORWARD) ) );
@@ -865,14 +865,14 @@ public class DraftAngle : ModifyShape
                     pmid = bc2d.Value((bc2d.FirstParameter() + bc2d.LastParameter()) / 2.0);
                     Vector2D offset = new();
                     bool translate = false;
-                    if (pfirst.X() - 2.0 * M_PI > global::Kerf.Engine.Foundation.Precision.Confusion() || plast.X() - 2.0 * M_PI > global::Kerf.Engine.Foundation.Precision.Confusion()
-                        || pmid.X() - 2.0 * M_PI > global::Kerf.Engine.Foundation.Precision.Confusion())
+                    if (pfirst.X - 2.0 * M_PI > global::Kerf.Engine.Foundation.Precision.Confusion() || plast.X - 2.0 * M_PI > global::Kerf.Engine.Foundation.Precision.Confusion()
+                        || pmid.X - 2.0 * M_PI > global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         offset = offset.WithCoord(-2.0 * M_PI, 0);
                         translate = true;
                     }
-                    if (pfirst.X() < -global::Kerf.Engine.Foundation.Precision.Confusion() || plast.X() < -global::Kerf.Engine.Foundation.Precision.Confusion()
-                        || pmid.X() < -global::Kerf.Engine.Foundation.Precision.Confusion())
+                    if (pfirst.X < -global::Kerf.Engine.Foundation.Precision.Confusion() || plast.X < -global::Kerf.Engine.Foundation.Precision.Confusion()
+                        || pmid.X < -global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         offset = offset.WithCoord(2.0 * M_PI, 0);
                         translate = true;
@@ -969,7 +969,7 @@ public class DraftAngle : ModifyShape
                             Vertex newVtx = new();
                             Point3D vPnt = Tool.Pnt(vtx);
                             bb.MakeVertex(ref newVtx, vPnt, eTol + Epsilon(eTol));
-                            newVtx.Orientation(vtx.Orientation());
+                            newVtx.Orient(vtx.Orientation);
                             _vtxToReplace[vtx] = newVtx;
                         }
                     }

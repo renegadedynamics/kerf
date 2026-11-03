@@ -563,7 +563,7 @@ public class Inter<TheCurve, TheCurveTool, TheSurface, TheSurfaceTool, ThePolygo
             {
                 double correction = 1.0E+5 * global::Kerf.Engine.Foundation.Precision.Angular();
                 Cone cn = TheSurfaceTool.Cone(surface);
-                if (Math.Abs(cn.SemiAngle()) < M_PI / 2.0 - correction)
+                if (Math.Abs(cn.SemiAngle) < M_PI / 2.0 - correction)
                 {
                     IntConicQuad linCone = new(line, new Quadric(cn));
                     AppendIntAna(curve, surface, linCone);

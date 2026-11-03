@@ -120,12 +120,12 @@ public class BRepMAT2d_BisectingLocusTests(ITestOutputHelper theOutput)
     {
         if (theElt is CartesianPoint2 aPnt)
         {
-            return aPnt.Pnt2d().Distance(theP);
+            return aPnt.Pnt2d().DistanceTo(theP);
         }
         Curve2D aC = (Curve2D)theElt;
         CurveAdaptor2D anAd = new(aC);
         ExtPC2d anExt = new(theP, anAd);
-        double aMin = Math.Min(aC.Value(aC.FirstParameter()).Distance(theP), aC.Value(aC.LastParameter()).Distance(theP));
+        double aMin = Math.Min(aC.Value(aC.FirstParameter).DistanceTo(theP), aC.Value(aC.LastParameter).DistanceTo(theP));
         for (int i = 1; anExt.IsDone && i <= anExt.ExtCount; i++)
         {
             aMin = Math.Min(aMin, Math.Sqrt(anExt.SquareDistance(i)));
@@ -142,7 +142,7 @@ public class BRepMAT2d_BisectingLocusTests(ITestOutputHelper theOutput)
         for (int i = 1; i <= aG.NumberOfNodes(); i++)
         {
             Point2D aP = aLocus.GeomElt(aG.Node(i));
-            if (aP.Distance(new Point2D(5, 5)) < 1.0e-9)
+            if (aP.DistanceTo(new Point2D(5, 5)) < 1.0e-9)
             {
                 aNbCentre++;
                 Assert.Equal(5.0, aG.Node(i).Distance(), 1.0e-9);
@@ -156,8 +156,8 @@ public class BRepMAT2d_BisectingLocusTests(ITestOutputHelper theOutput)
         {
             Bisec aB = aLocus.GeomBis(aG.Arc(i), out bool aReverse);
             Assert.IsType<BisecAna>(aB.Value().ChangeBasisCurve());
-            Point2D aStart = aB.Value().Value(aReverse ? aB.Value().LastParameter() : aB.Value().FirstParameter());
-            Assert.Equal(0.0, aStart.Distance(aLocus.GeomElt(aG.Arc(i).FirstNode())), 1.0e-9);
+            Point2D aStart = aB.Value().Value(aReverse ? aB.Value().LastParameter : aB.Value().FirstParameter);
+            Assert.Equal(0.0, aStart.DistanceTo(aLocus.GeomElt(aG.Arc(i).FirstNode())), 1.0e-9);
         }
     }
 

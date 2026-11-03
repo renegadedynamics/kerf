@@ -171,7 +171,7 @@ public class ShapeDivide
 
         // Process COMPOUNDs separately in order to handle sharing in assemblies
         // NOTE: not optimized: subshape can be processed twice (second time - no modif)
-        if (_shape.ShapeType() == ShapeType.Compound)
+        if (_shape.Type == ShapeType.Compound)
         {
             int locStatus = _status;
             var c = new Compound();
@@ -181,7 +181,7 @@ public class ShapeDivide
             for (var it = new Iterator(savShape, false); it.More(); it.Next())
             {
                 Shape shape = it.Value();
-                Placement l = shape.Location();
+                Placement l = shape.Placement;
                 if (_context.ModeConsiderLocation())
                 {
                     var nullLoc = new Placement();
@@ -193,7 +193,7 @@ public class ShapeDivide
                 {
                     _result.Location(l);
                 }
-                _result.Orientation(global::Kerf.Engine.Topology.TopAbs.Compose(_result.Orientation(), savShape.Orientation()));
+                _result.Orient(global::Kerf.Engine.Topology.TopAbs.Compose(_result.Orientation, savShape.Orientation));
                 b.Add(c, _result);
                 locStatus |= _status;
             }

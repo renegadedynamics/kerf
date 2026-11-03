@@ -21,7 +21,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// result can't be changed through them. The per-index accessors (<see cref="Pole"/>, ...) are deprecated in OCCT
 /// in favour of the batch accessors.
 /// </remarks>
-public class ConicToBSplineCurve
+internal class ConicToBSplineCurve
 {
     protected NCollection_Array1<Point2D> _poles = new();
     protected NCollection_Array1<double> _weights = new();
@@ -267,8 +267,8 @@ public class ConicToBSplineCurve
         for (int i = evalPoles.Lower(); i <= evalPoles.Upper(); i++)
         {
             int idx = (i - evalPoles.Lower()) * 2;
-            coeffs[idx] = evalPoles[i].X();
-            coeffs[idx + 1] = evalPoles[i].Y();
+            coeffs[idx] = evalPoles[i].X;
+            coeffs[idx + 1] = evalPoles[i].Y;
         }
         //
         //   rational_function_coeff represent a rational approximation

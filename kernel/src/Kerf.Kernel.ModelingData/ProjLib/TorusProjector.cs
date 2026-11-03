@@ -11,7 +11,7 @@ using static Kerf.Geometry.CurveKind;
 namespace Kerf.Engine.Geometry.Projection;
 
 /// <summary>Projects elementary curves on a torus: circles that are U or V isolines.</summary>
-public class TorusProjector : Projector
+internal class TorusProjector : Projector
 {
     private Torus _torus = new();
 
@@ -43,8 +43,8 @@ public class TorusProjector : Projector
 
     private static Point2D EvalPnt2d(in Vector3D ve, in Torus to)
     {
-        double x = ve.Dot(new Vector3D(to.Position().XDirection()));
-        double y = ve.Dot(new Vector3D(to.Position().YDirection()));
+        double x = ve.Dot(new Vector3D(to.Position.XDirection));
+        double y = ve.Dot(new Vector3D(to.Position.YDirection));
         double u, v;
 
         if (Math.Abs(x) > global::Kerf.Engine.Foundation.Precision.PConfusion() || Math.Abs(y) > global::Kerf.Engine.Foundation.Precision.PConfusion())
@@ -64,25 +64,25 @@ public class TorusProjector : Projector
     {
         _type = global::Kerf.Geometry.CurveKind.Line;
 
-        Vector3D xc = new(c.Position().XDirection());
-        Vector3D yc = new(c.Position().YDirection());
-        Vector3D xt = new(_torus.Position().XDirection());
-        Vector3D yt = new(_torus.Position().YDirection());
-        Vector3D zt = new(_torus.Position().Direction());
-        Vector3D oc = new(_torus.Location(), c.Location());
+        Vector3D xc = new(c.Position.XDirection);
+        Vector3D yc = new(c.Position.YDirection);
+        Vector3D xt = new(_torus.Position.XDirection);
+        Vector3D yt = new(_torus.Position.YDirection);
+        Vector3D zt = new(_torus.Position.Direction);
+        Vector3D oc = new(_torus.Location, c.Location);
 
         //  if (OC.Magnitude() < Precision::Confusion()      ||
         //      OC.IsParallel(myTorus.Position().Direction(),
         //		    Precision::Angular())) {
 
-        if (oc.Magnitude() < global::Kerf.Engine.Foundation.Precision.Confusion()
-            || c.Position().Direction().IsParallel(_torus.Position().Direction(), global::Kerf.Engine.Foundation.Precision.Angular()))
+        if (oc.Magnitude < global::Kerf.Engine.Foundation.Precision.Confusion()
+            || c.Position.Direction.IsParallel(_torus.Position.Direction, global::Kerf.Engine.Foundation.Precision.Angular()))
         {
             // Iso V
             Point2D p1 = EvalPnt2d(xc, _torus); // evaluate U1
             Point2D p2 = EvalPnt2d(yc, _torus); // evaluate U2
-            double z = oc.Dot(new Vector3D(_torus.Position().Direction()));
-            z /= _torus.MinorRadius();
+            double z = oc.Dot(new Vector3D(_torus.Position.Direction));
+            z /= _torus.MinorRadius;
 
             double v;
 
@@ -99,7 +99,7 @@ public class TorusProjector : Projector
                 v = Math.Asin(z);
             }
 
-            if (c.Radius() < _torus.MajorRadius())
+            if (c.Radius < _torus.MajorRadius)
             {
                 v = M_PI - v;
             }
@@ -112,15 +112,15 @@ public class TorusProjector : Projector
             Vector2D v2d = new(p1, p2);
             // Normally std::abs( P1.X() - P2.X()) = PI/2
             // If != PI/2, we crossed the period => Reverse the Direction
-            if (Math.Abs(p1.X() - p2.X()) > M_PI)
+            if (Math.Abs(p1.X - p2.X) > M_PI)
             {
                 v2d = v2d.Reversed();
             }
 
             Direction2D d2 = new(v2d);
-            if (p1.X() < 0)
+            if (p1.X < 0)
             {
-                p1 = p1.WithX(2 * M_PI + p1.X());
+                p1 = p1.WithX(2 * M_PI + p1.X);
             }
             _lin = new Line2D(p1, d2);
         }

@@ -24,12 +24,12 @@ public class GeomBndLib_OffsetCurveTest
             double aU = theU1 + i * aStep;
             Point3D aPnt = theCurve.Value(aU);
             string aWhere = $"Point outside box at U={aU}";
-            ExpectGE(aPnt.X(), aXmin - Conf, aWhere);
-            ExpectLE(aPnt.X(), aXmax + Conf, aWhere);
-            ExpectGE(aPnt.Y(), aYmin - Conf, aWhere);
-            ExpectLE(aPnt.Y(), aYmax + Conf, aWhere);
-            ExpectGE(aPnt.Z(), aZmin - Conf, aWhere);
-            ExpectLE(aPnt.Z(), aZmax + Conf, aWhere);
+            ExpectGE(aPnt.X, aXmin - Conf, aWhere);
+            ExpectLE(aPnt.X, aXmax + Conf, aWhere);
+            ExpectGE(aPnt.Y, aYmin - Conf, aWhere);
+            ExpectLE(aPnt.Y, aYmax + Conf, aWhere);
+            ExpectGE(aPnt.Z, aZmin - Conf, aWhere);
+            ExpectLE(aPnt.Z, aZmax + Conf, aWhere);
         }
     }
 

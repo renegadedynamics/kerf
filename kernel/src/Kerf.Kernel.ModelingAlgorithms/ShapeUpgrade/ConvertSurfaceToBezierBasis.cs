@@ -40,7 +40,7 @@ public class ConvertSurfaceToBezierBasis : SplitSurface
     {
         if (!segment)
         {
-            _surface!.Bounds(out double uf, out double ul, out double vf, out double vl);
+            _surface!.ParameterBounds(out double uf, out double ul, out double vf, out double vl);
             if (!Kerf.Engine.Foundation.Precision.IsInfinite(uf))
             {
                 _uSplitValues!.SetValue(1, uf);
@@ -67,7 +67,7 @@ public class ConvertSurfaceToBezierBasis : SplitSurface
 
         if (_surface is TrimmedSurface surface)
         {
-            Surface basSurf = surface.BasisSurface();
+            Surface basSurf = surface.BasisSurface;
             var converter = new ConvertSurfaceToBezierBasis();
             converter.Init(basSurf, uFirst, uLast, vFirst, vLast);
             converter.SetUSplitValues(_uSplitValues);
@@ -81,7 +81,7 @@ public class ConvertSurfaceToBezierBasis : SplitSurface
         }
         else if (_surface is OffsetSurface Offset)
         {
-            Surface basSurf = Offset.BasisSurface();
+            Surface basSurf = Offset.BasisSurface;
             var converter = new ConvertSurfaceToBezierBasis();
             converter.Init(basSurf, uFirst, uLast, vFirst, vLast);
             converter.SetUSplitValues(_uSplitValues);
@@ -147,7 +147,7 @@ public class ConvertSurfaceToBezierBasis : SplitSurface
         else if (_surface is BSplineSurface bspline && _bSplineMode)
         {
             // pdn
-            bspline.Bounds(out _, out _, out _, out _);
+            bspline.ParameterBounds(out _, out _, out _, out _);
             var converter = new BSplineSurfaceToBezierSurface(bspline); //,UFirst,ULast,VFirst,VLast,precision;
             int nbUPatches = converter.UPatchCount;
             int nbVPatches = converter.VPatchCount;
@@ -275,10 +275,10 @@ public class ConvertSurfaceToBezierBasis : SplitSurface
         }
         else if (_surface is RevolutionSurface revol && _revolutionMode)
         {
-            Curve3D basis = revol.BasisCurve();
+            Curve3D basis = revol.BasisCurve;
             if (basis is TrimmedCurve3D tc)
             {
-                basis = tc.BasisCurve();
+                basis = tc.BasisCurve;
             }
             NCollection_HArray1<Curve3D> curves;
             int nbCurves;
@@ -286,9 +286,9 @@ public class ConvertSurfaceToBezierBasis : SplitSurface
             var vSVal = new NCollection_HSequence<double>();
             if (basis is OffsetCurve3D offset)
             {
-                double value = offset.Offset();
-                Direction3D direction = offset.Direction();
-                Curve3D bas = offset.BasisCurve();
+                double value = offset.Offset;
+                Direction3D direction = offset.Direction;
+                Curve3D bas = offset.BasisCurve;
                 var converter = new ConvertCurve3dToBezier();
                 converter.Init(bas, vFirst, vLast);
                 converter.Perform(true);
@@ -331,9 +331,9 @@ public class ConvertSurfaceToBezierBasis : SplitSurface
                 nbCurves = curves.Length();
             }
 
-            Axis3D axis = revol.Axis();
+            Axis3D axis = revol.Axis;
             var surf = new NCollection_HArray2<Surface>(1, 1, 1, nbCurves);
-            _surface.Bounds(out double umin, out double umax, out _, out _);
+            _surface.ParameterBounds(out double umin, out double umax, out _, out _);
             int k;
             for (k = 1; k <= nbCurves; k++)
             {
@@ -381,7 +381,7 @@ public class ConvertSurfaceToBezierBasis : SplitSurface
         }
         else if (_surface is ExtrusionSurface extr && _extrusionMode)
         {
-            Curve3D basis = extr.BasisCurve();
+            Curve3D basis = extr.BasisCurve;
             // gp_Dir direction = extr->Direction(); // direction not used (skl)
             NCollection_HArray1<Curve3D> curves;
             int nbCurves;
@@ -458,7 +458,7 @@ public class ConvertSurfaceToBezierBasis : SplitSurface
             vJoints[1] = vFirst;
             vJoints[2] = vLast;
             var surf = new NCollection_HArray2<Surface>(1, 1, 1, 1);
-            _surface!.Bounds(out double U1, out double U2, out _, out double V2);
+            _surface!.ParameterBounds(out double U1, out double U2, out _, out double V2);
             Surface s;
             if (U1 - uFirst < precision && uLast - U2 < precision && V2 - vFirst < precision
                 && vLast - V2 < precision)
@@ -501,7 +501,7 @@ public class ConvertSurfaceToBezierBasis : SplitSurface
         Surface s;
         if (surf is TrimmedSurface rect)
         {
-            s = rect.BasisSurface();
+            s = rect.BasisSurface;
         }
         else
         {
@@ -511,13 +511,13 @@ public class ConvertSurfaceToBezierBasis : SplitSurface
         if (s is RevolutionSurface)
         {
             var revol = (RevolutionSurface)s.Copy();
-            revol.Bounds(out double umin, out double umax, out _, out _);
-            Curve3D basis = revol.BasisCurve();
+            revol.ParameterBounds(out double umin, out double umax, out _, out _);
+            Curve3D basis = revol.BasisCurve;
             OffsetCurve3D? offset = null;
             if (basis is OffsetCurve3D anOffset)
             {
                 offset = anOffset;
-                basis = anOffset.BasisCurve();
+                basis = anOffset.BasisCurve;
             }
             if (basis is BezierCurve3D bezierBasis)
             {
@@ -526,7 +526,7 @@ public class ConvertSurfaceToBezierBasis : SplitSurface
                 // curve if there is one and set as the copy's basis (decision 998)
                 var segment = (BezierCurve3D)bezierBasis.Copy();
                 segment.Segment(V1, V2);
-                Curve3D newBasis = offset is null ? segment : new OffsetCurve3D(segment, offset.Offset(), offset.Direction());
+                Curve3D newBasis = offset is null ? segment : new OffsetCurve3D(segment, offset.Offset, offset.Direction);
                 revol.SetBasisCurve(newBasis);
             }
             else
@@ -543,7 +543,7 @@ public class ConvertSurfaceToBezierBasis : SplitSurface
         }
         else
         {
-            surf.Bounds(out double umin, out double umax, out double vmin, out double vmax);
+            surf.ParameterBounds(out double umin, out double umax, out double vmin, out double vmax);
             if (U1 - umin < Kerf.Engine.Foundation.Precision.PConfusion() && umax - U2 < Kerf.Engine.Foundation.Precision.PConfusion()
                 && V1 - vmin < Kerf.Engine.Foundation.Precision.PConfusion() && vmax - V2 < Kerf.Engine.Foundation.Precision.PConfusion())
             {
@@ -563,7 +563,7 @@ public class ConvertSurfaceToBezierBasis : SplitSurface
         Surface s;
         if (_surface is TrimmedSurface surface)
         {
-            s = surface.BasisSurface();
+            s = surface.BasisSurface;
         }
         else
         {
@@ -572,7 +572,7 @@ public class ConvertSurfaceToBezierBasis : SplitSurface
         if (s is OffsetSurface offSur)
         {
             isOffset = true;
-            offsetValue = offSur.Offset();
+            offsetValue = offSur.Offset;
         }
 
         double prec = Kerf.Engine.Foundation.Precision.PConfusion();
@@ -608,7 +608,7 @@ public class ConvertSurfaceToBezierBasis : SplitSurface
                 }
 
                 Surface patch = _segments.Patch(j1 - 1, j2 - 1);
-                patch.Bounds(out double u1, out double u2, out double v1, out double v2);
+                patch.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
                 // linear recomputation of part:
                 double uFirst = myUSplitParams.Value(j1 - 1);
                 double uLast = myUSplitParams.Value(j1);

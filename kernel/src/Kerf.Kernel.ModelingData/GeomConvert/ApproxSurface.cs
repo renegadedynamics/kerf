@@ -18,7 +18,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// Converts a surface to a B-spline surface by approximation (AdvApp2Var) within a tolerance, continuities in U and
 /// V, maximum degrees and a maximum number of patches. The approximation is made by the constructor.
 /// </summary>
-public sealed class ApproxSurface
+internal sealed class ApproxSurface
 {
     private sealed class GeomConvert_ApproxSurface_Eval : EvaluatorFunc2Var
     {
@@ -68,9 +68,9 @@ public sealed class ApproxSurface
                         {
                             vpar = parameters[jpar - 1];
                             pnt = _adaptor.Value(upar, vpar);
-                            result[(jpar - 1) * dimension] = pnt.X();
-                            result[1 + (jpar - 1) * dimension] = pnt.Y();
-                            result[2 + (jpar - 1) * dimension] = pnt.Z();
+                            result[(jpar - 1) * dimension] = pnt.X;
+                            result[1 + (jpar - 1) * dimension] = pnt.Y;
+                            result[2 + (jpar - 1) * dimension] = pnt.Z;
                         }
 
                         break;
@@ -81,15 +81,15 @@ public sealed class ApproxSurface
                             _adaptor.D1(upar, vpar, out pnt, out v1, out v2);
                             if (uOrder == 1)
                             {
-                                result[(jpar - 1) * dimension] = v1.X();
-                                result[1 + (jpar - 1) * dimension] = v1.Y();
-                                result[2 + (jpar - 1) * dimension] = v1.Z();
+                                result[(jpar - 1) * dimension] = v1.X;
+                                result[1 + (jpar - 1) * dimension] = v1.Y;
+                                result[2 + (jpar - 1) * dimension] = v1.Z;
                             }
                             else
                             {
-                                result[(jpar - 1) * dimension] = v2.X();
-                                result[1 + (jpar - 1) * dimension] = v2.Y();
-                                result[2 + (jpar - 1) * dimension] = v2.Z();
+                                result[(jpar - 1) * dimension] = v2.X;
+                                result[1 + (jpar - 1) * dimension] = v2.Y;
+                                result[2 + (jpar - 1) * dimension] = v2.Z;
                             }
                         }
 
@@ -101,21 +101,21 @@ public sealed class ApproxSurface
                             _adaptor.D2(upar, vpar, out pnt, out v1, out v2, out v3, out v4, out v5);
                             if (uOrder == 2)
                             {
-                                result[(jpar - 1) * dimension] = v3.X();
-                                result[1 + (jpar - 1) * dimension] = v3.Y();
-                                result[2 + (jpar - 1) * dimension] = v3.Z();
+                                result[(jpar - 1) * dimension] = v3.X;
+                                result[1 + (jpar - 1) * dimension] = v3.Y;
+                                result[2 + (jpar - 1) * dimension] = v3.Z;
                             }
                             else if (uOrder == 1)
                             {
-                                result[(jpar - 1) * dimension] = v5.X();
-                                result[1 + (jpar - 1) * dimension] = v5.Y();
-                                result[2 + (jpar - 1) * dimension] = v5.Z();
+                                result[(jpar - 1) * dimension] = v5.X;
+                                result[1 + (jpar - 1) * dimension] = v5.Y;
+                                result[2 + (jpar - 1) * dimension] = v5.Z;
                             }
                             else if (uOrder == 0)
                             {
-                                result[(jpar - 1) * dimension] = v4.X();
-                                result[1 + (jpar - 1) * dimension] = v4.Y();
-                                result[2 + (jpar - 1) * dimension] = v4.Z();
+                                result[(jpar - 1) * dimension] = v4.X;
+                                result[1 + (jpar - 1) * dimension] = v4.Y;
+                                result[2 + (jpar - 1) * dimension] = v4.Z;
                             }
                         }
 
@@ -127,15 +127,15 @@ public sealed class ApproxSurface
                             _adaptor.D3(upar, vpar, out pnt, out v1, out v2, out v3, out v4, out v5, out v6, out v7, out v8, out v9);
                             if (uOrder == 2)
                             {
-                                result[(jpar - 1) * dimension] = v8.X();
-                                result[1 + (jpar - 1) * dimension] = v8.Y();
-                                result[2 + (jpar - 1) * dimension] = v8.Z();
+                                result[(jpar - 1) * dimension] = v8.X;
+                                result[1 + (jpar - 1) * dimension] = v8.Y;
+                                result[2 + (jpar - 1) * dimension] = v8.Z;
                             }
                             else if (uOrder == 1)
                             {
-                                result[(jpar - 1) * dimension] = v9.X();
-                                result[1 + (jpar - 1) * dimension] = v9.Y();
-                                result[2 + (jpar - 1) * dimension] = v9.Z();
+                                result[(jpar - 1) * dimension] = v9.X;
+                                result[1 + (jpar - 1) * dimension] = v9.Y;
+                                result[2 + (jpar - 1) * dimension] = v9.Z;
                             }
                         }
 
@@ -145,9 +145,9 @@ public sealed class ApproxSurface
                         {
                             vpar = parameters[jpar - 1];
                             vect = _adaptor.DN(upar, vpar, uOrder, vOrder);
-                            result[(jpar - 1) * dimension] = vect.X();
-                            result[1 + (jpar - 1) * dimension] = vect.Y();
-                            result[2 + (jpar - 1) * dimension] = vect.Z();
+                            result[(jpar - 1) * dimension] = vect.X;
+                            result[1 + (jpar - 1) * dimension] = vect.Y;
+                            result[2 + (jpar - 1) * dimension] = vect.Z;
                         }
 
                         break;
@@ -163,9 +163,9 @@ public sealed class ApproxSurface
                         {
                             upar = parameters[jpar - 1];
                             pnt = _adaptor.Value(upar, vpar);
-                            result[(jpar - 1) * dimension] = pnt.X();
-                            result[1 + (jpar - 1) * dimension] = pnt.Y();
-                            result[2 + (jpar - 1) * dimension] = pnt.Z();
+                            result[(jpar - 1) * dimension] = pnt.X;
+                            result[1 + (jpar - 1) * dimension] = pnt.Y;
+                            result[2 + (jpar - 1) * dimension] = pnt.Z;
                         }
 
                         break;
@@ -176,15 +176,15 @@ public sealed class ApproxSurface
                             _adaptor.D1(upar, vpar, out pnt, out v1, out v2);
                             if (uOrder == 1)
                             {
-                                result[(jpar - 1) * dimension] = v1.X();
-                                result[1 + (jpar - 1) * dimension] = v1.Y();
-                                result[2 + (jpar - 1) * dimension] = v1.Z();
+                                result[(jpar - 1) * dimension] = v1.X;
+                                result[1 + (jpar - 1) * dimension] = v1.Y;
+                                result[2 + (jpar - 1) * dimension] = v1.Z;
                             }
                             else
                             {
-                                result[(jpar - 1) * dimension] = v2.X();
-                                result[1 + (jpar - 1) * dimension] = v2.Y();
-                                result[2 + (jpar - 1) * dimension] = v2.Z();
+                                result[(jpar - 1) * dimension] = v2.X;
+                                result[1 + (jpar - 1) * dimension] = v2.Y;
+                                result[2 + (jpar - 1) * dimension] = v2.Z;
                             }
                         }
 
@@ -196,21 +196,21 @@ public sealed class ApproxSurface
                             _adaptor.D2(upar, vpar, out pnt, out v1, out v2, out v3, out v4, out v5);
                             if (uOrder == 2)
                             {
-                                result[(jpar - 1) * dimension] = v3.X();
-                                result[1 + (jpar - 1) * dimension] = v3.Y();
-                                result[2 + (jpar - 1) * dimension] = v3.Z();
+                                result[(jpar - 1) * dimension] = v3.X;
+                                result[1 + (jpar - 1) * dimension] = v3.Y;
+                                result[2 + (jpar - 1) * dimension] = v3.Z;
                             }
                             else if (uOrder == 1)
                             {
-                                result[(jpar - 1) * dimension] = v5.X();
-                                result[1 + (jpar - 1) * dimension] = v5.Y();
-                                result[2 + (jpar - 1) * dimension] = v5.Z();
+                                result[(jpar - 1) * dimension] = v5.X;
+                                result[1 + (jpar - 1) * dimension] = v5.Y;
+                                result[2 + (jpar - 1) * dimension] = v5.Z;
                             }
                             else if (uOrder == 0)
                             {
-                                result[(jpar - 1) * dimension] = v4.X();
-                                result[1 + (jpar - 1) * dimension] = v4.Y();
-                                result[2 + (jpar - 1) * dimension] = v4.Z();
+                                result[(jpar - 1) * dimension] = v4.X;
+                                result[1 + (jpar - 1) * dimension] = v4.Y;
+                                result[2 + (jpar - 1) * dimension] = v4.Z;
                             }
                         }
 
@@ -222,15 +222,15 @@ public sealed class ApproxSurface
                             _adaptor.D3(upar, vpar, out pnt, out v1, out v2, out v3, out v4, out v5, out v6, out v7, out v8, out v9);
                             if (uOrder == 2)
                             {
-                                result[(jpar - 1) * dimension] = v8.X();
-                                result[1 + (jpar - 1) * dimension] = v8.Y();
-                                result[2 + (jpar - 1) * dimension] = v8.Z();
+                                result[(jpar - 1) * dimension] = v8.X;
+                                result[1 + (jpar - 1) * dimension] = v8.Y;
+                                result[2 + (jpar - 1) * dimension] = v8.Z;
                             }
                             else if (uOrder == 1)
                             {
-                                result[(jpar - 1) * dimension] = v9.X();
-                                result[1 + (jpar - 1) * dimension] = v9.Y();
-                                result[2 + (jpar - 1) * dimension] = v9.Z();
+                                result[(jpar - 1) * dimension] = v9.X;
+                                result[1 + (jpar - 1) * dimension] = v9.Y;
+                                result[2 + (jpar - 1) * dimension] = v9.Z;
                             }
                         }
 
@@ -240,9 +240,9 @@ public sealed class ApproxSurface
                         {
                             upar = parameters[jpar - 1];
                             vect = _adaptor.DN(upar, vpar, uOrder, vOrder);
-                            result[(jpar - 1) * dimension] = vect.X();
-                            result[1 + (jpar - 1) * dimension] = vect.Y();
-                            result[2 + (jpar - 1) * dimension] = vect.Z();
+                            result[(jpar - 1) * dimension] = vect.X;
+                            result[1 + (jpar - 1) * dimension] = vect.Y;
+                            result[2 + (jpar - 1) * dimension] = vect.Z;
                         }
 
                         break;

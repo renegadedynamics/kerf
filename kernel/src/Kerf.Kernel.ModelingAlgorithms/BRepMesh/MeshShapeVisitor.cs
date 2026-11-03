@@ -120,12 +120,12 @@ public class MeshShapeVisitor : ShapeVisitor
         {
             int edgeIndex = orderTool.Ordered(i);
             Edge edge = wireData.Edge(edgeIndex);
-            if (edge.Orientation() != External)
+            if (edge.Orientation != External)
             {
                 EdgeModel dEdge = _model.GetEdge(_dEdgeMap.GetValue(edge));
 
-                dEdge.AddPCurve(dFace, edge.Orientation());
-                dWire.AddEdge(dEdge, edge.Orientation());
+                dEdge.AddPCurve(dFace, edge.Orientation);
+                dWire.AddEdge(dEdge, edge.Orientation);
             }
         }
 

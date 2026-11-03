@@ -60,7 +60,7 @@ internal sealed class Translation : Trsf
     {
         _vec = v;
         _canonize = canonize;
-        Standard_ConstructionError_Raise_if(v.Magnitude() < global::Kerf.Engine.Foundation.Precision.Confusion(), "BRepSweep_Translation::Constructor");
+        Standard_ConstructionError_Raise_if(v.Magnitude < global::Kerf.Engine.Foundation.Precision.Confusion(), "BRepSweep_Translation::Constructor");
         Init();
     }
 
@@ -71,7 +71,7 @@ internal sealed class Translation : Trsf
         Point3D p = Tool.Pnt(ShapeCasts.Vertex(aGenV));
         if (aDirV.Index() == 2)
         {
-            p = p.Transformed(_location.Transformation());
+            p = p.Transformed(_location.Transformation);
         }
         Vertex v = new();
         ////// modified by jgv, 5.10.01, for buc61008 //////
@@ -108,10 +108,10 @@ internal sealed class Translation : Trsf
             if (c is not null)
             {
                 c = (Curve3D)c.Copy();
-                c.Transform(l.Transformation());
+                c.Transform(l.Transformation);
                 if (aDirV.Index() == 2)
                 {
-                    c.Transform(_location.Transformation());
+                    c.Transform(_location.Transformation);
                 }
             }
             _builder.Builder().MakeEdge(ref newE, c, Tool.Tolerance(ShapeCasts.Edge(aGenE)));
@@ -124,7 +124,7 @@ internal sealed class Translation : Trsf
     {
         // Glue the parameter of vertices directly included in cap faces.
         Point2D pnt2d = Tool.Parameters(ShapeCasts.Vertex(aGenV), ShapeCasts.Face(aGenF));
-        _builder.Builder().UpdateVertex(ShapeCasts.Vertex(aNewVertex), pnt2d.X(), pnt2d.Y(), ShapeCasts.Face(aNewFace),
+        _builder.Builder().UpdateVertex(ShapeCasts.Vertex(aNewVertex), pnt2d.X, pnt2d.Y, ShapeCasts.Face(aNewFace),
                                          global::Kerf.Engine.Foundation.Precision.PConfusion());
     }
 
@@ -134,7 +134,7 @@ internal sealed class Translation : Trsf
         double param = 0;
         if (aDirV.Index() == 2)
         {
-            param = _vec.Magnitude();
+            param = _vec.Magnitude;
         }
         _builder.Builder().UpdateVertex(ShapeCasts.Vertex(aNewVertex), param, ShapeCasts.Edge(aNewEdge), global::Kerf.Engine.Foundation.Precision.PConfusion());
     }
@@ -143,7 +143,7 @@ internal sealed class Translation : Trsf
                                                 in Shape aGenV, in NumShape aDirV)
     {
         Vertex vbid = ShapeCasts.Vertex(aNewVertex);
-        vbid.Orientation(aGenV.Orientation());
+        vbid.Orient(aGenV.Orientation);
         _builder.Builder().UpdateVertex(vbid, Tool.Parameter(ShapeCasts.Vertex(aGenV), ShapeCasts.Edge(aGenE)),
                                          ShapeCasts.Edge(aNewEdge), global::Kerf.Engine.Foundation.Precision.PConfusion());
     }
@@ -157,7 +157,7 @@ internal sealed class Translation : Trsf
         {
             Curve3D c = Tool.Curve(ShapeCasts.Edge(aGenS), out Placement l, out double first, out double last)!;
             toler = Tool.Tolerance(ShapeCasts.Edge(aGenS));
-            Transform3D tr = l.Transformation();
+            Transform3D tr = l.Transformation;
             c = (Curve3D)c.Copy();
             // extruded surfaces are inverted correspondingly to the topology, so reverse.
             c.Transform(tr);
@@ -189,7 +189,7 @@ internal sealed class Translation : Trsf
         {
             s = Tool.Surface(ShapeCasts.Face(aGenS), out Placement l)!;
             toler = Tool.Tolerance(ShapeCasts.Face(aGenS));
-            Transform3D tr = l.Transformation();
+            Transform3D tr = l.Transformation;
             s = (Surface)s.Copy();
             s.Transform(tr);
             if (aDirS.Index() == 2)
@@ -229,7 +229,7 @@ internal sealed class Translation : Trsf
         var AS = new SurfaceAdaptor(Tool.Surface(ShapeCasts.Face(aNewFace), out Placement _)!);
         var l = new Line2D();
         Edge newOrientedEdge = ShapeCasts.Edge(aNewEdge);
-        newOrientedEdge.Orientation(orien);
+        newOrientedEdge.Orient(orien);
         if (AS.GetType() == Plane)
         {
             // nothing is done JAG (OCCT's commented-out computation of the line on the plane)
@@ -239,7 +239,7 @@ internal sealed class Translation : Trsf
             double v = 0;
             if (aDirV.Index() == 2)
             {
-                v = -_vec.Magnitude();
+                v = -_vec.Magnitude;
             }
             l = l.WithLocation(new Point2D(0, v));
             l = l.WithDirection(new Direction2D(Direction2D.D.X));

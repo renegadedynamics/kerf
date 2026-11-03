@@ -180,8 +180,8 @@ public class AdvApprox_ApproxAFunctionTests
         {
             double t = 3.0 * i / 300;
             anErr1 = Math.Max(anErr1, Math.Abs(Eval1d(anApprox, 1, t) - Math.Exp(t)));
-            anErr2 = Math.Max(anErr2, Eval2d(anApprox, 1, t).Distance(new Point2D(2 * Math.Cos(t), 2 * Math.Sin(t))));
-            anErr3 = Math.Max(anErr3, Eval3d(anApprox, 1, t).Distance(new Point3D(Math.Cos(t), Math.Sin(t), 0.5 * t)));
+            anErr2 = Math.Max(anErr2, Eval2d(anApprox, 1, t).DistanceTo(new Point2D(2 * Math.Cos(t), 2 * Math.Sin(t))));
+            anErr3 = Math.Max(anErr3, Eval3d(anApprox, 1, t).DistanceTo(new Point3D(Math.Cos(t), Math.Sin(t), 0.5 * t)));
         }
         Assert.True(anErr1 <= 1e-6, $"1D error {anErr1}");
         Assert.True(anErr2 <= 1e-5, $"2D error {anErr2}");

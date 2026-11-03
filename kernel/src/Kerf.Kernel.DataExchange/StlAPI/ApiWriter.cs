@@ -95,7 +95,7 @@ public class ApiWriter
             }
 
             // copy nodes
-            Transform3D trsf = loc.Transformation();
+            Transform3D trsf = loc.Transformation;
             for (int nodeIter = 1; nodeIter <= triangulation.NodeCount; ++nodeIter)
             {
                 Point3D pnt = triangulation.Node(nodeIter);
@@ -104,7 +104,7 @@ public class ApiWriter
             }
 
             // copy triangles
-            Orientation orientation = expSF.Current().Orientation();
+            Orientation orientation = expSF.Current().Orientation;
             for (int triIter = 1; triIter <= triangulation.TriangleCount; ++triIter)
             {
                 Triangle1 tri = triangulation.Triangle(triIter);

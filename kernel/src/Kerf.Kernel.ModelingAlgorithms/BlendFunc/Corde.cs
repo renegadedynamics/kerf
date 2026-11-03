@@ -55,7 +55,7 @@ public sealed class Corde
     public void SetParam(double param)
     {
         _guide.D2(param, out _ptgui, out _d1gui, out _d2gui);
-        _normtg = _d1gui.Magnitude();
+        _normtg = _d1gui.Magnitude;
         _nplan = _d1gui.Normalized();
         _d = -(_nplan.XYZ().Dot(_ptgui.XYZ()));
     }
@@ -71,7 +71,7 @@ public sealed class Corde
         f[1] = _nplan.XYZ().Dot(_pts.XYZ()) + _d;
         Vector3D vref = new Vector3D(_ptgui, _pts);
 
-        f[2] = vref.SquareMagnitude() - _dis * _dis;
+        f[2] = vref.SquareMagnitude - _dis * _dis;
 
         return true;
     }

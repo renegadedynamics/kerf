@@ -43,7 +43,7 @@ public readonly partial struct Direction2D : IEquatable<Direction2D>
 
     public Direction2D(in Vector2D v) : this(v.XY()) { }
 
-    public Direction2D(in Xy xy) : this(xy.X(), xy.Y()) { }
+    internal Direction2D(in Xy xy) : this(xy.X(), xy.Y()) { }
 
     public Direction2D(double xv, double yv)
     {
@@ -62,13 +62,13 @@ public readonly partial struct Direction2D : IEquatable<Direction2D>
 
     // Copies
 
-    public readonly Direction2D WithCoord(int index, double xi)
+    internal readonly Direction2D WithCoord(int index, double xi)
     {
         Standard_OutOfRange_Raise_if(index < 1 || index > 2, "gp_Dir2d::SetCoord() - index is out of range [1, 2]");
         return index == 1 ? WithX(xi) : WithY(xi);
     }
 
-    public readonly Direction2D WithCoord(double xv, double yv)
+    internal readonly Direction2D WithCoord(double xv, double yv)
     {
         Xy coord = _coord;
         double sqMod = xv * xv + yv * yv;
@@ -88,23 +88,23 @@ public readonly partial struct Direction2D : IEquatable<Direction2D>
 
     public readonly Direction2D WithY(double y) => WithCoord(_coord.X(), y);
 
-    public readonly Direction2D WithXY(in Xy xy) => WithCoord(xy.X(), xy.Y());
+    internal readonly Direction2D WithXY(in Xy xy) => WithCoord(xy.X(), xy.Y());
 
     // Queries
 
-    public readonly double Coord(int index) => _coord.Coord(index);
+    internal readonly double Coord(int index) => _coord.Coord(index);
 
-    public readonly void Coord(out double xv, out double yv) => _coord.Coord(out xv, out yv);
+    internal readonly void Coord(out double xv, out double yv) => _coord.Coord(out xv, out yv);
 
-    public readonly double X() => _coord.X();
+    public readonly double X => _coord.X();
 
-    public readonly double Y() => _coord.Y();
+    public readonly double Y => _coord.Y();
 
-    public readonly Xy XY() => _coord;
+    internal readonly Xy XY() => _coord;
 
     public readonly bool IsEqual(in Direction2D other, double angularTolerance)
     {
-        double ang = Angle(other);
+        double ang = AngleTo(other);
         if (ang < 0)
         {
             ang = -ang;
@@ -115,7 +115,7 @@ public readonly partial struct Direction2D : IEquatable<Direction2D>
 
     public readonly bool IsNormal(in Direction2D other, double angularTolerance)
     {
-        double ang = Angle(other);
+        double ang = AngleTo(other);
         if (ang < 0)
         {
             ang = -ang;
@@ -132,7 +132,7 @@ public readonly partial struct Direction2D : IEquatable<Direction2D>
 
     public readonly bool IsOpposite(in Direction2D other, double angularTolerance)
     {
-        double ang = Angle(other);
+        double ang = AngleTo(other);
         if (ang < 0)
         {
             ang = -ang;
@@ -143,7 +143,7 @@ public readonly partial struct Direction2D : IEquatable<Direction2D>
 
     public readonly bool IsParallel(in Direction2D other, double angularTolerance)
     {
-        double ang = Angle(other);
+        double ang = AngleTo(other);
         if (ang < 0)
         {
             ang = -ang;
@@ -153,7 +153,7 @@ public readonly partial struct Direction2D : IEquatable<Direction2D>
     }
 
     /// <summary>The signed angle from this direction to <paramref name="other"/>, in ]-PI, PI].</summary>
-    public readonly double Angle(in Direction2D other)
+    public readonly double AngleTo(in Direction2D other)
     {
         double cosinus = _coord.Dot(other._coord);
         double sinus = _coord.Crossed(other._coord);
@@ -218,7 +218,7 @@ public readonly partial struct Direction2D : IEquatable<Direction2D>
     public readonly Direction2D Mirrored(in Axis2D a2)
     {
         Xy coord = _coord;
-        Xy xy = a2.Direction().XY();
+        Xy xy = a2.Direction.XY();
         double a = xy.X();
         double b = xy.Y();
         double x = coord.X();
@@ -234,33 +234,33 @@ public readonly partial struct Direction2D : IEquatable<Direction2D>
     {
         Xy coord = _coord;
         Transform2D t = new Transform2D().WithRotation(new Point2D(0.0, 0.0), ang);
-        coord.Multiply(t.HVectorialPart());
+        coord.Multiply(t.RotationPart);
         return new Direction2D(coord, isUnit: true);
     }
 
     public readonly Direction2D Transformed(in Transform2D t)
     {
         Xy coord = _coord;
-        if (t.Form() == Identity || t.Form() == Translation)
+        if (t.Form == Identity || t.Form == Translation)
         {
         }
-        else if (t.Form() == PntMirror)
+        else if (t.Form == PntMirror)
         {
             coord.Reverse();
         }
-        else if (t.Form() == Scale)
+        else if (t.Form == Scale)
         {
-            if (t.ScaleFactor() < 0.0)
+            if (t.ScaleFactor < 0.0)
             {
                 coord.Reverse();
             }
         }
         else
         {
-            coord.Multiply(t.HVectorialPart());
+            coord.Multiply(t.RotationPart);
             double d = coord.Modulus();
             coord.Divide(d);
-            if (t.ScaleFactor() < 0.0)
+            if (t.ScaleFactor < 0.0)
             {
                 coord.Reverse();
             }

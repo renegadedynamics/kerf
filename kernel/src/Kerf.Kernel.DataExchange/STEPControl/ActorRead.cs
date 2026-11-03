@@ -240,7 +240,7 @@ public class ActorRead : ActorOfTransientProcess, IActorRead
     // ============================================================================
     private static void ApplyTransformation(ref Shape shape, in Transform3D trsf)
     {
-        if (trsf.Form() == Identity)
+        if (trsf.Form == Identity)
         {
             return;
         }
@@ -250,7 +250,7 @@ public class ActorRead : ActorOfTransientProcess, IActorRead
 
     private static void ApplyTransformation(ref Compound shape, in Transform3D trsf)
     {
-        if (trsf.Form() == Identity)
+        if (trsf.Form == Identity)
         {
             return;
         }
@@ -549,7 +549,7 @@ public class ActorRead : ActorOfTransientProcess, IActorRead
             {
                 result1 = theResult;
                 // [BEGIN] ssv: OCCT#22436: extra compound in NMSSR case
-                if (_nmDetected && result1.ShapeType() == ShapeType.Compound)
+                if (_nmDetected && result1.Type == ShapeType.Compound)
                 {
                     Iterator it = new Iterator(result1);
                     for (; it.More(); it.Next())
@@ -610,7 +610,7 @@ public class ActorRead : ActorOfTransientProcess, IActorRead
                 {
                     result1 = theResult;
                     // [BEGIN] ssv: OCCT#22436: extra compound in NMSSR case
-                    if (_nmDetected && result1.ShapeType() == ShapeType.Compound)
+                    if (_nmDetected && result1.Type == ShapeType.Compound)
                     {
                         Iterator it = new Iterator(result1);
                         for (; it.More(); it.Next())
@@ -875,9 +875,9 @@ public class ActorRead : ActorOfTransientProcess, IActorRead
                         {
                             CoordinateSystem ax3Orig = new CoordinateSystem(new Point3D(0.0, 0.0, 0), new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X));
                             CoordinateSystem ax3Targ = new CoordinateSystem(targAP.Ax2());
-                            if (ax3Targ.Location().SquareDistance(ax3Orig.Location()) < global::Kerf.Engine.Foundation.Precision.SquareConfusion()
-                                && ax3Targ.Direction().IsEqual(ax3Orig.Direction(), global::Kerf.Engine.Foundation.Precision.Angular())
-                                && ax3Targ.XDirection().IsEqual(ax3Orig.XDirection(), global::Kerf.Engine.Foundation.Precision.Angular()))
+                            if (ax3Targ.Location.SquareDistanceTo(ax3Orig.Location) < global::Kerf.Engine.Foundation.Precision.SquareConfusion()
+                                && ax3Targ.Direction.IsEqual(ax3Orig.Direction, global::Kerf.Engine.Foundation.Precision.Angular())
+                                && ax3Targ.XDirection.IsEqual(ax3Orig.XDirection, global::Kerf.Engine.Foundation.Precision.Angular()))
                             {
                                 continue;
                             }
@@ -927,7 +927,7 @@ public class ActorRead : ActorOfTransientProcess, IActorRead
             Shape fixedResult = shapeProcessor.InternalProcessShape(comp, GetProcessingFlags().Item1, ps1.Next());
             shapeProcessor.InternalMergeTransferInfo(tp, nbTPitems);
 
-            if (fixedResult.ShapeType() == ShapeType.Compound)
+            if (fixedResult.Type == ShapeType.Compound)
             {
                 comp = ShapeCasts.Compound(fixedResult);
             }
@@ -986,14 +986,14 @@ public class ActorRead : ActorOfTransientProcess, IActorRead
             for (; exp.More(); exp.Next())
             {
                 Shape subShape = exp.Current();
-                if (subShape.ShapeType() == ShapeType.Shell && subShape.Closed())
+                if (subShape.Type == ShapeType.Shell && subShape.IsClosed)
                 {
                     Solid nextSolid = new Solid();
                     brepBuilder.MakeSolid(ref nextSolid);
                     brepBuilder.Add(nextSolid, subShape);
                     brepBuilder.Add(reconstComp, nextSolid);
                 }
-                else if (subShape.ShapeType() == ShapeType.Shell)
+                else if (subShape.Type == ShapeType.Shell)
                 {
                     brepBuilder.Add(reconstComp, subShape);
                 }
@@ -1009,7 +1009,7 @@ public class ActorRead : ActorOfTransientProcess, IActorRead
         }
         else if (nsh == 1)
         {
-            if (trsf.Form() != Identity)
+            if (trsf.Form != Identity)
             {
                 Placement loc = new Placement(trsf);
                 oneResult.Move(loc);
@@ -1018,7 +1018,7 @@ public class ActorRead : ActorOfTransientProcess, IActorRead
         }
         else
         {
-            if (trsf.Form() != Identity)
+            if (trsf.Form != Identity)
             {
                 Placement loc = new Placement(trsf);
                 comp.Move(loc);
@@ -2134,7 +2134,7 @@ public class ActorRead : ActorOfTransientProcess, IActorRead
 
         //  ne pas se tromper de sens !
         trsf = trsf.WithTransformation(ax3Targ, ax3Orig);
-        return trsf.Form() != Identity;
+        return trsf.Form != Identity;
     }
 
     public bool ComputeTransformation(StepAxis2Placement3d origin, StepAxis2Placement3d target, StepRepresentation origContext,
@@ -2170,7 +2170,7 @@ public class ActorRead : ActorOfTransientProcess, IActorRead
             {
                 PrepareUnits(oldSRContext, tp, ref aLocalFactors);
             }
-            return trsf.Form() != Identity;
+            return trsf.Form != Identity;
         }
 
         // item-defined transformation

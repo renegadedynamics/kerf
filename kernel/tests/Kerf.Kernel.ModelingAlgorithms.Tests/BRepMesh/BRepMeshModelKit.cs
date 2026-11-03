@@ -198,7 +198,7 @@ internal static class BRepMeshModelKit
             for (int k = 0; k < aC.ParametersNb(); k++)
             {
                 Point3D aP = aC.GetPoint(k);
-                aText.Append(CultureInfo.InvariantCulture, $" {B(aC.GetParameter(k))}:{B(aP.X())},{B(aP.Y())},{B(aP.Z())}");
+                aText.Append(CultureInfo.InvariantCulture, $" {B(aC.GetParameter(k))}:{B(aP.X)},{B(aP.Y)},{B(aP.Z)}");
             }
             aText.Append('\n');
             for (int p = 0; p < anE.PCurvesNb(); p++)
@@ -208,7 +208,7 @@ internal static class BRepMeshModelKit
                 for (int k = 0; k < aPC.ParametersNb(); k++)
                 {
                     Point2D aP = aPC.GetPoint(k);
-                    aText.Append(CultureInfo.InvariantCulture, $" {B(aPC.GetParameter(k))}:{B(aP.X())},{B(aP.Y())}#{aPC.GetIndex(k)}");
+                    aText.Append(CultureInfo.InvariantCulture, $" {B(aPC.GetParameter(k))}:{B(aP.X)},{B(aP.Y)}#{aPC.GetIndex(k)}");
                 }
                 aText.Append('\n');
             }

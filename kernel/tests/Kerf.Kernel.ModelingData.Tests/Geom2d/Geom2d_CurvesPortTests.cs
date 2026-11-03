@@ -52,14 +52,14 @@ public class Geom2d_CurvesPortTest
 
     private static void AssertSamePoint(in Point2D theExpected, in Point2D theActual, double theTol = 1e-12)
     {
-        Assert.Equal(theExpected.X(), theActual.X(), theTol);
-        Assert.Equal(theExpected.Y(), theActual.Y(), theTol);
+        Assert.Equal(theExpected.X, theActual.X, theTol);
+        Assert.Equal(theExpected.Y, theActual.Y, theTol);
     }
 
     private static void AssertSameVec(in Vector2D theExpected, in Vector2D theActual, double theTol)
     {
-        Assert.Equal(theExpected.X(), theActual.X(), theTol);
-        Assert.Equal(theExpected.Y(), theActual.Y(), theTol);
+        Assert.Equal(theExpected.X, theActual.X, theTol);
+        Assert.Equal(theExpected.Y, theActual.Y, theTol);
     }
 
     // (1) Freezing and the non-mutating twins
@@ -149,10 +149,10 @@ public class Geom2d_CurvesPortTest
             // The transformed copy is a new object, and the frozen original is unchanged
             Curve2D aMoved = (Curve2D)aCurve.Translated(new Vector2D(1, 2));
             Curve2D anOrig = (Curve2D)aCurve;
-            double aU = Math.Max(anOrig.FirstParameter(), -1.0) + 0.1;
+            double aU = Math.Max(anOrig.FirstParameter, -1.0) + 0.1;
             Point2D aP = anOrig.Value(aU);
             Point2D aQ = aMoved.Value(aMoved.TransformedParameter(aU, Translation(1, 2)));
-            AssertSamePoint(new Point2D(aP.X() + 1, aP.Y() + 2), aQ, 1e-12);
+            AssertSamePoint(new Point2D(aP.X + 1, aP.Y + 2), aQ, 1e-12);
         }
     }
 
@@ -161,33 +161,33 @@ public class Geom2d_CurvesPortTest
     {
         CircleCurve2D aCircle = new CircleCurve2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 2.0);
         CircleCurve2D aBig = aCircle.WithRadius(5.0);
-        Assert.Equal(2.0, aCircle.Radius());
-        Assert.Equal(5.0, aBig.Radius());
+        Assert.Equal(2.0, aCircle.Radius);
+        Assert.Equal(5.0, aBig.Radius);
         Assert.Throws<ConstructionErrorException>(() => aCircle.WithRadius(-1.0));
 
         EllipseCurve2D anEllipse = new EllipseCurve2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 3.0, 1.0);
-        Assert.Equal(4.0, anEllipse.WithMajorRadius(4.0).MajorRadius());
-        Assert.Equal(0.5, anEllipse.WithMinorRadius(0.5).MinorRadius());
-        Assert.Equal(3.0, anEllipse.MajorRadius());
-        Assert.Equal(1.0, anEllipse.MinorRadius());
+        Assert.Equal(4.0, anEllipse.WithMajorRadius(4.0).MajorRadius);
+        Assert.Equal(0.5, anEllipse.WithMinorRadius(0.5).MinorRadius);
+        Assert.Equal(3.0, anEllipse.MajorRadius);
+        Assert.Equal(1.0, anEllipse.MinorRadius);
 
         ParabolaCurve2D aParabola = new ParabolaCurve2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 2.0);
-        Assert.Equal(7.0, aParabola.WithFocal(7.0).Focal());
-        Assert.Equal(2.0, aParabola.Focal());
+        Assert.Equal(7.0, aParabola.WithFocal(7.0).Focal);
+        Assert.Equal(2.0, aParabola.Focal);
 
         LineCurve2D aLine = new LineCurve2D(new Point2D(0, 0), new Direction2D(1, 0));
         LineCurve2D aMoved = aLine.WithLocation(new Point2D(3, 4));
-        AssertSamePoint(new Point2D(0, 0), aLine.Location());
-        AssertSamePoint(new Point2D(3, 4), aMoved.Location());
+        AssertSamePoint(new Point2D(0, 0), aLine.Location);
+        AssertSamePoint(new Point2D(3, 4), aMoved.Location);
 
         ConicCurve2D aConic = aCircle.WithLocation(new Point2D(1, 1));
-        AssertSamePoint(new Point2D(1, 1), aConic.Location());
-        AssertSamePoint(new Point2D(0, 0), aCircle.Location());
+        AssertSamePoint(new Point2D(1, 1), aConic.Location);
+        AssertSamePoint(new Point2D(0, 0), aCircle.Location);
 
         Curve2D aReversed = aCircle.Reversed();
         Assert.False(aReversed.IsFrozen);
-        Assert.True(aCircle.Position().YDirection().IsOpposite(((CircleCurve2D)aReversed).Position().YDirection(), 1e-12));
-        Assert.True(aCircle.Position().YDirection().IsEqual(new Direction2D(0, 1), 1e-12));
+        Assert.True(aCircle.Position.YDirection.IsOpposite(((CircleCurve2D)aReversed).Position.YDirection, 1e-12));
+        Assert.True(aCircle.Position.YDirection.IsEqual(new Direction2D(0, 1), 1e-12));
     }
 
     [Fact]
@@ -219,10 +219,10 @@ public class Geom2d_CurvesPortTest
         Assert.Equal(4, aCurve.KnotCount);
 
         BSplineCurve2D aSegment = aCurve.Segmented(0.5, 2.5);
-        Assert.Equal(0.5, aSegment.FirstParameter(), 1e-12);
-        Assert.Equal(2.5, aSegment.LastParameter(), 1e-12);
-        Assert.Equal(0.0, aCurve.FirstParameter());
-        Assert.Equal(3.0, aCurve.LastParameter());
+        Assert.Equal(0.5, aSegment.FirstParameter, 1e-12);
+        Assert.Equal(2.5, aSegment.LastParameter, 1e-12);
+        Assert.Equal(0.0, aCurve.FirstParameter);
+        Assert.Equal(3.0, aCurve.LastParameter);
 
         BSplineCurve2D aPeriodic = aCurve.WithPeriodic();
         Assert.True(aPeriodic.IsPeriodic);
@@ -233,8 +233,8 @@ public class Geom2d_CurvesPortTest
         AssertSamePoint(aPeriodic.Value(1.3), aNotPeriodic.Value(1.3), 1e-10);
 
         BSplineCurve2D aRaised = aCurve.DegreeIncreased(5);
-        Assert.Equal(5, aRaised.Degree());
-        Assert.Equal(3, aCurve.Degree());
+        Assert.Equal(5, aRaised.Degree);
+        Assert.Equal(3, aCurve.Degree);
         AssertSamePoint(aMid, aRaised.Value(1.5), 1e-12);
 
         BSplineCurve2D aWeighted = aCurve.WithWeight(3, 2.0);
@@ -262,13 +262,13 @@ public class Geom2d_CurvesPortTest
         Point2D aMid = aCurve.Value(0.5);
 
         BezierCurve2D anIncreased = aCurve.Increased(5);
-        Assert.Equal(5, anIncreased.Degree());
-        Assert.Equal(3, aCurve.Degree());
+        Assert.Equal(5, anIncreased.Degree);
+        Assert.Equal(3, aCurve.Degree);
         AssertSamePoint(aMid, anIncreased.Value(0.5), 1e-12);
 
         BezierCurve2D aSegment = aCurve.Segmented(0.25, 0.75);
         AssertSamePoint(aMid, aSegment.Value(0.5), 1e-12);
-        AssertSamePoint(new Point2D(0, 0), aCurve.StartPoint());
+        AssertSamePoint(new Point2D(0, 0), aCurve.StartPoint);
 
         Assert.Equal(5, aCurve.PoleInsertedAfter(2, new Point2D(1.5, 2)).PoleCount);
         Assert.Equal(3, aCurve.PoleRemoved(2).PoleCount);
@@ -282,13 +282,13 @@ public class Geom2d_CurvesPortTest
     {
         TrimmedCurve2D aTrim = new TrimmedCurve2D(CubicBSpline(), 0.5, 2.5);
         TrimmedCurve2D aNarrow = aTrim.WithTrim(1.0, 2.0);
-        Assert.Equal(1.0, aNarrow.FirstParameter());
-        Assert.Equal(0.5, aTrim.FirstParameter());
+        Assert.Equal(1.0, aNarrow.FirstParameter);
+        Assert.Equal(0.5, aTrim.FirstParameter);
 
         OffsetCurve2D anOffset = new OffsetCurve2D(CubicBSpline(), 0.5);
         OffsetCurve2D aFar = anOffset.WithOffsetValue(2.0);
-        Assert.Equal(2.0, aFar.Offset());
-        Assert.Equal(0.5, anOffset.Offset());
+        Assert.Equal(2.0, aFar.Offset);
+        Assert.Equal(0.5, anOffset.Offset);
     }
 
     // (2) Decision 132: shared basis curves are frozen; their owner copies on write
@@ -301,28 +301,28 @@ public class Geom2d_CurvesPortTest
         // The constructor copies the basis: the caller's curve isn't shared nor frozen
         Assert.False(aCaller.IsFrozen);
 
-        Curve2D aBasis = aTrim.BasisCurve();
+        Curve2D aBasis = aTrim.BasisCurve;
         Assert.True(aBasis.IsFrozen);
         Assert.NotSame(aCaller, aBasis);
-        Assert.Same(aBasis, aTrim.BasisCurve());
+        Assert.Same(aBasis, aTrim.BasisCurve);
         Point2D aBasisPoint = aBasis.Value(1.0);
 
         // The trimmed curve is still mutable: it copies its basis first
         aTrim.Transform(Translation(10, 0));
-        AssertSamePoint(new Point2D(aBasisPoint.X() + 10, aBasisPoint.Y()), aTrim.Value(1.0));
+        AssertSamePoint(new Point2D(aBasisPoint.X + 10, aBasisPoint.Y), aTrim.Value(1.0));
         AssertSamePoint(aBasisPoint, aBasis.Value(1.0), 0.0);
-        Assert.NotSame(aBasis, aTrim.BasisCurve());
+        Assert.NotSame(aBasis, aTrim.BasisCurve);
 
-        Curve2D aBasis2 = aTrim.BasisCurve();
-        Point2D aStart = aTrim.StartPoint();
+        Curve2D aBasis2 = aTrim.BasisCurve;
+        Point2D aStart = aTrim.StartPoint;
         aTrim.Reverse();
-        AssertSamePoint(aStart, aTrim.EndPoint(), 1e-12);
-        AssertSamePoint(new Point2D(aBasisPoint.X() + 10, aBasisPoint.Y()), aBasis2.Value(1.0));
+        AssertSamePoint(aStart, aTrim.EndPoint, 1e-12);
+        AssertSamePoint(new Point2D(aBasisPoint.X + 10, aBasisPoint.Y), aBasis2.Value(1.0));
 
         // A trimmed curve of a trimmed curve doesn't freeze the inner basis
         TrimmedCurve2D anInner = new TrimmedCurve2D(CubicBSpline(), 0.5, 2.5);
         TrimmedCurve2D anOuter = new TrimmedCurve2D(anInner, 1.0, 2.0);
-        Assert.IsType<BSplineCurve2D>(anOuter.BasisCurve());
+        Assert.IsType<BSplineCurve2D>(anOuter.BasisCurve);
         anInner.Transform(Translation(1, 1)); // would throw if the constructor had frozen its basis
     }
 
@@ -334,32 +334,32 @@ public class Geom2d_CurvesPortTest
 
         // As in OCCT the offset curve shares the caller's curve, which is therefore frozen
         Assert.True(aCaller.IsFrozen);
-        Assert.Same(aCaller, anOffset.BasisCurve());
+        Assert.Same(aCaller, anOffset.BasisCurve);
         Assert.Throws<ImmutableObjectException>(() => aCaller.SetPole(2, new Point2D(0, 9)));
 
         Point2D aBasisPoint = aCaller.Value(1.0);
         Point2D anOffsetPoint = anOffset.Value(1.0);
 
         anOffset.Transform(Translation(0, 5));
-        AssertSamePoint(new Point2D(anOffsetPoint.X(), anOffsetPoint.Y() + 5), anOffset.Value(1.0), 1e-12);
+        AssertSamePoint(new Point2D(anOffsetPoint.X, anOffsetPoint.Y + 5), anOffset.Value(1.0), 1e-12);
         AssertSamePoint(aBasisPoint, aCaller.Value(1.0), 0.0);
-        Assert.NotSame(aCaller, anOffset.BasisCurve());
+        Assert.NotSame(aCaller, anOffset.BasisCurve);
 
-        Curve2D aBasis2 = anOffset.BasisCurve();
+        Curve2D aBasis2 = anOffset.BasisCurve;
         Assert.True(aBasis2.IsFrozen);
         anOffset.Reverse();
-        Assert.Equal(-0.5, anOffset.Offset());
-        AssertSamePoint(new Point2D(aBasisPoint.X(), aBasisPoint.Y() + 5), aBasis2.Value(1.0), 0.0);
+        Assert.Equal(-0.5, anOffset.Offset);
+        AssertSamePoint(new Point2D(aBasisPoint.X, aBasisPoint.Y + 5), aBasis2.Value(1.0), 0.0);
 
         // An offset of a trimmed curve rebuilds the trimmed curve (a copy): the caller's isn't frozen
         TrimmedCurve2D aTrim = new TrimmedCurve2D(CubicBSpline(), 0.5, 2.5);
         OffsetCurve2D anOffsetOfTrim = new OffsetCurve2D(aTrim, 0.5);
         Assert.False(aTrim.IsFrozen);
-        Assert.NotSame(aTrim, anOffsetOfTrim.BasisCurve());
+        Assert.NotSame(aTrim, anOffsetOfTrim.BasisCurve);
 
         // An offset of an offset adds the offsets and shares the inner basis
         OffsetCurve2D anOffsetOfOffset = new OffsetCurve2D(anOffset, 0.25);
-        Assert.Equal(-0.25, anOffsetOfOffset.Offset(), 1e-15);
+        Assert.Equal(-0.25, anOffsetOfOffset.Offset, 1e-15);
     }
 
     // (3) Decision 131: returned arrays are copies
@@ -369,30 +369,30 @@ public class Geom2d_CurvesPortTest
     {
         BSplineCurve2D aCurve = RationalBSpline();
 
-        Assert.Equal(aCurve.InternalPoles().AsSpan().ToArray(), aCurve.Poles().ToArray());
-        Assert.Equal(aCurve.InternalKnots().AsSpan().ToArray(), aCurve.Knots().ToArray());
-        Assert.Equal(aCurve.InternalMultiplicities().AsSpan().ToArray(), aCurve.Multiplicities().ToArray());
-        Assert.Equal(aCurve.InternalKnotSequence().AsSpan().ToArray(), aCurve.KnotSequence().ToArray());
-        IReadOnlyList<double>? aWeights = aCurve.Weights();
+        Assert.Equal(aCurve.InternalPoles().AsSpan().ToArray(), aCurve.Poles.ToArray());
+        Assert.Equal(aCurve.InternalKnots().AsSpan().ToArray(), aCurve.Knots.ToArray());
+        Assert.Equal(aCurve.InternalMultiplicities().AsSpan().ToArray(), aCurve.Multiplicities.ToArray());
+        Assert.Equal(aCurve.InternalKnotSequence().AsSpan().ToArray(), aCurve.KnotSequence.ToArray());
+        IReadOnlyList<double>? aWeights = aCurve.WeightsOrNull();
         Assert.NotNull(aWeights);
         Assert.Equal(aCurve.InternalWeights()!.AsSpan().ToArray(), aWeights.ToArray());
-        Assert.Equal(aCurve.InternalWeightsArray().AsSpan().ToArray(), aCurve.WeightsArray().ToArray());
+        Assert.Equal(aCurve.InternalWeightsArray().AsSpan().ToArray(), aCurve.Weights.ToArray());
 
         // A later internal change doesn't reach a list handed out before it
-        IReadOnlyList<Point2D> aPoles = aCurve.Poles();
-        IReadOnlyList<double> aKnots = aCurve.Knots();
+        IReadOnlyList<Point2D> aPoles = aCurve.Poles;
+        IReadOnlyList<double> aKnots = aCurve.Knots;
         aCurve.SetPole(2, new Point2D(42, 42));
         aCurve.SetKnot(2, 1.25);
         Assert.Equal(new Point2D(1, 2), aPoles[1]);
         Assert.Equal(1.0, aKnots[1]);
-        Assert.Equal(new Point2D(42, 42), aCurve.Poles()[1]);
+        Assert.Equal(new Point2D(42, 42), aCurve.Poles[1]);
 
         // Non-rational: Weights() is null, WeightsArray() is ones
         BSplineCurve2D aPlain = CubicBSpline();
-        Assert.Null(aPlain.Weights());
+        Assert.Null(aPlain.WeightsOrNull());
         Assert.Null(aPlain.InternalWeights());
-        Assert.All(aPlain.WeightsArray().ToArray(), w => Assert.Equal(1.0, w));
-        Assert.Equal(aPlain.PoleCount, aPlain.WeightsArray().Count);
+        Assert.All(aPlain.Weights.ToArray(), w => Assert.Equal(1.0, w));
+        Assert.Equal(aPlain.PoleCount, aPlain.Weights.Count);
     }
 
     [Fact]
@@ -400,24 +400,24 @@ public class Geom2d_CurvesPortTest
     {
         BezierCurve2D aCurve = new BezierCurve2D(Arr(new Point2D(0, 0), new Point2D(1, 1), new Point2D(2, 0)),
                                                            Arr(1.0, 2.0, 1.0));
-        Assert.Equal(aCurve.InternalPoles().AsSpan().ToArray(), aCurve.Poles().ToArray());
-        Assert.Equal(new[] { 0.0, 1.0 }, aCurve.Knots().ToArray());
-        Assert.Equal(new[] { 3, 3 }, aCurve.Multiplicities().ToArray());
-        Assert.Equal(new[] { 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 }, aCurve.KnotSequence().ToArray());
-        Assert.Equal(new[] { 1.0, 2.0, 1.0 }, aCurve.Weights()!.ToArray());
-        Assert.Equal(new[] { 1.0, 2.0, 1.0 }, aCurve.WeightsArray().ToArray());
+        Assert.Equal(aCurve.InternalPoles().AsSpan().ToArray(), aCurve.Poles.ToArray());
+        Assert.Equal(new[] { 0.0, 1.0 }, aCurve.Knots.ToArray());
+        Assert.Equal(new[] { 3, 3 }, aCurve.Multiplicities.ToArray());
+        Assert.Equal(new[] { 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 }, aCurve.KnotSequence.ToArray());
+        Assert.Equal(new[] { 1.0, 2.0, 1.0 }, aCurve.WeightsOrNull()!.ToArray());
+        Assert.Equal(new[] { 1.0, 2.0, 1.0 }, aCurve.Weights.ToArray());
 
-        IReadOnlyList<Point2D> aPoles = aCurve.Poles();
+        IReadOnlyList<Point2D> aPoles = aCurve.Poles;
         aCurve.SetPole(2, new Point2D(5, 5));
         Assert.Equal(new Point2D(1, 1), aPoles[1]);
 
         // The shared unit weights are never written: making a non-rational curve rational copies them
         BezierCurve2D aPlain = CubicBezier();
-        Assert.Null(aPlain.Weights());
+        Assert.Null(aPlain.WeightsOrNull());
         aPlain.SetWeight(2, 3.0);
         Assert.Equal(1.0, global::Kerf.Engine.Geometry.Splines.BSplCLib.UnitWeights(4)[2]);
-        Assert.Null(CubicBezier().Weights());
-        Assert.Equal(1.0, CubicBezier().WeightsArray()[1]);
+        Assert.Null(CubicBezier().WeightsOrNull());
+        Assert.Equal(1.0, CubicBezier().Weights[1]);
     }
 
     // (4) Reproductions of OCCT issues
@@ -487,9 +487,9 @@ public class Geom2d_CurvesPortTest
         Assert.Equal(global::Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(3, false, aCurve.InternalMultiplicities()), aCurve.PoleCount);
 
         aCurve.IncreaseDegree(4);
-        int anExpected = global::Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(aCurve.Degree(), false, aCurve.InternalMultiplicities());
+        int anExpected = global::Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(aCurve.Degree, false, aCurve.InternalMultiplicities());
         myOutput.WriteLine($"after IncreaseDegree(4): {aCurve.PoleCount} poles, multiplicities "
-                           + $"[{string.Join(", ", aCurve.Multiplicities())}] need {anExpected}");
+                           + $"[{string.Join(", ", aCurve.Multiplicities)}] need {anExpected}");
         // OCCT: the pole count doesn't match the multiplicities
         Assert.NotEqual(anExpected, aCurve.PoleCount);
 
@@ -529,7 +529,7 @@ public class Geom2d_CurvesPortTest
         // Without the representation the curve evaluates its own (changed) poles
         BSplineCurve2D aCleared = aCurve.WithoutEvalRepresentation();
         Assert.False(aCleared.HasEvalRepresentation);
-        Assert.True(aCleared.EvalD0(1.5).Distance(aBefore) > 1.0);
+        Assert.True(aCleared.EvalD0(1.5).DistanceTo(aBefore) > 1.0);
     }
 
     /// <summary>
@@ -553,7 +553,7 @@ public class Geom2d_CurvesPortTest
 
         aCurve.Transform(Translation(10, 0));
         Assert.False(aCurve.HasEvalRepresentation);
-        Assert.True(aCurve.EvalD0(0.3).X() > 9.0);
+        Assert.True(aCurve.EvalD0(0.3).X > 9.0);
 
         // Increase rebuilds the poles (init), which also drops it
         BezierCurve2D aSecond = CubicBezier();
@@ -588,10 +588,10 @@ public class Geom2d_CurvesPortTest
         Curve2D.ResD2 aD2 = theCurve.EvalD2(theU);
         Vector2D aFd1 = new Vector2D(theCurve.EvalD0(theU - h), theCurve.EvalD0(theU + h)) / (2.0 * h);
         Vector2D aFd2 = (theCurve.EvalD1(theU + h).D1 - theCurve.EvalD1(theU - h).D1) / (2.0 * h);
-        double aScale1 = Math.Max(1.0, aD2.D1.Magnitude());
-        double aScale2 = Math.Max(1.0, aD2.D2.Magnitude());
-        Assert.True((aFd1 - aD2.D1).Magnitude() < 1e-6 * aScale1, $"D1 at {theU}: {aD2.D1} vs {aFd1}");
-        Assert.True((aFd2 - aD2.D2).Magnitude() < 1e-5 * aScale2, $"D2 at {theU}: {aD2.D2} vs {aFd2}");
+        double aScale1 = Math.Max(1.0, aD2.D1.Magnitude);
+        double aScale2 = Math.Max(1.0, aD2.D2.Magnitude);
+        Assert.True((aFd1 - aD2.D1).Magnitude < 1e-6 * aScale1, $"D1 at {theU}: {aD2.D1} vs {aFd1}");
+        Assert.True((aFd2 - aD2.D2).Magnitude < 1e-5 * aScale2, $"D2 at {theU}: {aD2.D2} vs {aFd2}");
         Curve2D.ResD3 aD3 = theCurve.EvalD3(theU);
         AssertSamePoint(aD2.Point, aD3.Point, 1e-12);
         AssertSameVec(aD2.D1, theCurve.EvalDN(theU, 1), 1e-9 * aScale1);
@@ -651,9 +651,9 @@ public class Geom2d_CurvesPortTest
 
         public TestCurveAdaptor(Curve2D theCurve) => myCurve = theCurve;
 
-        public override double FirstParameter() => myCurve.FirstParameter();
+        public override double FirstParameter() => myCurve.FirstParameter;
 
-        public override double LastParameter() => myCurve.LastParameter();
+        public override double LastParameter() => myCurve.LastParameter;
 
         public override Point2D Value(double U) => myCurve.Value(U);
 

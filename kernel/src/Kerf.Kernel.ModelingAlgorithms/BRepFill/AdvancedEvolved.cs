@@ -167,7 +167,7 @@ public sealed class AdvancedEvolved
 
             n2 = t1.Crossed(t2);
 
-            if (n2.SquareMagnitude() > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+            if (n2.SquareMagnitude > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
             {
                 loc = Tool.Pnt(vc);
                 break;
@@ -177,7 +177,7 @@ public sealed class AdvancedEvolved
         DistanceShapeShape extr = new();
         extr.LoadS1(spine);
 
-        if (n2.SquareMagnitude() > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+        if (n2.SquareMagnitude > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             Plane3D pln = new(loc, new Direction3D(n2));
             LibraryMakeFace mf = new(pln, profile);
@@ -250,8 +250,8 @@ public sealed class AdvancedEvolved
                     ac1.D1(par2, out p, out Vector3D t2); // OCCT: anAC1, not anAC2
 
                     // Find minimal sine
-                    double sqT1 = Max(t1.SquareMagnitude(), 1.0 / global::Kerf.Engine.Foundation.Precision.Infinite());
-                    double sqT2 = Max(t2.SquareMagnitude(), 1.0 / global::Kerf.Engine.Foundation.Precision.Infinite());
+                    double sqT1 = Max(t1.SquareMagnitude, 1.0 / global::Kerf.Engine.Foundation.Precision.Infinite());
+                    double sqT2 = Max(t2.SquareMagnitude, 1.0 / global::Kerf.Engine.Foundation.Precision.Infinite());
 
                     double sqSin1 = t1.CrossSquareMagnitude(n2) / sqT1;
                     double sqSin2 = t2.CrossSquareMagnitude(n2) / sqT2;
@@ -298,7 +298,7 @@ public sealed class AdvancedEvolved
                 Face fSpine = mkFSpine.InternalFace();
                 // OCCT dereferences the down-cast plane without a check.
                 PlaneSurface plnSpine = Tool.Surface(fSpine) as PlaneSurface ?? throw new NullReferenceException();
-                Vector3D n1 = new(plnSpine.Axis().Direction());
+                Vector3D n1 = new(plnSpine.Axis.Direction);
                 Vector3D tanV;
 
                 if (extr.SupportTypeShape2(idxMin) == SupportType.IsVertex)
@@ -322,8 +322,8 @@ public sealed class AdvancedEvolved
                     ac1.D1(par2, out p, out Vector3D t2); // OCCT: anAC1, not anAC2
 
                     // Find maximal cosine
-                    double sqT1 = t1.SquareMagnitude();
-                    double sqT2 = t2.SquareMagnitude();
+                    double sqT1 = t1.SquareMagnitude;
+                    double sqT2 = t2.SquareMagnitude;
 
                     if (sqT1 < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
@@ -547,7 +547,7 @@ public sealed class AdvancedEvolved
         // Square of the default angular tolerance in
         // BOPAlgo_Tools::EdgesToWires(...) and BOPAlgo_Tools::WiresToFaces(...) methods
         double sqAnguarTol = tol * tol / sqDiag;
-        Direction3D normal = surf.Position().Direction();
+        Direction3D normal = surf.Position.Direction;
 
         // Obtain free-edges from myPipeShell. All edges must be planar
         // and parallel to the plane of mySpine
@@ -579,7 +579,7 @@ public sealed class AdvancedEvolved
 
             ac.D1(0.5 * (ac.FirstParameter() + ac.LastParameter()), out Point3D ptmp, out Vector3D tan);
 
-            double sqModulus = tan.SquareMagnitude();
+            double sqModulus = tan.SquareMagnitude;
             if (sqModulus < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 continue;
@@ -636,8 +636,8 @@ public sealed class AdvancedEvolved
                 Face f = ShapeCasts.Face(exp.Current());
                 // OCCT dereferences the down-cast plane without a check.
                 PlaneSurface pln = Tool.Surface(f) as PlaneSurface ?? throw new NullReferenceException();
-                Xyz norm = pln.Position().Direction().XYZ();
-                Xyz locP = pln.Position().Location().XYZ();
+                Xyz norm = pln.Position.Direction.XYZ();
+                Xyz locP = pln.Position.Location.XYZ();
 
                 bool isFound = false;
 
@@ -976,7 +976,7 @@ public sealed class AdvancedEvolved
                 {
                     Face fm = ShapeCasts.Face(mod);
 
-                    if (fm.Orientation() != f.Orientation())
+                    if (fm.Orientation != f.Orientation)
                     {
                         listInvFaces.Append(fm);
                     }
@@ -1114,7 +1114,7 @@ public sealed class AdvancedEvolved
         double tol = 2.0 * Tool.Tolerance(v);
         double tolU = anAS.UResolution(tol), tolV = anAS.VResolution(tol);
 
-        if ((Math.Abs(pf.X() - pl.X()) < tolU) && (Math.Abs(pf.Y() - pl.Y()) < tolV))
+        if ((Math.Abs(pf.X - pl.X) < tolU) && (Math.Abs(pf.Y - pl.Y) < tolV))
         {
             return false;
         }
@@ -1134,8 +1134,8 @@ public sealed class AdvancedEvolved
         bb.UpdateEdge(edegen1, l1, face, global::Kerf.Engine.Foundation.Precision.Confusion());
         bb.UpdateEdge(edegen2, l2, face, global::Kerf.Engine.Foundation.Precision.Confusion());
 
-        edegen1.Orientation(Forward);
-        edegen2.Orientation(Forward);
+        edegen1.Orient(Forward);
+        edegen2.Orient(Forward);
 
         bb.Add(edegen1, vf);
         bb.Add(edegen1, vl);
@@ -1525,7 +1525,7 @@ public sealed class AdvancedEvolved
         for (; itrS.More(); itrS.Next())
         {
             Face aF = ShapeCasts.Face(itrS.Value());
-            listOfFaces.Append(aF.Oriented(f.Orientation()));
+            listOfFaces.Append(aF.Oriented(f.Orientation));
         }
 
         return true;
@@ -1556,7 +1556,7 @@ public sealed class AdvancedEvolved
         for (; itS.More(); itS.Next())
         {
             Shape ss = itS.Value();
-            if (ss.Orientation() == Internal)
+            if (ss.Orientation == Internal)
             {
                 lInt.Append(ss);
             }
@@ -1565,7 +1565,7 @@ public sealed class AdvancedEvolved
                 Iterator itSS = new(ss);
                 for (; itSS.More(); itSS.Next())
                 {
-                    if (itSS.Value().Orientation() == Internal)
+                    if (itSS.Value().Orientation == Internal)
                     {
                         lInt.Append(ss);
                         break;
@@ -1625,7 +1625,7 @@ public sealed class AdvancedEvolved
             Edge e = ShapeCasts.Edge(it.Value());
             //
             BrepTEdge te = (BrepTEdge)e.TShape()!;
-            Placement eloc = e.Location();
+            Placement eloc = e.Placement;
             //
             vExp.Init(e, ShapeType.Vertex);
             for (; vExp.More(); vExp.Next())
@@ -1637,7 +1637,7 @@ public sealed class AdvancedEvolved
                     continue;
                 }
                 //
-                orV = vx.Orientation();
+                orV = vx.Orientation;
                 if (orV != Forward && orV != Reversed)
                 {
                     continue;
@@ -1649,7 +1649,7 @@ public sealed class AdvancedEvolved
                 {
                     CurveRepresentation cr = itcr.Value();
                     Placement loc = cr.Location();
-                    Placement l = (eloc * loc).Predivided(aV.Location());
+                    Placement l = (eloc * loc).Predivided(aV.Placement);
                     //
                     // 3D-Curve
                     if (cr.IsCurve3D)
@@ -1663,8 +1663,8 @@ public sealed class AdvancedEvolved
                         // 3D-point treatment
                         param = Tool.Parameter(vx, e);
                         pc3D = c3D.Value(param);
-                        pc3D = pc3D.Transformed(l.Transformation());
-                        d2 = pv3D.SquareDistance(pc3D);
+                        pc3D = pc3D.Transformed(l.Transformation);
+                        d2 = pv3D.SquareDistanceTo(pc3D);
                         if (d2 > tolMax2)
                         {
                             tolMax2 = d2;
@@ -1686,9 +1686,9 @@ public sealed class AdvancedEvolved
                         // 2D-point treatment
                         param = Tool.Parameter(vx, e, s, l);
                         pc2D = c2D.Value(param);
-                        s.D0(pc2D.X(), pc2D.Y(), out pc3D);
-                        pc3D = pc3D.Transformed(l.Transformation());
-                        d2 = pv3D.SquareDistance(pc3D);
+                        s.D0(pc2D.X, pc2D.Y, out pc3D);
+                        pc3D = pc3D.Transformed(l.Transformation);
+                        d2 = pv3D.SquareDistanceTo(pc3D);
                         if (d2 > tolMax2)
                         {
                             tolMax2 = d2;

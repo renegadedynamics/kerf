@@ -13,7 +13,7 @@ namespace Kerf.Engine.Geometry.Adaptors;
 
 /// <summary>A 2D line segment as an adapted curve; used by Adaptor3d_TopolTool to trim a surface.</summary>
 /// <remarks>An adaptor is a working object: <see cref="Load(in Line2D)"/> is public, as in OCCT.</remarks>
-public class Line2d : Curve2DAdaptorBase
+internal class Line2d : Curve2DAdaptorBase
 {
     private double _ufirst;
     private double _ulast;
@@ -46,7 +46,7 @@ public class Line2d : Curve2DAdaptorBase
     /// <summary>Loads the infinite line L.</summary>
     public void Load(in Line2D l)
     {
-        _ax2d = l.Position();
+        _ax2d = l.Position;
         _ufirst = -global::Kerf.Engine.Foundation.Precision.Infinite();
         _ulast = global::Kerf.Engine.Foundation.Precision.Infinite();
     }
@@ -54,7 +54,7 @@ public class Line2d : Curve2DAdaptorBase
     /// <summary>Loads the line L between Fi and La.</summary>
     public void Load(in Line2D l, double fi, double la)
     {
-        _ax2d = l.Position();
+        _ax2d = l.Position;
         _ufirst = fi;
         _ulast = la;
     }
@@ -115,7 +115,7 @@ public class Line2d : Curve2DAdaptorBase
         }
         if (n == 1)
         {
-            return new Vector2D(_ax2d.Direction());
+            return new Vector2D(_ax2d.Direction);
         }
         return new Vector2D(0.0, 0.0);
     }

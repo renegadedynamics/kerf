@@ -24,7 +24,7 @@ public sealed class MakeSegment : Root
     /// </exception>
     public MakeSegment(in Point3D p1, in Point3D p2)
     {
-        double dist = p1.Distance(p2);
+        double dist = p1.DistanceTo(p2);
         // OCCT converts GC_MakeLine implicitly; Value() throws here when P1 and P2 coincide (see the exception).
         LineCurve3D l = new MakeLine(p1, p2).Value();
         _theSegment = new TrimmedCurve3D(l, 0.0, dist, true);

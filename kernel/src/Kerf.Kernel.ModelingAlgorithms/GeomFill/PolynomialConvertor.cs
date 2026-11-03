@@ -114,7 +114,7 @@ public sealed class PolynomialConvertor
         beta3 = beta * beta2;
 
         // Calcul de la transformation
-        Matrix3x3 m = new Matrix3x3(v1.X(), v2.X(), 0, v1.Y(), v2.Y(), 0, v1.Z(), v2.Z(), 0);
+        Matrix3x3 m = new Matrix3x3(v1.X, v2.X, 0, v1.Y, v2.Y, 0, v1.Z, v2.Z, 0);
 
         // Calcul des contraintes  -----------
         vx[1] = 1;
@@ -165,10 +165,10 @@ public sealed class PolynomialConvertor
         beta3 = beta * beta2;
 
         // Calcul des  transformations
-        Matrix3x3 m = new Matrix3x3(v1.X(), v2.X(), 0, v1.Y(), v2.Y(), 0, v1.Z(), v2.Z(), 0);
+        Matrix3x3 m = new Matrix3x3(v1.X, v2.X, 0, v1.Y, v2.Y, 0, v1.Z, v2.Z, 0);
         v1Prim = dFirstPnt - dCenter;
         v2 = (dDir ^ v1) + (dir ^ v1Prim);
-        Matrix3x3 mPrim = new Matrix3x3(v1Prim.X(), v2.X(), 0, v1Prim.Y(), v2.Y(), 0, v1Prim.Z(), v2.Z(), 0);
+        Matrix3x3 mPrim = new Matrix3x3(v1Prim.X, v2.X, 0, v1Prim.Y, v2.Y, 0, v1Prim.Z, v2.Z, 0);
 
         // Calcul des contraintes  -----------
         vx[1] = 1;
@@ -249,17 +249,17 @@ public sealed class PolynomialConvertor
         bprim2 = bprim * bprim;
 
         // Calcul des  transformations
-        Matrix3x3 m = new Matrix3x3(v1.X(), v2.X(), 0, v1.Y(), v2.Y(), 0, v1.Z(), v2.Z(), 0);
+        Matrix3x3 m = new Matrix3x3(v1.X, v2.X, 0, v1.Y, v2.Y, 0, v1.Z, v2.Z, 0);
         v1Prim = dFirstPnt - dCenter;
         v2 = (dDir ^ v1) + (dir ^ v1Prim);
 
-        Matrix3x3 mPrim = new Matrix3x3(v1Prim.X(), v2.X(), 0, v1Prim.Y(), v2.Y(), 0, v1Prim.Z(), v2.Z(), 0);
+        Matrix3x3 mPrim = new Matrix3x3(v1Prim.X, v2.X, 0, v1Prim.Y, v2.Y, 0, v1Prim.Z, v2.Z, 0);
         v1Secn = d2FirstPnt - d2Center;
         v2 = dDir ^ v1Prim;
         v2 *= 2;
         v2 += (d2Dir ^ v1) + (dir ^ v1Secn);
 
-        Matrix3x3 mSecn = new Matrix3x3(v1Secn.X(), v2.X(), 0, v1Secn.Y(), v2.Y(), 0, v1Secn.Z(), v2.Z(), 0);
+        Matrix3x3 mSecn = new Matrix3x3(v1Secn.X, v2.X, 0, v1Secn.Y, v2.Y, 0, v1Secn.Z, v2.Z, 0);
 
         // Calcul des contraintes  -----------
         vx[1] = 1;

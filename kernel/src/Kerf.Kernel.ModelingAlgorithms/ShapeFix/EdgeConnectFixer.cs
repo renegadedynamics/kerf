@@ -148,7 +148,7 @@ public sealed class EdgeConnectFixer
                     theEdge = theNext;
                 }
                 // Connect first and last edges if wire is closed
-                if (theWire.Closed())
+                if (theWire.IsClosed)
                 {
                     Add(theEdge, theFirst);
                 }
@@ -185,7 +185,7 @@ public sealed class EdgeConnectFixer
                 ref Shape theEdgeShape = ref theLIterator.ChangeValue();
 
                 // Determine usage of curve bound points
-                theEdgeShape.Orientation(Forward);
+                theEdgeShape.Orient(Forward);
                 Edge theEdge = ShapeCasts.Edge(theEdgeShape);
                 Exploration.Vertices(theEdge, out Vertex theStart, out Vertex theEnd);
                 bool use_start = (theVertex.IsSame(theStart));
@@ -293,7 +293,7 @@ public sealed class EdgeConnectFixer
                 ref Shape theEdgeShape = ref theLIterator.ChangeValue();
 
                 // Determine usage of old vertices
-                theEdgeShape.Orientation(Forward);
+                theEdgeShape.Orient(Forward);
                 Edge theEdge = ShapeCasts.Edge(theEdgeShape);
                 Exploration.Vertices(theEdge, out Vertex theStart, out Vertex theEnd);
                 bool use_start = (theVertex.IsSame(theStart));

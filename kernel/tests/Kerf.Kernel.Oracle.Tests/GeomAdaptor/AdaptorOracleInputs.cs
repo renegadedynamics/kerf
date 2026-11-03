@@ -192,7 +192,7 @@ internal static class AdaptorOracleInputs
                 (N.Geom_Curve aNB, Curve3D aPB, double aRange) = RandomCurve(theO, aKind = theO.Int(0, 8));
                 using (aNB)
                 {
-                    double aF = aPB.FirstParameter(), aL = aPB.LastParameter();
+                    double aF = aPB.FirstParameter, aL = aPB.LastParameter;
                     if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aF) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aL) || aPB.IsPeriodic)
                     {
                         aF = -aRange;
@@ -415,7 +415,7 @@ internal static class AdaptorOracleInputs
     /// </summary>
     internal static (N.Geom_Surface? Native, Surface? Port) RandomTrim(Oracle theO, N.Geom_Surface theN, Surface theP)
     {
-        theP.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+        theP.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
         (double aUF, double aUL) = TrimRange(theO, aU1, aU2, theP.IsUPeriodic);
         (double aVF, double aVL) = TrimRange(theO, aV1, aV2, theP.IsVPeriodic);
         int aMode = theO.Int(0, 2);
@@ -492,7 +492,7 @@ internal static class AdaptorOracleInputs
                 if (aPB is CylindricalSurface aCyl && theO.Int(0, 4) == 0)
                 {
                     // the equivalent cylinder flips or degenerates
-                    anOffset = -aCyl.Radius() * (theO.Bool() ? 1 : 2) * (aCyl.Position().Direct() ? 1 : -1);
+                    anOffset = -aCyl.Radius * (theO.Bool() ? 1 : 2) * (aCyl.Position.IsDirect ? 1 : -1);
                 }
                 bool aNotCheck = theO.Int(0, 4) == 0;
                 N.Geom_Surface? aN = null;
@@ -760,17 +760,17 @@ internal static class AdaptorOracleInputs
 
     internal static void SameDir(Oracle theO, N.gp_Dir theN, in Direction3D theP, string theWhat)
     {
-        theO.Same(theN.X(), theP.X(), theWhat + " X");
-        theO.Same(theN.Y(), theP.Y(), theWhat + " Y");
-        theO.Same(theN.Z(), theP.Z(), theWhat + " Z");
+        theO.Same(theN.X(), theP.X, theWhat + " X");
+        theO.Same(theN.Y(), theP.Y, theWhat + " Y");
+        theO.Same(theN.Z(), theP.Z, theWhat + " Z");
     }
 
     internal static void SameAx1(Oracle theO, N.gp_Ax1 theN, in Axis3D theP, string theWhat)
     {
         using N.gp_Pnt aLoc = theN.Location();
         using N.gp_Dir aDir = theN.Direction();
-        theO.Same(aLoc, theP.Location(), theWhat + " location");
-        SameDir(theO, aDir, theP.Direction(), theWhat + " direction");
+        theO.Same(aLoc, theP.Location, theWhat + " location");
+        SameDir(theO, aDir, theP.Direction, theWhat + " direction");
     }
 
     internal static void SameAx2(Oracle theO, N.gp_Ax2 theN, in Frame3D theP, string theWhat)
@@ -779,10 +779,10 @@ internal static class AdaptorOracleInputs
         using N.gp_Dir aDir = theN.Direction();
         using N.gp_Dir aXDir = theN.XDirection();
         using N.gp_Dir aYDir = theN.YDirection();
-        theO.Same(aLoc, theP.Location(), theWhat + " location");
-        SameDir(theO, aDir, theP.Direction(), theWhat + " direction");
-        SameDir(theO, aXDir, theP.XDirection(), theWhat + " X direction");
-        SameDir(theO, aYDir, theP.YDirection(), theWhat + " Y direction");
+        theO.Same(aLoc, theP.Location, theWhat + " location");
+        SameDir(theO, aDir, theP.Direction, theWhat + " direction");
+        SameDir(theO, aXDir, theP.XDirection, theWhat + " X direction");
+        SameDir(theO, aYDir, theP.YDirection, theWhat + " Y direction");
     }
 
     internal static void SameAx3(Oracle theO, N.gp_Ax3 theN, in CoordinateSystem theP, string theWhat)
@@ -791,10 +791,10 @@ internal static class AdaptorOracleInputs
         using N.gp_Dir aDir = theN.Direction();
         using N.gp_Dir aXDir = theN.XDirection();
         using N.gp_Dir aYDir = theN.YDirection();
-        theO.Same(aLoc, theP.Location(), theWhat + " location");
-        SameDir(theO, aDir, theP.Direction(), theWhat + " direction");
-        SameDir(theO, aXDir, theP.XDirection(), theWhat + " X direction");
-        SameDir(theO, aYDir, theP.YDirection(), theWhat + " Y direction");
+        theO.Same(aLoc, theP.Location, theWhat + " location");
+        SameDir(theO, aDir, theP.Direction, theWhat + " direction");
+        SameDir(theO, aXDir, theP.XDirection, theWhat + " X direction");
+        SameDir(theO, aYDir, theP.YDirection, theWhat + " Y direction");
     }
 
     /// <summary>A parameter in [theFirst, theLast], or in [-theRange, theRange] where a bound is infinite.</summary>

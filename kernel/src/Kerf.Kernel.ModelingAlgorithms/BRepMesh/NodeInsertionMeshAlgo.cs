@@ -180,7 +180,7 @@ public class NodeInsertionMeshAlgo<RangeSplitter> : DelaunayBaseMeshAlgo
         for (; explorer.More(); explorer.Next())
         {
             Vertex vertex = ShapeCasts.Vertex(explorer.Current());
-            if (vertex.Orientation() != Orientation.Internal)
+            if (vertex.Orientation != Orientation.Internal)
             {
                 continue;
             }

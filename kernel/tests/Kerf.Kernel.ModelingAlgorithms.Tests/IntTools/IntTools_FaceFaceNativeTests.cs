@@ -208,18 +208,18 @@ public class IntTools_FaceFaceNativeTests(ITestOutputHelper output)
             aRec.Append(Record("c2", SectionTokens(aText, "Curve2ds")));
             if (aIC.Curve() is Curve3D aC3)
             {
-                aRec.Append(Samples("s3", aC3.FirstParameter(), aC3.LastParameter(),
-                                    t => { Point3D p = aC3.Value(t); return [p.X(), p.Y(), p.Z()]; }));
+                aRec.Append(Samples("s3", aC3.FirstParameter, aC3.LastParameter,
+                                    t => { Point3D p = aC3.Value(t); return [p.X, p.Y, p.Z]; }));
             }
             if (aIC.FirstCurve2d() is Curve2D aC1)
             {
-                aRec.Append(Samples("s1", aC1.FirstParameter(), aC1.LastParameter(),
-                                    t => { Point2D p = aC1.Value(t); return [p.X(), p.Y()]; }));
+                aRec.Append(Samples("s1", aC1.FirstParameter, aC1.LastParameter,
+                                    t => { Point2D p = aC1.Value(t); return [p.X, p.Y]; }));
             }
             if (aIC.SecondCurve2d() is Curve2D aC2)
             {
-                aRec.Append(Samples("s2", aC2.FirstParameter(), aC2.LastParameter(),
-                                    t => { Point2D p = aC2.Value(t); return [p.X(), p.Y()]; }));
+                aRec.Append(Samples("s2", aC2.FirstParameter, aC2.LastParameter,
+                                    t => { Point2D p = aC2.Value(t); return [p.X, p.Y]; }));
             }
         }
         for (int i = 1; i <= aPoints.Length(); i++)
@@ -228,9 +228,9 @@ public class IntTools_FaceFaceNativeTests(ITestOutputHelper output)
             aP.P1().Parameters(out double u1, out double v1);
             aP.P2().Parameters(out double u2, out double v2);
             aRec.Append(CultureInfo.InvariantCulture, $"pnt {i}");
-            aRec.Append(Hex(aP.P1().Pnt().X())).Append(Hex(aP.P1().Pnt().Y())).Append(Hex(aP.P1().Pnt().Z()));
+            aRec.Append(Hex(aP.P1().Pnt().X)).Append(Hex(aP.P1().Pnt().Y)).Append(Hex(aP.P1().Pnt().Z));
             aRec.Append(Hex(u1)).Append(Hex(v1));
-            aRec.Append(Hex(aP.P2().Pnt().X())).Append(Hex(aP.P2().Pnt().Y())).Append(Hex(aP.P2().Pnt().Z()));
+            aRec.Append(Hex(aP.P2().Pnt().X)).Append(Hex(aP.P2().Pnt().Y)).Append(Hex(aP.P2().Pnt().Z));
             aRec.Append(Hex(u2)).Append(Hex(v2)).Append('\n');
         }
         return aRec.ToString();

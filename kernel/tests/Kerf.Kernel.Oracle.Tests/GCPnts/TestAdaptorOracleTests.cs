@@ -379,7 +379,7 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
             (N.Geom_Curve aNC, Curve3D aPC, string aKind) = RandomCurve(anOracle);
             using (aNC)
             {
-                (double aFirst, double aLast) = Bounds(anOracle, aPC.FirstParameter(), aPC.LastParameter(), aPC.IsPeriodic);
+                (double aFirst, double aLast) = Bounds(anOracle, aPC.FirstParameter, aPC.LastParameter, aPC.IsPeriodic);
                 N.GeomAdaptor_Curve aN;
                 TestGeomAdaptor_Curve aP;
                 N.Geom_TrimmedCurve? aNTrim = null;
@@ -435,7 +435,7 @@ public class TestAdaptorOracleTests(ITestOutputHelper output)
             (N.Geom2d_Curve aNC, Curve2D aPC, string aKind) = RandomCurve2d(anOracle);
             using (aNC)
             {
-                (double aFirst, double aLast) = Bounds(anOracle, aPC.FirstParameter(), aPC.LastParameter(), aPC.IsPeriodic);
+                (double aFirst, double aLast) = Bounds(anOracle, aPC.FirstParameter, aPC.LastParameter, aPC.IsPeriodic);
                 N.Geom2dAdaptor_Curve aN;
                 TestGeom2dAdaptor_Curve aP;
                 N.Geom2d_TrimmedCurve? aNTrim = null;

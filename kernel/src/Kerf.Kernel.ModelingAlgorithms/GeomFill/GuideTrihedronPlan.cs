@@ -122,14 +122,14 @@ public class GuideTrihedronPlan : TrihedronWithGuide
                 Point3D pmin;
                 pInt = Int.Point(1);
                 pmin = pInt.Pnt();
-                double dmin = p.Distance(pmin);
+                double dmin = p.DistanceTo(pmin);
                 for (int jj = 2; jj <= Int.PointCount; jj++)
                 {
                     pmin = Int.Point(jj).Pnt();
-                    if (p.Distance(pmin) < dmin)
+                    if (p.DistanceTo(pmin) < dmin)
                     {
                         pInt = Int.Point(jj);
-                        dmin = p.Distance(pmin);
+                        dmin = p.DistanceTo(pmin);
                     }
                 } // for_jj
 
@@ -137,12 +137,12 @@ public class GuideTrihedronPlan : TrihedronWithGuide
             }
             if (ii > 1)
             {
-                double diff = w - _pole.Value(1, ii - 1).Y();
+                double diff = w - _pole.Value(1, ii - 1).Y;
                 if (Math.Abs(diff) > deltaG)
                 {
                     if (_guide.IsPeriodic)
                     {
-                        InGoodPeriod(_pole.Value(1, ii - 1).Y(), _guide.Period(), ref w);
+                        InGoodPeriod(_pole.Value(1, ii - 1).Y, _guide.Period(), ref w);
                     }
                 }
             }
@@ -222,7 +222,7 @@ public class GuideTrihedronPlan : TrihedronWithGuide
             double res = result.Root();
             _trimG!.D1(res, out Point3D pg, out Vector3D tg);
             Vector3D n = new Vector3D(p, pg), dn = new Vector3D(); // vecteur definissant la normale du triedre
-            double norm = n.Magnitude();
+            double norm = n.Magnitude;
             if (norm < 1.0e-12)
             {
                 norm = 1.0;
@@ -332,7 +332,7 @@ public class GuideTrihedronPlan : TrihedronWithGuide
             if ((_curve!.GetType() == Line) && (_guide!.GetType() == Line))
             {
                 double angle;
-                angle = _curve.Line().Angle(_guide.Line());
+                angle = _curve.Line().AngleTo(_guide.Line());
                 if ((angle < 1.0e-12) || ((2 * M_PI - angle) < 1.0e-12))
                 {
                     return true;
@@ -357,13 +357,13 @@ public class GuideTrihedronPlan : TrihedronWithGuide
         int ideb = 1, ifin = _pole.RowLength(), idemi;
         double valeur, t1, t2;
 
-        valeur = _pole.Value(1, ideb).X();
+        valeur = _pole.Value(1, ideb).X;
         if (param == valeur)
         {
             ifin = ideb + 1;
         }
 
-        valeur = _pole.Value(1, ifin).X();
+        valeur = _pole.Value(1, ifin).X;
         if (param == valeur)
         {
             ideb = ifin - 1;
@@ -372,7 +372,7 @@ public class GuideTrihedronPlan : TrihedronWithGuide
         while (ideb + 1 != ifin)
         {
             idemi = (ideb + ifin) / 2;
-            valeur = _pole.Value(1, idemi).X();
+            valeur = _pole.Value(1, idemi).X;
             if (valeur < param)
             {
                 ideb = idemi;
@@ -391,8 +391,8 @@ public class GuideTrihedronPlan : TrihedronWithGuide
             }
         }
 
-        t1 = _pole.Value(1, ideb).X();
-        t2 = _pole.Value(1, ifin).X();
+        t1 = _pole.Value(1, ideb).X;
+        t2 = _pole.Value(1, ifin).X;
         double diff = t2 - t1;
         if (diff > 1.0e-7)
         {

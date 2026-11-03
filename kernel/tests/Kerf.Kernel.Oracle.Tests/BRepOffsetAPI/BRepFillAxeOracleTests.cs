@@ -143,9 +143,9 @@ public sealed class BRepFillAxeOracleTests(ITestOutputHelper output) : IDisposab
             }
             Point3D aNL = Oracle.FromNative(aNAxe.Location());
             Xyz aND = Oracle.FromNative(aNAxe.Direction().XYZ()), aNX = Oracle.FromNative(aNAxe.XDirection().XYZ());
-            if (aNL.XYZ() != aPAxe.Location().XYZ() || aND != aPAxe.Direction().XYZ() || aNX != aPAxe.XDirection().XYZ())
+            if (aNL.XYZ() != aPAxe.Location.XYZ() || aND != aPAxe.Direction.XYZ() || aNX != aPAxe.XDirection.XYZ())
             {
-                aDifferences.Add($"{aWhat}: native {aNL} {aND} {aNX}, port {aPAxe.Location()} {aPAxe.Direction()} {aPAxe.XDirection()}");
+                aDifferences.Add($"{aWhat}: native {aNL} {aND} {aNX}, port {aPAxe.Location} {aPAxe.Direction} {aPAxe.XDirection}");
             }
         }
         output.WriteLine($"BRepFill.Axe: {aCases} cases ({aOnVertex} profiles starting on a spine vertex, {aOnSpine} on the spine, "

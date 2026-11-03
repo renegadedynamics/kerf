@@ -81,7 +81,7 @@ public class IntTools_EdgeIntersectorTests
             Assert.Equal(ShapeType.Vertex, aCP.Type());
             Assert.True(aCP.Edge1().IsSame(aLine)); // the edges are swapped inside, not in the common parts
             Point3D aP = Tool.Curve(aLine, out _, out _)!.Value(aCP.VertexParameter1());
-            Assert.Equal(1.0, Math.Sqrt(aP.X() * aP.X() + aP.Y() * aP.Y()), 1e-6);
+            Assert.Equal(1.0, Math.Sqrt(aP.X * aP.X + aP.Y * aP.Y), 1e-6);
         }
     }
 

@@ -128,7 +128,7 @@ public class Convert_SphereToBSplineSurfaceTest
                             out Point3D aPnt);
 
                 // Verify the point lies on the sphere: x^2 + y^2 + z^2 = R^2
-                double aDistFromOrigin = aPnt.Distance(new Point3D(0.0, 0.0, 0.0));
+                double aDistFromOrigin = aPnt.DistanceTo(new Point3D(0.0, 0.0, 0.0));
                 Assert.Equal(aRadius, aDistFromOrigin, aTol);
             }
         }

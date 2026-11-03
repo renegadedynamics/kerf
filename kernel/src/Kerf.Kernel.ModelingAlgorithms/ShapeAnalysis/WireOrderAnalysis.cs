@@ -272,10 +272,10 @@ public sealed class WireOrderAnalysis
                 int curJointType;
                 double curMin;
                 // distance for four possible cases
-                double seqTailEdgeHead = lastPnt3D.SquareDistance(new Point3D(begins3D[i]));
-                double seqTailEdgeTail = lastPnt3D.SquareDistance(new Point3D(ends3D[i]));
-                double seqHeadEdgeTail = firstPnt3D.SquareDistance(new Point3D(ends3D[i]));
-                double seqHeadEdgeHead = firstPnt3D.SquareDistance(new Point3D(begins3D[i]));
+                double seqTailEdgeHead = lastPnt3D.SquareDistanceTo(new Point3D(begins3D[i]));
+                double seqTailEdgeTail = lastPnt3D.SquareDistanceTo(new Point3D(ends3D[i]));
+                double seqHeadEdgeTail = firstPnt3D.SquareDistanceTo(new Point3D(ends3D[i]));
+                double seqHeadEdgeHead = firstPnt3D.SquareDistanceTo(new Point3D(begins3D[i]));
                 // the best distances for joints with head and tail of sequence
                 double minDistToTail, minDistToHead;
                 int tailJoinType, headJointType;
@@ -355,10 +355,10 @@ public sealed class WireOrderAnalysis
                         jointMask3D |= (1 << 3);
                     }
 
-                    double seqTailEdgeHead2D = lastPnt2D.SquareDistance(new Point2D(begins2D[i]));
-                    double seqTailEdgeTail2D = lastPnt2D.SquareDistance(new Point2D(ends2D[i]));
-                    double seqHeadEdgeTail2D = firstPnt2D.SquareDistance(new Point2D(ends2D[i]));
-                    double seqHeadEdgeHead2D = firstPnt2D.SquareDistance(new Point2D(begins2D[i]));
+                    double seqTailEdgeHead2D = lastPnt2D.SquareDistanceTo(new Point2D(begins2D[i]));
+                    double seqTailEdgeTail2D = lastPnt2D.SquareDistanceTo(new Point2D(ends2D[i]));
+                    double seqHeadEdgeTail2D = firstPnt2D.SquareDistanceTo(new Point2D(ends2D[i]));
+                    double seqHeadEdgeHead2D = firstPnt2D.SquareDistanceTo(new Point2D(begins2D[i]));
                     if (seqTailEdgeHead2D < tolP2)
                     {
                         jointMask2D |= (1 << 0);
@@ -447,7 +447,7 @@ public sealed class WireOrderAnalysis
             if (isFound)
             {
                 // distance between first and last point in sequence
-                double closeDist = firstPnt3D.SquareDistance(lastPnt3D);
+                double closeDist = firstPnt3D.SquareDistanceTo(lastPnt3D);
                 // if it's better to insert the edge than to close the loop, just insert the edge according to joint type
                 if (bestMin3D <= RealSmall() || bestMin3D < closeDist)
                 {
@@ -578,8 +578,8 @@ public sealed class WireOrderAnalysis
                             Point3D mainLoopLast = new Point3D(nextEdgeIdx2 > 0 ? begins3D[nextEdgeIdx2] : ends3D[-nextEdgeIdx2]);
                             // getting the sum of square distances if we try to sew the current loop with the main loop
                             // in current positions
-                            double directDist = curLoopFirst.SquareDistance(mainLoopFirst) + curLoopLast.SquareDistance(mainLoopLast);
-                            double reverseDist = curLoopFirst.SquareDistance(mainLoopLast) + curLoopLast.SquareDistance(mainLoopFirst);
+                            double directDist = curLoopFirst.SquareDistanceTo(mainLoopFirst) + curLoopLast.SquareDistanceTo(mainLoopLast);
+                            double reverseDist = curLoopFirst.SquareDistanceTo(mainLoopLast) + curLoopLast.SquareDistanceTo(mainLoopFirst);
                             // take the best result
                             double joinDist;
                             if ((directDist < tol2) || (directDist < 2.0 * reverseDist))

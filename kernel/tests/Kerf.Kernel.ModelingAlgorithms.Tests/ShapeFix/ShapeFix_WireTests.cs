@@ -315,9 +315,9 @@ public class ShapeFix_WireTests
         List<Edge> aResEdges = Edges(aRes);
         Curve3D aC0 = Tool.Curve(aResEdges[0], out double f0, out double l0)!;
         Curve3D aC1 = Tool.Curve(aResEdges[1], out double f1, out _)!;
-        Assert.True(aC0.Value(l0).Distance(aC1.Value(f1)) < 1e-5);
+        Assert.True(aC0.Value(l0).DistanceTo(aC1.Value(f1)) < 1e-5);
         // the caller's curves didn't move
-        Assert.Equal(1e-3, aL1.Value(0).Y(), 15);
+        Assert.Equal(1e-3, aL1.Value(0).Y, 15);
     }
 
     [Fact]
@@ -353,7 +353,7 @@ public class ShapeFix_WireTests
         List<Edge> aResEdges = Edges(aRes);
         Curve2D aP0 = Tool.CurveOnSurface(aResEdges[0], aF, out _, out double l0)!;
         Curve2D aP1 = Tool.CurveOnSurface(aResEdges[1], aF, out double f1, out _)!;
-        Assert.True(aP0.Value(l0).Distance(aP1.Value(f1)) < 1e-5);
+        Assert.True(aP0.Value(l0).DistanceTo(aP1.Value(f1)) < 1e-5);
     }
 
     [Fact]
@@ -395,7 +395,7 @@ public class ShapeFix_WireTests
         Wire aRes = sfw.Wire();
         aSnap.AssertUnchanged(aShiftedWire);
         Curve2D aResPC = Tool.CurveOnSurface(Edges(aRes)[aShifted], aF, out double rf, out double rl)!;
-        double aU = aResPC.Value((rf + rl) / 2).X();
+        double aU = aResPC.Value((rf + rl) / 2).X;
         Assert.InRange(aU, -1e-9, 2 * Math.PI + 1e-9);
     }
 

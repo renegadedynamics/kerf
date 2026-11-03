@@ -177,9 +177,9 @@ public class BRepClass3dTests
         Point3D aP = new();
         double u = 0, v = 0;
         Assert.True(global::Kerf.Engine.Classification.SolidExplorer.FindAPointInTheFace(aFace, ref aP, ref u, ref v));
-        Assert.Equal(0.0, aP.Z(), 1e-12);
-        Assert.Equal(u, aP.X(), 1e-12);
-        Assert.Equal(v, aP.Y(), 1e-12);
+        Assert.Equal(0.0, aP.Z, 1e-12);
+        Assert.Equal(u, aP.X, 1e-12);
+        Assert.Equal(v, aP.Y, 1e-12);
         Assert.Equal(In, new global::Kerf.Engine.Classification.FaceClassifier(aFace, new Point2D(u, v), 1e-7).State());
 
         var anExplorer = new global::Kerf.Engine.Classification.SolidExplorer(Box10());
@@ -215,7 +215,7 @@ public class BRepClass3dTests
         aClassifier.Reset(new Line3D(new Point3D(5, 5, 5), new Direction3D(0, 0, 1)), RealLast(), 1e-7);
         foreach (Face aF in BRepGPropTestShapes.Faces(aBox))
         {
-            aClassifier.Compare(aF, aF.Orientation());
+            aClassifier.Compare(aF, aF.Orientation);
         }
 
         Assert.Equal(In, aClassifier.State());

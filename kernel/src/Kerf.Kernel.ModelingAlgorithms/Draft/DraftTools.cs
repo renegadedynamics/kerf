@@ -29,7 +29,7 @@ public static class DraftTools
         Type typeS = s.GetType();
         if (typeS == typeof(TrimmedSurface))
         {
-            s = ((TrimmedSurface)s).BasisSurface();
+            s = ((TrimmedSurface)s).BasisSurface;
             typeS = s.GetType();
         }
 
@@ -40,16 +40,16 @@ public static class DraftTools
         }
 
         double angle;
-        s = (Surface)s.Transformed(lo.Transformation());
+        s = (Surface)s.Transformed(lo.Transformation);
         if (typeS == typeof(PlaneSurface))
         {
-            CoordinateSystem ax3 = ((PlaneSurface)s).Pln().Position();
-            Vector3D normale = new(ax3.Direction());
-            if (!ax3.Direct())
+            CoordinateSystem ax3 = ((PlaneSurface)s).Plane.Position;
+            Vector3D normale = new(ax3.Direction);
+            if (!ax3.IsDirect)
             {
                 normale = normale.Reversed();
             }
-            if (f.Orientation() == Reversed)
+            if (f.Orientation == Reversed)
             {
                 normale = normale.Reversed();
             }
@@ -57,8 +57,8 @@ public static class DraftTools
         }
         else if (typeS == typeof(CylindricalSurface))
         {
-            Cylinder cy = ((CylindricalSurface)s).Cylinder();
-            double testdir = d.Dot(cy.Axis().Direction());
+            Cylinder cy = ((CylindricalSurface)s).Cylinder;
+            double testdir = d.Dot(cy.Axis.Direction);
             if (Math.Abs(testdir) <= 1.0 - global::Kerf.Engine.Foundation.Precision.Angular())
             {
                 throw new DomainErrorException();
@@ -67,8 +67,8 @@ public static class DraftTools
         }
         else
         { // STANDARD_TYPE(Geom_ConicalSurface)
-            Cone co = ((ConicalSurface)s).Cone();
-            double testdir = d.Dot(co.Axis().Direction());
+            Cone co = ((ConicalSurface)s).Cone;
+            double testdir = d.Dot(co.Axis.Direction);
             if (Math.Abs(testdir) <= 1.0 - global::Kerf.Engine.Foundation.Precision.Angular())
             {
                 throw new DomainErrorException();
@@ -77,7 +77,7 @@ public static class DraftTools
             global::Kerf.Engine.Geometry.ElSLib.D1(umin + umax / 2.0, vmin + vmax / 2.0, co, out Point3D _, out Vector3D d1u, out Vector3D d1v);
             d1u = d1u.Crossed(d1v);
             d1u = d1u.Normalized();
-            if (f.Orientation() == Reversed)
+            if (f.Orientation == Reversed)
             {
                 d1u = d1u.Reversed();
             }

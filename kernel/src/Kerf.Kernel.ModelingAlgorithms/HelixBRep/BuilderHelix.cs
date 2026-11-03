@@ -282,10 +282,10 @@ public class BuilderHelix
 
         NCollection_List<Shape> lst = new();
 
-        Axis3D axis = _axis3.Axis();
-        Point3D pStart = _axis3.Location();
-        pStart = pStart.Translated(.5 * _diams!.Value(1) * new Vector3D(_axis3.XDirection()));
-        bool bIsClockwise = _axis3.Direct();
+        Axis3D axis = _axis3.Axis;
+        Point3D pStart = _axis3.Location;
+        pStart = pStart.Translated(.5 * _diams!.Value(1) * new Vector3D(_axis3.XDirection));
+        bool bIsClockwise = _axis3.IsDirect;
 
         double height;
         double pitch;
@@ -319,7 +319,7 @@ public class BuilderHelix
 
             pStart = Tool.Pnt(v2);
 
-            axis = axis.WithLocation(axis.Location().Translated(height * new Vector3D(axis.Direction())));
+            axis = axis.WithLocation(axis.Location.Translated(height * new Vector3D(axis.Direction)));
 
             lst.Append(part);
             // aBB.Add(myShape, aPart);
@@ -377,7 +377,7 @@ public class BuilderHelix
         }
         //
         Line3D lin = new(axis);
-        dist = lin.Distance(pStart);
+        dist = lin.DistanceTo(pStart);
         if (dist < tolPrec)
         {
             _errorStatus = 10; // myPStart belongs to the myAxis
@@ -388,9 +388,9 @@ public class BuilderHelix
         double angleStart = 0.0;
 
         // const bool bIsOutWard = theTaperAngle > 0.0;
-        Direction3D dir = axis.Direction();
+        Direction3D dir = axis.Direction;
         Vector3D vec1 = new(dir);
-        Point3D m0 = axis.Location();
+        Point3D m0 = axis.Location;
         Vector3D vec = new(m0, pStart);
         dm = vec1.Dot(vec);
         Point3D m1 = m0.Translated(dm * vec1);
@@ -468,20 +468,20 @@ public class BuilderHelix
             {
                 if (t1 > 0.0)
                 {
-                    t2 = c.LastParameter();
+                    t2 = c.LastParameter;
                     TrimmedCurve3D ct = new(c, t1, t2);
                     c = ct;
                 }
-                t1 = c.FirstParameter();
+                t1 = c.FirstParameter;
                 c.D0(t1, out p1);
                 bb.MakeVertex(ref v1, p1, _tolReached);
-                v1.Orientation(Forward);
+                v1.Orient(Forward);
             }
             //
-            t2 = c.LastParameter();
+            t2 = c.LastParameter;
             c.D0(t2, out p2);
             bb.MakeVertex(ref v2, p2, _tolReached);
-            v2.Orientation(Reversed);
+            v2.Orient(Reversed);
             //
             bme.Init(c, v1, v2);
             bIsDone = bme.IsDone;
@@ -496,7 +496,7 @@ public class BuilderHelix
 
             //
             v1 = v2;
-            v1.Orientation(Forward);
+            v1.Orient(Forward);
         }
         //
         if (_tolReached > _tolerance)
@@ -557,7 +557,7 @@ public class BuilderHelix
         cPrev.D1(l1, out p1, out v1);
         cNext.D1(f2, out p2, out v2);
 
-        if (v1.Angle(v2) < epsAng)
+        if (v1.AngleTo(v2) < epsAng)
         {
             return;
         }
@@ -572,8 +572,8 @@ public class BuilderHelix
         cNext = (BSplineCurve3D)cNext.Copy();
 
         int errorStatus = 1;
-        int degMax = BSplineCurve3D.MaxDegree();
-        int deg = cPrev.Degree();
+        int degMax = BSplineCurve3D.MaxDegree;
+        int deg = cPrev.Degree;
         int i;
         bool bPrevOK = false;
         bool bNextOK = false;
@@ -597,12 +597,12 @@ public class BuilderHelix
             bPrevOK = true;
         }
 
-        if (bPrevOK || cPrev.Degree() != deg)
+        if (bPrevOK || cPrev.Degree != deg)
         {
             bb.UpdateEdge(prev, cPrev, Tool.Tolerance(prev));
         }
 
-        deg = cNext.Degree();
+        deg = cNext.Degree;
         cNext.MovePointAndTangent(f2, p2, v2, _tolerance, -1, 1, out errorStatus);
         if (errorStatus != 0)
         {
@@ -622,7 +622,7 @@ public class BuilderHelix
             bNextOK = true;
         }
 
-        if (bNextOK || cNext.Degree() != deg)
+        if (bNextOK || cNext.Degree != deg)
         {
             bb.UpdateEdge(next, cNext, Tool.Tolerance(next));
         }

@@ -21,9 +21,9 @@ internal readonly struct VectorHasher(double theCompTolerance, double theHashTol
         // Round each component to tolerance precision before hashing
         ReadOnlySpan<ulong> hashes =
         [
-            HashUtils.Hash((long)HashUtils.Round(vector.X() * factor)),
-            HashUtils.Hash((long)HashUtils.Round(vector.Y() * factor)),
-            HashUtils.Hash((long)HashUtils.Round(vector.Z() * factor))
+            HashUtils.Hash((long)HashUtils.Round(vector.X * factor)),
+            HashUtils.Hash((long)HashUtils.Round(vector.Y * factor)),
+            HashUtils.Hash((long)HashUtils.Round(vector.Z * factor))
         ];
         return HashUtils.HashBytes(hashes);
     }
@@ -31,8 +31,8 @@ internal readonly struct VectorHasher(double theCompTolerance, double theHashTol
     // Compares two 3D vectors with fixed tolerance.
     public bool IsEqual(in Vector3D vector1, in Vector3D vector2)
     {
-        return Math.Abs(vector1.X() - vector2.X()) <= CompTolerance
-               && Math.Abs(vector1.Y() - vector2.Y()) <= CompTolerance
-               && Math.Abs(vector1.Z() - vector2.Z()) <= CompTolerance;
+        return Math.Abs(vector1.X - vector2.X) <= CompTolerance
+               && Math.Abs(vector1.Y - vector2.Y) <= CompTolerance
+               && Math.Abs(vector1.Z - vector2.Z) <= CompTolerance;
     }
 }

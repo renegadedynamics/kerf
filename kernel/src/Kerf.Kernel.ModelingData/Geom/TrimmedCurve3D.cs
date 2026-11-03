@@ -20,7 +20,7 @@ namespace Kerf.Geometry;
 /// <see cref="BasisCurve"/> returns the stored copy frozen, as OCCT returns its handle; this curve's internal
 /// mutators then copy the basis curve again before changing it (decision 127).
 /// </remarks>
-public class TrimmedCurve3D : BoundedCurve3D
+public sealed class TrimmedCurve3D : BoundedCurve3D
 {
     private Curve3D _basisCurve;
     private double _uTrim1;
@@ -93,8 +93,8 @@ public class TrimmedCurve3D : BoundedCurve3D
             throw new ConstructionErrorException("Geom_TrimmedCurve::U1 == U2");
         }
 
-        double udeb = _basisCurve.FirstParameter();
-        double ufin = _basisCurve.LastParameter();
+        double udeb = _basisCurve.FirstParameter;
+        double ufin = _basisCurve.LastParameter;
 
         if (_basisCurve.IsPeriodic)
         {
@@ -149,15 +149,15 @@ public class TrimmedCurve3D : BoundedCurve3D
         {
             if (_basisCurve.IsPeriodic)
             {
-                double period = _basisCurve.Period();
-                double length = LastParameter() - FirstParameter();
+                double period = _basisCurve.Period;
+                double length = LastParameter - FirstParameter;
                 if (length > global::Kerf.Engine.Foundation.Precision.PConfusion()
                     && Math.Abs(Math.IEEERemainder(length, period)) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     return true;
                 }
             }
-            return StartPoint().SquareDistance(EndPoint()) <= global::Kerf.Engine.Foundation.Precision.Computational();
+            return StartPoint.SquareDistanceTo(EndPoint) <= global::Kerf.Engine.Foundation.Precision.Computational();
         }
     }
 
@@ -168,8 +168,8 @@ public class TrimmedCurve3D : BoundedCurve3D
         {
             if (_basisCurve.IsPeriodic)
             {
-                double period = _basisCurve.Period();
-                double length = LastParameter() - FirstParameter();
+                double period = _basisCurve.Period;
+                double length = LastParameter - FirstParameter;
                 if (length > global::Kerf.Engine.Foundation.Precision.PConfusion()
                     && Math.Abs(Math.IEEERemainder(length, period)) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
@@ -182,37 +182,40 @@ public class TrimmedCurve3D : BoundedCurve3D
 
     /// <summary>The period of the basis curve.</summary>
     /// <exception cref="NoSuchObjectException">The basis curve is not periodic.</exception>
-    public sealed override double Period() => _basisCurve.Period();
+    public sealed override double Period => _basisCurve.Period;
 
-    public sealed override Continuity Continuity() => _basisCurve.Continuity();
+    public sealed override Continuity Continuity => _basisCurve.Continuity;
 
     /// <summary>The basis curve, frozen (it is shared with this trimmed curve; decision 127).</summary>
-    public Curve3D BasisCurve()
+    public Curve3D BasisCurve
     {
-        _basisCurve.Freeze();
-        return _basisCurve;
+        get
+        {
+            _basisCurve.Freeze();
+            return _basisCurve;
+        }
     }
 
-    public sealed override Point3D EvalD0(double u) => _basisCurve.EvalD0(u);
+    internal sealed override Point3D EvalD0(double u) => _basisCurve.EvalD0(u);
 
-    public sealed override ResD1 EvalD1(double u) => _basisCurve.EvalD1(u);
+    internal sealed override ResD1 EvalD1(double u) => _basisCurve.EvalD1(u);
 
-    public sealed override ResD2 EvalD2(double u) => _basisCurve.EvalD2(u);
+    internal sealed override ResD2 EvalD2(double u) => _basisCurve.EvalD2(u);
 
-    public sealed override ResD3 EvalD3(double u) => _basisCurve.EvalD3(u);
+    internal sealed override ResD3 EvalD3(double u) => _basisCurve.EvalD3(u);
 
-    public sealed override Vector3D EvalDN(double u, int n) => _basisCurve.EvalDN(u, n);
+    internal sealed override Vector3D EvalDN(double u, int n) => _basisCurve.EvalDN(u, n);
 
-    public sealed override Point3D EndPoint() => _basisCurve.Value(_uTrim2);
+    public sealed override Point3D EndPoint => _basisCurve.Value(_uTrim2);
 
-    public sealed override double FirstParameter() => _uTrim1;
+    public sealed override double FirstParameter => _uTrim1;
 
-    public sealed override double LastParameter() => _uTrim2;
+    public sealed override double LastParameter => _uTrim2;
 
-    public sealed override Point3D StartPoint() => _basisCurve.Value(_uTrim1);
+    public sealed override Point3D StartPoint => _basisCurve.Value(_uTrim1);
 
     /// <exception cref="RangeErrorException">N &lt; 0.</exception>
-    public sealed override bool IsCN(int n)
+    internal sealed override bool IsCN(int n)
     {
         Standard_RangeError_Raise_if(n < 0, " ");
         return _basisCurve.IsCN(n);
@@ -230,10 +233,10 @@ public class TrimmedCurve3D : BoundedCurve3D
     }
 
     /// <summary>The basis curve's transformed parameter.</summary>
-    public sealed override double TransformedParameter(double u, in Transform3D t) => _basisCurve.TransformedParameter(u, t);
+    internal sealed override double TransformedParameter(double u, in Transform3D t) => _basisCurve.TransformedParameter(u, t);
 
     /// <summary>The basis curve's parametric transformation.</summary>
-    public sealed override double ParametricTransformation(in Transform3D t) => _basisCurve.ParametricTransformation(t);
+    internal sealed override double ParametricTransformation(in Transform3D t) => _basisCurve.ParametricTransformation(t);
 
     // Non-mutating twin of SetTrim (OCCT.NET)
 

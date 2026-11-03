@@ -255,7 +255,7 @@ public class XSControlTests
         vars.SetPoint("p", new Point3D(1, 2, 3));
         Point3D p = default;
         Assert.True(vars.GetPoint("p", ref p));
-        Assert.Equal(2.0, p.Y());
+        Assert.Equal(2.0, p.Y);
         Assert.False(vars.GetPoint("a", ref p));
         Shape aBox = new MakeBox(1, 2, 3).Shape();
         vars.SetShape("s", aBox);
@@ -267,7 +267,7 @@ public class XSControlTests
         Assert.Equal("HAsciiString", xu.TypeName(new TCollection_HAsciiString("x"), true));
         Assert.Equal(ShapeType.Solid, xu.ShapeType(aBox, true));
         Shape faces = xu.SortedCompound(aBox, ShapeType.Face, true, false);
-        Assert.Equal(ShapeType.Compound, faces.ShapeType());
+        Assert.Equal(ShapeType.Compound, faces.Type);
         Assert.Equal(ShapeType.Face, xu.ShapeType(faces, true));
         Assert.True(xu.BinderShape(xu.ShapeBinder(aBox)).IsSame(aBox));
         Assert.True(xu.BinderShape(xu.ShapeBinder(aBox, false)).IsSame(aBox));

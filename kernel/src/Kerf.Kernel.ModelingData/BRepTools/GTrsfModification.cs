@@ -23,7 +23,7 @@ namespace Kerf.Engine.Topology.Tools;
 /// Any other surface or curve throws <see cref="NoSuchObjectException"/>, as in OCCT (BRepBuilderAPI_GTransform
 /// converts the shape to NURBS first).
 /// </remarks>
-public class GTrsfModification : Modification
+internal class GTrsfModification : Modification
 {
     private GeneralTransform3D _gTrsf;
     private readonly double _gScale;
@@ -65,8 +65,8 @@ public class GTrsfModification : Modification
     {
         tol = 0.0;
         revWires = revFace = false;
-        GeneralTransform3D gtrsf = new GeneralTransform3D().WithVectorialPart(_gTrsf.VectorialPart());
-        gtrsf = gtrsf.WithTranslationPart(_gTrsf.TranslationPart());
+        GeneralTransform3D gtrsf = new GeneralTransform3D().WithVectorialPart(_gTrsf.VectorialPart);
+        gtrsf = gtrsf.WithTranslationPart(_gTrsf.TranslationXyz());
         s = Tool.Surface(f, out l);
         if (s is null)
         {
@@ -79,7 +79,7 @@ public class GTrsfModification : Modification
         tol *= _gScale;
         revWires = false;
         revFace = _gTrsf.IsNegative;
-        s = (Surface)s.Transformed(l.Transformation());
+        s = (Surface)s.Transformed(l.Transformation);
 
         if (s.GetType() == typeof(BSplineSurface))
         {
@@ -125,14 +125,14 @@ public class GTrsfModification : Modification
     /// <exception cref="NoSuchObjectException">The curve is neither a B-spline nor a Bezier curve.</exception>
     public override bool NewCurve(in Edge e, out Curve3D? c, out Placement L, out double tol)
     {
-        GeneralTransform3D gtrsf = new GeneralTransform3D().WithVectorialPart(_gTrsf.VectorialPart());
-        gtrsf = gtrsf.WithTranslationPart(_gTrsf.TranslationPart());
+        GeneralTransform3D gtrsf = new GeneralTransform3D().WithVectorialPart(_gTrsf.VectorialPart);
+        gtrsf = gtrsf.WithTranslationPart(_gTrsf.TranslationXyz());
         tol = Tool.Tolerance(e) * _gScale;
         c = Tool.Curve(e, out L, out double f, out double l);
 
         if (c is not null)
         {
-            c = (Curve3D)c.Copy().Transformed(L.Transformation());
+            c = (Curve3D)c.Copy().Transformed(L.Transformation);
             if (c.GetType() == typeof(BSplineCurve3D))
             {
                 BSplineCurve3D c2 = (BSplineCurve3D)c;
@@ -228,9 +228,9 @@ public class GTrsfModification : Modification
             return false;
         }
 
-        GeneralTransform3D gTrsf = new GeneralTransform3D().WithVectorialPart(_gTrsf.VectorialPart());
-        gTrsf = gTrsf.WithTranslationPart(_gTrsf.TranslationPart());
-        gTrsf = gTrsf.Multiplied(new GeneralTransform3D(loc.Transformation()));
+        GeneralTransform3D gTrsf = new GeneralTransform3D().WithVectorialPart(_gTrsf.VectorialPart);
+        gTrsf = gTrsf.WithTranslationPart(_gTrsf.TranslationXyz());
+        gTrsf = gTrsf.Multiplied(new GeneralTransform3D(loc.Transformation));
 
         triangulation = triangulation.Copy();
         triangulation.SetCachedMinMax(new Box()); // clear bounding box
@@ -261,7 +261,7 @@ public class GTrsfModification : Modification
             for (int ind = 1; ind <= triangulation.NodeCount; ++ind)
             {
                 Direction3D normal = triangulation.Normal(ind);
-                Matrix3x3 mat = gTrsf.VectorialPart();
+                Matrix3x3 mat = gTrsf.VectorialPart;
                 mat = mat.WithDiagonal(1.0, 1.0, 1.0);
                 Transform3D trsf = new Transform3D(1.0, Rotation, mat, new Xyz(0.0, 0.0, 0.0));
                 normal = normal.Transformed(trsf);
@@ -281,9 +281,9 @@ public class GTrsfModification : Modification
             return false;
         }
 
-        GeneralTransform3D gTrsf = new GeneralTransform3D().WithVectorialPart(_gTrsf.VectorialPart());
-        gTrsf = gTrsf.WithTranslationPart(_gTrsf.TranslationPart());
-        gTrsf = gTrsf.Multiplied(new GeneralTransform3D(loc.Transformation()));
+        GeneralTransform3D gTrsf = new GeneralTransform3D().WithVectorialPart(_gTrsf.VectorialPart);
+        gTrsf = gTrsf.WithTranslationPart(_gTrsf.TranslationXyz());
+        gTrsf = gTrsf.Multiplied(new GeneralTransform3D(loc.Transformation));
 
         poly = poly.Copy();
         poly.Deflection(poly.Deflection() * Math.Abs(_gScale));

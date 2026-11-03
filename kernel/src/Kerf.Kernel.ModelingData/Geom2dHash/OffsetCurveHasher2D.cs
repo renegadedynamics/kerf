@@ -21,8 +21,8 @@ internal readonly struct OffsetCurveHasher2D(double theCompTolerance, double the
         var curveHasher = new CurveHasher2D(CompTolerance, HashTolerance);
         ReadOnlySpan<ulong> hashes =
         [
-            curveHasher.Hash(curve.BasisCurve()),
-            HashUtils.Hash((long)HashUtils.Round(curve.Offset() * factor))
+            curveHasher.Hash(curve.BasisCurve),
+            HashUtils.Hash((long)HashUtils.Round(curve.Offset * factor))
         ];
         return HashUtils.HashBytes(hashes);
     }
@@ -31,7 +31,7 @@ internal readonly struct OffsetCurveHasher2D(double theCompTolerance, double the
     public bool IsEqual(OffsetCurve2D curve1, OffsetCurve2D curve2)
     {
         var curveHasher = new CurveHasher2D(CompTolerance, HashTolerance);
-        return curveHasher.Equals(curve1.BasisCurve(), curve2.BasisCurve())
-               && Math.Abs(curve1.Offset() - curve2.Offset()) <= CompTolerance;
+        return curveHasher.Equals(curve1.BasisCurve, curve2.BasisCurve)
+               && Math.Abs(curve1.Offset - curve2.Offset) <= CompTolerance;
     }
 }

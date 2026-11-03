@@ -40,7 +40,7 @@ public static class TheCurveLocatorOfTheProjPCurOfCInter
         for (int noSample = 1; noSample < nbU; noSample++, u += pasU)
         {
             pt = HiddenLineCurveTool.Value(c, u);
-            dist2 = pt.SquareDistance(p);
+            dist2 = pt.SquareDistanceTo(p);
             if (dist2 < dist2Min)
             {
                 dist2Min = dist2;
@@ -92,7 +92,7 @@ public static class TheCurveLocatorOfTheProjPCurOfCInter
         for (int noSample = 1; noSample < nbU; noSample++, u += pasU)
         {
             pt = HiddenLineCurveTool.Value(c, u);
-            dist2 = pt.SquareDistance(p);
+            dist2 = pt.SquareDistanceTo(p);
             if (dist2 < dist2Min)
             {
                 dist2Min = dist2;

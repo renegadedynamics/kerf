@@ -56,14 +56,14 @@ public class FaceExplorer : IFaceExplorer<ClassifierEdge>
         _uMax = -global::Kerf.Engine.Foundation.Precision.Infinite();
         _vMin = global::Kerf.Engine.Foundation.Precision.Infinite();
         _vMax = -global::Kerf.Engine.Foundation.Precision.Infinite();
-        _face.Orientation(Forward);
+        _face.Orient(Forward);
     }
 
     /// <summary>Computes the UV bounds of the face.</summary>
     protected void ComputeFaceBounds()
     {
         Surface surface = Tool.Surface(_face, out Placement _)!;
-        surface.Bounds(out _uMin, out _uMax, out _vMin, out _vMax);
+        surface.ParameterBounds(out _uMin, out _uMax, out _vMin, out _vMax);
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(_uMin) || global::Kerf.Engine.Foundation.Precision.IsInfinite(_uMax)
             || global::Kerf.Engine.Foundation.Precision.IsInfinite(_vMin) || global::Kerf.Engine.Foundation.Precision.IsInfinite(_vMax))
         {
@@ -89,7 +89,7 @@ public class FaceExplorer : IFaceExplorer<ClassifierEdge>
         }
 
         Point2D centerPnt = new((_uMin + _uMax) / 2, (_vMin + _vMax) / 2);
-        double distance = centerPnt.Distance(point);
+        double distance = centerPnt.DistanceTo(point);
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(distance))
         {
             point = point.WithCoord(_uMin - (_uMax - _uMin), _vMin - (_vMax - _vMin));
@@ -148,7 +148,7 @@ public class FaceExplorer : IFaceExplorer<ClassifierEdge>
             }
 
             Shape localShape = expF.Current();
-            Orientation orientation = localShape.Orientation();
+            Orientation orientation = localShape.Orientation;
 
             if (orientation == Forward || orientation == Reversed)
             {
@@ -181,14 +181,14 @@ public class FaceExplorer : IFaceExplorer<ClassifierEdge>
                         paramIn = _curEdgePar * fPar + (1.0 - _curEdgePar) * lPar;
 
                         c2d.D1(paramIn, out pOnC, out Vector2D tanVec);
-                        par = pOnC.SquareDistance(p);
+                        par = pOnC.SquareDistanceTo(p);
 
                         if (par > tolParConf2)
                         {
                             Vector2D linVec = new(p, pOnC);
                             Direction2D linDir = new(linVec);
 
-                            double tanMod = tanVec.SquareMagnitude();
+                            double tanMod = tanVec.SquareMagnitude;
                             if (tanMod < tolParConf2)
                             {
                                 continue;
@@ -217,10 +217,10 @@ public class FaceExplorer : IFaceExplorer<ClassifierEdge>
                             // Check if ends of a curve lie on a line.
                             c2d.D0(fPar, out pOnC);
                             Point2D fpOnC = pOnC;
-                            if (l.SquareDistance(pOnC) > tolParConf2)
+                            if (l.SquareDistanceTo(pOnC) > tolParConf2)
                             {
                                 c2d.D0(lPar, out pOnC);
-                                if (l.SquareDistance(pOnC) > tolParConf2)
+                                if (l.SquareDistanceTo(pOnC) > tolParConf2)
                                 {
                                     if (isSmallAngle)
                                     {
@@ -231,8 +231,8 @@ public class FaceExplorer : IFaceExplorer<ClassifierEdge>
                                         if (proj.NbPoints() > 0)
                                         {
                                             Point2D lpOnC = pOnC;
-                                            double fDist = p.SquareDistance(fpOnC);
-                                            double lDist = p.SquareDistance(lpOnC);
+                                            double fDist = p.SquareDistanceTo(fpOnC);
+                                            double lDist = p.SquareDistanceTo(lpOnC);
                                             double minDist = proj.LowerDistance();
                                             minDist *= minDist;
                                             pOnC = proj.NearestPoint();
@@ -331,7 +331,7 @@ public class FaceExplorer : IFaceExplorer<ClassifierEdge>
         // (a closed edge, or a vertex with more than two edges) (occt-issues.md)
         e.ChangeEdge() = ShapeCasts.Edge(_eExplorer.Current());
         e.ChangeFace() = _face;
-        or = e.Edge().Orientation();
+        or = e.Edge().Orientation;
         e.SetNextEdge(_mapVE);
         e.SetMaxTolerance(_maxTolerance);
         e.SetUseBndBox(_useBndBox);

@@ -809,12 +809,12 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
             for (int k = 1; k <= aT.NodeCount; k++)
             {
                 Point3D p = aT.Node(k);
-                aBuilder.Append(BitConverter.DoubleToInt64Bits(p.X())).Append(' ').Append(BitConverter.DoubleToInt64Bits(p.Y())).Append(' ')
-                        .Append(BitConverter.DoubleToInt64Bits(p.Z()));
+                aBuilder.Append(BitConverter.DoubleToInt64Bits(p.X)).Append(' ').Append(BitConverter.DoubleToInt64Bits(p.Y)).Append(' ')
+                        .Append(BitConverter.DoubleToInt64Bits(p.Z));
                 if (aT.HasUVNodes)
                 {
                     Point2D uv = aT.UVNode(k);
-                    aBuilder.Append(' ').Append(BitConverter.DoubleToInt64Bits(uv.X())).Append(' ').Append(BitConverter.DoubleToInt64Bits(uv.Y()));
+                    aBuilder.Append(' ').Append(BitConverter.DoubleToInt64Bits(uv.X)).Append(' ').Append(BitConverter.DoubleToInt64Bits(uv.Y));
                 }
                 aBuilder.Append('\n');
             }

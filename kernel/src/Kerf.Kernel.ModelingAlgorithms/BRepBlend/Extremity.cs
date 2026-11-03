@@ -268,5 +268,5 @@ public partial struct Extremity : IEquatable<Extremity>
         => !left.Equals(right);
 
     public override readonly string ToString()
-        => Constants.Format("BRepBlend_Extremity", _pt.X(), _pt.Y(), _pt.Z(), _u, _v, _param, _tol);
+        => Constants.Format("BRepBlend_Extremity", _pt.X, _pt.Y, _pt.Z, _u, _v, _param, _tol);
 }

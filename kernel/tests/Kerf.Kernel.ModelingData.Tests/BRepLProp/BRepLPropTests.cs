@@ -23,10 +23,10 @@ public class BRepLPropTests
         Edge anE = TestShapes.Frozen(TestShapes.Edge(Circle(2.0), 0.0, Math.PI));
         var aC = new EdgeCurveAdaptor(anE);
         var aProps = new global::Kerf.Engine.Topology.Properties.CLProps(aC, 0.5 * Math.PI, 2, global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.True(aProps.Value().Distance(new Point3D(1, 3, 0)) < 1e-14);
+        Assert.True(aProps.Value().DistanceTo(new Point3D(1, 3, 0)) < 1e-14);
         Assert.Equal(0.5, aProps.Curvature(), 1e-14);
         aProps.CentreOfCurvature(out Point3D aCentre);
-        Assert.True(aCentre.Distance(new Point3D(1, 1, 0)) < 1e-14);
+        Assert.True(aCentre.DistanceTo(new Point3D(1, 1, 0)) < 1e-14);
         Assert.True(aProps.IsTangentDefined());
         aProps.Tangent(out Direction3D aT);
         Assert.True(aT.IsEqual(new Direction3D(-1, 0, 0), 1e-14));
@@ -34,7 +34,7 @@ public class BRepLPropTests
         // the properties keep their own copy of the adaptor
         aC.Initialize(TestShapes.Frozen(TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(1, 0, 0))));
         aProps.SetParameter(0.0);
-        Assert.True(aProps.Value().Distance(new Point3D(3, 1, 0)) < 1e-14);
+        Assert.True(aProps.Value().DistanceTo(new Point3D(3, 1, 0)) < 1e-14);
 
         var aLater = new global::Kerf.Engine.Topology.Properties.CLProps(1, global::Kerf.Engine.Foundation.Precision.Confusion());
         aLater.SetCurve(aC);
@@ -108,8 +108,8 @@ public class BRepLPropTests
         var aB2 = new EdgeCurveAdaptor(anE2);
         Tool.Range(anE1, out double f1, out double l1);
         Tool.Range(anE2, out double f2, out double l2);
-        double u1 = anE1.Orientation() == Reversed ? f1 : l1;
-        double u2 = anE2.Orientation() == Reversed ? l2 : f2;
+        double u1 = anE1.Orientation == Reversed ? f1 : l1;
+        double u2 = anE2.Orientation == Reversed ? l2 : f2;
         Assert.Equal(C0, global::Kerf.Engine.Topology.Properties.BRepLProp.Continuity(aB1, aB2, u1, u2));
 
         // points that don't coincide

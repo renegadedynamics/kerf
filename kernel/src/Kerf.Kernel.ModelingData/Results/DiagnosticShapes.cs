@@ -36,14 +36,13 @@ public static class DiagnosticShapes
 /// A shape an operation built, with the history of how its sub-shapes came from the inputs' (decision 1332). It converts
 /// to the shape, so the common case stays short: <c>Solid part = BooleanOperations.Cut(block, hole).Value;</c>.
 /// </summary>
-/// <remarks>
-/// Until unit 10L gives the public API its <c>ShapeHistory</c> and <c>IShape&lt;T&gt;</c>, the history is the engine's
-/// <see cref="History"/> and the shape any struct.
-/// </remarks>
-public sealed record Built<TShape>(TShape Shape, History History) where TShape : struct
+/// <typeparam name="TShape">The shape's type: <see cref="Shape"/> or one of the eight typed shapes.</typeparam>
+/// <param name="Shape">The shape built.</param>
+/// <param name="History">What the operation did to its inputs' sub-shapes.</param>
+public sealed record Built<TShape>(TShape Shape, ShapeHistory History) where TShape : struct, IShape<TShape>
 {
     /// <summary>The history; never null.</summary>
-    public History History
+    public ShapeHistory History
     {
         get;
         init => field = value ?? throw new ArgumentNullException(nameof(value));

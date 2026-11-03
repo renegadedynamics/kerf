@@ -60,11 +60,11 @@ public class IntPatchSpecialPointsTests
         PntOn2S anAdded = new();
 
         Assert.True(SpecialPoints.AddSingularPole(aQ, aP, aPtIso, ref aVertex, ref anAdded));
-        Assert.True(anAdded.Value().Distance(new Point3D(0, 0, 2)) < 1e-9);
+        Assert.True(anAdded.Value().DistanceTo(new Point3D(0, 0, 2)) < 1e-9);
         anAdded.Parameters(out double aUq, out double aVq, out double aUp, out double aVp);
         Assert.Equal(M_PI_2, aVq);
         Assert.Equal(M_PI_2, aUq, 9);
-        Assert.True(aP.Value(aUp, aVp).Distance(new Point3D(0, 0, 2)) < 1e-9);
+        Assert.True(aP.Value(aUp, aVp).DistanceTo(new Point3D(0, 0, 2)) < 1e-9);
 
         // The pole is found on the sphere's other side too (reversed: the quadric is the second surface).
         PatchPoint aVertexR = new();
@@ -90,7 +90,7 @@ public class IntPatchSpecialPointsTests
         aVertex.SetTolerance(1e-3);
         PntOn2S anAdded = new();
         Assert.True(SpecialPoints.AddSingularPole(aQ, aP, aVertex.PntOn2S(), ref aVertex, ref anAdded));
-        Assert.True(anAdded.Value().Distance(new Point3D(0, 0, -1)) < 1e-9);
+        Assert.True(anAdded.Value().DistanceTo(new Point3D(0, 0, -1)) < 1e-9);
         anAdded.ParametersOnS1(out double aUq, out double aVq);
         Assert.Equal(-1.0 / Math.Sin(M_PI / 4), aVq);
         Assert.Equal(M_PI_2, aUq, 9);
@@ -145,7 +145,7 @@ public class IntPatchSpecialPointsTests
         Assert.Equal(0.5, aVq, 9);
         Assert.Equal(1.0, aUp, 9);
         Assert.Equal(0.0, aVp, 9);
-        Assert.True(anAdded.Value().Distance(new Point3D(1, 0, 0.5)) < 1e-9);
+        Assert.True(anAdded.Value().DistanceTo(new Point3D(1, 0, 0.5)) < 1e-9);
     }
 
     [Fact]

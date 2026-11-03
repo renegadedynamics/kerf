@@ -20,7 +20,7 @@ public class IntAna_ConicQuadTests
         while (true)
         {
             var aV = new Vector3D(theRandom.NextDouble() - 0.5, theRandom.NextDouble() - 0.5, theRandom.NextDouble() - 0.5);
-            if (aV.Magnitude() > 0.1)
+            if (aV.Magnitude > 0.1)
             {
                 return new Direction3D(aV);
             }
@@ -49,7 +49,7 @@ public class IntAna_ConicQuadTests
     {
         theQ.Coefficients(out double xx, out double yy, out double zz, out double xy, out double xz, out double yz,
                           out double x, out double y, out double z, out double c);
-        double X = theP.X(), Y = theP.Y(), Z = theP.Z();
+        double X = theP.X, Y = theP.Y, Z = theP.Z;
         double aF = xx * X * X + yy * Y * Y + zz * Z * Z + 2 * (xy * X * Y + xz * X * Z + yz * Y * Z)
                     + 2 * (x * X + y * Y + z * Z) + c;
         double aScale = Math.Abs(xx * X * X) + Math.Abs(yy * Y * Y) + Math.Abs(zz * Z * Z)
@@ -75,9 +75,9 @@ public class IntAna_ConicQuadTests
             }
             Point3D aP = anInt.Value();
             double aScale = Math.Max(1.0, aP.XYZ().Modulus());
-            Assert.True(aP1.Distance(aP) < 1e-9 * aScale, $"case {i}");
-            Assert.True(aP2.Distance(aP) < 1e-9 * aScale, $"case {i}");
-            Assert.True(aP3.Distance(aP) < 1e-9 * aScale, $"case {i}");
+            Assert.True(aP1.DistanceTo(aP) < 1e-9 * aScale, $"case {i}");
+            Assert.True(aP2.DistanceTo(aP) < 1e-9 * aScale, $"case {i}");
+            Assert.True(aP3.DistanceTo(aP) < 1e-9 * aScale, $"case {i}");
         }
     }
 
@@ -113,7 +113,7 @@ public class IntAna_ConicQuadTests
             double aMaj = Real(aRandom, 3, 10), aMin = Real(aRandom, 0.5, aMaj - 0.5);
             CoordinateSystem anAx = RandomAx3(aRandom, RandomPnt(aRandom));
             var aTor = new Torus(anAx, aMaj, aMin);
-            var aLin = new Line3D(anAx.Location().Translated(new Vector3D(Real(aRandom, -aMaj, aMaj), Real(aRandom, -aMaj, aMaj),
+            var aLin = new Line3D(anAx.Location.Translated(new Vector3D(Real(aRandom, -aMaj, aMaj), Real(aRandom, -aMaj, aMaj),
                                                                         Real(aRandom, -aMin, aMin))), RandomDir(aRandom));
             var anInt = new IntLinTorus(aLin, aTor);
             if (!anInt.IsDone)
@@ -124,9 +124,9 @@ public class IntAna_ConicQuadTests
             for (int j = 1; j <= anInt.PointCount; j++)
             {
                 Point3D aP = anInt.Value(j);
-                Assert.True(aP.Distance(global::Kerf.Engine.Geometry.ElCLib.Value(anInt.ParamOnLine(j), aLin)) < 1e-12 * Math.Max(1, aP.XYZ().Modulus()));
+                Assert.True(aP.DistanceTo(global::Kerf.Engine.Geometry.ElCLib.Value(anInt.ParamOnLine(j), aLin)) < 1e-12 * Math.Max(1, aP.XYZ().Modulus()));
                 anInt.ParamOnTorus(j, out double aFi, out double aTheta);
-                Assert.True(aP.Distance(global::Kerf.Engine.Geometry.ElSLib.Value(aFi, aTheta, aTor)) < 1e-5, $"case {i}");
+                Assert.True(aP.DistanceTo(global::Kerf.Engine.Geometry.ElSLib.Value(aFi, aTheta, aTor)) < 1e-5, $"case {i}");
             }
         }
         Assert.True(aWithPoints > Cases / 2);
@@ -169,11 +169,11 @@ public class IntAna_ConicQuadTests
                 2 => new Quadric(new Cone(anAx, Real(aRandom, 0.1, 1.4), aR)),
                 _ => new Quadric(new Sphere(anAx, aR)),
             };
-            Point3D aLoc = anAx.Location().Translated(new Vector3D(Real(aRandom, -aR, aR), Real(aRandom, -aR, aR), Real(aRandom, -aR, aR)));
+            Point3D aLoc = anAx.Location.Translated(new Vector3D(Real(aRandom, -aR, aR), Real(aRandom, -aR, aR), Real(aRandom, -aR, aR)));
             var aCAx = new Frame3D(aLoc, RandomDir(aRandom));
             double aMaj = Real(aRandom, 0.5, 2 * aR), aMin = Real(aRandom, 0.2, aMaj);
 
-            var aLin = new Line3D(aCAx.Axis());
+            var aLin = new Line3D(aCAx.Axis);
             var aCirc = new Circle3D(aCAx, aMaj);
             var anElips = new Ellipse3D(aCAx, aMaj, aMin);
             var aParab = new Parabola3D(aCAx, aMin);
@@ -196,7 +196,7 @@ public class IntAna_ConicQuadTests
                 {
                     Point3D aP = theInt.Point(j);
                     double aScale = Math.Max(1.0, aP.XYZ().Modulus());
-                    Assert.True(aP.Distance(theValue(theInt.ParamOnConic(j))) < 1e-9 * aScale, $"case {i} {theWhat} point {j}");
+                    Assert.True(aP.DistanceTo(theValue(theInt.ParamOnConic(j))) < 1e-9 * aScale, $"case {i} {theWhat} point {j}");
                     Assert.True(Residual(aQuad, aP) < 1e-7, $"case {i} {theWhat} point {j}: residual {Residual(aQuad, aP):E2}");
                 }
             }
@@ -211,9 +211,9 @@ public class IntAna_ConicQuadTests
         for (int i = 0; i < Cases; i++)
         {
             var aPln = new Plane3D(RandomAx3(aRandom, RandomPnt(aRandom)));
-            var aCAx = new Frame3D(aPln.Location().Translated(new Vector3D(RandomDir(aRandom)) * Real(aRandom, 0, 8)), RandomDir(aRandom));
+            var aCAx = new Frame3D(aPln.Location.Translated(new Vector3D(RandomDir(aRandom)) * Real(aRandom, 0, 8)), RandomDir(aRandom));
             double aMaj = Real(aRandom, 0.5, 10), aMin = Real(aRandom, 0.2, aMaj);
-            var aLin = new Line3D(aCAx.Axis());
+            var aLin = new Line3D(aCAx.Axis);
             var aCirc = new Circle3D(aCAx, aMaj);
             var anElips = new Ellipse3D(aCAx, aMaj, aMin);
             var aParab = new Parabola3D(aCAx, aMin);
@@ -235,8 +235,8 @@ public class IntAna_ConicQuadTests
                 {
                     Point3D aP = theInt.Point(j);
                     double aScale = Math.Max(1.0, aP.XYZ().Modulus());
-                    Assert.True(aP.Distance(theValue(theInt.ParamOnConic(j))) < 1e-8 * aScale, $"case {i} {theWhat} point {j}");
-                    Assert.True(aPln.Distance(aP) < 1e-8 * aScale, $"case {i} {theWhat} point {j}");
+                    Assert.True(aP.DistanceTo(theValue(theInt.ParamOnConic(j))) < 1e-8 * aScale, $"case {i} {theWhat} point {j}");
+                    Assert.True(aPln.DistanceTo(aP) < 1e-8 * aScale, $"case {i} {theWhat} point {j}");
                 }
             }
         }

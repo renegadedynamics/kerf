@@ -150,12 +150,12 @@ public class BRepFill_CompatibleWiresTests
         // origins match: the second wire starts at the vertex above the first's start, and runs the same way
         WireExplorer e1 = new(ShapeCasts.Wire(aRes[0])), e2 = new(ShapeCasts.Wire(aRes[1]));
         Point3D p1 = Tool.Pnt(e1.CurrentVertex()), p2 = Tool.Pnt(e2.CurrentVertex());
-        Assert.True(Math.Abs(p1.X() - p2.X()) < 0.2 && Math.Abs(p1.Y() - p2.Y()) < 0.2);
+        Assert.True(Math.Abs(p1.X - p2.X) < 0.2 && Math.Abs(p1.Y - p2.Y) < 0.2);
         e1.Next();
         e2.Next();
         p1 = Tool.Pnt(e1.CurrentVertex());
         p2 = Tool.Pnt(e2.CurrentVertex());
-        Assert.True(Math.Abs(p1.X() - p2.X()) < 0.2 && Math.Abs(p1.Y() - p2.Y()) < 0.2);
+        Assert.True(Math.Abs(p1.X - p2.X) < 0.2 && Math.Abs(p1.Y - p2.Y) < 0.2);
     }
 
     [Fact]
@@ -174,7 +174,7 @@ public class BRepFill_CompatibleWiresTests
         Exploration.Vertices(ShapeCasts.Wire(aRes[0]), out Vertex a0, out _);
         Exploration.Vertices(ShapeCasts.Wire(aRes[1]), out Vertex b0, out _);
         Point3D pa = Tool.Pnt(a0), pb = Tool.Pnt(b0);
-        Assert.True(Math.Abs(pa.X() - pb.X()) < 1e-9 && Math.Abs(pa.Y() - pb.Y()) < 1e-9);
+        Assert.True(Math.Abs(pa.X - pb.X) < 1e-9 && Math.Abs(pa.Y - pb.Y) < 1e-9);
     }
 
     [Theory]

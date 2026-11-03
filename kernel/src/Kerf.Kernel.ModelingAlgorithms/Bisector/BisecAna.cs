@@ -103,7 +103,7 @@ public sealed class BisecAna : BisectorCurve
             global::Kerf.Engine.Geometry.ElCLib.D1(aparameter, gpellipse, out point, out tangent);
         }
 
-        distance = apoint.Distance(point);
+        distance = apoint.DistanceTo(point);
 
         Direction2D afirstdir = new(afirstvector);
         Direction2D aseconddir = new(asecondvector);
@@ -187,7 +187,7 @@ public sealed class BisecAna : BisectorCurve
                 }
 
                 // jgv: for OCC26185
-                if (vecRef.SquareMagnitude() != 0)
+                if (vecRef.SquareMagnitude != 0)
                 {
                     Direction2D dirRef = new(vecRef);
                     if (tangdir * dirRef < 0.0)
@@ -238,8 +238,8 @@ public sealed class BisecAna : BisectorCurve
 
         // jgv: for OCC26296
         Vector2D lineBisVec = new(0.0, 0.0);
-        afirstcurve.D1(afirstcurve.LastParameter(), out Point2D pnt1, out Vector2D tan1);
-        asecondcurve.D1(asecondcurve.FirstParameter(), out Point2D pnt2, out Vector2D tan2);
+        afirstcurve.D1(afirstcurve.LastParameter, out Point2D pnt1, out Vector2D tan1);
+        asecondcurve.D1(asecondcurve.FirstParameter, out Point2D pnt2, out Vector2D tan2);
         if (!oncurve)
         {
             lineBisVec = new Vector2D(pnt1, pnt2);
@@ -283,17 +283,17 @@ public sealed class BisecAna : BisectorCurve
             {
                 cas = 1;
                 CircleCurve2D c1 = (CircleCurve2D)curveF;
-                circle1 = c1.Circ2d();
+                circle1 = c1.Circle;
                 CircleCurve2D c2 = (CircleCurve2D)curveE;
-                circle2 = c2.Circ2d();
+                circle2 = c2.Circle;
             }
             else if (type2 == typeof(LineCurve2D))
             {
                 cas = 2;
                 CircleCurve2D c1 = (CircleCurve2D)curveF;
-                circle1 = c1.Circ2d();
+                circle1 = c1.Circle;
                 LineCurve2D l2 = (LineCurve2D)curveE;
-                line2 = l2.Lin2d();
+                line2 = l2.Line;
             }
             // else: OCCT prints "Not yet implemented" (left out).
         }
@@ -303,17 +303,17 @@ public sealed class BisecAna : BisectorCurve
             {
                 cas = 2;
                 CircleCurve2D c1 = (CircleCurve2D)curveE;
-                circle1 = c1.Circ2d();
+                circle1 = c1.Circle;
                 LineCurve2D l2 = (LineCurve2D)curveF;
-                line2 = l2.Lin2d();
+                line2 = l2.Line;
             }
             else if (type2 == typeof(LineCurve2D))
             {
                 cas = 3;
                 LineCurve2D l1 = (LineCurve2D)curveF;
-                line1 = l1.Lin2d();
+                line1 = l1.Line;
                 LineCurve2D l2 = (LineCurve2D)curveE;
-                line2 = l2.Lin2d();
+                line2 = l2.Line;
             }
             // else: OCCT prints "Not yet implemented" (left out).
         }
@@ -326,39 +326,39 @@ public sealed class BisecAna : BisectorCurve
             //=============================================================================
             case 1:
             {
-                double radius1 = circle1.Radius();
-                double radius2 = circle2.Radius();
+                double radius1 = circle1.Radius;
+                double radius2 = circle2.Radius;
 
                 //-----------------------------------------------------
                 // Particular case when two circles are mixed.
                 //-----------------------------------------------------
-                if (circle1.Location().IsEqual(circle2.Location(), preConf)
+                if (circle1.Location.IsEqual(circle2.Location, preConf)
                     && (Math.Abs(radius1 - radius2) <= preConf))
                 {
-                    Point2D p1 = afirstcurve.Value(afirstcurve.LastParameter());
-                    Point2D p2 = asecondcurve.Value(asecondcurve.FirstParameter());
+                    Point2D p1 = afirstcurve.Value(afirstcurve.LastParameter);
+                    Point2D p2 = asecondcurve.Value(asecondcurve.FirstParameter);
                     Point2D pMil;
                     Line2D line;
-                    pMil = new Point2D((p1.X() + p2.X()) / 2.0, (p1.Y() + p2.Y()) / 2.0);
+                    pMil = new Point2D((p1.X + p2.X) / 2.0, (p1.Y + p2.Y) / 2.0);
                     //  Modified by skv - Fri Jul  1 16:23:32 2005 IDEM(Airbus) Begin
-                    if (!circle1.Location().IsEqual(pMil, preConf))
+                    if (!circle1.Location.IsEqual(pMil, preConf))
                     {
                         // PMil doesn't coincide with the circle location.
                         line = new Line2D(pMil,
-                                            new Direction2D(circle1.Location().X() - pMil.X(),
-                                                         circle1.Location().Y() - pMil.Y()));
+                                            new Direction2D(circle1.Location.X - pMil.X,
+                                                         circle1.Location.Y - pMil.Y));
                     }
                     else if (radius1 >= preConf)
                     {
                         // PMil coincides with the circle location and radius is greater then 0.
-                        line = new Line2D(circle1.Location(),
-                                            new Direction2D(p1.Y() - circle1.Location().Y(),
-                                                         circle1.Location().X() - p1.X()));
+                        line = new Line2D(circle1.Location,
+                                            new Direction2D(p1.Y - circle1.Location.Y,
+                                                         circle1.Location.X - p1.X));
                     }
                     else
                     {
                         // radius is equal to 0. No matter what direction to chose.
-                        line = new Line2D(circle1.Location(), new Direction2D(Direction2D.D.X));
+                        line = new Line2D(circle1.Location, new Direction2D(Direction2D.D.X));
                     }
                     //  Modified by skv - Fri Jul  1 16:23:32 2005 IDEM(Airbus) End
 
@@ -384,7 +384,7 @@ public sealed class BisecAna : BisectorCurve
                     else
                     {
                         double parameter2;
-                        parameter2 = global::Kerf.Engine.Geometry.ElCLib.Parameter(line, circle1.Location());
+                        parameter2 = global::Kerf.Engine.Geometry.ElCLib.Parameter(line, circle1.Location);
                         parameter2 += 1.0e-8;
                         _thebisector = new TrimmedCurve2D(bisectorcurve, parameter, parameter2);
                     }
@@ -404,7 +404,7 @@ public sealed class BisecAna : BisectorCurve
 
                 // small reframing of circles. in the case when the circles
                 // are OnCurve , if they are almost tangent they become tangent.
-                double entreAxe = circle1.Location().Distance(circle2.Location());
+                double entreAxe = circle1.Location.DistanceTo(circle2.Location);
                 double d1 = 0.5 * (radius1 - entreAxe - radius2);
                 bool circlesTangent = false;
 
@@ -511,15 +511,15 @@ public sealed class BisecAna : BisectorCurve
                                     //  and the reference point is too big.
                                     if (distancemini > tolerance)
                                     {
-                                        Point2D ploc = gpline.Location();
+                                        Point2D ploc = gpline.Location;
                                         Direction2D newDir = new(apoint.XY() - ploc.XY());
                                         Line2D newLin = new(ploc, newDir);
-                                        Point2D cc2 = circle2.Location();
-                                        double newDMin = newLin.Distance(apoint);
+                                        Point2D cc2 = circle2.Location;
+                                        double newDMin = newLin.DistanceTo(apoint);
                                         double tolConf = 1.0e-3;
                                         // Hope, aNewDMin is equal to 0...
 
-                                        if (newLin.Distance(cc2) <= tolConf)
+                                        if (newLin.DistanceTo(cc2) <= tolConf)
                                         {
                                             distancemini = newDMin;
                                             firstparameter = global::Kerf.Engine.Geometry.ElCLib.Parameter(newLin, apoint);
@@ -530,8 +530,8 @@ public sealed class BisecAna : BisectorCurve
                                     if (tan1.Dot(tan2) < 0.0)
                                     {
                                         // flat and not turn back.
-                                        double par1 = global::Kerf.Engine.Geometry.ElCLib.Parameter(gpline, circle1.Location());
-                                        double par2 = global::Kerf.Engine.Geometry.ElCLib.Parameter(gpline, circle2.Location());
+                                        double par1 = global::Kerf.Engine.Geometry.ElCLib.Parameter(gpline, circle1.Location);
+                                        double par2 = global::Kerf.Engine.Geometry.ElCLib.Parameter(gpline, circle2.Location);
                                         double minPar = Min(par1, par2);
                                         double maxPar = Max(par1, par2);
 
@@ -619,8 +619,8 @@ public sealed class BisecAna : BisectorCurve
                 // If the circle and the straight line are almost tangent they become tangent.
                 if (oncurve)
                 {
-                    double radius1 = circle1.Radius();
-                    double d1 = (line2.Distance(circle1.Location()) - radius1);
+                    double radius1 = circle1.Radius;
+                    double d1 = (line2.DistanceTo(circle1.Location) - radius1);
                     //  Modified by Sergey KHROMOV - Wed Oct 30 14:48:43 2002 Begin
                     if (Math.Abs(d1) < preConf && tan1.IsParallel(tan2, 1.0e-8))
                     {
@@ -685,7 +685,7 @@ public sealed class BisecAna : BisectorCurve
                             Line2D gpline;
                             double secondparameter;
 
-                            circlecenter = circle1.Location();
+                            circlecenter = circle1.Location;
                             gpline = theSol.Line();
                             secondparameter = global::Kerf.Engine.Geometry.ElCLib.Parameter(gpline, circlecenter);
                             bisectorcurve = new LineCurve2D(gpline);
@@ -720,13 +720,13 @@ public sealed class BisecAna : BisectorCurve
                             bisectorcurve = new ParabolaCurve2D(theSol.Parabola());
                             Point2D apex = bisectorcurve.Value(0.0);
                             Point2D firstpnt = bisectorcurve.Value(firstparameter);
-                            double chordLen = apex.Distance(firstpnt);
+                            double chordLen = apex.DistanceTo(firstpnt);
                             double tolPar = 1.0e-5;
                             double secondparameter = global::Kerf.Engine.Foundation.Precision.Infinite();
                             if (!thesense)
                             {
                                 if (ajointype == global::Kerf.Geometry.JoinKind.Intersection && tolPar < firstparameter
-                                    && chordLen >= circle1.Radius())
+                                    && chordLen >= circle1.Radius)
                                 { // first parameter is too far from peak of parabola
                                     secondparameter = 0.0;
                                 }
@@ -735,7 +735,7 @@ public sealed class BisecAna : BisectorCurve
                             else
                             {
                                 if (ajointype == global::Kerf.Geometry.JoinKind.Intersection && firstparameter < -tolPar
-                                    && chordLen >= circle1.Radius())
+                                    && chordLen >= circle1.Radius)
                                 { // first parameter is too far from peak of parabola
                                     secondparameter = 0.0;
                                 }
@@ -752,8 +752,8 @@ public sealed class BisecAna : BisectorCurve
             //=============================================================================
             case 3:
             {
-                Direction2D direc1 = line1.Direction();
-                Direction2D direc2 = line2.Direction();
+                Direction2D direc1 = line1.Direction;
+                Direction2D direc2 = line2.Direction;
                 Line2D line;
                 distancemini = global::Kerf.Engine.Foundation.Precision.Infinite();
 
@@ -763,13 +763,13 @@ public sealed class BisecAna : BisectorCurve
                 if (direc1.IsParallel(direc2, 1.0e-8))
                 {
                     //  Modified by Sergey KHROMOV - Tue Sep 10 15:58:45 2002 End
-                    if (line1.Distance(line2.Location()) / 2.0 <= global::Kerf.Engine.Foundation.Precision.Confusion())
+                    if (line1.DistanceTo(line2.Location) / 2.0 <= global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
-                        line = new Line2D(apoint, new Direction2D(-line1.Direction().Y(), line1.Direction().X()));
+                        line = new Line2D(apoint, new Direction2D(-line1.Direction.Y, line1.Direction.X));
                     }
                     else
                     {
-                        line = new Line2D(apoint, line2.Direction());
+                        line = new Line2D(apoint, line2.Direction);
                     }
 
                     ConstraintBisec solution = new BLine(line);
@@ -894,13 +894,13 @@ public sealed class BisecAna : BisectorCurve
         {
             cas = 1;
             CircleCurve2D c1 = (CircleCurve2D)curve;
-            circle = c1.Circ2d();
+            circle = c1.Circle;
         }
         else if (firstCurveType == typeof(LineCurve2D))
         {
             cas = 2;
             LineCurve2D l1 = (LineCurve2D)curve;
-            line = l1.Lin2d();
+            line = l1.Line;
         }
         // else: OCCT prints "Not yet implemented" (left out).
 
@@ -947,7 +947,7 @@ public sealed class BisecAna : BisectorCurve
                             // Note : In this latter case the bisectrice is actually an ellipse of small null axis.
                             // ----------------------------------------------------------------------------
 
-                            circlecenter = circle.Location();
+                            circlecenter = circle.Location;
                             line = theSol.Line();
                             secondparameter = global::Kerf.Engine.Geometry.ElCLib.Parameter(line, circlecenter);
                             bisectorcurve = new LineCurve2D(line);
@@ -1185,7 +1185,7 @@ public sealed class BisecAna : BisectorCurve
 
     /// <summary>The trimmed conic's IsCN.</summary>
     /// <exception cref="RangeErrorException">N &lt; 0.</exception>
-    public override bool IsCN(int n) => _thebisector.IsCN(n);
+    internal override bool IsCN(int n) => _thebisector.IsCN(n);
 
     /// <summary>A new, unfrozen bisector with a copy of the trimmed conic.</summary>
     public override Geometry2D Copy()
@@ -1204,16 +1204,19 @@ public sealed class BisecAna : BisectorCurve
     }
 
     /// <summary>The first parameter of the trimmed conic.</summary>
-    public override double FirstParameter()
+    public override double FirstParameter
     {
-        //  modified by NIZHNY-EAP Thu Feb  3 17:23:42 2000 ___BEGIN___
-        //  return thebisector->BasisCurve()->FirstParameter();
-        return _thebisector.FirstParameter();
-        //  modified by NIZHNY-EAP Thu Feb  3 17:23:48 2000 ___END___
+        get
+        {
+            //  modified by NIZHNY-EAP Thu Feb  3 17:23:42 2000 ___BEGIN___
+            //  return thebisector->BasisCurve()->FirstParameter();
+            return _thebisector.FirstParameter;
+            //  modified by NIZHNY-EAP Thu Feb  3 17:23:48 2000 ___END___
+        }
     }
 
     /// <summary>The last parameter of the trimmed conic.</summary>
-    public override double LastParameter() => _thebisector.LastParameter();
+    public override double LastParameter => _thebisector.LastParameter;
 
     /// <summary>True if the conic is closed.</summary>
     public override bool IsClosed => _thebisector.ChangeBasisCurve().IsClosed;
@@ -1222,25 +1225,25 @@ public sealed class BisecAna : BisectorCurve
     public override bool IsPeriodic => _thebisector.ChangeBasisCurve().IsPeriodic;
 
     /// <summary>The trimmed conic's continuity.</summary>
-    public override Continuity Continuity() => _thebisector.Continuity();
+    public override Continuity Continuity => _thebisector.Continuity;
 
     /// <summary>The conic's point at U (not limited to the trimmed range).</summary>
-    public override Point2D EvalD0(double u) => _thebisector.ChangeBasisCurve().EvalD0(u);
+    internal override Point2D EvalD0(double u) => _thebisector.ChangeBasisCurve().EvalD0(u);
 
     /// <summary>The conic's point and first derivative at U.</summary>
-    public override ResD1 EvalD1(double u) => _thebisector.ChangeBasisCurve().EvalD1(u);
+    internal override ResD1 EvalD1(double u) => _thebisector.ChangeBasisCurve().EvalD1(u);
 
     /// <summary>The conic's point and first two derivatives at U.</summary>
-    public override ResD2 EvalD2(double u) => _thebisector.ChangeBasisCurve().EvalD2(u);
+    internal override ResD2 EvalD2(double u) => _thebisector.ChangeBasisCurve().EvalD2(u);
 
     /// <summary>The conic's point and first three derivatives at U.</summary>
-    public override ResD3 EvalD3(double u) => _thebisector.ChangeBasisCurve().EvalD3(u);
+    internal override ResD3 EvalD3(double u) => _thebisector.ChangeBasisCurve().EvalD3(u);
 
     /// <summary>The conic's derivative of order N at U.</summary>
-    public override Vector2D EvalDN(double u, int n) => _thebisector.ChangeBasisCurve().EvalDN(u, n);
+    internal override Vector2D EvalDN(double u, int n) => _thebisector.ChangeBasisCurve().EvalDN(u, n);
 
     /// <summary>The conic (line, circle, ellipse, parabola or hyperbola), frozen.</summary>
-    public Curve2D Geom2dCurve() => _thebisector.BasisCurve();
+    public Curve2D Geom2dCurve() => _thebisector.BasisCurve;
 
     /// <summary>The parameter of the point P on the conic.</summary>
     public override double Parameter(in Point2D p)
@@ -1256,37 +1259,37 @@ public sealed class BisecAna : BisectorCurve
 
         if (type == typeof(LineCurve2D))
         {
-            gpline = ((LineCurve2D)basisCurve).Lin2d();
+            gpline = ((LineCurve2D)basisCurve).Line;
             return global::Kerf.Engine.Geometry.ElCLib.Parameter(gpline, p);
         }
         else if (type == typeof(CircleCurve2D))
         {
-            gpcircle = ((CircleCurve2D)basisCurve).Circ2d();
+            gpcircle = ((CircleCurve2D)basisCurve).Circle;
             return global::Kerf.Engine.Geometry.ElCLib.Parameter(gpcircle, p);
         }
         else if (type == typeof(HyperbolaCurve2D))
         {
-            gphyperbola = ((HyperbolaCurve2D)basisCurve).Hypr2d();
+            gphyperbola = ((HyperbolaCurve2D)basisCurve).Hyperbola;
             return global::Kerf.Engine.Geometry.ElCLib.Parameter(gphyperbola, p);
         }
         else if (type == typeof(ParabolaCurve2D))
         {
-            gpparabola = ((ParabolaCurve2D)basisCurve).Parab2d();
+            gpparabola = ((ParabolaCurve2D)basisCurve).Parabola;
             return global::Kerf.Engine.Geometry.ElCLib.Parameter(gpparabola, p);
         }
         else if (type == typeof(EllipseCurve2D))
         {
-            gpellipse = ((EllipseCurve2D)basisCurve).Elips2d();
+            gpellipse = ((EllipseCurve2D)basisCurve).Ellipse;
             return global::Kerf.Engine.Geometry.ElCLib.Parameter(gpellipse, p);
         }
         return 0.0;
     }
 
     /// <summary>The parameter of the start point: the first parameter of the trimmed conic.</summary>
-    public double ParameterOfStartPoint() => _thebisector.FirstParameter();
+    public double ParameterOfStartPoint() => _thebisector.FirstParameter;
 
     /// <summary>The parameter of the end point: the last parameter of the trimmed conic.</summary>
-    public double ParameterOfEndPoint() => _thebisector.LastParameter();
+    public double ParameterOfEndPoint() => _thebisector.LastParameter;
 
     /// <summary>1: an analytic bisector is one interval.</summary>
     public override int IntervalCount => 1;
@@ -1299,7 +1302,7 @@ public sealed class BisecAna : BisectorCurve
         {
             throw new OutOfRangeException();
         }
-        return FirstParameter();
+        return FirstParameter;
     }
 
     /// <summary>The last parameter.</summary>
@@ -1310,7 +1313,7 @@ public sealed class BisecAna : BisectorCurve
         {
             throw new OutOfRangeException();
         }
-        return LastParameter();
+        return LastParameter;
     }
 
     /// <summary>Makes Bis the bisector (shared, as OCCT's handle; copied before this curve changes if frozen).</summary>
@@ -1342,16 +1345,16 @@ public sealed class BisecAna : BisectorCurve
             // If the Hyperbola is degenerated, it is replaced by the straight line
             // with direction to the axis if symmetry.
 
-            if (gphyperbola.MajorRadius() < tolerance)
+            if (gphyperbola.MajorRadius < tolerance)
             {
-                Line2D gpline = new(gphyperbola.YAxis());
+                Line2D gpline = new(gphyperbola.YAxis);
                 newBisector = new BLine(gpline);
                 aBisector = newBisector;
                 degeneree = true;
             }
-            if (gphyperbola.MinorRadius() < tolerance)
+            if (gphyperbola.MinorRadius < tolerance)
             {
-                Line2D gpline = new(gphyperbola.XAxis());
+                Line2D gpline = new(gphyperbola.XAxis);
                 newBisector = new BLine(gpline);
                 aBisector = newBisector;
                 degeneree = true;
@@ -1364,9 +1367,9 @@ public sealed class BisecAna : BisectorCurve
             // If the parabole is degenerated, it is replaces by the straight
             // line starting at the Top and with direction of the axis of symmetry.
 
-            if (gpparabola.Focal() < tolerance)
+            if (gpparabola.Focal < tolerance)
             {
-                Line2D gpline = new(gpparabola.MirrorAxis());
+                Line2D gpline = new(gpparabola.MirrorAxis);
                 newBisector = new BLine(gpline);
                 aBisector = newBisector;
                 degeneree = true;
@@ -1379,9 +1382,9 @@ public sealed class BisecAna : BisectorCurve
             // If the ellipse is degenerated, it is replaced by the straight line
             // defined by the great axis.
 
-            if (gpellipse.MinorRadius() < tolerance)
+            if (gpellipse.MinorRadius < tolerance)
             {
-                Line2D gpline = new(gpellipse.XAxis());
+                Line2D gpline = new(gpellipse.XAxis);
                 newBisector = new BLine(gpline);
                 aBisector = newBisector;
                 degeneree = true;

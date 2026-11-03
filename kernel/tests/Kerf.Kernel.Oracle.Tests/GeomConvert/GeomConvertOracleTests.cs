@@ -19,7 +19,7 @@ public class GeomConvertOracleTests(ITestOutputHelper output)
 {
     internal static void SameBSplineCurve(Oracle theO, N.Geom_BSplineCurve theN, BSplineCurve3D theP, string theWhat)
     {
-        theO.Same(theN.Degree(), theP.Degree(), theWhat + " degree");
+        theO.Same(theN.Degree(), theP.Degree, theWhat + " degree");
         theO.Same(theN.IsPeriodic(), theP.IsPeriodic, theWhat + " periodic");
         theO.Same(theN.IsRational(), theP.IsRational, theWhat + " rational");
         theO.Same(theN.NbPoles(), theP.PoleCount, theWhat + " NbPoles");
@@ -50,8 +50,8 @@ public class GeomConvertOracleTests(ITestOutputHelper output)
     internal static void SameBSplineSurface(Oracle theO, N.Geom_BSplineSurface theN, BSplineSurface theP, string theWhat,
                                             bool theComparePoles = true)
     {
-        theO.Same(theN.UDegree(), theP.UDegree(), theWhat + " UDegree");
-        theO.Same(theN.VDegree(), theP.VDegree(), theWhat + " VDegree");
+        theO.Same(theN.UDegree(), theP.UDegree, theWhat + " UDegree");
+        theO.Same(theN.VDegree(), theP.VDegree, theWhat + " VDegree");
         theO.Same(theN.IsUPeriodic(), theP.IsUPeriodic, theWhat + " UPeriodic");
         theO.Same(theN.IsVPeriodic(), theP.IsVPeriodic, theWhat + " VPeriodic");
         theO.Same(theN.IsURational(), theP.IsURational, theWhat + " URational");
@@ -109,7 +109,7 @@ public class GeomConvertOracleTests(ITestOutputHelper output)
     {
         int aKind = theO.Int(0, theMaxKind);
         (N.Geom_Curve aN, Curve3D aP, double aRange) = RandomCurve(theO, aKind);
-        double aF = aP.FirstParameter(), aL = aP.LastParameter();
+        double aF = aP.FirstParameter, aL = aP.LastParameter;
         bool isUnbounded = global::Kerf.Engine.Foundation.Precision.IsInfinite(aF) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aL);
         if (aKind == 9 || (!isUnbounded && theO.Bool()))
         {
@@ -219,7 +219,7 @@ public class GeomConvertOracleTests(ITestOutputHelper output)
             }
             else
             {
-                double aF = aPC.FirstParameter(), aL = aPC.LastParameter();
+                double aF = aPC.FirstParameter, aL = aPC.LastParameter;
                 double aU1 = anOracle.Real(aF, aL), aU2 = anOracle.Real(aF, aL);
                 if (Math.Abs(aU2 - aU1) < 1e-3)
                 {
@@ -261,7 +261,7 @@ public class GeomConvertOracleTests(ITestOutputHelper output)
             Exception? aNErr, aPErr;
             int aUF = aPS.FirstUKnotIndex(), aUL = aPS.LastUKnotIndex(), aVF = aPS.FirstVKnotIndex(), aVL = aPS.LastVKnotIndex();
             (double V1, double V2)? aSplitInV = null;
-            aPS.Bounds(out double aU0, out double aU9, out double aV0, out double aV9);
+            aPS.ParameterBounds(out double aU0, out double aU9, out double aV0, out double aV9);
             (double, double) Params(double theF, double theL)
             {
                 double a1 = anOracle.Real(theF, theL), a2 = anOracle.Real(theF, theL);
@@ -332,7 +332,7 @@ public class GeomConvertOracleTests(ITestOutputHelper output)
                 // Plan 3.2's third level (occt-issues.md, GeomConvert::SplitBSplineSurface; Kerf decision 1490): OCCT's
                 // split in V reversed U where the port reverses V. The port's U is the surface's, its V ends the isos
                 // at the two parameters.
-                aP!.Bounds(out double aPU1, out double aPU2, out double aPV1, out double aPV2);
+                aP!.ParameterBounds(out double aPU1, out double aPU2, out double aPV1, out double aPV2);
                 anOracle.Same(aU0, aPU1, aWhat + " U first");
                 anOracle.Same(aU9, aPU2, aWhat + " U last");
                 foreach (double u in new[] { aU0, 0.5 * (aU0 + aU9), aU9 })
@@ -340,8 +340,8 @@ public class GeomConvertOracleTests(ITestOutputHelper output)
                     Point3D aStart = aP.Value(u, aPV1), anEnd = aP.Value(u, aPV2);
                     Point3D aS1 = aPS.Value(u, aSplitV1), aS2 = aPS.Value(u, aSplitV2);
                     double aTol = 1e-9 * Math.Max(1.0, aS1.XYZ().Modulus() + aS2.XYZ().Modulus());
-                    Assert.True((aStart.Distance(aS1) < aTol && anEnd.Distance(aS2) < aTol)
-                                || (aStart.Distance(aS2) < aTol && anEnd.Distance(aS1) < aTol), aWhat + ": the V ends");
+                    Assert.True((aStart.DistanceTo(aS1) < aTol && anEnd.DistanceTo(aS2) < aTol)
+                                || (aStart.DistanceTo(aS2) < aTol && anEnd.DistanceTo(aS1) < aTol), aWhat + ": the V ends");
                 }
             }
         }
@@ -415,7 +415,7 @@ public class GeomConvertOracleTests(ITestOutputHelper output)
             }
 
             using N.Geom_Surface aNSOwned = aNS;
-            Surface aBasis = aPS is TrimmedSurface aTrim ? aTrim.BasisSurface() : aPS;
+            Surface aBasis = aPS is TrimmedSurface aTrim ? aTrim.BasisSurface : aPS;
             bool isApprox = aBasis is OffsetSurface anOffset && anOffset.Surface() is null;
             string aWhat = NativeSurfaceKind(aNS) + (isApprox ? " approximated" : " equivalent");
             N.Geom_BSplineSurface? aN = null;
@@ -449,7 +449,7 @@ public class GeomConvertOracleTests(ITestOutputHelper output)
         {
             (N.Geom_Curve aNC, Curve3D aPC, string aKind) = RandomInputCurve(anOracle);
             using N.Geom_Curve aNCOwned = aNC;
-            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aPC.FirstParameter()) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aPC.LastParameter()))
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aPC.FirstParameter) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aPC.LastParameter))
             {
                 continue;
             }
@@ -462,7 +462,7 @@ public class GeomConvertOracleTests(ITestOutputHelper output)
             int aMaxSeg = anOracle.Int(1, 12);
             int aMaxDeg = anOracle.Int(0, 9) == 0 ? anOracle.Int(1, 14) : anOracle.Int(2 * anOrderIndex + 1, 14);
             bool isAdaptor = anOracle.Int(0, 3) == 0;
-            double aF = aPC.FirstParameter(), aL = aPC.LastParameter();
+            double aF = aPC.FirstParameter, aL = aPC.LastParameter;
             double aU1 = aF, aU2 = aL;
             if (isAdaptor)
             {
@@ -532,7 +532,7 @@ public class GeomConvertOracleTests(ITestOutputHelper output)
 
             (N.Geom_Curve aNB, Curve3D aPB, double aRange) = RandomCurve(anOracle, aKind);
             using N.Geom_Curve aNBOwned = aNB;
-            double aF = aPB.FirstParameter(), aL = aPB.LastParameter();
+            double aF = aPB.FirstParameter, aL = aPB.LastParameter;
             if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aF) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aL) || aPB.IsPeriodic)
             {
                 aF = anOracle.Real(-aRange, aRange);

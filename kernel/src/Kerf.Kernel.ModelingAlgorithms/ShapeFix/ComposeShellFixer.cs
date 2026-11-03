@@ -125,7 +125,7 @@ public class ComposeShellFixer : RootFixer
         else
         {
             double gu0 = 0.0, gu1 = 0.0, gv0 = 0.0, gv1 = 0.0;
-            theSurface.Bounds(out double u0, out double U1, out double v0, out double V1);
+            theSurface.ParameterBounds(out double u0, out double U1, out double v0, out double V1);
             if (Kerf.Engine.Foundation.Precision.IsInfinite(u0) || Kerf.Engine.Foundation.Precision.IsInfinite(U1) || Kerf.Engine.Foundation.Precision.IsInfinite(v0)
                 || Kerf.Engine.Foundation.Precision.IsInfinite(V1))
             {
@@ -143,7 +143,7 @@ public class ComposeShellFixer : RootFixer
                 }
                 Point3D p0 = theSurface.Value(u0, (v0 + V1) / 2.0);
                 Point3D p1 = theSurface.Value(U1, (v0 + V1) / 2.0);
-                if (p0.Distance(p1) > Kerf.Engine.Foundation.Precision.Confusion() * 10)
+                if (p0.DistanceTo(p1) > Kerf.Engine.Foundation.Precision.Confusion() * 10)
                 {
                     _uClosed = false;
                 }
@@ -160,7 +160,7 @@ public class ComposeShellFixer : RootFixer
                 }
                 Point3D p0 = theSurface.Value((u0 + U1) / 2.0, v0);
                 Point3D p1 = theSurface.Value((u0 + U1) / 2.0, V1);
-                if (p0.Distance(p1) > Kerf.Engine.Foundation.Precision.Confusion() * 10)
+                if (p0.DistanceTo(p1) > Kerf.Engine.Foundation.Precision.Confusion() * 10)
                 {
                     _vClosed = false;
                 }
@@ -172,7 +172,7 @@ public class ComposeShellFixer : RootFixer
         // smh#8
         Shape tmpF = face.Oriented(Forward);
         _face   = ShapeCasts.Face(tmpF); // for correct dealing with seams
-        _orient = face.Orientation();
+        _orient = face.Orientation;
         SetPrecision(prec);
         _status = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
 
@@ -185,7 +185,7 @@ public class ComposeShellFixer : RootFixer
             for (int j = 1; j <= _grid.VPatchCount; j++)
             {
                 double vRange = _grid.VJointValue(j + 1) - _grid.VJointValue(j);
-                _grid.Patch(i, j).Bounds(out double u1, out double u2, out double v1, out double v2);
+                _grid.Patch(i, j).ParameterBounds(out double u1, out double u2, out double v1, out double v2);
                 var gas = new SurfaceAdaptor(_grid.Patch(i, j));
                 double ures = gas.UResolution(1.0) * uRange / (u2 - u1);
                 double vres = gas.VResolution(1.0) * vRange / (v2 - v1);
@@ -262,7 +262,7 @@ public class ComposeShellFixer : RootFixer
         {
             _result = faces[1];
         }
-        _result.Orientation(_orient);
+        _result.Orient(_orient);
 
         _status |= global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE1);
         return true;
@@ -360,9 +360,9 @@ public class ComposeShellFixer : RootFixer
     // Return (signed) deviation of point from line
     private static double PointLineDeviation(in Point2D p, in Line2D line)
     {
-        Direction2D dir = line.Direction();
-        var n = new Direction2D(-dir.Y(), dir.X());
-        return n.XY() * (p.XY() - line.Location().XY());
+        Direction2D dir = line.Direction;
+        var n = new Direction2D(-dir.Y, dir.X);
+        return n.XY() * (p.XY() - line.Location.XY());
     }
 
     // Define position of point relative to line
@@ -381,7 +381,7 @@ public class ComposeShellFixer : RootFixer
     // Compute parameter of point on line
     private static double ParamPointOnLine(in Point2D p, in Line2D line)
     {
-        return line.Direction().XY() * (p.XY() - line.Location().XY());
+        return line.Direction.XY() * (p.XY() - line.Location.XY());
     }
 
     // Compute parameter of two points on line (as intersection of segment)
@@ -414,7 +414,7 @@ public class ComposeShellFixer : RootFixer
     // Compute projection of point on line
     private static Point2D ProjectPointOnLine(in Point2D p, in Line2D line)
     {
-        return new Point2D(line.Location().XY() + line.Direction().XY() * ParamPointOnLine(p, line));
+        return new Point2D(line.Location.XY() + line.Direction.XY() * ParamPointOnLine(p, line));
     }
 
     // Apply context to one edge in the wire and put result into this wire
@@ -428,7 +428,7 @@ public class ComposeShellFixer : RootFixer
             return 1;
         }
 
-        if (res.ShapeType() == ShapeType.Edge)
+        if (res.Type == ShapeType.Edge)
         {
             wire.SetEdge(iedge, ShapeCasts.Edge(res));
             return 1;
@@ -455,7 +455,7 @@ public class ComposeShellFixer : RootFixer
             int nbEdges = segw.EdgeCount;
             for (int i = 1; i <= nbEdges; i++, index++)
             {
-                ind = (edge.Orientation() == Forward || edge.Orientation() == Internal
+                ind = (edge.Orientation == Forward || edge.Orientation == Internal
                          ? i
                          : segw.EdgeCount - i + 1);
                 Edge e = segw.Edge(ind);
@@ -479,7 +479,7 @@ public class ComposeShellFixer : RootFixer
         // pdn Maximal accuracy is working precision of intersector.
         double uTolerance = uResolution * tol;
         double vTolerance = vResolution * tol;
-        return Math.Abs(p1.X() - p2.X()) <= Max(Tolint, uTolerance) && Math.Abs(p1.Y() - p2.Y()) <= Max(Tolint, vTolerance);
+        return Math.Abs(p1.X - p2.X) <= Max(Tolint, uTolerance) && Math.Abs(p1.Y - p2.Y) <= Max(Tolint, vTolerance);
     }
 
     // computes index for the patch by given parameter Param
@@ -522,13 +522,13 @@ public class ComposeShellFixer : RootFixer
         for (var iw = new Iterator(_face, false); iw.More(); iw.Next())
         {
             Shape tmpW = Context()!.InternalApply(iw.Value());
-            if (tmpW.ShapeType() != ShapeType.Wire)
+            if (tmpW.Type != ShapeType.Wire)
             {
-                if (tmpW.ShapeType() == ShapeType.Vertex)
+                if (tmpW.Type == ShapeType.Vertex)
                 {
                     var seg = new WireSegmentFixer(); //(( isOuter ? TopAbs_REVERSED : TopAbs_FORWARD ) );
                     seg.SetVertex(ShapeCasts.Vertex(tmpW));
-                    seg.Orientation(tmpW.Orientation());
+                    seg.Orientation(tmpW.Orientation);
                     seqw.Append(seg);
                 }
 
@@ -537,7 +537,7 @@ public class ComposeShellFixer : RootFixer
 
             Wire wire = ShapeCasts.Wire(tmpW);
 
-            bool isNonManifold = (wire.Orientation() != Reversed && wire.Orientation() != Forward);
+            bool isNonManifold = (wire.Orientation != Reversed && wire.Orientation != Forward);
 
             // protect against INTERNAL/EXTERNAL wires
             //    if ( wire.Orientation() != TopAbs_REVERSED &&
@@ -571,7 +571,7 @@ public class ComposeShellFixer : RootFixer
                 for (; it.More(); it.Next())
                 {
                     Edge e = ShapeCasts.Edge(it.Value());
-                    if (e.Orientation() == Forward || e.Orientation() == Reversed)
+                    if (e.Orientation == Forward || e.Orientation == Reversed)
                     {
                         sbwdM.Add(e);
                     }
@@ -664,8 +664,8 @@ public class ComposeShellFixer : RootFixer
 
         // track special closed case: segment starts at end of edge and ends at its beginning
         int special = (begInd == endInd
-                           && (wire.Edge(begInd).Orientation() == Forward
-                               || wire.Edge(begInd).Orientation() == Internal)
+                           && (wire.Edge(begInd).Orientation == Forward
+                               || wire.Edge(begInd).Orientation == Internal)
                                 == (begPar > endPar)
                          ? 1
                          : 0);
@@ -701,7 +701,7 @@ public class ComposeShellFixer : RootFixer
                 continue;
             }
             double tol = LimitTolerance(Tool.Tolerance(edge));
-            bool isreversed = (edge.Orientation() == Reversed);
+            bool isreversed = (edge.Orientation == Reversed);
 
             double par1 = (i == begInd && special >= 0 ? begPar : (isreversed ? l : f));
             double par2 = (i == endInd && special <= 0 ? endPar : (isreversed ? f : l));
@@ -714,29 +714,29 @@ public class ComposeShellFixer : RootFixer
                 Point2D p2d = c2d!.Value(par);
                 if (_closedMode)
                 {
-                    if (_uClosed && Math.Abs(line.Direction().X()) < Kerf.Engine.Foundation.Precision.PConfusion())
+                    if (_uClosed && Math.Abs(line.Direction.X) < Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         if (begin)
                         {
-                            shift = ShapeAnalysisAnalysis.AdjustByPeriod(p2d.X(), line.Location().X(), _uPeriod);
+                            shift = ShapeAnalysisAnalysis.AdjustByPeriod(p2d.X, line.Location.X, _uPeriod);
                         }
                         else if (j == 0)
                         {
-                            shift = ShapeAnalysisAnalysis.AdjustByPeriod(p2d.X() - p2d0.X(), 0.0, _uPeriod);
+                            shift = ShapeAnalysisAnalysis.AdjustByPeriod(p2d.X - p2d0.X, 0.0, _uPeriod);
                         }
-                        p2d = p2d.WithX(p2d.X() + shift);
+                        p2d = p2d.WithX(p2d.X + shift);
                     }
-                    if (_vClosed && Math.Abs(line.Direction().Y()) < Kerf.Engine.Foundation.Precision.PConfusion())
+                    if (_vClosed && Math.Abs(line.Direction.Y) < Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         if (begin)
                         {
-                            shift = ShapeAnalysisAnalysis.AdjustByPeriod(p2d.Y(), line.Location().Y(), _vPeriod);
+                            shift = ShapeAnalysisAnalysis.AdjustByPeriod(p2d.Y, line.Location.Y, _vPeriod);
                         }
                         else if (j == 0)
                         {
-                            shift = ShapeAnalysisAnalysis.AdjustByPeriod(p2d.Y() - p2d0.Y(), 0.0, _vPeriod);
+                            shift = ShapeAnalysisAnalysis.AdjustByPeriod(p2d.Y - p2d0.Y, 0.0, _vPeriod);
                         }
-                        p2d = p2d.WithY(p2d.Y() + shift);
+                        p2d = p2d.WithY(p2d.Y + shift);
                     }
                     begin = false;
                 }
@@ -785,7 +785,7 @@ public class ComposeShellFixer : RootFixer
             {
                 // in closed mode, if segment is of 2*pi length, it is BOTH
                 double dev = PointLineDeviation(p2d0, line);
-                if (_uClosed && Math.Abs(line.Direction().X()) < Kerf.Engine.Foundation.Precision.PConfusion())
+                if (_uClosed && Math.Abs(line.Direction.X) < Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     if (Math.Abs(Math.Abs(dev) - _uPeriod) < 0.1 * _uPeriod)
                     {
@@ -800,7 +800,7 @@ public class ComposeShellFixer : RootFixer
                         code = IOR_UNDEF;
                     }
                 }
-                if (_vClosed && Math.Abs(line.Direction().Y()) < Kerf.Engine.Foundation.Precision.PConfusion())
+                if (_vClosed && Math.Abs(line.Direction.Y) < Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     if (Math.Abs(Math.Abs(dev) - _vPeriod) < 0.1 * _vPeriod)
                     {
@@ -835,7 +835,7 @@ public class ComposeShellFixer : RootFixer
     private static void DistributeSplitPoints(ExtendWireData sbwd, in Face myFace, int index, int nsplit,
                                               NCollection_Sequence<int> indexes, NCollection_Sequence<double> values)
     {
-        bool isreversed = (nsplit > 0 && sbwd.Edge(index).Orientation() == Reversed);
+        bool isreversed = (nsplit > 0 && sbwd.Edge(index).Orientation == Reversed);
 
         var params_ = new NCollection_Array1<double>(0, nsplit);
         int i; // svv #1
@@ -871,11 +871,11 @@ public class ComposeShellFixer : RootFixer
             return 1;
         }
         Point3D p = c3d.Value(param);
-        if (t.Form() != Identity)
+        if (t.Form != Identity)
         {
             p = p.Transformed(t);
         }
-        return pos.SquareDistance(p) <= tol * tol ? 1 : 0;
+        return pos.SquareDistanceTo(p) <= tol * tol ? 1 : 0;
     }
 
     private static void DefinePatch(in WireSegmentFixer wire, int code, bool isCutByU, int cutIndex, int number = -1)
@@ -934,7 +934,7 @@ public class ComposeShellFixer : RootFixer
         var t = new Transform3D();
         if (!_loc.IsIdentity)
         {
-            t = _loc.Inverted().Transformation();
+            t = _loc.Inverted().Transformation;
         }
 
         // Processing edge by edge (assuming that split points are sorted along the wire)
@@ -978,7 +978,7 @@ public class ComposeShellFixer : RootFixer
             var it = new Iterator(edge, false);
             for (; it.More(); it.Next())
             {
-                if (it.Value().Orientation() != Forward && it.Value().Orientation() != Reversed)
+                if (it.Value().Orientation != Forward && it.Value().Orientation != Reversed)
                 {
                     nmVertices.Append(it.Value());
                 }
@@ -992,7 +992,7 @@ public class ComposeShellFixer : RootFixer
             double lastVTol = LimitTolerance(Tool.Tolerance(lastV));
             Point3D prevVPnt = Tool.Pnt(prevV);
             Point3D lastVPnt = Tool.Pnt(lastV);
-            if (t.Form() != Identity)
+            if (t.Form != Identity)
             {
                 prevVPnt = prevVPnt.Transformed(t);
                 lastVPnt = lastVPnt.Transformed(t);
@@ -1064,7 +1064,7 @@ public class ComposeShellFixer : RootFixer
             Point3D prevPnt = _grid!.Value(prevPnt2d);
             Point3D lastPnt = _grid.Value(lastPnt2d);
             bool isPeriodic = c2d.IsPeriodic;
-            double period = (isPeriodic ? c2d.Period() : 0.0);
+            double period = (isPeriodic ? c2d.Period : 0.0);
 
             // Splitting edge
             int nbEdgesStart = result.EdgeCount;
@@ -1112,13 +1112,13 @@ public class ComposeShellFixer : RootFixer
                 {
                     currPnt2d = c2d.Value(currPar);
                     currPnt = _grid.Value(currPnt2d);
-                    if (currPnt.Distance(lastVPnt) <= lastVTol &&
+                    if (currPnt.DistanceTo(lastVPnt) <= lastVTol &&
                         // Tolerance is increased to prevent degenerated cuts in cases where all vertex
                         // tolerance is covered by distance of the edge curve from vertex point.
                         // Doubled to prevent edge being fully covered by its vertices tolerance (invalid edge).
                         CheckByCurve3d(lastVPnt, c3d, f3d + (currPar - firstPar) * (l3d - f3d) / span2d, t,
                                        lastVTol + 2 * Kerf.Engine.Foundation.Precision.Confusion()) != 0
-                        && lastPnt.Distance(_grid.Value(c2d.Value(0.5 * (currPar + lastPar)))) <= lastVTol)
+                        && lastPnt.DistanceTo(_grid.Value(c2d.Value(0.5 * (currPar + lastPar)))) <= lastVTol)
                     {
                         v = lastV;
                         double uRes = _uResolution;
@@ -1139,14 +1139,14 @@ public class ComposeShellFixer : RootFixer
                             doCut = false;
                         }
                     }
-                    else if (currPnt.Distance(prevVPnt) <= prevVTol &&
+                    else if (currPnt.DistanceTo(prevVPnt) <= prevVTol &&
                              // Tolerance is increased to prevent degenerated cuts in cases where all vertex
                              // tolerance is covered by distance of the edge curve from vertex point.
                              // Doubled to prevent edge being fully covered by its vertices tolerance (invalid
                              // edge).
                              CheckByCurve3d(prevVPnt, c3d, f3d + (currPar - firstPar) * (l3d - f3d) / span2d, t,
                                             prevVTol + 2 * Kerf.Engine.Foundation.Precision.Confusion()) != 0
-                             && prevPnt.Distance(_grid.Value(c2d.Value(0.5 * (currPar + prevPar)))) <= prevVTol)
+                             && prevPnt.DistanceTo(_grid.Value(c2d.Value(0.5 * (currPar + prevPar)))) <= prevVTol)
                     {
                         v = prevV;
                         double uRes = _uResolution;
@@ -1185,7 +1185,7 @@ public class ComposeShellFixer : RootFixer
                 // if not adjusted, make new vertex
                 if (v.IsNull)
                 {
-                    b.MakeVertex(ref v, currPnt.Transformed(_loc.Transformation()), tolEdge);
+                    b.MakeVertex(ref v, currPnt.Transformed(_loc.Transformation), tolEdge);
                     vertices.Append(v);
                 }
                 // else adjusted to end, fill all resting vertices
@@ -1218,7 +1218,7 @@ public class ComposeShellFixer : RootFixer
                     if (prevV.IsSame(lastV))
                     {
                         // smh#8
-                        Shape tmpV = fV.Oriented(lastV.Orientation());
+                        Shape tmpV = fV.Oriented(lastV.Orientation);
                         lV = ShapeCasts.Vertex(tmpV);
                     }
                     else
@@ -1242,14 +1242,14 @@ public class ComposeShellFixer : RootFixer
 
                 // Splitting of the edge
                 splitted = true;
-                prevV.Orientation(Forward);
-                v.Orientation(Reversed);
+                prevV.Orient(Forward);
+                v.Orient(Reversed);
                 var sbe = new BuildEdgeBuilder();
                 Edge initEdge = edge;
-                bool ismanifold = (edge.Orientation() == Forward || edge.Orientation() == Reversed);
+                bool ismanifold = (edge.Orientation == Forward || edge.Orientation == Reversed);
                 if (!ismanifold)
                 {
-                    initEdge.Orientation(Forward);
+                    initEdge.Orient(Forward);
                 }
                 Edge newEdge = sbe.InternalCopyReplaceVertices(initEdge, prevV, v);
 
@@ -1294,11 +1294,11 @@ public class ComposeShellFixer : RootFixer
                 {
                     if (code == IOR_UNDEF)
                     { // tangential segment
-                        newEdge.Orientation(External);
+                        newEdge.Orient(External);
                     }
                     else
                     {
-                        newEdge.Orientation(edge.Orientation());
+                        newEdge.Orient(edge.Orientation);
                     }
                 }
 
@@ -1332,7 +1332,7 @@ public class ComposeShellFixer : RootFixer
                 b.MakeWire(ref resWire);
                 for (int k = nbEdgesStart; k < result.EdgeCount; k++)
                 {
-                    if (edge.Orientation() == Forward || edge.Orientation() == Internal)
+                    if (edge.Orientation == Forward || edge.Orientation == Internal)
                     {
                         b.Add(resWire, result.Edge(k + 1));
                     }
@@ -1348,14 +1348,14 @@ public class ComposeShellFixer : RootFixer
                 if (wireOrient == Internal && code == 0)
                 {
                     var sbe = new BuildEdgeBuilder();
-                    if (edge.Orientation() == Internal)
+                    if (edge.Orientation == Internal)
                     {
-                        edge.Orientation(Forward);
+                        edge.Orient(Forward);
                     }
                     Edge e1 = sbe.InternalCopy(edge, false);
                     var c2d2 = (Curve2D)c2d.Copy();
                     b.UpdateEdge(e1, c2d, c2d2, _face, 0.0);
-                    e1.Orientation(External);
+                    e1.Orient(External);
                     Context()!.Replace(edge, e1);
                     result.AddEdge(0, e1, iumin, iumax, ivmin, ivmax);
                 }
@@ -1413,7 +1413,7 @@ public class ComposeShellFixer : RootFixer
             var vertNew = new Vertex();
             var b = new BrepBuilder();
             b.MakeVertex(ref vertNew, p3d, Tool.Tolerance(vert));
-            vertNew.Orientation(Forward);
+            vertNew.Orient(Forward);
             Context()!.Replace(vert, vertNew);
             splitLineVertex.Append(vertNew);
             wire.SetVertex(vertNew);
@@ -1427,11 +1427,11 @@ public class ComposeShellFixer : RootFixer
         int closedDir = 0;
         if (_closedMode)
         {
-            if (_uClosed && Math.Abs(line.Direction().X()) < Kerf.Engine.Foundation.Precision.PConfusion())
+            if (_uClosed && Math.Abs(line.Direction.X) < Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 closedDir = -1;
             }
-            else if (_vClosed && Math.Abs(line.Direction().Y()) < Kerf.Engine.Foundation.Precision.PConfusion())
+            else if (_vClosed && Math.Abs(line.Direction.Y) < Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 closedDir = 1;
             }
@@ -1446,7 +1446,7 @@ public class ComposeShellFixer : RootFixer
         for (int iedge = 1; iedge <= nbe; iedge++)
         {
             Edge e = sewd.Edge(iedge);
-            bool isreversed = (e.Orientation() == Reversed);
+            bool isreversed = (e.Orientation == Reversed);
 
             if (!sae.PCurve(e, _face, out Curve2D? c2d, out double f, out double l, false))
             {
@@ -1474,7 +1474,7 @@ public class ComposeShellFixer : RootFixer
                 // compute shifts and adjust points adjust
                 if (closedDir < 0)
                 {
-                    double x = line.Location().X();
+                    double x = line.Location.X;
                     double shift = ShapeAnalysisAnalysis.AdjustToPeriod(umin, x - _uPeriod, x);
                     if (shift != 0.0)
                     {
@@ -1487,14 +1487,14 @@ public class ComposeShellFixer : RootFixer
                     double dUmax = umax + shift - x;
                     shiftNext = shiftNext.WithX(dUmax > 0 ? -_uPeriod : _uPeriod);
                     nbIter = (int)(1 + Math.Abs(dUmax) / _uPeriod);
-                    shift = ShapeAnalysisAnalysis.AdjustByPeriod(posf.X(), x, _uPeriod);
-                    posf = posf.WithX(posf.X() + shift);
-                    shift = ShapeAnalysisAnalysis.AdjustByPeriod(posl.X(), x, _uPeriod);
-                    posl = posl.WithX(posl.X() + shift);
+                    shift = ShapeAnalysisAnalysis.AdjustByPeriod(posf.X, x, _uPeriod);
+                    posf = posf.WithX(posf.X + shift);
+                    shift = ShapeAnalysisAnalysis.AdjustByPeriod(posl.X, x, _uPeriod);
+                    posl = posl.WithX(posl.X + shift);
                 }
                 else if (closedDir > 0)
                 {
-                    double y = line.Location().Y();
+                    double y = line.Location.Y;
                     double shift = ShapeAnalysisAnalysis.AdjustToPeriod(vmin, y - _vPeriod, y);
                     if (shift != 0.0)
                     {
@@ -1507,10 +1507,10 @@ public class ComposeShellFixer : RootFixer
                     double dVmax = vmax + shift - y;
                     shiftNext = shiftNext.WithY(dVmax > 0 ? -_vPeriod : _vPeriod);
                     nbIter = (int)(1 + Math.Abs(dVmax) / _vPeriod);
-                    shift = ShapeAnalysisAnalysis.AdjustByPeriod(posf.Y(), y, _vPeriod);
-                    posf = posf.WithY(posf.Y() + shift);
-                    shift = ShapeAnalysisAnalysis.AdjustByPeriod(posl.Y(), y, _vPeriod);
-                    posl = posl.WithY(posl.Y() + shift);
+                    shift = ShapeAnalysisAnalysis.AdjustByPeriod(posf.Y, y, _vPeriod);
+                    posf = posf.WithY(posf.Y + shift);
+                    shift = ShapeAnalysisAnalysis.AdjustByPeriod(posl.Y, y, _vPeriod);
+                    posl = posl.WithY(posl.Y + shift);
                 }
             }
 
@@ -1681,8 +1681,8 @@ public class ComposeShellFixer : RootFixer
                     Edge e2 = sewd.Edge(intEdgeInd[ii]);
                     Tool.Range(e1, _face, out double a1, out double b1);
                     Tool.Range(e2, _face, out double a2, out double b2);
-                    if (Math.Abs(intEdgePar[jj] - (e1.Orientation() == Forward ? b1 : a1)) < Kerf.Engine.Foundation.Precision.PConfusion()
-                        && Math.Abs(intEdgePar[ii] - (e2.Orientation() == Forward ? a2 : b2)) < Kerf.Engine.Foundation.Precision.PConfusion())
+                    if (Math.Abs(intEdgePar[jj] - (e1.Orientation == Forward ? b1 : a1)) < Kerf.Engine.Foundation.Precision.PConfusion()
+                        && Math.Abs(intEdgePar[ii] - (e2.Orientation == Forward ? a2 : b2)) < Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         intLinePar.Remove(ii);
                         intEdgePar.Remove(ii);
@@ -1951,7 +1951,7 @@ public class ComposeShellFixer : RootFixer
             double tol2 = Min(Tool.Tolerance(v2), maxTol);
             Point3D p1 = Tool.Pnt(v1);
             Point3D p2 = Tool.Pnt(v2);
-            double d = p1.SquareDistance(p2);
+            double d = p1.SquareDistanceTo(p2);
             if (splitLinePar[i] - splitLinePar[i - 1] < Kerf.Engine.Foundation.Precision.PConfusion()
                 || (canbeMerged && (d <= (tol1 * tol1) || d <= (tol2 * tol2))))
             { // BRepTools::Compare(V1, V2)) ) {
@@ -1959,8 +1959,8 @@ public class ComposeShellFixer : RootFixer
                 { // merge coincident vertices
                     var sbv = new VertexBuilder();
                     Vertex v = sbv.InternalCombineVertex(v1, v2);
-                    Context()!.Replace(v1, v.Oriented(v1.Orientation()));
-                    Context()!.Replace(v2, v.Oriented(v2.Orientation()));
+                    Context()!.Replace(v1, v.Oriented(v1.Orientation));
+                    Context()!.Replace(v2, v.Oriented(v2.Orientation));
                     v1 = v2 = v;
                 }
                 continue;
@@ -1970,8 +1970,8 @@ public class ComposeShellFixer : RootFixer
             // NOTE: i here is always >1
             var edge = new Edge();
             b.MakeEdge(ref edge);
-            v1.Orientation(Forward);
-            v2.Orientation(Reversed);
+            v1.Orient(Forward);
+            v2.Orient(Reversed);
             b.Add(edge, v1);
             b.Add(edge, v2);
             var lin1 = new LineCurve2D(line);
@@ -2032,7 +2032,7 @@ public class ComposeShellFixer : RootFixer
         // process splitting by U- anv V-seams (i.e. U=const and V=const curves)
         // closed composite surface is processed as periodic
         BrepTools.UVBounds(_face, out double uf, out double ul, out double vf, out double vl);
-        _grid!.Bounds(out double umin, out double umax, out double vmin, out double vmax);
+        _grid!.ParameterBounds(out double umin, out double umax, out double vmin, out double vmax);
 
         // value of precision to define number of patch should be the same as used in the definitin
         // position of point relatively to seam edge (TOLINT)
@@ -2052,7 +2052,7 @@ public class ComposeShellFixer : RootFixer
 
                 Shape atmpF = _face.EmptyCopied();
                 var b = new BrepBuilder();
-                atmpF.Orientation(Forward);
+                atmpF.Orient(Forward);
                 b.Add(atmpF, wire.WireData().InternalWire());
                 ShapeAnalysisAnalysis.GetFaceUVBounds(ShapeCasts.Face(atmpF), out double uf1, out double ul1, out double vf1, out double vl1);
 
@@ -2125,7 +2125,7 @@ public class ComposeShellFixer : RootFixer
             if (!_closedMode && _uClosed)
             {
                 double period = umax - umin;
-                double x = pos.X();
+                double x = pos.X;
                 double sh = ShapeAnalysisAnalysis.AdjustToPeriod(x, uf, uf + period);
                 for (; x + sh <= ul + pprec; sh += period)
                 {
@@ -2148,7 +2148,7 @@ public class ComposeShellFixer : RootFixer
             if (!_closedMode && _vClosed)
             {
                 double period = vmax - vmin;
-                double y = pos.Y();
+                double y = pos.Y;
                 double sh = ShapeAnalysisAnalysis.AdjustToPeriod(y, vf, vf + period);
                 for (; y + sh <= vl + pprec; sh += period)
                 {
@@ -2188,7 +2188,7 @@ public class ComposeShellFixer : RootFixer
             for (int j = 1; j <= sbwd.EdgeCount; j++)
             {
                 Edge edge = sbwd.Edge(j);
-                Orientation ori_edge = (ori_wire == External ? ori_wire : edge.Orientation());
+                Orientation ori_edge = (ori_wire == External ? ori_wire : edge.Orientation);
                 if (ori_edge == External)
                 {
                     splitVertices.Add(sae.FirstVertex(edge));
@@ -2258,10 +2258,10 @@ public class ComposeShellFixer : RootFixer
                     curOri = ori;
                 }
                 wire.GetPatchIndex(j, out int iumin, out int iumax, out int ivmin, out int ivmax);
-                if (ori == Internal && edge.Orientation() == External)
+                if (ori == Internal && edge.Orientation == External)
                 {
                     curOri = External;
-                    edge.Orientation(Forward);
+                    edge.Orient(Forward);
                     nbnew++;
                 }
                 newwire.AddEdge(0, edge, iumin, iumax, ivmin, ivmax);
@@ -2317,12 +2317,12 @@ public class ComposeShellFixer : RootFixer
             }
 
             // check 3d
-            Point3D midPnt3d = myGrid.Value(midPnt.X(), midPnt.Y());
+            Point3D midPnt3d = myGrid.Value(midPnt.X, midPnt.Y);
             if (!myLoc.IsIdentity)
             {
-                midPnt3d = midPnt3d.Transformed(myLoc.Transformation());
+                midPnt3d = midPnt3d.Transformed(myLoc.Transformation);
             }
-            if (midPnt3d.SquareDistance(pnt) > tol2)
+            if (midPnt3d.SquareDistanceTo(pnt) > tol2)
             {
                 return 0;
             }
@@ -2539,18 +2539,18 @@ public class ComposeShellFixer : RootFixer
                     {
                         if (_uClosed)
                         {
-                            shiftu = ShapeAnalysisAnalysis.AdjustByPeriod(lPnt.X(), endPnt.X(), _uPeriod);
-                            lPnt = lPnt.WithX(lPnt.X() + shiftu);
+                            shiftu = ShapeAnalysisAnalysis.AdjustByPeriod(lPnt.X, endPnt.X, _uPeriod);
+                            lPnt = lPnt.WithX(lPnt.X + shiftu);
                         }
                         if (_vClosed)
                         {
-                            shiftv = ShapeAnalysisAnalysis.AdjustByPeriod(lPnt.Y(), endPnt.Y(), _vPeriod);
-                            lPnt = lPnt.WithY(lPnt.Y() + shiftv);
+                            shiftv = ShapeAnalysisAnalysis.AdjustByPeriod(lPnt.Y, endPnt.Y, _vPeriod);
+                            lPnt = lPnt.WithY(lPnt.Y + shiftv);
                         }
                     }
 
                     // short segment is to be taken with highest priority by angle
-                    double ang = (shorts[i] > 0 ? M_PI : endTan.Angle(lVec));
+                    double ang = (shorts[i] > 0 ? M_PI : endTan.AngleTo(lVec));
                     if (_closedMode && shorts[i] <= 0 && M_PI - ang < Kerf.Engine.Foundation.Precision.Angular())
                     {
                         ang = 0.0; // abv 21 Mar 00: trj3_s1-md-214.stp #2471: avoid going back
@@ -2562,7 +2562,7 @@ public class ComposeShellFixer : RootFixer
                     // thus avoiding bad effects on overlapping edges
                     double ctol = Max(edgeTol, Tool.Tolerance(endV /*lastEdge*/));
                     bool conn = IsCoincided(endPnt, lPnt, _uResolution, _vResolution, ctol);
-                    double dist = endPnt.SquareDistance(lPnt);
+                    double dist = endPnt.SquareDistanceTo(lPnt);
 
                     // check if case is better than last found
                     int w1 = (sp ? 16 : 0) + (conn ? 4 : 0) + (!misor ? 8 : 0);
@@ -2669,11 +2669,11 @@ public class ComposeShellFixer : RootFixer
                 }
                 if (_uClosed)
                 {
-                    endPnt = endPnt.WithX(endPnt.X() + dsu);
+                    endPnt = endPnt.WithX(endPnt.X + dsu);
                 }
                 if (_vClosed)
                 {
-                    endPnt = endPnt.WithY(endPnt.Y() + dsv);
+                    endPnt = endPnt.WithY(endPnt.Y + dsv);
                 }
             }
 
@@ -2738,7 +2738,7 @@ public class ComposeShellFixer : RootFixer
                         continue;
                     }
                     sae.GetEndTangent2d(sbwd.Edge(k), _face, false, out Point2D pp, out vec);
-                    double dist = pp.SquareDistance(p2d);
+                    double dist = pp.SquareDistanceTo(p2d);
                     if (sp && !samepatch)
                     {
                         minj = j;
@@ -2824,7 +2824,7 @@ public class ComposeShellFixer : RootFixer
             var newFace = new Face();
             b.MakeFace(ref newFace, surf, _loc, Kerf.Engine.Foundation.Precision.Confusion());
             Shape aSH = loops.Value(1);
-            if (aSH.ShapeType() != ShapeType.Wire)
+            if (aSH.Type != ShapeType.Wire)
             {
                 return;
             }
@@ -2859,8 +2859,8 @@ public class ComposeShellFixer : RootFixer
             Point2D unp;
             Wire wr;
             Shape shape = loops[i];
-            if (shape.ShapeType() != ShapeType.Wire
-                || (shape.Orientation() != Forward && shape.Orientation() != Reversed))
+            if (shape.Type != ShapeType.Wire
+                || (shape.Orientation != Forward && shape.Orientation != Reversed))
             {
                 continue;
             }
@@ -2873,7 +2873,7 @@ public class ComposeShellFixer : RootFixer
             }
 
             Edge ed = ShapeCasts.Edge(ew.Value());
-            while (ed.Orientation() != Forward && ed.Orientation() != Reversed)
+            while (ed.Orientation != Forward && ed.Orientation != Reversed)
             {
                 ew.Next();
                 if (ew.More())
@@ -2904,20 +2904,20 @@ public class ComposeShellFixer : RootFixer
                     continue;
                 }
                 Shape shape2 = loops[j];
-                if (shape2.ShapeType() != ShapeType.Wire
-                    || (shape2.Orientation() != Forward && shape2.Orientation() != Reversed))
+                if (shape2.Type != ShapeType.Wire
+                    || (shape2.Orientation != Forward && shape2.Orientation != Reversed))
                 {
                     continue;
                 }
                 Wire w1 = ShapeCasts.Wire(shape2);
                 var awtmp = new Wire();
                 b.MakeWire(ref awtmp);
-                awtmp.Orientation(Forward);
+                awtmp.Orient(Forward);
                 var it = new Iterator(w1);
                 int nbe = 0;
                 for (; it.More(); it.Next())
                 {
-                    if (it.Value().Orientation() == Forward || it.Value().Orientation() == Reversed)
+                    if (it.Value().Orientation == Forward || it.Value().Orientation == Reversed)
                     {
                         b.Add(awtmp, it.Value());
                         nbe++;
@@ -2950,7 +2950,7 @@ public class ComposeShellFixer : RootFixer
                             break;
                         }
                         Edge edge = ShapeCasts.Edge(ew.Value());
-                        if (edge.Orientation() != Forward && edge.Orientation() != Reversed)
+                        if (edge.Orientation != Forward && edge.Orientation != Reversed)
                         {
                             continue;
                         }
@@ -3017,7 +3017,7 @@ public class ComposeShellFixer : RootFixer
             for (j = 1; j <= loops.Length(); j++)
             {
                 Point2D unp;
-                if (loops[j].ShapeType() == ShapeType.Wire)
+                if (loops[j].Type == ShapeType.Wire)
                 {
                     Wire bw = ShapeCasts.Wire(loops[j]);
                     var ew = new Iterator(bw);
@@ -3033,7 +3033,7 @@ public class ComposeShellFixer : RootFixer
                     }
                     unp = cw.Value(0.5 * (cf + cl));
                 }
-                else if (loops[j].ShapeType() == ShapeType.Vertex)
+                else if (loops[j].Type == ShapeType.Vertex)
                 {
                     Vertex v = ShapeCasts.Vertex(loops[j]);
                     Point3D p = Tool.Pnt(v);
@@ -3058,7 +3058,7 @@ public class ComposeShellFixer : RootFixer
             for (j = 1; j <= holes.Length(); j++)
             {
                 Shape sh = holes[j];
-                if (sh.ShapeType() == ShapeType.Vertex)
+                if (sh.Type == ShapeType.Vertex)
                 {
                     Vertex newV = TransferParametersProjAnalysis.InternalCopyNMVertex(ShapeCasts.Vertex(sh), newFace, _face);
                     Context()!.Replace(sh, newV);
@@ -3077,8 +3077,8 @@ public class ComposeShellFixer : RootFixer
                 for (j = 1; j <= loops.Length(); j++)
                 {
                     Shape sh = loops[j];
-                    if (sh.ShapeType() == ShapeType.Wire
-                        && (sh.Orientation() == Forward || sh.Orientation() == Reversed))
+                    if (sh.Type == ShapeType.Wire
+                        && (sh.Orientation == Forward || sh.Orientation == Reversed))
                     {
                         roots.Append(loops[j]);
                     }
@@ -3116,7 +3116,7 @@ public class ComposeShellFixer : RootFixer
                 for (int jL = 1; jL <= sbwd.EdgeCount; jL++)
                 {
                     Edge e = sbwd.Edge(jL);
-                    if (e.Orientation() == Reversed && Tool.IsClosed(e, _face))
+                    if (e.Orientation == Reversed && Tool.IsClosed(e, _face))
                     {
                         Curve2D c21 = Tool.CurveOnSurface(e, _face, out double f1, out double l1)!;
                         Shape dummy = e.Reversed();
@@ -3126,14 +3126,14 @@ public class ComposeShellFixer : RootFixer
                         Point2D pl1 = c21.Value(l1);
                         Point2D pf2 = c22.Value(f2);
                         Point2D pl2 = c22.Value(l2);
-                        if (ReferenceEquals(c21, c22) || pf1.SquareDistance(pf2) < dPreci || pl1.SquareDistance(pl2) < dPreci)
+                        if (ReferenceEquals(c21, c22) || pf1.SquareDistanceTo(pf2) < dPreci || pl1.SquareDistanceTo(pl2) < dPreci)
                         {
                             var shift = new Vector2D(0.0, 0.0);
-                            if (_uClosed && Math.Abs(pf2.X() - pl2.X()) < Kerf.Engine.Foundation.Precision.PConfusion())
+                            if (_uClosed && Math.Abs(pf2.X - pl2.X) < Kerf.Engine.Foundation.Precision.PConfusion())
                             {
                                 shift = shift.WithX(_uPeriod);
                             }
-                            if (_vClosed && Math.Abs(pf2.Y() - pl2.Y()) < Kerf.Engine.Foundation.Precision.PConfusion())
+                            if (_vClosed && Math.Abs(pf2.Y - pl2.Y) < Kerf.Engine.Foundation.Precision.PConfusion())
                             {
                                 shift = shift.WithY(_vPeriod);
                             }
@@ -3200,24 +3200,24 @@ public class ComposeShellFixer : RootFixer
         var sae = new EdgeAnalysis();
         var sfe = new EdgeFixer();
 
-        _grid!.Bounds(out double u1, out double u2, out double v1, out double v2);
+        _grid!.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
         for (i = 1; i <= nb; i++)
         {
             Point2D pnt = mPnts[i];
             double ush = 0.0, vsh = 0.0;
             if (_uClosed)
             {
-                ush = ShapeAnalysisAnalysis.AdjustToPeriod(pnt.X(), u1, u2);
-                pnt = pnt.WithX(pnt.X() + ush);
+                ush = ShapeAnalysisAnalysis.AdjustToPeriod(pnt.X, u1, u2);
+                pnt = pnt.WithX(pnt.X + ush);
             }
             if (_vClosed)
             {
-                vsh = ShapeAnalysisAnalysis.AdjustToPeriod(pnt.Y(), v1, v2);
-                pnt = pnt.WithY(pnt.Y() + vsh);
+                vsh = ShapeAnalysisAnalysis.AdjustToPeriod(pnt.Y, v1, v2);
+                pnt = pnt.WithY(pnt.Y + vsh);
             }
             mPnts[i] = pnt;
-            int indU = _grid.LocateUParameter(pnt.X());
-            int indV = _grid.LocateVParameter(pnt.Y());
+            int indU = _grid.LocateUParameter(pnt.X);
+            int indV = _grid.LocateVParameter(pnt.Y);
 
             // compute parametric transformation
             bool needT = _grid.GlobalToLocalTransformation(indU, indV, out double uFact, out Transform2D t);
@@ -3248,7 +3248,7 @@ public class ComposeShellFixer : RootFixer
                 // if edge is already copied, don`t copy any more
                 Edge newEdge;
                 Edge initEdge = edge;
-                bool ismanifold = (edge.Orientation() == Forward || edge.Orientation() == Reversed);
+                bool ismanifold = (edge.Orientation == Forward || edge.Orientation == Reversed);
                 if (rs.IsRecorded(edge))
                 {
                     // smh#8
@@ -3259,13 +3259,13 @@ public class ComposeShellFixer : RootFixer
                 {
                     if (!ismanifold)
                     {
-                        initEdge.Orientation(Forward);
+                        initEdge.Orient(Forward);
                     }
 
                     newEdge = sbe.InternalCopy(initEdge, false);
                     if (!ismanifold)
                     {
-                        newEdge.Orientation(edge.Orientation());
+                        newEdge.Orient(edge.Orientation);
                     }
                     rs.Replace(edge, newEdge);
                     Context()!.Replace(edge, newEdge);
@@ -3287,7 +3287,7 @@ public class ComposeShellFixer : RootFixer
                             Edge e2 = ShapeCasts.Edge(tmpE);
                             if (sae.PCurve(e2, face, out Curve2D? c2d2, out _, out _, false))
                             {
-                                if (newEdge.Orientation() == Forward)
+                                if (newEdge.Orientation == Forward)
                                 {
                                     b.UpdateEdge(newEdge, c2dnew, c2d2!, face, 0.0);
                                 }
@@ -3368,7 +3368,7 @@ public class ComposeShellFixer : RootFixer
                 if (seg.IsVertex)
                 {
                     Vertex vert = seg.GetVertex();
-                    if (vert.Orientation() == Internal)
+                    if (vert.Orientation == Internal)
                     {
                         loops.Append(wires[i].GetVertex());
                     }

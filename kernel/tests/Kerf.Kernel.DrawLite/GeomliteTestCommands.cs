@@ -455,7 +455,7 @@ internal static class GeomliteTestCommands
                 index2 = G2.PoleCount - 1;
             }
             G2.D0(u, out Point3D p);
-            p = p.WithCoord(p.X() + dx, p.Y() + dy, p.Z() + dz);
+            p = p.WithCoord(p.X + dx, p.Y + dy, p.Z + dz);
             DrawTrSurf.Set(theDI, a[1], G2.PointMoved(u, p, index1, index2, out _, out _));
             return 0;
         }
@@ -469,7 +469,7 @@ internal static class GeomliteTestCommands
                 index2 = G4.PoleCount - 1;
             }
             G4.D0(u, out Point2D p);
-            p = p.WithCoord(p.X() + dx, p.Y() + dy);
+            p = p.WithCoord(p.X + dx, p.Y + dy);
             DrawTrSurf.Set(theDI, a[1], G4.PointMoved(u, p, index1, index2, out _, out _));
             return 0;
         }
@@ -828,18 +828,18 @@ internal static class GeomliteTestCommands
                 }
 
                 GC.D2(U, out P, out D1, out Vector3D D2);
-                theDI.SetNumber(a[9], D2.X());
-                theDI.SetNumber(a[10], D2.Y());
-                theDI.SetNumber(a[11], D2.Z());
+                theDI.SetNumber(a[9], D2.X);
+                theDI.SetNumber(a[10], D2.Y);
+                theDI.SetNumber(a[11], D2.Z);
             }
             else
             {
                 GC.D1(U, out P, out D1);
             }
 
-            theDI.SetNumber(a[6], D1.X());
-            theDI.SetNumber(a[7], D1.Y());
-            theDI.SetNumber(a[8], D1.Z());
+            theDI.SetNumber(a[6], D1.X);
+            theDI.SetNumber(a[7], D1.Y);
+            theDI.SetNumber(a[8], D1.Z);
         }
         else
         {
@@ -848,9 +848,9 @@ internal static class GeomliteTestCommands
 
         if (n > 3)
         {
-            theDI.SetNumber(a[3], P.X());
-            theDI.SetNumber(a[4], P.Y());
-            theDI.SetNumber(a[5], P.Z());
+            theDI.SetNumber(a[3], P.X);
+            theDI.SetNumber(a[4], P.Y);
+            theDI.SetNumber(a[5], P.Z);
         }
 
         if (DrawPoint)
@@ -899,16 +899,16 @@ internal static class GeomliteTestCommands
                 }
 
                 GC.D2(U, out P, out D1, out Vector2D D2);
-                theDI.SetNumber(a[7], D2.X());
-                theDI.SetNumber(a[8], D2.Y());
+                theDI.SetNumber(a[7], D2.X);
+                theDI.SetNumber(a[8], D2.Y);
             }
             else
             {
                 GC.D1(U, out P, out D1);
             }
 
-            theDI.SetNumber(a[5], D1.X());
-            theDI.SetNumber(a[6], D1.Y());
+            theDI.SetNumber(a[5], D1.X);
+            theDI.SetNumber(a[6], D1.Y);
         }
         else
         {
@@ -917,8 +917,8 @@ internal static class GeomliteTestCommands
 
         if (n > 3)
         {
-            theDI.SetNumber(a[3], P.X());
-            theDI.SetNumber(a[4], P.Y());
+            theDI.SetNumber(a[3], P.X);
+            theDI.SetNumber(a[4], P.Y);
         }
 
         if (DrawPoint)
@@ -940,8 +940,8 @@ internal static class GeomliteTestCommands
                 return 1;
             }
 
-            theDI.SetNumber(a[2], P.X());
-            theDI.SetNumber(a[3], P.Y());
+            theDI.SetNumber(a[2], P.X);
+            theDI.SetNumber(a[3], P.Y);
         }
         else if (n == 5)
         {
@@ -951,9 +951,9 @@ internal static class GeomliteTestCommands
                 return 1;
             }
 
-            theDI.SetNumber(a[2], P.X());
-            theDI.SetNumber(a[3], P.Y());
-            theDI.SetNumber(a[4], P.Z());
+            theDI.SetNumber(a[2], P.X);
+            theDI.SetNumber(a[3], P.Y);
+            theDI.SetNumber(a[4], P.Z);
         }
         else
         {
@@ -1201,7 +1201,7 @@ internal static class GeomliteTestCommands
             {
                 if (GC is TrimmedCurve3D T)
                 {
-                    GC = T.BasisCurve();
+                    GC = T.BasisCurve;
                 }
 
                 DrawTrSurf.Set(theDI, a[1], GC);
@@ -1210,7 +1210,7 @@ internal static class GeomliteTestCommands
             {
                 if (GC2d is TrimmedCurve2D T)
                 {
-                    GC2d = T.BasisCurve();
+                    GC2d = T.BasisCurve;
                 }
 
                 DrawTrSurf.Set(theDI, a[1], GC2d);
@@ -1219,7 +1219,7 @@ internal static class GeomliteTestCommands
             {
                 if (GS is TrimmedSurface T)
                 {
-                    GS = T.BasisSurface();
+                    GS = T.BasisSurface;
                 }
 
                 DrawTrSurf.Set(theDI, a[1], GS);
@@ -1423,27 +1423,27 @@ internal static class GeomliteTestCommands
             if (n >= 22)
             {
                 GS.D2(U, V, out P, out DU, out DV, out Vector3D D2U, out Vector3D D2V, out Vector3D D2UV);
-                theDI.SetNumber(a[13], D2U.X());
-                theDI.SetNumber(a[14], D2U.Y());
-                theDI.SetNumber(a[15], D2U.Z());
-                theDI.SetNumber(a[16], D2V.X());
-                theDI.SetNumber(a[17], D2V.Y());
-                theDI.SetNumber(a[18], D2V.Z());
-                theDI.SetNumber(a[19], D2UV.X());
-                theDI.SetNumber(a[20], D2UV.Y());
-                theDI.SetNumber(a[21], D2UV.Z());
+                theDI.SetNumber(a[13], D2U.X);
+                theDI.SetNumber(a[14], D2U.Y);
+                theDI.SetNumber(a[15], D2U.Z);
+                theDI.SetNumber(a[16], D2V.X);
+                theDI.SetNumber(a[17], D2V.Y);
+                theDI.SetNumber(a[18], D2V.Z);
+                theDI.SetNumber(a[19], D2UV.X);
+                theDI.SetNumber(a[20], D2UV.Y);
+                theDI.SetNumber(a[21], D2UV.Z);
             }
             else
             {
                 GS.D1(U, V, out P, out DU, out DV);
             }
 
-            theDI.SetNumber(a[7], DU.X());
-            theDI.SetNumber(a[8], DU.Y());
-            theDI.SetNumber(a[9], DU.Z());
-            theDI.SetNumber(a[10], DV.X());
-            theDI.SetNumber(a[11], DV.Y());
-            theDI.SetNumber(a[12], DV.Z());
+            theDI.SetNumber(a[7], DU.X);
+            theDI.SetNumber(a[8], DU.Y);
+            theDI.SetNumber(a[9], DU.Z);
+            theDI.SetNumber(a[10], DV.X);
+            theDI.SetNumber(a[11], DV.Y);
+            theDI.SetNumber(a[12], DV.Z);
         }
         else
         {
@@ -1452,9 +1452,9 @@ internal static class GeomliteTestCommands
 
         if (n > 6)
         {
-            theDI.SetNumber(a[4], P.X());
-            theDI.SetNumber(a[5], P.Y());
-            theDI.SetNumber(a[6], P.Z());
+            theDI.SetNumber(a[4], P.X);
+            theDI.SetNumber(a[5], P.Y);
+            theDI.SetNumber(a[6], P.Z);
         }
 
         if (DrawPoint)
@@ -1483,9 +1483,9 @@ internal static class GeomliteTestCommands
         int aNu = theDI.Atoi(theArgv[4]);
         int aNv = theDI.Atoi(theArgv[5]);
         Vector3D aDeriv = aSurf.DN(aU, aV, aNu, aNv);
-        theDI.SetNumber(theArgv[6], aDeriv.X());
-        theDI.SetNumber(theArgv[7], aDeriv.Y());
-        theDI.SetNumber(theArgv[8], aDeriv.Z());
+        theDI.SetNumber(theArgv[6], aDeriv.X);
+        theDI.SetNumber(theArgv[7], aDeriv.Y);
+        theDI.SetNumber(theArgv[8], aDeriv.Z);
         return 0;
     }
 
@@ -1578,13 +1578,13 @@ internal static class GeomliteTestCommands
                     return 1;
                 }
 
-                U1 = C2d.FirstParameter();
-                U2 = C2d.LastParameter();
+                U1 = C2d.FirstParameter;
+                U2 = C2d.LastParameter;
             }
             else
             {
-                U1 = C3d.FirstParameter();
-                U2 = C3d.LastParameter();
+                U1 = C3d.FirstParameter;
+                U2 = C3d.LastParameter;
             }
 
             theDI.SetNumber(a[2], U1);
@@ -1598,7 +1598,7 @@ internal static class GeomliteTestCommands
                 return 1;
             }
 
-            S.Bounds(out double U1, out double U2, out double V1, out double V2);
+            S.ParameterBounds(out double U1, out double U2, out double V1, out double V2);
             theDI.SetNumber(a[2], U1);
             theDI.SetNumber(a[3], U2);
             theDI.SetNumber(a[4], V1);

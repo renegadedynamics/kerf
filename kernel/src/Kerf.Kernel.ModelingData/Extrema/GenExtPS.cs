@@ -330,8 +330,8 @@ public class GenExtPS
             {
                 NCollection_Array1<double> uKnots = bspl.InternalUKnots();
                 NCollection_Array1<double> vKnots = bspl.InternalVKnots();
-                FillParams(uKnots, bspl.UDegree(), _myumin, _myusup, ref _uParams, _myusample);
-                FillParams(vKnots, bspl.VDegree(), _myvmin, _myvsup, ref _vParams, _myvsample);
+                FillParams(uKnots, bspl.UDegree, _myumin, _myusup, ref _uParams, _myusample);
+                FillParams(vKnots, bspl.VDegree, _myvmin, _myvsup, ref _vParams, _myvsample);
             }
         }
         // calculation parametric points for Bezier surfaces
@@ -345,9 +345,9 @@ public class GenExtPS
 
             NCollection_Array1<double> uKnots = new(1, 2);
             NCollection_Array1<double> vKnots = new(1, 2);
-            bezier.Bounds(out uKnots[1], out uKnots[2], out vKnots[1], out vKnots[2]);
-            FillParams(uKnots, bezier.UDegree(), _myumin, _myusup, ref _uParams, _myusample);
-            FillParams(vKnots, bezier.VDegree(), _myvmin, _myvsup, ref _vParams, _myvsample);
+            bezier.ParameterBounds(out uKnots[1], out uKnots[2], out vKnots[1], out vKnots[2]);
+            FillParams(uKnots, bezier.UDegree, _myumin, _myusup, ref _uParams, _myusample);
+            FillParams(vKnots, bezier.VDegree, _myvmin, _myvsup, ref _vParams, _myvsample);
         }
         // creation points for surfaces based on BSpline or Bezier curves
         else if (surf.GetType() == SurfaceOfRevolution || surf.GetType() == SurfaceOfExtrusion)
@@ -360,7 +360,7 @@ public class GenExtPS
                 if (bspl is not null)
                 {
                     arrKnots = new NCollection_HArray1<double>(bspl.InternalKnots());
-                    degree = bspl.Degree();
+                    degree = bspl.Degree;
                 }
             }
             if (surf.BasisCurve().GetType() == BezierCurve)
@@ -369,9 +369,9 @@ public class GenExtPS
                 if (bez is not null)
                 {
                     arrKnots = new NCollection_HArray1<double>(1, 2);
-                    arrKnots.SetValue(1, bez.FirstParameter());
-                    arrKnots.SetValue(2, bez.LastParameter());
-                    degree = bez.Degree();
+                    arrKnots.SetValue(1, bez.FirstParameter);
+                    arrKnots.SetValue(2, bez.LastParameter);
+                    degree = bez.Degree;
                 }
             }
             if (arrKnots is null)
@@ -403,7 +403,7 @@ public class GenExtPS
     private POnSurfParams ComputeEdgeParameters(bool isUEdge, in POnSurfParams param0,
         in POnSurfParams param1, in Point3D point, double diffTol)
     {
-        double sqrDist01 = param0.Value().SquareDistance(param1.Value());
+        double sqrDist01 = param0.Value().SquareDistanceTo(param1.Value());
 
         if (sqrDist01 <= diffTol)
         {
@@ -457,7 +457,7 @@ public class GenExtPS
 
                 param0.GetIndices(out indices[0], out indices[1]);
                 _gridParam.SetElementType(isUEdge ? UIsoEdge : VIsoEdge);
-                _gridParam.SetSqrDistance(point.SquareDistance(_gridParam.Value()));
+                _gridParam.SetSqrDistance(point.SquareDistanceTo(_gridParam.Value()));
                 _gridParam.SetIndices(indices[0], indices[1]);
                 return _gridParam;
             }
@@ -556,7 +556,7 @@ public class GenExtPS
             {
                 ref POnSurfParams param = ref _points.ChangeValue(noU, noV);
 
-                param.SetSqrDistance(point.SquareDistance(param.Value()));
+                param.SetSqrDistance(point.SquareDistanceTo(param.Value()));
             }
         }
 
@@ -618,7 +618,7 @@ public class GenExtPS
                     POnSurfParams ve0 = _vEdgePntParams.Value(noU, noV);
                     POnSurfParams ve1 = _vEdgePntParams.Value(noU + 1, noV);
 
-                    sqrDist01 = ue0.Value().SquareDistance(ue1.Value());
+                    sqrDist01 = ue0.Value().SquareDistanceTo(ue1.Value());
                     diffDist = Math.Abs(ue0.GetSqrDistance() - ue1.GetSqrDistance());
                     isOut = false;
 
@@ -629,7 +629,7 @@ public class GenExtPS
                     }
                     else
                     {
-                        sqrDist01 = ve0.Value().SquareDistance(ve1.Value());
+                        sqrDist01 = ve0.Value().SquareDistanceTo(ve1.Value());
                         diffDist = Math.Abs(ve0.GetSqrDistance() - ve1.GetSqrDistance());
 
                         if (diffDist >= sqrDist01 - diffTol)
@@ -667,7 +667,7 @@ public class GenExtPS
                         POnSurfParams param = new(uPar, vPar, _s!.Value(uPar, vPar));
 
                         param.SetElementType(Face);
-                        param.SetSqrDistance(point.SquareDistance(param.Value()));
+                        param.SetSqrDistance(point.SquareDistanceTo(param.Value()));
                         param.SetIndices(noU, noV);
                         _facePntParams.SetValue(noU, noV, param);
                     }
@@ -716,7 +716,7 @@ public class GenExtPS
             {
                 p2 = s.Value(aPar, par);
             }
-            len += p1.Distance(p2);
+            len += p1.DistanceTo(p2);
             p1 = p2;
             aPar += dPar;
         }
@@ -792,8 +792,8 @@ public class GenExtPS
         if (_s!.GetType() == SurfaceKind.BSplineSurface)
         {
             global::Kerf.Geometry.BSplineSurface bspl = _s.BSpline();
-            int uValue = bspl.UDegree() * bspl.UKnotCount;
-            int vValue = bspl.VDegree() * bspl.VKnotCount;
+            int uValue = bspl.UDegree * bspl.UKnotCount;
+            int vValue = bspl.VDegree * bspl.VKnotCount;
             // 300 is value, which is used for singular points (see Extrema_ExtPS.cxx::Initialize(...))
             if (uValue > _myusample)
             {
@@ -1054,7 +1054,7 @@ public class GenExtPS
                 double v = _vParams!.Value(sph.V());
                 POnSurfParams aParams = new(u, v, _s!.Value(u, v));
 
-                aParams.SetSqrDistance(p.SquareDistance(aParams.Value()));
+                aParams.SetSqrDistance(p.SquareDistanceTo(aParams.Value()));
                 aParams.SetIndices(sph.U(), sph.V());
                 FindSolution(p, aParams);
             }
@@ -1070,7 +1070,7 @@ public class GenExtPS
                 double u = _uParams!.Value(sph.U());
                 double v = _vParams!.Value(sph.V());
                 POnSurfParams aParams = new(u, v, _s!.Value(u, v));
-                aParams.SetSqrDistance(p.SquareDistance(aParams.Value()));
+                aParams.SetSqrDistance(p.SquareDistanceTo(aParams.Value()));
                 aParams.SetIndices(sph.U(), sph.V());
 
                 FindSolution(p, aParams);

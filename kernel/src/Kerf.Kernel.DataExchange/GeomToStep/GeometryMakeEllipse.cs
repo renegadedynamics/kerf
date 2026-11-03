@@ -43,7 +43,7 @@ public sealed class GeometryMakeEllipse : GeometryRoot
     public GeometryMakeEllipse(EllipseCurve3D cer, in Factors localFactors)
     {
         Ellipse3D e;
-        e = cer.Elips();
+        e = cer.Ellipse;
         Make(e, localFactors);
     }
 
@@ -61,17 +61,17 @@ public sealed class GeometryMakeEllipse : GeometryRoot
     public GeometryMakeEllipse(EllipseCurve2D cer, in Factors localFactors)
     {
         Ellipse2D e2d;
-        e2d = cer.Elips2d();
+        e2d = cer.Ellipse;
 
         StepEllipse eStep = new StepEllipse();
         StepAxis2Placement ax2 = new StepAxis2Placement();
         StepAxis2Placement2d ax2Step;
         double majorR, minorR;
 
-        MakeAxis2Placement2d mkAxis2 = new MakeAxis2Placement2d(e2d.Axis(), localFactors);
+        MakeAxis2Placement2d mkAxis2 = new MakeAxis2Placement2d(e2d.Axis, localFactors);
         ax2Step = mkAxis2.Value();
-        majorR = e2d.MajorRadius();
-        minorR = e2d.MinorRadius();
+        majorR = e2d.MajorRadius;
+        minorR = e2d.MinorRadius;
         ax2.SetValue(ax2Step);
         TCollection_HAsciiString name = new TCollection_HAsciiString("");
         eStep.Init(name, ax2, majorR, minorR);
@@ -92,10 +92,10 @@ public sealed class GeometryMakeEllipse : GeometryRoot
         StepAxis2Placement3d ax2Step;
         double majorR, minorR;
 
-        Axis2Placement3dMaker mkAxis2 = new Axis2Placement3dMaker(e.Position(), localFactors);
+        Axis2Placement3dMaker mkAxis2 = new Axis2Placement3dMaker(e.Position, localFactors);
         ax2Step = mkAxis2.Value();
-        majorR = e.MajorRadius();
-        minorR = e.MinorRadius();
+        majorR = e.MajorRadius;
+        minorR = e.MinorRadius;
         ax2.SetValue(ax2Step);
         TCollection_HAsciiString name = new TCollection_HAsciiString("");
         double fact = localFactors.LengthFactor();

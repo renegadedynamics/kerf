@@ -17,9 +17,9 @@ public class ProjLib_ComputeApproxOnPolarSurfaceTest
                                                double theTol)
     {
         Point2D aUV = thePCurve.Value(theParam);
-        Point3D aProjP = theSurface.Value(aUV.X(), aUV.Y());
+        Point3D aProjP = theSurface.Value(aUV.X, aUV.Y);
         Point3D aRefP = theCurve.Value(theParam);
-        Assert.True(aProjP.Distance(aRefP) <= theTol);
+        Assert.True(aProjP.DistanceTo(aRefP) <= theTol);
     }
 
     [Fact]
@@ -45,8 +45,8 @@ public class ProjLib_ComputeApproxOnPolarSurfaceTest
         Assert.True(aProjector.IsDone);
         Assert.NotNull(aPCurve);
 
-        double aFirst = Max(aCurve.FirstParameter(), aPCurve.FirstParameter());
-        double aLast = Min(aCurve.LastParameter(), aPCurve.LastParameter());
+        double aFirst = Max(aCurve.FirstParameter, aPCurve.FirstParameter);
+        double aLast = Min(aCurve.LastParameter, aPCurve.LastParameter);
         Assert.True(aFirst < aLast);
 
         checkProjectionAtParam(aPCurve, aSurface, aCurve, aFirst, 1.0e-3);

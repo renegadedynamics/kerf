@@ -137,11 +137,11 @@ public partial struct Curve : IEquatable<Curve>
                                     bool twocurves,
                                     bool takezpositive)
     {
-        _ax3 = cone.Position();
-        _rCyl = cone.RefRadius();
+        _ax3 = cone.Position;
+        _rCyl = cone.RefRadius;
 
-        _angle = cone.SemiAngle();
-        double unSurTgAngle = 1.0 / (Math.Tan(cone.SemiAngle()));
+        _angle = cone.SemiAngle;
+        double unSurTgAngle = 1.0 / (Math.Tan(cone.SemiAngle));
 
         _typequadric = global::Kerf.Geometry.SurfaceKind.Cone;
 
@@ -204,8 +204,8 @@ public partial struct Curve : IEquatable<Curve>
                                         bool twocurves,
                                         bool takezpositive)
     {
-        _ax3 = cyl.Position();
-        _rCyl = cyl.Radius();
+        _ax3 = cyl.Position;
+        _rCyl = cyl.Radius;
         _typequadric = SurfaceKind.Cylinder;
 
         _twoCurves = twocurves;         //-- two Z values for the same parameter
@@ -434,7 +434,7 @@ public partial struct Curve : IEquatable<Curve>
         }
         Point3D p2 = Value(theta2);
         dtheta = 1.0 / dtheta;
-        vec = vec.WithCoord((p2.X() - pt.X()) * dtheta, (p2.Y() - pt.Y()) * dtheta, (p2.Z() - pt.Z()) * dtheta);
+        vec = vec.WithCoord((p2.X - pt.X) * dtheta, (p2.Y - pt.Y) * dtheta, (p2.Z - pt.Z) * dtheta);
 
         return (true);
     }
@@ -538,7 +538,7 @@ public partial struct Curve : IEquatable<Curve>
                 sqTol = sqTolPrecision;
             }
 
-            if (aP.SquareDistance(p) < sqTol)
+            if (aP.SquareDistanceTo(p) < sqTol)
             {
                 theParams.Append(aParams[i]);
             }

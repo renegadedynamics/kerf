@@ -18,7 +18,7 @@ namespace Kerf.Engine.Geometry.Evaluation;
 /// curve is neither periodic nor closed, and is CN. Reversal and transformation are not supported (they throw
 /// <see cref="MethodNotImplementedException"/>).
 /// </summary>
-public sealed class CircularHelixCurve : Curve3D
+internal sealed class CircularHelixCurve : Curve3D
 {
     private Frame3D _position; // Local coordinate system
     private double _radius;   // Helix radius (> 0)
@@ -60,40 +60,40 @@ public sealed class CircularHelixCurve : Curve3D
     }
 
     /// <summary>-Precision::Infinite().</summary>
-    public override double FirstParameter() => -global::Kerf.Engine.Foundation.Precision.Infinite();
+    public override double FirstParameter => -global::Kerf.Engine.Foundation.Precision.Infinite();
 
     /// <summary>Precision::Infinite().</summary>
-    public override double LastParameter() => global::Kerf.Engine.Foundation.Precision.Infinite();
+    public override double LastParameter => global::Kerf.Engine.Foundation.Precision.Infinite();
 
     public override bool IsClosed => false;
 
     public override bool IsPeriodic => false;
 
-    public override Continuity Continuity() => CN;
+    public override Continuity Continuity => CN;
 
-    public override bool IsCN(int n) => true;
+    internal override bool IsCN(int n) => true;
 
-    public override Point3D EvalD0(double u)
+    internal override Point3D EvalD0(double u)
     {
         double cosU = Math.Cos(u);
         double sinU = Math.Sin(u);
-        Xyz o = _position.Location().XYZ();
-        Xyz xd = _position.XDirection().XYZ();
-        Xyz yd = _position.YDirection().XYZ();
-        Xyz zd = _position.Direction().XYZ();
+        Xyz o = _position.Location.XYZ();
+        Xyz xd = _position.XDirection.XYZ();
+        Xyz yd = _position.YDirection.XYZ();
+        Xyz zd = _position.Direction.XYZ();
         double zComp = _pitch * u / (2.0 * M_PI);
 
         return new Point3D(o + _radius * cosU * xd + _radius * sinU * yd + zComp * zd);
     }
 
-    public override ResD1 EvalD1(double u)
+    internal override ResD1 EvalD1(double u)
     {
         double cosU = Math.Cos(u);
         double sinU = Math.Sin(u);
-        Xyz o = _position.Location().XYZ();
-        Xyz xd = _position.XDirection().XYZ();
-        Xyz yd = _position.YDirection().XYZ();
-        Xyz zd = _position.Direction().XYZ();
+        Xyz o = _position.Location.XYZ();
+        Xyz xd = _position.XDirection.XYZ();
+        Xyz yd = _position.YDirection.XYZ();
+        Xyz zd = _position.Direction.XYZ();
         double zComp = _pitch * u / (2.0 * M_PI);
         double zRate = _pitch / (2.0 * M_PI);
 
@@ -106,14 +106,14 @@ public sealed class CircularHelixCurve : Curve3D
         return result;
     }
 
-    public override ResD2 EvalD2(double u)
+    internal override ResD2 EvalD2(double u)
     {
         double cosU = Math.Cos(u);
         double sinU = Math.Sin(u);
-        Xyz o = _position.Location().XYZ();
-        Xyz xd = _position.XDirection().XYZ();
-        Xyz yd = _position.YDirection().XYZ();
-        Xyz zd = _position.Direction().XYZ();
+        Xyz o = _position.Location.XYZ();
+        Xyz xd = _position.XDirection.XYZ();
+        Xyz yd = _position.YDirection.XYZ();
+        Xyz zd = _position.Direction.XYZ();
         double zComp = _pitch * u / (2.0 * M_PI);
         double zRate = _pitch / (2.0 * M_PI);
 
@@ -127,14 +127,14 @@ public sealed class CircularHelixCurve : Curve3D
         return result;
     }
 
-    public override ResD3 EvalD3(double u)
+    internal override ResD3 EvalD3(double u)
     {
         double cosU = Math.Cos(u);
         double sinU = Math.Sin(u);
-        Xyz o = _position.Location().XYZ();
-        Xyz xd = _position.XDirection().XYZ();
-        Xyz yd = _position.YDirection().XYZ();
-        Xyz zd = _position.Direction().XYZ();
+        Xyz o = _position.Location.XYZ();
+        Xyz xd = _position.XDirection.XYZ();
+        Xyz yd = _position.YDirection.XYZ();
+        Xyz zd = _position.Direction.XYZ();
         double zComp = _pitch * u / (2.0 * M_PI);
         double zRate = _pitch / (2.0 * M_PI);
 
@@ -150,16 +150,16 @@ public sealed class CircularHelixCurve : Curve3D
     }
 
     /// <exception cref="RangeErrorException">N &lt; 1.</exception>
-    public override Vector3D EvalDN(double u, int n)
+    internal override Vector3D EvalDN(double u, int n)
     {
         if (n < 1)
         {
             throw new RangeErrorException("GeomEval_CircularHelixCurve::EvalDN: N must be >= 1");
         }
 
-        Xyz xd = _position.XDirection().XYZ();
-        Xyz yd = _position.YDirection().XYZ();
-        Xyz zd = _position.Direction().XYZ();
+        Xyz xd = _position.XDirection.XYZ();
+        Xyz yd = _position.YDirection.XYZ();
+        Xyz zd = _position.Direction.XYZ();
 
         // DN cycles with period 4 in the XY plane:
         // d^N/dt^N[cos(t)] = cos(t + N*Pi/2)

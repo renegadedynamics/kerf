@@ -135,20 +135,20 @@ public sealed class Modifier
             return;
         }
 
-        if (_shape.ShapeType() == ShapeType.Face)
+        if (_shape.Type == ShapeType.Face)
         {
-            if (_shape.Orientation() == Reversed)
+            if (_shape.Orientation == Reversed)
             {
                 _map.GetValueRef(_shape).Reverse();
             }
             else
             {
-                _map.GetValueRef(_shape).Orientation(_shape.Orientation());
+                _map.GetValueRef(_shape).Orient(_shape.Orientation);
             }
         }
         else
         {
-            _map.GetValueRef(_shape).Orientation(_shape.Orientation());
+            _map.GetValueRef(_shape).Orient(_shape.Orientation);
         }
 
         // Update the continuities
@@ -240,7 +240,7 @@ public sealed class Modifier
 
     private bool Rebuild(in Shape s, Modification m, out bool newGeom, ProgressRange progress)
     {
-        ShapeType ts = s.ShapeType();
+        ShapeType ts = s.Type;
         // OCCT.NET: a reference into the map, as OCCT's TopoDS_Shape& result = myMap(S). The map gains no keys while
         // rebuilding (Put bound every sub-shape), so the reference stays valid through the recursion.
         ref Shape result = ref _map.GetValueRef(s);
@@ -270,10 +270,10 @@ public sealed class Modifier
                     Face resultF = ShapeCasts.Face(result);
                     b.MakeFace(ref resultF,
                                nSinfo.mySurface,
-                               nSinfo.myLoc.Predivided(s.Location()),
+                               nSinfo.myLoc.Predivided(s.Placement),
                                nSinfo.Toler);
                     result = resultF;
-                    result.Location(s.Location(), false);
+                    result.Location(s.Placement, false);
                     if (nSinfo.myRevFace)
                     {
                         resOr = Reversed;
@@ -298,7 +298,7 @@ public sealed class Modifier
                         Surface? aSurface = Tool.Surface(sF, out Placement aSurfaceLoc);
                         if (aSurface is not null)
                         {
-                            b.MakeFace(ref resultF, aSurface, aSurfaceLoc.Predivided(s.Location()), Tool.Tolerance(sF));
+                            b.MakeFace(ref resultF, aSurface, aSurfaceLoc.Predivided(s.Placement), Tool.Tolerance(sF));
                             b.UpdateFace(resultF, triangulation);
                             b.NaturalRestriction(resultF, Tool.NaturalRestriction(sF));
                         }
@@ -307,7 +307,7 @@ public sealed class Modifier
                             b.MakeFace(ref resultF, triangulation);
                         }
                         result = resultF;
-                        result.Location(s.Location(), false);
+                        result.Location(s.Placement, false);
                     }
                     rebuild = true;
                 }
@@ -332,12 +332,12 @@ public sealed class Modifier
                     {
                         b.MakeEdge(ref resultE,
                                    nCinfo.myCurve,
-                                   nCinfo.myLoc.Predivided(s.Location()),
+                                   nCinfo.myLoc.Predivided(s.Placement),
                                    nCinfo.Toler);
                         no3DCurve = false;
                     }
                     result = resultE;
-                    result.Location(s.Location(), false);
+                    result.Location(s.Placement, false);
                     //	result.Orientation(S.Orientation());
 
                     // set specifics flags of an Edge
@@ -350,14 +350,14 @@ public sealed class Modifier
                 {
                     if (rebuild)
                     { // the copied edge already exists => update it
-                        b.UpdateEdge(ShapeCasts.Edge(result), polygon, s.Location());
+                        b.UpdateEdge(ShapeCasts.Edge(result), polygon, s.Placement);
                     }
                     else
                     { // create new edge with bare polygon
                         Edge resultE = ShapeCasts.Edge(result);
                         b.MakeEdge(ref resultE, polygon);
                         result = resultE;
-                        result.Location(s.Location(), false);
+                        result.Location(s.Placement, false);
                     }
                     rebuild = true;
                 }
@@ -407,7 +407,7 @@ public sealed class Modifier
         if (rebuild && !newgeom)
         {
             result = s.EmptyCopied();
-            result.Orientation(Forward);
+            result.Orient(Forward);
         }
 
         // copy the sub-elements
@@ -417,8 +417,8 @@ public sealed class Modifier
             Orientation orient;
             for (it.Initialize(s, false); it.More(); it.Next())
             {
-                orient = it.Value().Orientation();
-                if (revWires || _map.GetValue(it.Value()).Orientation() == Reversed)
+                orient = it.Value().Orientation;
+                if (revWires || _map.GetValue(it.Value()).Orientation == Reversed)
                 {
                     orient = global::Kerf.Engine.Topology.TopAbs.Reverse(orient);
                 }
@@ -429,7 +429,7 @@ public sealed class Modifier
             {
                 // pcurves
                 Face face = ShapeCasts.Face(s);
-                Orientation fcor = face.Orientation();
+                Orientation fcor = face.Orientation;
                 if (fcor != Reversed)
                 {
                     fcor = Forward;
@@ -501,14 +501,14 @@ public sealed class Modifier
                         {
                             Edge curE = ShapeCasts.Edge(_map.GetValue(edge));
                             Shape localResult = result;
-                            localResult.Orientation(Forward);
+                            localResult.Orient(Forward);
                             Face curF = ShapeCasts.Face(localResult);
                             Curve2D? curve2d1;
                             double f, l;
-                            if ((!revWires && fcor != edge.Orientation())
-                                || (revWires && fcor == edge.Orientation()))
+                            if ((!revWires && fcor != edge.Orientation)
+                                || (revWires && fcor == edge.Orientation))
                             {
-                                curE.Orientation(Forward);
+                                curE.Orient(Forward);
                                 curve2d1 = Tool.CurveOnSurface(curE, curF, out f, out l);
                                 if (curve2d1 is null)
                                 {
@@ -518,7 +518,7 @@ public sealed class Modifier
                             }
                             else
                             {
-                                curE.Orientation(Reversed);
+                                curE.Orient(Reversed);
                                 curve2d1 = Tool.CurveOnSurface(curE, curF, out f, out l);
                                 if (curve2d1 is null)
                                 {
@@ -549,8 +549,8 @@ public sealed class Modifier
                                     param = Tool.Parameter(vertex, edge);
                                 }
 
-                                Orientation vtxrelat = vertex.Orientation();
-                                if (edge.Orientation() == Reversed)
+                                Orientation vtxrelat = vertex.Orientation;
+                                if (edge.Orientation == Reversed)
                                 {
                                     // Update considers the edge as FORWARD, and the vertex relatively
                                     vtxrelat = global::Kerf.Engine.Topology.TopAbs.Reverse(vtxrelat);
@@ -560,7 +560,7 @@ public sealed class Modifier
                                 // }
 
                                 Vertex localVertex = ShapeCasts.Vertex(_map.GetValue(vertex));
-                                localVertex.Orientation(vtxrelat);
+                                localVertex.Orient(vtxrelat);
                                 // B.UpdateVertex(TopoDS::Vertex
                                 //(myMap(vertex).Oriented(vtxrelat)),
                                 b.UpdateVertex(localVertex, param, ShapeCasts.Edge(_map.GetValue(edge)), tol);
@@ -596,7 +596,7 @@ public sealed class Modifier
                         }
                         else
                         {
-                            if (edge.Orientation() == Forward)
+                            if (edge.Orientation == Forward)
                             {
                                 b.UpdateEdge(newEdge, polyOnTria_1, polyOnTria_2, newFaceTria, location);
                             }
@@ -615,7 +615,7 @@ public sealed class Modifier
                 // Vertices
                 double param = 0.0;
                 Edge edge = ShapeCasts.Edge(s);
-                Orientation edor = edge.Orientation();
+                Orientation edor = edge.Orientation;
                 if (edor != Reversed)
                 {
                     edor = Forward;
@@ -631,7 +631,7 @@ public sealed class Modifier
                         param = Tool.Parameter(vertex, edge);
                     }
 
-                    Orientation vtxrelat = vertex.Orientation();
+                    Orientation vtxrelat = vertex.Orientation;
                     if (edor == Reversed)
                     {
                         // Update considers the edge as FORWARD, and the vertex relatively
@@ -642,7 +642,7 @@ public sealed class Modifier
                     //   vtxrelat= TopAbs::Reverse(vtxrelat);
                     // }
                     Vertex localVertex = ShapeCasts.Vertex(_map.GetValue(vertex));
-                    localVertex.Orientation(vtxrelat);
+                    localVertex.Orient(vtxrelat);
                     // B.UpdateVertex(TopoDS::Vertex(myMap(vertex).Oriented(vtxrelat)),
                     if (_mutableInput || !localVertex.IsSame(vertex))
                     {
@@ -654,9 +654,9 @@ public sealed class Modifier
 
             // update flags
 
-            result.Orientable(s.Orientable());
-            result.Closed(s.Closed());
-            result.Infinite(s.Infinite());
+            result.Orientable(s.IsOrientable);
+            result.Closed(s.IsClosed);
+            result.Infinite(s.IsInfinite);
         }
         else
         {
@@ -664,7 +664,7 @@ public sealed class Modifier
         }
 
         // Set flag of the shape.
-        result.Orientation(resOr);
+        result.Orient(resOr);
 
         // OCCT.NET: frozen: an unrebuilt shape is the input itself, whose flags SetShapeFlags copies onto themselves;
         // a frozen one can't be written, and keeps them.
@@ -835,7 +835,7 @@ public sealed class Modifier
                 {
                     newV = v;
                 }
-                newV.Orientation(Forward);
+                newV.Orient(Forward);
                 _map.GetValueRef(v) = newV;
             }
         }
@@ -845,9 +845,9 @@ public sealed class Modifier
     {
         outSh.Modified(inSh.Modified());
         outSh.Checked(inSh.Checked());
-        outSh.Orientable(inSh.Orientable());
-        outSh.Closed(inSh.Closed());
-        outSh.Infinite(inSh.Infinite());
-        outSh.Convex(inSh.Convex());
+        outSh.Orientable(inSh.IsOrientable);
+        outSh.Closed(inSh.IsClosed);
+        outSh.Infinite(inSh.IsInfinite);
+        outSh.Convex(inSh.IsConvex);
     }
 }

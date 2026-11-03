@@ -38,8 +38,8 @@ internal static class SamplingHelpers
             case BSplineCurve:
             {
                 BSplineCurve3D bc = curve.BSpline();
-                n = 2 * (bc.Degree() + 1) * (bc.KnotCount - 1);
-                double umin = bc.FirstParameter(), umax = bc.LastParameter();
+                n = 2 * (bc.Degree + 1) * (bc.KnotCount - 1);
+                double umin = bc.FirstParameter, umax = bc.LastParameter;
                 double du = (uMax - uMin) / (umax - umin);
                 if (du < .9)
                 {
@@ -76,8 +76,8 @@ internal static class SamplingHelpers
             case BSplineCurve:
             {
                 BSplineCurve2D bc = curve.BSpline();
-                n = 2 * (bc.Degree() + 1) * (bc.KnotCount - 1);
-                double umin = bc.FirstParameter(), umax = bc.LastParameter();
+                n = 2 * (bc.Degree + 1) * (bc.KnotCount - 1);
+                double umin = bc.FirstParameter, umax = bc.LastParameter;
                 double du = (uMax - uMin) / (umax - umin);
                 if (du < .9)
                 {
@@ -114,8 +114,8 @@ internal static class SamplingHelpers
             case SurfaceKind.BSplineSurface:
             {
                 global::Kerf.Geometry.BSplineSurface bs = surf.BSpline();
-                n = 2 * (bs.UDegree() + 1) * (bs.UKnotCount - 1);
-                bs.Bounds(out double umin, out double umax, out _, out _);
+                n = 2 * (bs.UDegree + 1) * (bs.UKnotCount - 1);
+                bs.ParameterBounds(out double umin, out double umax, out _, out _);
                 double du = (uMax - uMin) / (umax - umin);
                 if (du < .9)
                 {
@@ -152,8 +152,8 @@ internal static class SamplingHelpers
             case SurfaceKind.BSplineSurface:
             {
                 global::Kerf.Geometry.BSplineSurface bs = surf.BSpline();
-                n = 2 * (bs.VDegree() + 1) * (bs.VKnotCount - 1);
-                bs.Bounds(out _, out _, out double vmin, out double vmax);
+                n = 2 * (bs.VDegree + 1) * (bs.VKnotCount - 1);
+                bs.ParameterBounds(out _, out _, out double vmin, out double vmax);
                 double dv = (vMax - vMin) / (vmax - vmin);
                 if (dv < .9)
                 {
@@ -182,7 +182,7 @@ internal static class SamplingHelpers
             case SurfaceKind.BSplineSurface:
             {
                 global::Kerf.Geometry.BSplineSurface bs = surf.BSpline();
-                n = 2 * (bs.UDegree() + 1) * (bs.UKnotCount - 1);
+                n = 2 * (bs.UDegree + 1) * (bs.UKnotCount - 1);
                 break;
             }
             default:
@@ -205,7 +205,7 @@ internal static class SamplingHelpers
             case SurfaceKind.BSplineSurface:
             {
                 global::Kerf.Geometry.BSplineSurface bs = surf.BSpline();
-                n = 2 * (bs.VDegree() + 1) * (bs.VKnotCount - 1);
+                n = 2 * (bs.VDegree + 1) * (bs.VKnotCount - 1);
                 break;
             }
             default:

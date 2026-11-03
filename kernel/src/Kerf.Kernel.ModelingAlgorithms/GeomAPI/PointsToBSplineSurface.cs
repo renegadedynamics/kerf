@@ -26,7 +26,7 @@ namespace Kerf.Engine.Geometry.Api;
 /// and 5805). As in OCCT, the methods on points index the multi-points by the arrays' own row and column indices, so
 /// arrays must start at 1 (occt-issues.md).
 /// </remarks>
-public class PointsToBSplineSurface
+internal class PointsToBSplineSurface
 {
     private bool _isDone;
     private BSplineSurface? _surface;
@@ -65,7 +65,7 @@ public class PointsToBSplineSurface
                 for (j = 1; j <= nbP3d; j++)
                 {
                     Point3D p1 = mpc.Point(j), p2 = mpc1.Point(j);
-                    dist += p2.SquareDistance(p1);
+                    dist += p2.SquareDistanceTo(p1);
                 }
 
                 dist = Math.Sqrt(dist);
@@ -149,9 +149,9 @@ public class PointsToBSplineSurface
         for (i = 1; i <= nbP3d; i++)
         {
             c1.D1(i, u, out p, out v);
-            v1[j] = v.X();
-            v1[j + 1] = v.Y();
-            v1[j + 2] = v.Z();
+            v1[j] = v.X;
+            v1[j + 1] = v.Y;
+            v1[j + 2] = v.Z;
             j += 3;
         }
 
@@ -164,9 +164,9 @@ public class PointsToBSplineSurface
             for (i = 1; i <= nbP3d; i++)
             {
                 c1.D1(i, u, out p, out v);
-                v2[j] = v.X();
-                v2[j + 1] = v.Y();
-                v2[j + 2] = v.Z();
+                v2[j] = v.X;
+                v2[j + 1] = v.Y;
+                v2[j + 2] = v.Z;
                 j += 3;
             }
         }
@@ -192,9 +192,9 @@ public class PointsToBSplineSurface
             for (i = 1; i <= nbP3d; i++)
             {
                 c2.D1(i, u, out p, out v);
-                v2[j] = v.X();
-                v2[j + 1] = v.Y();
-                v2[j + 2] = v.Z();
+                v2[j] = v.X;
+                v2[j + 1] = v.Y;
+                v2[j + 2] = v.Z;
                 j += 3;
             }
         }
@@ -728,7 +728,7 @@ public class PointsToBSplineSurface
             MultiPointConstraint mp = new(0, poles.Upper());
             for (j = 1; j <= poles.Upper(); j++)
             {
-                mp.SetPoint2d(j, new Point2D(0.0, poles[j].Y()));
+                mp.SetPoint2d(j, new Point2D(0.0, poles[j].Y));
             }
             param2[i] = (uSpan > 0) ? (double)(i - 1) / (double)(uSpan) : 0.0;
             line2.SetValue(i, mp);
@@ -805,7 +805,7 @@ public class PointsToBSplineSurface
             theCurve2.Curve(j, poles2);
             for (i = 1; i <= poles2.Upper(); i++)
             {
-                thePoles[i, j] = thePoles[i, j].WithCoord(xPoles[i], yPoles[j], poles2[i].Y());
+                thePoles[i, j] = thePoles[i, j].WithCoord(xPoles[i], yPoles[j], poles2[i].Y);
             }
         }
 

@@ -21,7 +21,7 @@ public class GpOracleTests(ITestOutputHelper output)
             using var aN1 = Oracle.ToNative(aD1);
             using var aN2 = Oracle.ToNative(aD2);
             using var aNRef = Oracle.ToNative(aRef);
-            anOracle.Same(aN1.Angle(aN2), aD1.Angle(aD2), "Angle");
+            anOracle.Same(aN1.Angle(aN2), aD1.AngleTo(aD2), "Angle");
             anOracle.Same(aN1.AngleWithRef(aN2, aNRef), aD1.AngleWithRef(aD2, aRef), "AngleWithRef");
         }
 
@@ -45,15 +45,15 @@ public class GpOracleTests(ITestOutputHelper output)
             using (var aNX = aNAx2.XDirection())
             using (var aNY = aNAx2.YDirection())
             {
-                anOracle.Same(Oracle.FromNative(aNX.XYZ()), anAx2.XDirection().XYZ(), "Ax2 X");
-                anOracle.Same(Oracle.FromNative(aNY.XYZ()), anAx2.YDirection().XYZ(), "Ax2 Y");
+                anOracle.Same(Oracle.FromNative(aNX.XYZ()), anAx2.XDirection.XYZ(), "Ax2 X");
+                anOracle.Same(Oracle.FromNative(aNY.XYZ()), anAx2.YDirection.XYZ(), "Ax2 Y");
             }
 
             using var aNAx3 = new N.gp_Ax3(aNP, aNV);
             var anAx3 = new CoordinateSystem(aP, aV);
             using (var aNX = aNAx3.XDirection())
             {
-                anOracle.Same(Oracle.FromNative(aNX.XYZ()), anAx3.XDirection().XYZ(), "Ax3 X");
+                anOracle.Same(Oracle.FromNative(aNX.XYZ()), anAx3.XDirection.XYZ(), "Ax3 X");
             }
 
             // Changing the main direction of a possibly left-handed system
@@ -63,12 +63,12 @@ public class GpOracleTests(ITestOutputHelper output)
             using var aNNewDir = Oracle.ToNative(aNewDir);
             aNSystem.SetDirection(aNNewDir);
             CoordinateSystem aChanged = aSystem.WithDirection(aNewDir);
-            anOracle.Same(aNSystem.Direct(), aChanged.Direct(), "Direct");
+            anOracle.Same(aNSystem.Direct(), aChanged.IsDirect, "Direct");
             using (var aNX = aNSystem.XDirection())
             using (var aNY = aNSystem.YDirection())
             {
-                anOracle.Same(Oracle.FromNative(aNX.XYZ()), aChanged.XDirection().XYZ(), "SetDirection X");
-                anOracle.Same(Oracle.FromNative(aNY.XYZ()), aChanged.YDirection().XYZ(), "SetDirection Y");
+                anOracle.Same(Oracle.FromNative(aNX.XYZ()), aChanged.XDirection.XYZ(), "SetDirection X");
+                anOracle.Same(Oracle.FromNative(aNY.XYZ()), aChanged.YDirection.XYZ(), "SetDirection Y");
             }
         }
 
@@ -125,7 +125,7 @@ public class GpOracleTests(ITestOutputHelper output)
 
                 int aPower = anOracle.Int(-4, 5);
                 using var aNPow = aN1.Powered(aPower);
-                if (aT1.Form() == TransformForm.CompoundTrsf && aT1.ScaleFactor() != 1.0 && Math.Abs(aPower) >= 3)
+                if (aT1.Form == TransformForm.CompoundTrsf && aT1.ScaleFactor != 1.0 && Math.Abs(aPower) >= 3)
                 {
                     SamePowerOfScaled(anOracle, aNPow, aT1, aPower, $"{aKind1} to the power {aPower}");
                 }
@@ -152,7 +152,7 @@ public class GpOracleTests(ITestOutputHelper output)
         {
             aMoved = aMoved.Transformed(aStep);
         }
-        Assert.Equal((int)theNative.Form(), (int)aPort.Form());
+        Assert.Equal((int)theNative.Form(), (int)aPort.Form);
         for (int i = 1; i <= 3; i++)
         {
             for (int j = 1; j <= 4; j++)

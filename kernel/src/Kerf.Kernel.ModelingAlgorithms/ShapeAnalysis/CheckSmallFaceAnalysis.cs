@@ -123,7 +123,7 @@ public sealed class CheckSmallFaceAnalysis
         bool isWir = false;
         for (var itw = new Iterator(f, false); itw.More(); itw.Next())
         {
-            if (itw.Value().ShapeType() != ShapeType.Wire)
+            if (itw.Value().Type != ShapeType.Wire)
             {
                 continue;
             }
@@ -190,7 +190,7 @@ public sealed class CheckSmallFaceAnalysis
             }
             Point3D debut = c3D.Value(cf);
             Point3D milieu = c3D.Value((cf + cl) / 2);
-            if (debut.SquareDistance(milieu) > toler * toler)
+            if (debut.SquareDistanceTo(milieu) > toler * toler)
             {
                 return 0;
             }
@@ -347,18 +347,18 @@ public sealed class CheckSmallFaceAnalysis
         {
             return false;
         }
-        cf1 = Max(cf1, c1.FirstParameter());
-        cl1 = Min(cl1, c1.LastParameter());
+        cf1 = Max(cf1, c1.FirstParameter);
+        cl1 = Min(cl1, c1.LastParameter);
         TrimmedCurve3D c1T = new(c1, cf1, cl1, true);
         // pdn protection against feature in Trimmed_Curve
-        cf1 = c1T.FirstParameter();
-        cl1 = c1T.LastParameter();
+        cf1 = c1T.FirstParameter;
+        cl1 = c1T.LastParameter;
         TrimmedCurve3D cc;
-        cf2 = Max(cf2, c2.FirstParameter());
-        cl2 = Min(cl2, c2.LastParameter());
+        cf2 = Max(cf2, c2.FirstParameter);
+        cl2 = Min(cl2, c2.LastParameter);
         TrimmedCurve3D c2T = new(c2, cf2, cl2, true);
-        cf2 = c2T.FirstParameter();
-        cl2 = c2T.LastParameter();
+        cf2 = c2T.FirstParameter;
+        cl2 = c2T.LastParameter;
 
         double cd1 = (cl1 - cf1) / nbint;
         double cd2 = (cl2 - cf2) / nbint;
@@ -430,14 +430,14 @@ public sealed class CheckSmallFaceAnalysis
             }
 
             //    Extremities
-            double dist = p1.Distance(p2);
+            double dist = p1.DistanceTo(p2);
             //    Middle point
             Curve3D? cc = Tool.Curve(e, out double cf, out double cl);
             bool isNullLength = true;
             if (cc is not null)
             {
                 Point3D pp = cc.Value((cf + cl) / 2.0);
-                if (pp.Distance(p1) < toler && pp.Distance(p2) < toler)
+                if (pp.DistanceTo(p1) < toler && pp.DistanceTo(p2) < toler)
                 {
                     continue;
                 }
@@ -963,7 +963,7 @@ public sealed class CheckSmallFaceAnalysis
         NCollection_Array2<double> ny = new(1, nbint + 1, 1, nbint + 1);
         NCollection_Array2<double> nz = new(1, nbint + 1, 1, nbint + 1);
         int iu, iv;
-        surf.Bounds(out double umin, out double umax, out double vmin, out double vmax);
+        surf.ParameterBounds(out double umin, out double umax, out double vmin, out double vmax);
         double u = umin, du = (umax - umin) / nbint;
         double v = vmin, dv = (umax - umin) / nbint; // OCCT: the V step is computed from the U range (occt-issues.md)
 
@@ -973,9 +973,9 @@ public sealed class CheckSmallFaceAnalysis
             {
                 gas.D1(u, v, out Point3D _, out Vector3D v1, out Vector3D v2);
                 Vector3D vXnorm = v1.Crossed(v2);
-                nx.SetValue(iu, iv, vXnorm.X());
-                ny.SetValue(iu, iv, vXnorm.Y());
-                nz.SetValue(iu, iv, vXnorm.Z());
+                nx.SetValue(iu, iv, vXnorm.X);
+                ny.SetValue(iu, iv, vXnorm.Y);
+                nz.SetValue(iu, iv, vXnorm.Z);
                 v += dv;
             }
             u += du;
@@ -1058,7 +1058,7 @@ public sealed class CheckSmallFaceAnalysis
                 { // tol = std::max(tol, toler); gka
                     tol = toler;
                 }
-                d1 = p1.Distance(p2);
+                d1 = p1.DistanceTo(p2);
                 if (d1 == 0)
                 {
                     return false;
@@ -1093,12 +1093,12 @@ public sealed class CheckSmallFaceAnalysis
             {
                 tol = toler;
             }
-            if (p1.Distance(p2) > tol)
+            if (p1.DistanceTo(p2) > tol)
             {
                 continue;
             }
             // If there are two pin edges, record them in diagnostic
-            d2 = p1.Distance(p2); // gka
+            d2 = p1.DistanceTo(p2); // gka
             if (d2 == 0)
             {
                 return false;
@@ -1168,24 +1168,24 @@ public sealed class CheckSmallFaceAnalysis
             tol = toler;
         }
         pv = Tool.Pnt(theSharedV);
-        if (pv.Distance(p1) <= tol)
+        if (pv.DistanceTo(p1) <= tol)
         {
             paramc1 = cf1;
         }
-        else if (pv.Distance(p2) <= tol)
+        else if (pv.DistanceTo(p2) <= tol)
         {
             paramc1 = cl1;
         }
-        if (pv.Distance(pp1) <= tol)
+        if (pv.DistanceTo(pp1) <= tol)
         {
             paramc2 = cf2;
         }
-        else if (pv.Distance(pp2) <= tol)
+        else if (pv.DistanceTo(pp2) <= tol)
         {
             paramc2 = cl2;
         }
         Point3D proj;
-        if (p1.Distance(p2) < pp1.Distance(pp2))
+        if (p1.DistanceTo(p2) < pp1.DistanceTo(pp2))
         {
             c3 = c1;
             if (paramc1 == cf1)
@@ -1210,8 +1210,8 @@ public sealed class CheckSmallFaceAnalysis
             }
         }
         CurveAdaptor gac = new(c3);
-        double f = c3.FirstParameter();
-        double l = c3.LastParameter();
+        double f = c3.FirstParameter;
+        double l = c3.LastParameter;
         CurveAnalysis sac = new();
         double dist = sac.Project(gac, proj, tol, out Point3D _, out double param);
         // pdn check if parameter of projection is in the domain of the edge.
@@ -1231,8 +1231,8 @@ public sealed class CheckSmallFaceAnalysis
             double angle1 = 0, angle2 = 0;
             try
             {
-                angle1 = v11.Angle(v12);
-                angle2 = v21.Angle(v22);
+                angle1 = v11.AngleTo(v12);
+                angle2 = v21.AngleTo(v22);
             }
             catch (FailureException)
             {

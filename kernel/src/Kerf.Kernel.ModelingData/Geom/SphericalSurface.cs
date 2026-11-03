@@ -16,7 +16,7 @@ namespace Kerf.Geometry;
 /// P(U, V) = O + R * cos(V) * (cos(U) * XDir + sin(U) * YDir) + R * sin(V) * ZDir;
 /// U in [0, 2*PI], V in [-PI/2, PI/2].
 /// </summary>
-public class SphericalSurface : ElementarySurface
+public sealed class SphericalSurface : ElementarySurface
 {
     private double _radius;
 
@@ -35,8 +35,8 @@ public class SphericalSurface : ElementarySurface
     /// <summary>A sphere from a gp sphere.</summary>
     public SphericalSurface(in Sphere s)
     {
-        _radius = s.Radius();
-        _pos = s.Position();
+        _radius = s.Radius;
+        _pos = s.Position;
     }
 
     public sealed override Geometry3D Copy()
@@ -53,10 +53,10 @@ public class SphericalSurface : ElementarySurface
     public sealed override double VReversedParameter(double v) => (-v);
 
     /// <summary>The area, 4 * PI * R * R.</summary>
-    public double Area() => 4.0 * M_PI * _radius * _radius;
+    public double Area => 4.0 * M_PI * _radius * _radius;
 
     /// <summary>The radius.</summary>
-    public double Radius() => _radius;
+    public double Radius => _radius;
 
     /// <summary>True.</summary>
     public sealed override bool IsUClosed => true;
@@ -84,8 +84,8 @@ public class SphericalSurface : ElementarySurface
     internal void SetSphere(in Sphere s)
     {
         CheckMutable();
-        _radius = s.Radius();
-        _pos = s.Position();
+        _radius = s.Radius;
+        _pos = s.Position;
     }
 
     /// <summary>A copy of radius R.</summary>
@@ -106,7 +106,7 @@ public class SphericalSurface : ElementarySurface
     }
 
     /// <summary>U in [0, 2*PI], V in [-PI/2, PI/2].</summary>
-    public sealed override void Bounds(out double u1, out double u2, out double v1, out double v2)
+    internal sealed override void ParameterBounds(out double u1, out double u2, out double v1, out double v2)
     {
         u1 = 0.0;
         u2 = M_PI * 2.0;
@@ -118,7 +118,7 @@ public class SphericalSurface : ElementarySurface
     /// The coefficients of the implicit equation in the absolute system:
     /// A1.X**2 + A2.Y**2 + A3.Z**2 + 2.(B1.X.Y + B2.X.Z + B3.Y.Z) + 2.(C1.X + C2.Y + C3.Z) + D = 0.
     /// </summary>
-    public void Coefficients(out double a1,
+    internal void Coefficients(out double a1,
                              out double a2,
                              out double a3,
                              out double b1,
@@ -154,21 +154,21 @@ public class SphericalSurface : ElementarySurface
         d = t14 * t14 + t24 * t24 + t34 * t34 - _radius * _radius;
     }
 
-    public sealed override Point3D EvalD0(double u, double v)
+    internal sealed override Point3D EvalD0(double u, double v)
     {
         Point3D p;
         global::Kerf.Engine.Geometry.ElSLib.SphereD0(u, v, _pos, _radius, out p);
         return p;
     }
 
-    public sealed override ResD1 EvalD1(double u, double v)
+    internal sealed override ResD1 EvalD1(double u, double v)
     {
         ResD1 result;
         global::Kerf.Engine.Geometry.ElSLib.SphereD1(u, v, _pos, _radius, out result.Point, out result.D1U, out result.D1V);
         return result;
     }
 
-    public sealed override ResD2 EvalD2(double u, double v)
+    internal sealed override ResD2 EvalD2(double u, double v)
     {
         ResD2 result;
         global::Kerf.Engine.Geometry.ElSLib.SphereD2(u,
@@ -184,7 +184,7 @@ public class SphericalSurface : ElementarySurface
         return result;
     }
 
-    public sealed override ResD3 EvalD3(double u, double v)
+    internal sealed override ResD3 EvalD3(double u, double v)
     {
         ResD3 result;
         global::Kerf.Engine.Geometry.ElSLib.SphereD3(u,
@@ -205,7 +205,7 @@ public class SphericalSurface : ElementarySurface
     }
 
     /// <exception cref="UndefinedDerivative3DException">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
-    public sealed override Vector3D EvalDN(double u, double v, int nu, int nv)
+    internal sealed override Vector3D EvalDN(double u, double v, int nu, int nv)
     {
         if (nu + nv < 1 || nu < 0 || nv < 0)
         {
@@ -215,7 +215,7 @@ public class SphericalSurface : ElementarySurface
     }
 
     /// <summary>The non-persistent gp sphere with the same geometry.</summary>
-    public Sphere Sphere() => new Sphere(_pos, _radius);
+    public Sphere Sphere => new Sphere(_pos, _radius);
 
     /// <summary>The U iso-parametric half circle (a Geom_TrimmedCurve on a Geom_Circle, in [-PI/2, PI/2]).</summary>
     public sealed override Curve3D UIso(double u)
@@ -233,12 +233,12 @@ public class SphericalSurface : ElementarySurface
     }
 
     /// <summary>The volume, 4 * PI * R**3 / 3.</summary>
-    public double Volume() => (4.0 * M_PI * _radius * _radius * _radius) / 3.0;
+    public double Volume => (4.0 * M_PI * _radius * _radius * _radius) / 3.0;
 
     protected internal sealed override void Transform(in Transform3D t)
     {
         CheckMutable();
-        _radius = _radius * Math.Abs(t.ScaleFactor());
+        _radius = _radius * Math.Abs(t.ScaleFactor);
         _pos = _pos.Transformed(t);
     }
 }

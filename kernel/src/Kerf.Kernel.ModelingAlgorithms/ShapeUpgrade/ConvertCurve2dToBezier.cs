@@ -76,7 +76,7 @@ public class ConvertCurve2dToBezier : SplitCurve2d
 
         if (_curve is TrimmedCurve2D tmp)
         {
-            Curve2D basCurve = tmp.BasisCurve();
+            Curve2D basCurve = tmp.BasisCurve;
             var converter = new ConvertCurve2dToBezier();
             // converter.Init(BasCurve,Max(First,BasCurve->FirstParameter()),Min(Last,BasCurve->LastParameter()));
             // //???
@@ -137,9 +137,9 @@ public class ConvertCurve2dToBezier : SplitCurve2d
                     bSpline2d = Geom2dConvert2D.CurveToBSplineCurve(tcurve, QuasiAngular);
                 }
 
-                shift = first - bSpline2d.FirstParameter();
-                first = bSpline2d.FirstParameter();
-                last = bSpline2d.LastParameter();
+                shift = first - bSpline2d.FirstParameter;
+                first = bSpline2d.FirstParameter;
+                last = bSpline2d.LastParameter;
             }
             else if (_curve is not BSplineCurve2D)
             {
@@ -150,8 +150,8 @@ public class ConvertCurve2dToBezier : SplitCurve2d
                 bSpline2d = (BSplineCurve2D)_curve;
             }
 
-            double bf = bSpline2d.FirstParameter();
-            double bl = bSpline2d.LastParameter();
+            double bf = bSpline2d.FirstParameter;
+            double bl = bSpline2d.LastParameter;
             if (Math.Abs(first - bf) < precision)
             {
                 first = bf;

@@ -72,5 +72,5 @@ public partial struct DataPoint : IEquatable<DataPoint>
     public static bool operator !=(DataPoint left, DataPoint right) => !left.Equals(right);
 
     public override readonly string ToString() =>
-        Constants.Format("BOPDS_Point", _pnt.X(), _pnt.Y(), _pnt.Z(), _pnt2D1.X(), _pnt2D1.Y(), _pnt2D2.X(), _pnt2D2.Y(), _index);
+        Constants.Format("BOPDS_Point", _pnt.X, _pnt.Y, _pnt.Z, _pnt2D1.X, _pnt2D1.Y, _pnt2D2.X, _pnt2D2.Y, _index);
 }

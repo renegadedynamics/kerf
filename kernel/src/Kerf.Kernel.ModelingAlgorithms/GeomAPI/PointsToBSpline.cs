@@ -22,7 +22,7 @@ namespace Kerf.Engine.Geometry.Api;
 /// A working object (decision 21). OCCT's implicit conversion to the curve is an explicit conversion (decision 28).
 /// <see cref="Curve"/> returns the computed curve itself, as OCCT returns its handle, frozen (decision 243).
 /// </remarks>
-public class PointsToBSpline
+internal class PointsToBSpline
 {
     private bool _isDone;
     private BSplineCurve3D? _curve;

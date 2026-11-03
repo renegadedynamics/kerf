@@ -97,7 +97,7 @@ public sealed class LocalGluer
             throw new ConstructionErrorException();
         }
 
-        Shape localFace = fnew.Oriented(exp.Current().Orientation());
+        Shape localFace = fnew.Oriented(exp.Current().Orientation);
         Face fnor = ShapeCasts.Face(localFace);
 
         for (exp.Init(_sb, ShapeType.Face); exp.More(); exp.Next())
@@ -112,7 +112,7 @@ public sealed class LocalGluer
             throw new ConstructionErrorException();
         }
 
-        localFace = fbase.Oriented(exp.Current().Orientation());
+        localFace = fbase.Oriented(exp.Current().Orientation);
         Face fbor = ShapeCasts.Face(localFace);
         Orientation ori = GetOrientation(fnor, fbor);
 
@@ -189,7 +189,7 @@ public sealed class LocalGluer
         for (ind = 1; ind <= lmap; ind++)
         {
             Shape s = _mapEF.KeyAt(ind - 1);
-            if (s.ShapeType() == ShapeType.Edge)
+            if (s.Type == ShapeType.Edge)
             {
                 Shape s2 = _mapEF.ValueAt(ind - 1);
                 if (!s2.IsNull)
@@ -468,12 +468,12 @@ public sealed class LocalGluer
             for (int i = 1; i <= 21; i++)
             {
                 c2d.D0(f + (i - 1) * deltau, out Point2D ptvtx);
-                sn.D1(ptvtx.X(), ptvtx.Y(), out Point3D pvt, out Vector3D d1u, out Vector3D d1v);
+                sn.D1(ptvtx.X, ptvtx.Y, out Point3D pvt, out Vector3D d1u, out Vector3D d1v);
                 n1 = d1u.Crossed(d1v);
-                if (n1.Magnitude() > global::Kerf.Engine.Foundation.Precision.Confusion())
+                if (n1.Magnitude > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     n1 = n1.Normalized();
-                    if (fn.Orientation() == Reversed)
+                    if (fn.Orientation == Reversed)
                     {
                         n1 = n1.Reversed();
                     }
@@ -497,10 +497,10 @@ public sealed class LocalGluer
                             extPS.Point(jmin).Parameter(out double uu, out double vv);
                             sb.D1(uu, vv, out pvt, out d1u, out d1v);
                             n2 = d1u.Crossed(d1v);
-                            if (n2.Magnitude() > global::Kerf.Engine.Foundation.Precision.Confusion())
+                            if (n2.Magnitude > global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
                                 n2 = n2.Normalized();
-                                if (fb.Orientation() == Reversed)
+                                if (fb.Orientation == Reversed)
                                 {
                                     n2 = n2.Reversed();
                                 }

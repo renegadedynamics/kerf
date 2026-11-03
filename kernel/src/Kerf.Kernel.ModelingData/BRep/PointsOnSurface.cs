@@ -10,7 +10,7 @@ using Occt;
 namespace Kerf.Engine.Topology.Brep;
 
 /// <summary>The root of the representations of a vertex by parameters on a surface.</summary>
-public abstract class PointsOnSurface : PointRepresentation
+internal abstract class PointsOnSurface : PointRepresentation
 {
     private Surface? _surface;
 

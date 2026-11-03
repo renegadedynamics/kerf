@@ -153,7 +153,7 @@ public static class PolyhedronTools
                 surf.D1(u, v, out Point3D p, out Vector3D du, out Vector3D dv);
                 // Compute normal
                 Vector3D vNorm = du.Crossed(dv);
-                double length = vNorm.Magnitude();
+                double length = vNorm.Magnitude;
                 if (length > Constants.Resolution())
                 {
                     vNorm /= length;

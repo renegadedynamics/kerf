@@ -10,7 +10,7 @@ using Occt;
 namespace Kerf.Engine.Geometry.Bvh;
 
 /// <summary>A tool to call BVH builder subroutines.</summary>
-public abstract class BuildTool
+internal abstract class BuildTool
 {
     /// <summary>Splits the given BVH node.</summary>
     public abstract void Perform(int node);
@@ -18,7 +18,7 @@ public abstract class BuildTool
 
 /// <summary>A BVH build thread: takes nodes from the queue and splits them until no thread has work left.</summary>
 /// <remarks>OCCT's <c>OSD_Thread</c> is a <see cref="Thread"/>.</remarks>
-public class BuildThread : Transient
+internal class BuildThread : Transient
 {
     /// <summary>Data needed to build the BVH.</summary>
     protected BuildTool _buildTool;

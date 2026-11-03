@@ -17,7 +17,7 @@ namespace Kerf.Engine.Topology.Adaptors;
 
 /// <summary>The pcurve of an edge on a face, seen as a 2D curve.</summary>
 /// <remarks>A working object (decision 214).</remarks>
-public class EdgeCurve2DAdaptor : CurveAdaptor2D
+internal class EdgeCurve2DAdaptor : CurveAdaptor2D
 {
     private Edge _edge = new();
     private Face _face = new();

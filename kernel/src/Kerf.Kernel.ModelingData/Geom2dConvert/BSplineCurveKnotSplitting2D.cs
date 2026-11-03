@@ -14,7 +14,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// continuity of a B-spline is its degree minus the knot's multiplicity. The split points are knot indices, the
 /// first and last knots of the curve included; Geom2dConvert.SplitBSplineCurve splits the curve between two of them.
 /// </summary>
-public sealed class BSplineCurveKnotSplitting2D
+internal sealed class BSplineCurveKnotSplitting2D
 {
     private readonly NCollection_HArray1<int> _splitIndexes;
 
@@ -30,7 +30,7 @@ public sealed class BSplineCurveKnotSplitting2D
         int firstIndex = basisCurve.FirstUKnotIndex();
         int lastIndex = basisCurve.LastUKnotIndex();
 
-        int degree = basisCurve.Degree();
+        int degree = basisCurve.Degree;
 
         if (continuityRange == 0)
         {

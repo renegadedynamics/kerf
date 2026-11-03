@@ -75,7 +75,7 @@ public sealed class MakeTransformed : ImportRoot
     /// <summary>Applies the computed transformation to a shape; false if the transformation is the identity.</summary>
     public bool Transform(ref Shape shape)
     {
-        if (_trsf.Form() == Identity)
+        if (_trsf.Form == Identity)
         {
             return false;
         }

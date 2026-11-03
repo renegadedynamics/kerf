@@ -51,7 +51,7 @@ public class TestAdaptorsTests
         var aCircle = new CircleCurve3D(new Frame3D(new Point3D(1, 2, 3), new Direction3D(0, 0, 1)), 2.5);
         var anAdaptor = new TestGeomAdaptor_Curve(aCircle);
         Assert.Equal(Circle, anAdaptor.GetType());
-        Assert.Equal(2.5, anAdaptor.Circle().Radius());
+        Assert.Equal(2.5, anAdaptor.Circle().Radius);
         Assert.Equal(CN, anAdaptor.Continuity());
         Assert.Equal(1, anAdaptor.NbIntervals(C2));
         Assert.True(anAdaptor.IsPeriodic);
@@ -113,9 +113,9 @@ public class TestAdaptorsTests
         {
             anAdaptor.D2(u, out Point3D aP, out Vector3D aV1, out Vector3D aV2);
             aCurve.D2(u, out Point3D aQ, out Vector3D aW1, out Vector3D aW2);
-            Assert.True(aP.Distance(aQ) < 1e-12);
-            Assert.True((aV1 - aW1).Magnitude() < 1e-11);
-            Assert.True((aV2 - aW2).Magnitude() < 1e-10);
+            Assert.True(aP.DistanceTo(aQ) < 1e-12);
+            Assert.True((aV1 - aW1).Magnitude < 1e-11);
+            Assert.True((aV2 - aW2).Magnitude < 1e-10);
         }
         Assert.Equal(aCurve.Value(0.0), anAdaptor.Value(0.0));
         Assert.Equal(aCurve.Value(2.0), anAdaptor.Value(2.0));
@@ -133,8 +133,8 @@ public class TestAdaptorsTests
         {
             anAdaptor.D1(u, out Point2D aP, out Vector2D aV);
             aCurve.D1(u, out Point2D aQ, out Vector2D aW);
-            Assert.True(aP.Distance(aQ) < 1e-12);
-            Assert.True((aV - aW).Magnitude() < 1e-11);
+            Assert.True(aP.DistanceTo(aQ) < 1e-12);
+            Assert.True((aV - aW).Magnitude < 1e-11);
         }
     }
 
@@ -152,7 +152,7 @@ public class TestAdaptorsTests
         Assert.Same(aBezier, anAdaptor.Bezier());
         for (double u = 0; u <= 1; u += 0.125)
         {
-            Assert.True(anAdaptor.Value(u).Distance(aBezier.Value(u)) < 1e-14);
+            Assert.True(anAdaptor.Value(u).DistanceTo(aBezier.Value(u)) < 1e-14);
         }
         Assert.Throws<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => anAdaptor.BSpline());
         Assert.Throws<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => anAdaptor.Circle());

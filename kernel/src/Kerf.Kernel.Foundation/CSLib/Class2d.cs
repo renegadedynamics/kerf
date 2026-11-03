@@ -18,7 +18,7 @@ namespace Kerf.Engine.Geometry;
 /// OCCT's class is movable but not copyable, so it is a class here. The default constructor makes an empty
 /// classifier, for which every point is <see cref="Result.Result_Uncertain"/>.
 /// </remarks>
-public sealed class Class2d
+internal sealed class Class2d
 {
     /// <summary>Classification result for point-in-polygon tests.</summary>
     public enum Result
@@ -111,8 +111,8 @@ public sealed class Class2d
         for (int i = 0; i < _pointsCount; ++i)
         {
             Point2D p2D = pnts2d(i + aLower);
-            _pnts2dX[i]  = TransformToNormalized(p2D.X(), uMin, du);
-            _pnts2dY[i]  = TransformToNormalized(p2D.Y(), vMin, dv);
+            _pnts2dX[i]  = TransformToNormalized(p2D.X, uMin, du);
+            _pnts2dY[i]  = TransformToNormalized(p2D.Y, vMin, dv);
         }
 
         // Close the polygon by copying first point to last position.
@@ -139,8 +139,8 @@ public sealed class Class2d
             return Result.Result_Uncertain;
         }
 
-        double x = point.X();
-        double y = point.Y();
+        double x = point.X;
+        double y = point.Y;
 
         // Compute tolerance in original coordinate space.
         double tolU = _tolU * (_uMax - _uMin);
@@ -188,8 +188,8 @@ public sealed class Class2d
             return Result.Result_Uncertain;
         }
 
-        double x = point.X();
-        double y = point.Y();
+        double x = point.X;
+        double y = point.Y;
 
         // Quick rejection test.
         if (x < (_uMin - tol) || x > (_uMax + tol) || y < (_vMin - tol)

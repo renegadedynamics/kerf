@@ -21,7 +21,7 @@ namespace Kerf.Engine.Topology.Tools;
 /// Without <c>theCopyGeom</c> the copy shares the original's curves, surfaces and meshes, which are frozen: that is
 /// the structural copy of <see cref="BrepTools.CopyForWrite"/> (docs/phase3-design.md, section 4.6).
 /// </remarks>
-public class CopyModification : Modification
+internal class CopyModification : Modification
 {
     private readonly bool _copyGeom;
     private readonly bool _copyMesh;

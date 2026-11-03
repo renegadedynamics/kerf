@@ -503,7 +503,7 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
             var aLoft = new ThruSections(theFilled, theRuled);
             foreach (Shape aS in o)
             {
-                if (aS.ShapeType() == ShapeType.Vertex)
+                if (aS.Type == ShapeType.Vertex)
                 {
                     aLoft.AddVertex(ShapeCasts.Vertex(aS));
                 }

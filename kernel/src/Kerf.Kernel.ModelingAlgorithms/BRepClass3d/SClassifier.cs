@@ -538,9 +538,9 @@ public class SClassifier
             {
                 for (k = 0; k < 2; k++)
                 {
-                    double X = Math.Abs(x[i] - l.Location().X());
-                    double Y = Math.Abs(y[j] - l.Location().Y());
-                    double Z = Math.Abs(z[k] - l.Location().Z());
+                    double X = Math.Abs(x[i] - l.Location.X);
+                    double Y = Math.Abs(y[j] - l.Location.Y);
+                    double Z = Math.Abs(z[k] - l.Location.Z);
                     if (X < 1.0e+20 && Y < 1.0e+20 && Z < 1.0e+20)
                     {
                         Point3D aP = new(x[i], y[j], z[k]);
@@ -567,14 +567,14 @@ public class SClassifier
         Surface s = Tool.Surface(aF)!;
         s.D1(u, v, out Point3D _, out Vector3D d1U, out Vector3D d1V);
         Vector3D n = d1U.Crossed(d1V);
-        if (n.Magnitude() <= Constants.Resolution())
+        if (n.Magnitude <= Constants.Resolution())
         {
             return false;
         }
 
         n = n.Normalized();
         aDN = aDN.WithXYZ(n.XYZ());
-        if (aF.Orientation() == Reversed)
+        if (aF.Orientation == Reversed)
         {
             aDN = aDN.Reversed();
         }
@@ -596,7 +596,7 @@ public class SClassifier
         }
 
         c2d.D0(param, out Point2D p2d);
-        return FaceNormal(F, p2d.X(), p2d.Y(), ref outDir);
+        return FaceNormal(F, p2d.X, p2d.Y, ref outDir);
     }
 
     // gets transition of line <L> passing through/near the edge <e> of faces <f1>, <f2>. <param> is
@@ -623,7 +623,7 @@ public class SClassifier
             return -1;
         }
 
-        Direction3D lDir = l.Direction();
+        Direction3D lDir = l.Direction;
 
         if (Math.Abs(lDir.Dot(nf1)) < global::Kerf.Engine.Foundation.Precision.Angular()
             || Math.Abs(lDir.Dot(nf2)) < global::Kerf.Engine.Foundation.Precision.Angular())

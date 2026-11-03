@@ -459,7 +459,7 @@ public static partial class BuilderTools
             }
             //
             Plane3D plnI = dmEdgePln.ValueAt(i - 1);
-            Direction3D di = plnI.Position().Direction();
+            Direction3D di = plnI.Position.Direction;
             //
             lpFence.Append(di);
             //
@@ -472,7 +472,7 @@ public static partial class BuilderTools
             // look for other edges with the plane parallel to current one
             for (j = i + 1; j <= nbPlanes; ++j)
             {
-                Direction3D dj = dmEdgePln.ValueAt(j - 1).Position().Direction();
+                Direction3D dj = dmEdgePln.ValueAt(j - 1).Position.Direction;
                 if (di.IsParallel(dj, angTol))
                 {
                     Shape ej = dmEdgePln.KeyAt(j - 1);
@@ -704,12 +704,12 @@ public static partial class BuilderTools
                 // check if the planes are the same
                 Plane3D plnJ = dmWirePln.ValueAt(j - 1);
                 // check direction of the planes
-                if (!plnI.Position().Direction().IsParallel(plnJ.Position().Direction(), angTol))
+                if (!plnI.Position.Direction.IsParallel(plnJ.Position.Direction, angTol))
                 {
                     continue;
                 }
                 // check distance between the planes
-                double dist = plnI.Distance(plnJ.Location());
+                double dist = plnI.DistanceTo(plnJ.Location);
                 double tolJ = dmWireTol.GetValue(wireJ);
                 if (dist > (tolI + tolJ))
                 {
@@ -735,7 +735,7 @@ public static partial class BuilderTools
             //
             // build planar face
             Face ff = new MakeFace(plnI, -max, max, -max, max).InternalFace();
-            ff.Orientation(Forward);
+            ff.Orient(Forward);
             //
             try
             {
@@ -850,7 +850,7 @@ public static partial class BuilderTools
         // for the line the tangent is defined by the direction
         if (curve.GetType() == CurveKind.Line)
         {
-            tangent = new Vector3D(curve.Line().Position().Direction());
+            tangent = new Vector3D(curve.Line().Position.Direction);
             return true;
         }
         //
@@ -862,7 +862,7 @@ public static partial class BuilderTools
         for (t = t1 + dt; t <= t2; t += dt)
         {
             curve.D1(t, out Point3D _, out tangent);
-            if (tangent.Magnitude() > global::Kerf.Engine.Foundation.Precision.Confusion())
+            if (tangent.Magnitude > global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 return true;
             }
@@ -886,16 +886,16 @@ public static partial class BuilderTools
             case CurveKind.Line:
                 return false;
             case CurveKind.Circle:
-                vn = new Vector3D(curve.Circle().Position().Direction());
+                vn = new Vector3D(curve.Circle().Position.Direction);
                 break;
             case CurveKind.Ellipse:
-                vn = new Vector3D(curve.Ellipse().Position().Direction());
+                vn = new Vector3D(curve.Ellipse().Position.Direction);
                 break;
             case CurveKind.Hyperbola:
-                vn = new Vector3D(curve.Hyperbola().Position().Direction());
+                vn = new Vector3D(curve.Hyperbola().Position.Direction);
                 break;
             case CurveKind.Parabola:
-                vn = new Vector3D(curve.Parabola().Position().Direction());
+                vn = new Vector3D(curve.Parabola().Position.Direction);
                 break;
             default:
             {
@@ -914,7 +914,7 @@ public static partial class BuilderTools
                     curve.D1(t, out Point3D _, out Vector3D v2);
                     //
                     vn = v1 ^ v2;
-                    if (vn.Magnitude() > global::Kerf.Engine.Foundation.Precision.Confusion())
+                    if (vn.Magnitude > global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         bFound = true;
                         break;
@@ -1049,7 +1049,7 @@ public static partial class BuilderTools
                 double tolSum2 = tolV1 + tolV2 + _fuzzyValue;
                 tolSum2 *= tolSum2;
 
-                double d2 = p1.SquareDistance(p2);
+                double d2 = p1.SquareDistanceTo(p2);
                 if (d2 < tolSum2)
                 {
                     _pairs.Append(new PairIDs(anID1, anID2));
@@ -1417,7 +1417,7 @@ public static partial class BuilderTools
             for (; _itF.More(); _itF.Next())
             {
                 Shape w = _itF.Value();
-                if (w.ShapeType() != ShapeType.Wire)
+                if (w.Type != ShapeType.Wire)
                 {
                     continue;
                 }
@@ -1459,7 +1459,7 @@ public static partial class BuilderTools
                 for (; _itF.More(); _itF.Next())
                 {
                     Shape w = _itF.Value();
-                    if (w.ShapeType() != ShapeType.Wire)
+                    if (w.Type != ShapeType.Wire)
                     {
                         continue;
                     }
@@ -1646,7 +1646,7 @@ public static partial class BuilderTools
         for (; itLS.More(); itLS.Next())
         {
             Shape solid = itLS.Value();
-            if (solid.ShapeType() == ShapeType.Solid)
+            if (solid.Type == ShapeType.Solid)
             {
                 Exploration.MapShapes(solid, ShapeType.Vertex, msSolids);
                 Exploration.MapShapes(solid, ShapeType.Edge, msSolids);
@@ -1661,7 +1661,7 @@ public static partial class BuilderTools
         for (; itLP.More(); itLP.Next())
         {
             Shape part = itLP.Value();
-            switch (part.ShapeType())
+            switch (part.Type)
             {
                 case ShapeType.Vertex:
                 case ShapeType.Edge:
@@ -1706,7 +1706,7 @@ public static partial class BuilderTools
         for (; itLS.More(); itLS.Next())
         {
             Shape solid = itLS.Value();
-            if (solid.ShapeType() != ShapeType.Solid)
+            if (solid.Type != ShapeType.Solid)
             {
                 continue;
             }
@@ -1720,7 +1720,7 @@ public static partial class BuilderTools
                 Containment state = AlgoTools.ComputeStateByOnePoint(part, sd, global::Kerf.Engine.Foundation.Precision.Confusion(), context);
                 if (state == Containment.In)
                 {
-                    if (part.ShapeType() == ShapeType.Face)
+                    if (part.Type == ShapeType.Face)
                     {
                         if (!inFaces.TryGetValue(sd, out NCollection_List<Shape>? pFaces))
                         {
@@ -1730,7 +1730,7 @@ public static partial class BuilderTools
                     }
                     else
                     {
-                        part.Orientation(Internal);
+                        part.Orient(Internal);
                         new BrepBuilder().Add(sd, part);
                     }
                     lParts.Remove(itLP);
@@ -1775,7 +1775,7 @@ public static partial class BuilderTools
                 for (; expF.More(); expF.Next())
                 {
                     Face fInt = ShapeCasts.Face(expF.Current());
-                    fInt.Orientation(Internal);
+                    fInt.Orient(Internal);
                     new BrepBuilder().Add(shell, fInt);
                 }
 

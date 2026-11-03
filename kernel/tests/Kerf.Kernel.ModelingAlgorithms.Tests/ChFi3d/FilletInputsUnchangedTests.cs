@@ -41,7 +41,7 @@ public class FilletInputsUnchangedTests
         ShapeCasts.Edge(SubShapes(box, ShapeType.Edge).First(e =>
         {
             Exploration.Vertices(ShapeCasts.Edge(e), out Vertex v1, out Vertex v2);
-            return Tool.Pnt(v1).Z() > 29.0 && Tool.Pnt(v2).Z() > 29.0;
+            return Tool.Pnt(v1).Z > 29.0 && Tool.Pnt(v2).Z > 29.0;
         }));
 
     // A fused part, as the modelling layer holds one: two boxes, frozen
@@ -100,7 +100,7 @@ public class FilletInputsUnchangedTests
         Edge other = ShapeCasts.Edge(SubShapes(box, ShapeType.Edge).First(e =>
         {
             Exploration.Vertices(ShapeCasts.Edge(e), out Vertex v1, out Vertex v2);
-            return Tool.Pnt(v1).Z() < 1.0 && Tool.Pnt(v2).Z() < 1.0;
+            return Tool.Pnt(v1).Z < 1.0 && Tool.Pnt(v2).Z < 1.0;
         }));
         fillet.Add(1.0, other);
         fillet.Build();

@@ -17,7 +17,7 @@ public class GC_MakePlaneTest
         MakePlane aMaker = new(aBase, 5.0);
         Assert.True(aMaker.IsDone);
         Assert.Equal(Done, aMaker.Status());
-        Assert.Equal(5.0, aMaker.Value().Pln().Location().Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(5.0, aMaker.Value().Plane.Location.Z, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -28,7 +28,7 @@ public class GC_MakePlaneTest
         MakePlane aMaker = new(aBase, aPoint);
         Assert.True(aMaker.IsDone);
         Assert.Equal(Done, aMaker.Status());
-        Assert.True(aMaker.Value().Pln().Location().IsEqual(aPoint, global::Kerf.Engine.Foundation.Precision.Confusion()));
+        Assert.True(aMaker.Value().Plane.Location.IsEqual(aPoint, global::Kerf.Engine.Foundation.Precision.Confusion()));
     }
 
     [Fact]
@@ -38,6 +38,6 @@ public class GC_MakePlaneTest
         MakePlane aMaker = new(aAxis);
         Assert.True(aMaker.IsDone);
         Assert.Equal(Done, aMaker.Status());
-        Assert.True(aMaker.Value().Pln().Axis().Direction().IsParallel(aAxis.Direction(), global::Kerf.Engine.Foundation.Precision.Angular()));
+        Assert.True(aMaker.Value().Plane.Axis.Direction.IsParallel(aAxis.Direction, global::Kerf.Engine.Foundation.Precision.Angular()));
     }
 }

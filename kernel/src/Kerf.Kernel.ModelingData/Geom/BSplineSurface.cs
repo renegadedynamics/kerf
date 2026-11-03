@@ -24,10 +24,10 @@ namespace Kerf.Geometry;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Arrays: <see cref="UKnots()"/>, <see cref="VKnots()"/>, <see cref="UMultiplicities()"/>,
-/// <see cref="VMultiplicities()"/>, <see cref="UKnotSequence()"/> and <see cref="VKnotSequence()"/> return
-/// immutable <see cref="PackedList{T}"/>s (index 0 is OCCT's index 1); <see cref="Poles()"/>,
-/// <see cref="Weights()"/> and <see cref="WeightsArray"/> return new copies of the two-dimensional arrays (OCCT
+/// Arrays: <see cref="UKnots"/>, <see cref="VKnots"/>, <see cref="UMultiplicities"/>,
+/// <see cref="VMultiplicities"/>, <see cref="UKnotSequence"/> and <see cref="VKnotSequence"/> return
+/// immutable <see cref="PackedList{T}"/>s (index 0 is OCCT's index 1); <see cref="Poles"/>,
+/// <see cref="WeightsOrNull()"/> and <see cref="Weights"/> return new copies of the two-dimensional arrays (OCCT
 /// returns references to the surface's arrays). Code inside OCCT.NET uses the internal <c>Internal*</c>
 /// accessors, which return the stored arrays (shared: don't modify).
 /// </para>
@@ -36,7 +36,7 @@ namespace Kerf.Geometry;
 /// <see cref="WithEvalRepresentation"/>, which stores a copy of the descriptor. Modifications drop it, as in OCCT.
 /// </para>
 /// </remarks>
-public class BSplineSurface : BoundedSurface
+public sealed partial class BSplineSurface : BoundedSurface
 {
     private NCollection_Array2<Point3D> _poles = new NCollection_Array2<Point3D>();
     private NCollection_Array2<double> _weights = new NCollection_Array2<double>();
@@ -68,7 +68,7 @@ public class BSplineSurface : BoundedSurface
     //=============================================================================================
 
     /// <summary>True if an evaluation representation is attached.</summary>
-    public bool HasEvalRepresentation => _evalRep is not null;
+    internal bool HasEvalRepresentation => _evalRep is not null;
 
     /// <summary>The evaluation representation descriptor (may be null). Stored, not copied: don't modify.</summary>
     internal RepSurfaceDesc.Base? EvalRepresentation() => _evalRep;
@@ -98,8 +98,8 @@ public class BSplineSurface : BoundedSurface
                                          bool uPeriodic,
                                          bool vPeriodic)
     {
-        if (uDegree < 1 || uDegree > BSplineSurface.MaxDegree() || vDegree < 1
-            || vDegree > BSplineSurface.MaxDegree())
+        if (uDegree < 1 || uDegree > BSplineSurface.MaxDegree || vDegree < 1
+            || vDegree > BSplineSurface.MaxDegree)
         {
             throw new ConstructionErrorException("Geom_BSplineSurface: invalid degree");
         }
@@ -210,7 +210,7 @@ public class BSplineSurface : BoundedSurface
     /// A degree not in [1, MaxDegree()], fewer than 2 poles in a direction, knots and multiplicities of different
     /// lengths, knots not increasing, or numbers of poles that don't match the multiplicities.
     /// </exception>
-    public BSplineSurface(NCollection_Array2<Point3D> poles,
+    internal BSplineSurface(NCollection_Array2<Point3D> poles,
                                NCollection_Array1<double> uKnots,
                                NCollection_Array1<double> vKnots,
                                NCollection_Array1<int> uMults,
@@ -256,7 +256,7 @@ public class BSplineSurface : BoundedSurface
     /// As the non-rational constructor, or weights of a different size from the poles, or a weight not greater
     /// than gp::Resolution().
     /// </exception>
-    public BSplineSurface(NCollection_Array2<Point3D> poles,
+    internal BSplineSurface(NCollection_Array2<Point3D> poles,
                                NCollection_Array2<double> weights,
                                NCollection_Array1<double> uKnots,
                                NCollection_Array1<double> vKnots,
@@ -389,7 +389,7 @@ public class BSplineSurface : BoundedSurface
         CheckMutable();
         if (uDegree != _uDeg)
         {
-            if (uDegree < _uDeg || uDegree > BSplineSurface.MaxDegree())
+            if (uDegree < _uDeg || uDegree > BSplineSurface.MaxDegree)
             {
                 throw new ConstructionErrorException("Geom_BSplineSurface::IncreaseDegree: bad U degree value");
             }
@@ -454,7 +454,7 @@ public class BSplineSurface : BoundedSurface
 
         if (vDegree != _vDeg)
         {
-            if (vDegree < _vDeg || vDegree > BSplineSurface.MaxDegree())
+            if (vDegree < _vDeg || vDegree > BSplineSurface.MaxDegree)
             {
                 throw new ConstructionErrorException("Geom_BSplineSurface::IncreaseDegree: bad V degree value");
             }
@@ -567,7 +567,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>The common part of <see cref="Segment"/> and <see cref="CheckAndSegment"/>.</summary>
-    protected void SegmentCore(double u1,
+    private void SegmentCore(double u1,
                            double u2,
                            double v1,
                            double v2,
@@ -1090,7 +1090,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>Recomputes the U flat knots, the U knot distribution and the U continuity.</summary>
-    protected void UpdateUKnots()
+    private void UpdateUKnots()
     {
         _maxDerivInvOk = false;
         int maxKnotMult;
@@ -1135,7 +1135,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>Recomputes the V flat knots, the V knot distribution and the V continuity.</summary>
-    protected void UpdateVKnots()
+    private void UpdateVKnots()
     {
         _maxDerivInvOk = false;
         int maxKnotMult;
@@ -1184,7 +1184,7 @@ public class BSplineSurface : BoundedSurface
     /// non-periodic direction are unchanged.
     /// </summary>
     /// <exception cref="OutOfRangeException">The period is not greater than Epsilon of the parameter.</exception>
-    public void PeriodicNormalization(ref double uparameter, ref double vparameter)
+    internal void PeriodicNormalization(ref double uparameter, ref double vparameter)
     {
         double period, maxVal, minVal;
 
@@ -1357,7 +1357,7 @@ public class BSplineSurface : BoundedSurface
 
     /// <summary>True if the surface is at least CN in the U direction.</summary>
     /// <exception cref="RangeErrorException">N &lt; 0.</exception>
-    public sealed override bool IsCNu(int n)
+    internal sealed override bool IsCNu(int n)
     {
         Standard_RangeError_Raise_if(n < 0, " ");
         switch (_uSmooth)
@@ -1384,7 +1384,7 @@ public class BSplineSurface : BoundedSurface
 
     /// <summary>True if the surface is at least CN in the V direction.</summary>
     /// <exception cref="RangeErrorException">N &lt; 0.</exception>
-    public sealed override bool IsCNv(int n)
+    internal sealed override bool IsCNv(int n)
     {
         Standard_RangeError_Raise_if(n < 0, " ");
 
@@ -1411,7 +1411,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>The point of parameters (U, V); periodic parameters are normalised first.</summary>
-    public sealed override Point3D EvalD0(double u, double v)
+    internal sealed override Point3D EvalD0(double u, double v)
     {
         Point3D evalRepResult;
         if (RepUtils.TryEvalSurfaceD0(_evalRep, u, v, out evalRepResult))
@@ -1445,7 +1445,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>The point and first derivatives at (U, V).</summary>
-    public sealed override ResD1 EvalD1(double u, double v)
+    internal sealed override ResD1 EvalD1(double u, double v)
     {
         ResD1 evalRepResult;
         if (RepUtils.TryEvalSurfaceD1(_evalRep, u, v, out evalRepResult))
@@ -1489,7 +1489,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>The point and derivatives up to the second order at (U, V).</summary>
-    public sealed override ResD2 EvalD2(double u, double v)
+    internal sealed override ResD2 EvalD2(double u, double v)
     {
         ResD2 evalRepResult;
         if (RepUtils.TryEvalSurfaceD2(_evalRep, u, v, out evalRepResult))
@@ -1536,7 +1536,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>The point and derivatives up to the third order at (U, V).</summary>
-    public sealed override ResD3 EvalD3(double u, double v)
+    internal sealed override ResD3 EvalD3(double u, double v)
     {
         ResD3 evalRepResult;
         if (RepUtils.TryEvalSurfaceD3(_evalRep, u, v, out evalRepResult))
@@ -1576,7 +1576,7 @@ public class BSplineSurface : BoundedSurface
 
     /// <summary>The derivative of order Nu in U and Nv in V at (U, V).</summary>
     /// <exception cref="UndefinedDerivative3DException">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
-    public sealed override Vector3D EvalDN(double u, double v, int nu, int nv)
+    internal sealed override Vector3D EvalDN(double u, double v, int nu, int nv)
     {
         if (nu + nv < 1 || nu < 0 || nv < 0)
         {
@@ -1613,7 +1613,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>The point at (U, V), evaluated on the spans between the knots FromUK1-ToUK2 and FromVK1-ToVK2.</summary>
-    public Point3D LocalValue(double u, double v, int fromUK1, int toUK2, int fromVK1, int toVK2)
+    internal Point3D LocalValue(double u, double v, int fromUK1, int toUK2, int fromVK1, int toVK2)
     {
         Point3D p;
         LocalD0(u, v, fromUK1, toUK2, fromVK1, toVK2, out p);
@@ -1625,7 +1625,7 @@ public class BSplineSurface : BoundedSurface
     /// ToVK2 in V (useful at a knot of a C0 surface).
     /// </summary>
     /// <exception cref="DomainErrorException">FromUK1 == ToUK2 or FromVK1 == ToVK2.</exception>
-    public void LocalD0(double U, double V, int fromUK1, int toUK2, int fromVK1, int toVK2, out Point3D p)
+    internal void LocalD0(double U, double V, int fromUK1, int toUK2, int fromVK1, int toVK2, out Point3D p)
     {
         Standard_DomainError_Raise_if(fromUK1 == toUK2 || fromVK1 == toVK2, "Geom_BSplineSurface::LocalD0");
 
@@ -1658,7 +1658,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>The point and first derivatives at (U, V), evaluated on the given spans (see <see cref="LocalD0"/>).</summary>
-    public void LocalD1(double U,
+    internal void LocalD1(double U,
                         double V,
                         int fromUK1,
                         int toUK2,
@@ -1701,7 +1701,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>The point and derivatives up to the second order, evaluated on the given spans.</summary>
-    public void LocalD2(double U,
+    internal void LocalD2(double U,
                         double V,
                         int fromUK1,
                         int toUK2,
@@ -1750,7 +1750,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>The point and derivatives up to the third order, evaluated on the given spans.</summary>
-    public void LocalD3(double U,
+    internal void LocalD3(double U,
                         double V,
                         int fromUK1,
                         int toUK2,
@@ -1807,7 +1807,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>The derivative of order Nu in U and Nv in V, evaluated on the given spans.</summary>
-    public Vector3D LocalDN(double U, double V, int fromUK1, int toUK2, int fromVK1, int toVK2, int nu, int nv)
+    internal Vector3D LocalDN(double U, double V, int fromUK1, int toUK2, int fromVK1, int toVK2, int nu, int nv)
     {
         Standard_DomainError_Raise_if(fromUK1 == toUK2 || fromVK1 == toVK2, "Geom_BSplineSurface::LocalDN");
 
@@ -1845,7 +1845,7 @@ public class BSplineSurface : BoundedSurface
 
     /// <summary>The pole (UIndex, VIndex).</summary>
     /// <exception cref="OutOfRangeException">An index out of the pole grid.</exception>
-    public Point3D Pole(int uIndex, int vIndex)
+    internal Point3D Pole(int uIndex, int vIndex)
     {
         Standard_OutOfRange_Raise_if(uIndex < 1 || uIndex > _poles.ColLength() || vIndex < 1
                                          || vIndex > _poles.RowLength(),
@@ -1853,9 +1853,9 @@ public class BSplineSurface : BoundedSurface
         return _poles.Value(uIndex, vIndex);
     }
 
-    /// <summary>Copies the poles into P (deprecated in OCCT: use <see cref="Poles()"/>).</summary>
+    /// <summary>Copies the poles into P (deprecated in OCCT: use <see cref="Poles"/>).</summary>
     /// <exception cref="DimensionErrorException">P is not NbUPoles x NbVPoles.</exception>
-    internal void Poles(NCollection_Array2<Point3D> p)
+    internal void CopyPolesTo(NCollection_Array2<Point3D> p)
     {
         Standard_DimensionError_Raise_if(p.ColLength() != _poles.ColLength() || p.RowLength() != _poles.RowLength(),
                                          " ");
@@ -1863,7 +1863,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>The poles, NbUPoles rows by NbVPoles columns, indexed from 0 (a copy).</summary>
-    public Grid<Point3D> Poles() => _poles.ToGrid();
+    public Grid<Point3D> Poles => _poles.ToGrid();
 
     /// <summary>The U iso-curve (a B-spline curve in V) at U.</summary>
     public sealed override Curve3D UIso(double u)
@@ -1916,7 +1916,7 @@ public class BSplineSurface : BoundedSurface
 
     /// <summary>The value of the U knot UIndex.</summary>
     /// <exception cref="OutOfRangeException">UIndex out of [1, NbUKnots].</exception>
-    public double UKnot(int uIndex)
+    internal double UKnot(int uIndex)
     {
         Standard_OutOfRange_Raise_if(uIndex < 1 || uIndex > _uKnots.Length(), " ");
         return _uKnots.Value(uIndex);
@@ -1924,68 +1924,68 @@ public class BSplineSurface : BoundedSurface
 
     /// <summary>The value of the V knot VIndex.</summary>
     /// <exception cref="OutOfRangeException">VIndex out of [1, NbVKnots].</exception>
-    public double VKnot(int vIndex)
+    internal double VKnot(int vIndex)
     {
         Standard_OutOfRange_Raise_if(vIndex < 1 || vIndex > _vKnots.Length(), " ");
         return _vKnots.Value(vIndex);
     }
 
-    /// <summary>Copies the U knots into Ku (deprecated in OCCT: use <see cref="UKnots()"/>).</summary>
-    public void UKnots(NCollection_Array1<double> ku)
+    /// <summary>Copies the U knots into Ku (deprecated in OCCT: use <see cref="UKnots"/>).</summary>
+    internal void CopyUKnotsTo(NCollection_Array1<double> ku)
     {
         Standard_DimensionError_Raise_if(ku.Length() != _uKnots.Length(), " ");
         ku.Assign(_uKnots);
     }
 
     /// <summary>The U knots (without repetition).</summary>
-    public IReadOnlyList<double> UKnots() => _uKnots.ToPackedList();
+    public IReadOnlyList<double> UKnots => _uKnots.ToPackedList();
 
-    /// <summary>Copies the V knots into Kv (deprecated in OCCT: use <see cref="VKnots()"/>).</summary>
-    public void VKnots(NCollection_Array1<double> kv)
+    /// <summary>Copies the V knots into Kv (deprecated in OCCT: use <see cref="VKnots"/>).</summary>
+    internal void CopyVKnotsTo(NCollection_Array1<double> kv)
     {
         Standard_DimensionError_Raise_if(kv.Length() != _vKnots.Length(), " ");
         kv.Assign(_vKnots);
     }
 
     /// <summary>The V knots (without repetition).</summary>
-    public IReadOnlyList<double> VKnots() => _vKnots.ToPackedList();
+    public IReadOnlyList<double> VKnots => _vKnots.ToPackedList();
 
-    /// <summary>Copies the U flat knots into Ku (deprecated in OCCT: use <see cref="UKnotSequence()"/>).</summary>
-    public void UKnotSequence(NCollection_Array1<double> ku)
+    /// <summary>Copies the U flat knots into Ku (deprecated in OCCT: use <see cref="UKnotSequence"/>).</summary>
+    internal void CopyUKnotSequenceTo(NCollection_Array1<double> ku)
     {
         Standard_DimensionError_Raise_if(ku.Length() != _uFlatKnots.Length(), " ");
         ku.Assign(_uFlatKnots);
     }
 
     /// <summary>The U knots repeated by their multiplicities (the flat knots).</summary>
-    public IReadOnlyList<double> UKnotSequence() => _uFlatKnots.ToPackedList();
+    public IReadOnlyList<double> UKnotSequence => _uFlatKnots.ToPackedList();
 
-    /// <summary>Copies the V flat knots into Kv (deprecated in OCCT: use <see cref="VKnotSequence()"/>).</summary>
-    public void VKnotSequence(NCollection_Array1<double> kv)
+    /// <summary>Copies the V flat knots into Kv (deprecated in OCCT: use <see cref="VKnotSequence"/>).</summary>
+    internal void CopyVKnotSequenceTo(NCollection_Array1<double> kv)
     {
         Standard_DimensionError_Raise_if(kv.Length() != _vFlatKnots.Length(), " ");
         kv.Assign(_vFlatKnots);
     }
 
     /// <summary>The V knots repeated by their multiplicities (the flat knots).</summary>
-    public IReadOnlyList<double> VKnotSequence() => _vFlatKnots.ToPackedList();
+    public IReadOnlyList<double> VKnotSequence => _vFlatKnots.ToPackedList();
 
     /// <summary>The multiplicity of the U knot UIndex.</summary>
-    public int UMultiplicity(int uIndex)
+    internal int UMultiplicity(int uIndex)
     {
         Standard_OutOfRange_Raise_if(uIndex < 1 || uIndex > _uMults.Length(), " ");
         return _uMults.Value(uIndex);
     }
 
-    /// <summary>Copies the U multiplicities into Mu (deprecated in OCCT: use <see cref="UMultiplicities()"/>).</summary>
-    public void UMultiplicities(NCollection_Array1<int> mu)
+    /// <summary>Copies the U multiplicities into Mu (deprecated in OCCT: use <see cref="UMultiplicities"/>).</summary>
+    internal void CopyUMultiplicitiesTo(NCollection_Array1<int> mu)
     {
         Standard_DimensionError_Raise_if(mu.Length() != _uMults.Length(), " ");
         mu.Assign(_uMults);
     }
 
     /// <summary>The multiplicities of the U knots.</summary>
-    public IReadOnlyList<int> UMultiplicities() => _uMults.ToPackedList();
+    public IReadOnlyList<int> UMultiplicities => _uMults.ToPackedList();
 
     /// <summary>The V iso-curve (a B-spline curve in U) at V.</summary>
     public sealed override Curve3D VIso(double v)
@@ -2037,24 +2037,24 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>The multiplicity of the V knot VIndex.</summary>
-    public int VMultiplicity(int vIndex)
+    internal int VMultiplicity(int vIndex)
     {
         Standard_OutOfRange_Raise_if(vIndex < 1 || vIndex > _vMults.Length(), " ");
         return _vMults.Value(vIndex);
     }
 
-    /// <summary>Copies the V multiplicities into Mv (deprecated in OCCT: use <see cref="VMultiplicities()"/>).</summary>
-    public void VMultiplicities(NCollection_Array1<int> mv)
+    /// <summary>Copies the V multiplicities into Mv (deprecated in OCCT: use <see cref="VMultiplicities"/>).</summary>
+    internal void CopyVMultiplicitiesTo(NCollection_Array1<int> mv)
     {
         Standard_DimensionError_Raise_if(mv.Length() != _vMults.Length(), " ");
         mv.Assign(_vMults);
     }
 
     /// <summary>The multiplicities of the V knots.</summary>
-    public IReadOnlyList<int> VMultiplicities() => _vMults.ToPackedList();
+    public IReadOnlyList<int> VMultiplicities => _vMults.ToPackedList();
 
     /// <summary>The weight of the pole (UIndex, VIndex): 1 for a non-rational surface.</summary>
-    public double Weight(int uIndex, int vIndex)
+    internal double Weight(int uIndex, int vIndex)
     {
         if (!(_uRational || _vRational))
         {
@@ -2068,7 +2068,7 @@ public class BSplineSurface : BoundedSurface
 
     /// <summary>Copies the weights into W, all 1 for a non-rational surface (deprecated in OCCT).</summary>
     /// <exception cref="DimensionErrorException">W is not NbUPoles x NbVPoles.</exception>
-    internal void Weights(NCollection_Array2<double> w)
+    internal void CopyWeightsTo(NCollection_Array2<double> w)
     {
         if (!(_uRational || _vRational))
         {
@@ -2083,12 +2083,12 @@ public class BSplineSurface : BoundedSurface
         w.Assign(_weights);
     }
 
-    /// <summary>The weights, indexed from 0 as <see cref="Poles()"/> (a copy), or null if the surface is non-rational
+    /// <summary>The weights, indexed from 0 as <see cref="Poles"/> (a copy), or null if the surface is non-rational
     /// in both directions.</summary>
-    public Grid<double>? Weights() => (_uRational || _vRational) ? _weights.ToGrid() : null;
+    internal Grid<double>? WeightsOrNull() => (_uRational || _vRational) ? _weights.ToGrid() : null;
 
-    /// <summary>The weights, all 1 for a non-rational surface, indexed from 0 as <see cref="Poles()"/> (a copy).</summary>
-    public Grid<double> WeightsArray() => _weights.ToGrid();
+    /// <summary>The weights, all 1 for a non-rational surface, indexed from 0 as <see cref="Poles"/> (a copy).</summary>
+    public Grid<double> Weights => _weights.ToGrid();
 
     /// <summary>Transforms the poles by T.</summary>
     protected internal sealed override void Transform(in Transform3D t)
@@ -2534,7 +2534,7 @@ public class BSplineSurface : BoundedSurface
             }
 
             double u1, u2, v1, v2;
-            Bounds(out u1, out u2, out v1, out v2);
+            ParameterBounds(out u1, out u2, out v1, out v2);
             Curve3D cuf = UIso(u1);
             Curve3D cul = UIso(u2);
             if (cuf is null || cul is null)
@@ -2561,7 +2561,7 @@ public class BSplineSurface : BoundedSurface
             }
 
             double u1, u2, v1, v2;
-            Bounds(out u1, out u2, out v1, out v2);
+            ParameterBounds(out u1, out u2, out v1, out v2);
             Curve3D cvf = VIso(v1);
             Curve3D cvl = VIso(v2);
             if (cvf is null || cvl is null)
@@ -2581,7 +2581,7 @@ public class BSplineSurface : BoundedSurface
     public sealed override bool IsVPeriodic => _vPeriodic;
 
     /// <summary>The index of the first U knot of the parametric range (1 when periodic).</summary>
-    public int FirstUKnotIndex()
+    internal int FirstUKnotIndex()
     {
         if (_uPeriodic)
         {
@@ -2594,7 +2594,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>The index of the first V knot of the parametric range (1 when periodic).</summary>
-    public int FirstVKnotIndex()
+    internal int FirstVKnotIndex()
     {
         if (_vPeriodic)
         {
@@ -2607,7 +2607,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>The index of the last U knot of the parametric range (NbUKnots when periodic).</summary>
-    public int LastUKnotIndex()
+    internal int LastUKnotIndex()
     {
         if (_uPeriodic)
         {
@@ -2620,7 +2620,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>The index of the last V knot of the parametric range (NbVKnots when periodic).</summary>
-    public int LastVKnotIndex()
+    internal int LastVKnotIndex()
     {
         if (_vPeriodic)
         {
@@ -2637,7 +2637,7 @@ public class BSplineSurface : BoundedSurface
     /// ParametricTolerance), else UKnots(I1) &lt; U &lt; UKnots(I2); I1 = 0 below the first knot, I2 = Length + 1
     /// above the last.
     /// </summary>
-    public void LocateU(double u, double parametricTolerance, out int i1, out int i2, bool withKnotRepetition = false)
+    internal void LocateU(double u, double parametricTolerance, out int i1, out int i2, bool withKnotRepetition = false)
     {
         double newU = u, vbid = _vKnots.Value(1);
         NCollection_Array1<double> theKnots = withKnotRepetition ? _uFlatKnots : _uKnots;
@@ -2685,7 +2685,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>Locates V among the V knots (see <see cref="LocateU"/>).</summary>
-    public void LocateV(double v, double parametricTolerance, out int i1, out int i2, bool withKnotRepetition = false)
+    internal void LocateV(double v, double parametricTolerance, out int i1, out int i2, bool withKnotRepetition = false)
     {
         double newV = v, ubid = _uKnots.Value(1);
         NCollection_Array1<double> theKnots = withKnotRepetition ? _vFlatKnots : _vKnots;
@@ -2927,7 +2927,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>The parametric bounds: the knots at the ends of the parametric range in each direction.</summary>
-    public sealed override void Bounds(out double u1, out double u2, out double v1, out double v2)
+    internal sealed override void ParameterBounds(out double u1, out double u2, out double v1, out double v2)
     {
         u1 = _uFlatKnots.Value(_uDeg + 1);
         u2 = _uFlatKnots.Value(_uFlatKnots.Upper() - _uDeg);
@@ -2936,7 +2936,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>The maximum degree in each direction: 25.</summary>
-    public static int MaxDegree() => global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxDegree();
+    public static int MaxDegree => global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxDegree();
 
     /// <summary>True if the weights vary in the U direction.</summary>
     public bool IsURational => _uRational;
@@ -2945,7 +2945,7 @@ public class BSplineSurface : BoundedSurface
     public bool IsVRational => _vRational;
 
     /// <summary>The lower of the U and V continuities.</summary>
-    public sealed override Continuity Continuity() => ((_uSmooth < _vSmooth) ? _uSmooth : _vSmooth);
+    public sealed override Continuity Continuity => ((_uSmooth < _vSmooth) ? _uSmooth : _vSmooth);
 
     /// <summary>The number of U knots.</summary>
     public int UKnotCount => _uKnots.Length();
@@ -2960,16 +2960,16 @@ public class BSplineSurface : BoundedSurface
     public int VPoleCount => _poles.RowLength();
 
     /// <summary>The degree in U.</summary>
-    public int UDegree() => _uDeg;
+    public int UDegree => _uDeg;
 
     /// <summary>The degree in V.</summary>
-    public int VDegree() => _vDeg;
+    public int VDegree => _vDeg;
 
     /// <summary>The distribution of the U knots (uniform, quasi-uniform, piecewise Bezier, non-uniform).</summary>
-    public BSplKnotDistribution UKnotDistribution() => _uKnotSet;
+    internal BSplKnotDistribution UKnotDistribution => _uKnotSet;
 
     /// <summary>The distribution of the V knots.</summary>
-    public BSplKnotDistribution VKnotDistribution() => _vKnotSet;
+    internal BSplKnotDistribution VKnotDistribution => _vKnotSet;
 
     /// <summary>
     /// Inserts the U knots with the multiplicities Mults (a knot within ParametricTolerance of an existing one
@@ -3319,7 +3319,7 @@ public class BSplineSurface : BoundedSurface
     /// The parametric tolerances in U and V matching the 3D tolerance Tolerance3D (computed once and cached, as in
     /// OCCT; the cache is not part of the surface's value, so this works on a frozen surface).
     /// </summary>
-    public void Resolution(double tolerance3D, out double uTolerance, out double vTolerance)
+    internal void Resolution(double tolerance3D, out double uTolerance, out double vTolerance)
     {
         if (!_maxDerivInvOk)
         {
@@ -3409,7 +3409,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>A copy whose U origin is the knot Index (see <see cref="SetUOrigin"/>).</summary>
-    public BSplineSurface WithUOrigin(int index)
+    internal BSplineSurface WithUOrigin(int index)
     {
         BSplineSurface copy = CopyBSpline();
         copy.SetUOrigin(index);
@@ -3417,7 +3417,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>A copy whose V origin is the knot Index (see <see cref="SetVOrigin"/>).</summary>
-    public BSplineSurface WithVOrigin(int index)
+    internal BSplineSurface WithVOrigin(int index)
     {
         BSplineSurface copy = CopyBSpline();
         copy.SetVOrigin(index);
@@ -3449,7 +3449,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>A copy with the U knots inserted (see <see cref="InsertUKnots"/>).</summary>
-    public BSplineSurface UKnotsInserted(NCollection_Array1<double> knots,
+    internal BSplineSurface UKnotsInserted(NCollection_Array1<double> knots,
                                               NCollection_Array1<int> mults,
                                               double parametricTolerance = 0.0,
                                               bool add = true)
@@ -3460,7 +3460,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>A copy with the V knots inserted (see <see cref="InsertVKnots"/>).</summary>
-    public BSplineSurface VKnotsInserted(NCollection_Array1<double> knots,
+    internal BSplineSurface VKnotsInserted(NCollection_Array1<double> knots,
                                               NCollection_Array1<int> mults,
                                               double parametricTolerance = 0.0,
                                               bool add = true)
@@ -3471,7 +3471,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>A copy with the U knot U inserted (see <see cref="InsertUKnot"/>).</summary>
-    public BSplineSurface UKnotInserted(double u, int m, double parametricTolerance, bool add = true)
+    internal BSplineSurface UKnotInserted(double u, int m, double parametricTolerance, bool add = true)
     {
         BSplineSurface copy = CopyBSpline();
         copy.InsertUKnot(u, m, parametricTolerance, add);
@@ -3479,7 +3479,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>A copy with the V knot V inserted (see <see cref="InsertVKnot"/>).</summary>
-    public BSplineSurface VKnotInserted(double v, int m, double parametricTolerance, bool add = true)
+    internal BSplineSurface VKnotInserted(double v, int m, double parametricTolerance, bool add = true)
     {
         BSplineSurface copy = CopyBSpline();
         copy.InsertVKnot(v, m, parametricTolerance, add);
@@ -3487,21 +3487,21 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>A copy with the U knot Index lowered to multiplicity M, or null if that fails (see <see cref="RemoveUKnot"/>).</summary>
-    public BSplineSurface? UKnotRemoved(int index, int m, double tolerance)
+    internal BSplineSurface? UKnotRemoved(int index, int m, double tolerance)
     {
         BSplineSurface copy = CopyBSpline();
         return copy.RemoveUKnot(index, m, tolerance) ? copy : null;
     }
 
     /// <summary>A copy with the V knot Index lowered to multiplicity M, or null if that fails (see <see cref="RemoveVKnot"/>).</summary>
-    public BSplineSurface? VKnotRemoved(int index, int m, double tolerance)
+    internal BSplineSurface? VKnotRemoved(int index, int m, double tolerance)
     {
         BSplineSurface copy = CopyBSpline();
         return copy.RemoveVKnot(index, m, tolerance) ? copy : null;
     }
 
     /// <summary>A copy with the multiplicity of the U knot UIndex raised to M.</summary>
-    public BSplineSurface UMultiplicityIncreased(int uIndex, int m)
+    internal BSplineSurface UMultiplicityIncreased(int uIndex, int m)
     {
         BSplineSurface copy = CopyBSpline();
         copy.IncreaseUMultiplicity(uIndex, m);
@@ -3509,7 +3509,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>A copy with the multiplicities of the U knots FromI1 to ToI2 raised to M.</summary>
-    public BSplineSurface UMultiplicityIncreased(int fromI1, int toI2, int m)
+    internal BSplineSurface UMultiplicityIncreased(int fromI1, int toI2, int m)
     {
         BSplineSurface copy = CopyBSpline();
         copy.IncreaseUMultiplicity(fromI1, toI2, m);
@@ -3517,7 +3517,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>A copy with the multiplicities of the U knots FromI1 to ToI2 raised by Step.</summary>
-    public BSplineSurface UMultiplicityIncremented(int fromI1, int toI2, int step)
+    internal BSplineSurface UMultiplicityIncremented(int fromI1, int toI2, int step)
     {
         BSplineSurface copy = CopyBSpline();
         copy.IncrementUMultiplicity(fromI1, toI2, step);
@@ -3525,7 +3525,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>A copy with the multiplicity of the V knot VIndex raised to M.</summary>
-    public BSplineSurface VMultiplicityIncreased(int vIndex, int m)
+    internal BSplineSurface VMultiplicityIncreased(int vIndex, int m)
     {
         BSplineSurface copy = CopyBSpline();
         copy.IncreaseVMultiplicity(vIndex, m);
@@ -3533,7 +3533,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>A copy with the multiplicities of the V knots FromI1 to ToI2 raised to M.</summary>
-    public BSplineSurface VMultiplicityIncreased(int fromI1, int toI2, int m)
+    internal BSplineSurface VMultiplicityIncreased(int fromI1, int toI2, int m)
     {
         BSplineSurface copy = CopyBSpline();
         copy.IncreaseVMultiplicity(fromI1, toI2, m);
@@ -3541,7 +3541,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>A copy with the multiplicities of the V knots FromI1 to ToI2 raised by Step.</summary>
-    public BSplineSurface VMultiplicityIncremented(int fromI1, int toI2, int step)
+    internal BSplineSurface VMultiplicityIncremented(int fromI1, int toI2, int step)
     {
         BSplineSurface copy = CopyBSpline();
         copy.IncrementVMultiplicity(fromI1, toI2, step);
@@ -3562,7 +3562,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>A copy restricted to [U1, U2] x [V1, V2] where the bounds change (see <see cref="CheckAndSegment"/>).</summary>
-    public BSplineSurface CheckedAndSegmented(double u1,
+    internal BSplineSurface CheckedAndSegmented(double u1,
                                                    double u2,
                                                    double v1,
                                                    double v2,
@@ -3574,105 +3574,105 @@ public class BSplineSurface : BoundedSurface
         return copy;
     }
 
-    public BSplineSurface WithUKnot(int uIndex, double k)
+    internal BSplineSurface WithUKnot(int uIndex, double k)
     {
         BSplineSurface copy = CopyBSpline();
         copy.SetUKnot(uIndex, k);
         return copy;
     }
 
-    public BSplineSurface WithUKnots(NCollection_Array1<double> uk)
+    internal BSplineSurface WithUKnots(NCollection_Array1<double> uk)
     {
         BSplineSurface copy = CopyBSpline();
         copy.SetUKnots(uk);
         return copy;
     }
 
-    public BSplineSurface WithUKnot(int uIndex, double k, int m)
+    internal BSplineSurface WithUKnot(int uIndex, double k, int m)
     {
         BSplineSurface copy = CopyBSpline();
         copy.SetUKnot(uIndex, k, m);
         return copy;
     }
 
-    public BSplineSurface WithVKnot(int vIndex, double k)
+    internal BSplineSurface WithVKnot(int vIndex, double k)
     {
         BSplineSurface copy = CopyBSpline();
         copy.SetVKnot(vIndex, k);
         return copy;
     }
 
-    public BSplineSurface WithVKnots(NCollection_Array1<double> vk)
+    internal BSplineSurface WithVKnots(NCollection_Array1<double> vk)
     {
         BSplineSurface copy = CopyBSpline();
         copy.SetVKnots(vk);
         return copy;
     }
 
-    public BSplineSurface WithVKnot(int vIndex, double k, int m)
+    internal BSplineSurface WithVKnot(int vIndex, double k, int m)
     {
         BSplineSurface copy = CopyBSpline();
         copy.SetVKnot(vIndex, k, m);
         return copy;
     }
 
-    public BSplineSurface WithPole(int uIndex, int vIndex, in Point3D p)
+    internal BSplineSurface WithPole(int uIndex, int vIndex, in Point3D p)
     {
         BSplineSurface copy = CopyBSpline();
         copy.SetPole(uIndex, vIndex, p);
         return copy;
     }
 
-    public BSplineSurface WithPole(int uIndex, int vIndex, in Point3D p, double weight)
+    internal BSplineSurface WithPole(int uIndex, int vIndex, in Point3D p, double weight)
     {
         BSplineSurface copy = CopyBSpline();
         copy.SetPole(uIndex, vIndex, p, weight);
         return copy;
     }
 
-    public BSplineSurface WithPoleCol(int vIndex, NCollection_Array1<Point3D> cPoles)
+    internal BSplineSurface WithPoleCol(int vIndex, NCollection_Array1<Point3D> cPoles)
     {
         BSplineSurface copy = CopyBSpline();
         copy.SetPoleCol(vIndex, cPoles);
         return copy;
     }
 
-    public BSplineSurface WithPoleCol(int vIndex, NCollection_Array1<Point3D> cPoles, NCollection_Array1<double> cPoleWeights)
+    internal BSplineSurface WithPoleCol(int vIndex, NCollection_Array1<Point3D> cPoles, NCollection_Array1<double> cPoleWeights)
     {
         BSplineSurface copy = CopyBSpline();
         copy.SetPoleCol(vIndex, cPoles, cPoleWeights);
         return copy;
     }
 
-    public BSplineSurface WithPoleRow(int uIndex, NCollection_Array1<Point3D> cPoles)
+    internal BSplineSurface WithPoleRow(int uIndex, NCollection_Array1<Point3D> cPoles)
     {
         BSplineSurface copy = CopyBSpline();
         copy.SetPoleRow(uIndex, cPoles);
         return copy;
     }
 
-    public BSplineSurface WithPoleRow(int uIndex, NCollection_Array1<Point3D> cPoles, NCollection_Array1<double> cPoleWeights)
+    internal BSplineSurface WithPoleRow(int uIndex, NCollection_Array1<Point3D> cPoles, NCollection_Array1<double> cPoleWeights)
     {
         BSplineSurface copy = CopyBSpline();
         copy.SetPoleRow(uIndex, cPoles, cPoleWeights);
         return copy;
     }
 
-    public BSplineSurface WithWeight(int uIndex, int vIndex, double weight)
+    internal BSplineSurface WithWeight(int uIndex, int vIndex, double weight)
     {
         BSplineSurface copy = CopyBSpline();
         copy.SetWeight(uIndex, vIndex, weight);
         return copy;
     }
 
-    public BSplineSurface WithWeightCol(int vIndex, NCollection_Array1<double> cPoleWeights)
+    internal BSplineSurface WithWeightCol(int vIndex, NCollection_Array1<double> cPoleWeights)
     {
         BSplineSurface copy = CopyBSpline();
         copy.SetWeightCol(vIndex, cPoleWeights);
         return copy;
     }
 
-    public BSplineSurface WithWeightRow(int uIndex, NCollection_Array1<double> cPoleWeights)
+    internal BSplineSurface WithWeightRow(int uIndex, NCollection_Array1<double> cPoleWeights)
     {
         BSplineSurface copy = CopyBSpline();
         copy.SetWeightRow(uIndex, cPoleWeights);
@@ -3680,7 +3680,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>A copy with the point at (U, V) moved to P (see <see cref="MovePoint"/>).</summary>
-    public BSplineSurface PointMoved(double u,
+    internal BSplineSurface PointMoved(double u,
                                           double v,
                                           in Point3D p,
                                           int uIndex1,
@@ -3699,7 +3699,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>A copy evaluated through a copy of theDesc (null: without a representation).</summary>
-    public BSplineSurface WithEvalRepresentation(RepSurfaceDesc.Base? desc)
+    internal BSplineSurface WithEvalRepresentation(RepSurfaceDesc.Base? desc)
     {
         RepUtils.ValidateSurfaceDesc(desc, this);
         BSplineSurface copy = CopyBSpline();

@@ -167,7 +167,7 @@ public class FrameworkAlgoContainer : Transient
             {
                 sb.SetResult(map.GetValue(orig));
             }
-            else if (!orig.Location().IsIdentity)
+            else if (!orig.Placement.IsIdentity)
             {
                 var nullLoc = new Placement();
                 Shape atmpSh = orig.Located(nullLoc);
@@ -244,7 +244,7 @@ public class FrameworkAlgoContainer : Transient
                 resBinder = new ShapeBinder(res);
                 // if <orig> shape was split, put entities corresponding to new shapes
                 //  into Transfer_TransientListBinder.
-                if (orig.ShapeType() > res.ShapeType())
+                if (orig.Type > res.Type)
                 {
                     Shape sub = new Shape();
                     var transientListBinder = new TransientListBinder();

@@ -39,7 +39,7 @@ internal static class ComputeDataSphere
         // - origine of u given by P1S2
         // - u+ to P2S2
         double ptol = global::Kerf.Engine.Foundation.Precision.Confusion();
-        s1.D1(ps1.X(), ps1.Y(), out Point3D p1, out Vector3D v1, out Vector3D v2);
+        s1.D1(ps1.X, ps1.Y, out Point3D p1, out Vector3D v1, out Vector3D v2);
         Direction3D ds1 = new(v1.Crossed(v2));
         Direction3D df1 = ds1;
         Direction3D dnat1 = ds1;
@@ -51,18 +51,18 @@ internal static class ComputeDataSphere
         {
             df1 = df1.Reversed();
         }
-        s2.D0(p1S2.X(), p1S2.Y(), out Point3D p2);
-        s2.D0(p2S2.X(), p2S2.Y(), out Point3D p3);
+        s2.D0(p1S2.X, p1S2.Y, out Point3D p2);
+        s2.D0(p2S2.X, p2S2.Y, out Point3D p3);
         Circle3D ci = new MakeCirc(p1, p2, p3).Value();
-        Direction3D di = ci.Axis().Direction();
-        Point3D pp = ci.Location();
-        double rr = ci.Radius();
+        Direction3D di = ci.Axis.Direction;
+        Point3D pp = ci.Location;
+        double rr = ci.Radius;
         double delta = Math.Sqrt(rad * rad - rr * rr);
-        Point3D cen = new(pp.X() + delta * di.X(), pp.Y() + delta * di.Y(), pp.Z() + delta * di.Z());
+        Point3D cen = new(pp.X + delta * di.X, pp.Y + delta * di.Y, pp.Z + delta * di.Z);
         Direction3D dz = new(new Vector3D(p1, cen));
         if (Math.Abs(ds1.Dot(dz) - 1.0) > ptol)
         {
-            cen = cen.WithCoord(pp.X() - delta * di.X(), pp.Y() - delta * di.Y(), pp.Z() - delta * di.Z());
+            cen = cen.WithCoord(pp.X - delta * di.X, pp.Y - delta * di.Y, pp.Z - delta * di.Z);
             dz = new Direction3D(new Vector3D(p1, cen));
             if (Math.Abs(ds1.Dot(dz) - 1.0) > ptol)
             {
@@ -76,7 +76,7 @@ internal static class ComputeDataSphere
         Direction3D dx = dz.Crossed(ddx.Crossed(dz));
         Direction3D ddz = dz.Reversed();
         CoordinateSystem filAx3 = new(cen, dz, dx);
-        if (filAx3.YDirection().Dot(ddy) <= 0.0)
+        if (filAx3.YDirection.Dot(ddy) <= 0.0)
         {
             filAx3 = filAx3.YReversed();
             ddz = ddz.Reversed();
@@ -116,7 +116,7 @@ internal static class ComputeDataSphere
         }
         data.ChangeInterferenceOnS1().SetInterference(ChFiKPart_IndexCurveInDS(c, dStr), trans, c2d, c2dFil);
         // The other side.
-        double ang = ddx.Angle(ddy);
+        double ang = ddx.AngleTo(ddy);
         Direction3D dci = ddx.Crossed(ddy);
         Frame3D axci = new(cen, dci, ddx);
         Circle3D ci2 = new(axci, rad);
@@ -133,7 +133,7 @@ internal static class ComputeDataSphere
         }
         Vector2D v2d = new(p1S2, p2S2);
         Direction2D d2d = new(v2d);
-        if (Math.Abs(v2d.Magnitude() - ang) <= ptol)
+        if (Math.Abs(v2d.Magnitude - ang) <= ptol)
         {
             Line2D l2d = new(p1S2, d2d);
             c2d = new LineCurve2D(l2d);
@@ -142,7 +142,7 @@ internal static class ComputeDataSphere
         {
             c2d = ChFiKPart_PCurve(p1S2, p2S2, 0.0, ang);
         }
-        s2.D1(p1S2.X(), p1S2.Y(), out Point3D pp1, out v1, out v2);
+        s2.D1(p1S2.X, p1S2.Y, out Point3D pp1, out v1, out v2);
         Direction3D ds2 = new(v1.Crossed(v2));
         toreverse = (ds2.Dot(dddx) <= 0.0);
         trans = Reversed;

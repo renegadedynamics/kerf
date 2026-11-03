@@ -196,7 +196,7 @@ public static class TransferBRep
         }
         Shape mapped = sm.Value();
         //  equality is assumed, we only test the orientation
-        if (mapped.Orientation() != shape.Orientation())
+        if (mapped.Orientation != shape.Orientation)
         {
             return Reversed;
         }
@@ -383,7 +383,7 @@ public static class TransferBRep
             FrameworkCheck check = binder.Check();
 
             Shape s = mapper.Value();
-            ShapeType shapeType = s.ShapeType();
+            ShapeType shapeType = s.Type;
 
             // find appropriate element in the Sequence
             for (int index = 1; index <= seqLen; index++)

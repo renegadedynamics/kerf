@@ -45,23 +45,23 @@ public class ChFi3dBuilderNativeTests
 
         private void count(string theMember) => Calls[theMember] = Calls.GetValueOrDefault(theMember) + 1;
 
-        public override void MergeSolid(in Shape S, Containment TB) => count("MergeSolid " + Kerf.Engine.Foundation.OcctTypeNames.Of(S.ShapeType()) + " " + Kerf.Engine.Foundation.OcctTypeNames.Of(TB));
+        public override void MergeSolid(in Shape S, Containment TB) => count("MergeSolid " + Kerf.Engine.Foundation.OcctTypeNames.Of(S.Type) + " " + Kerf.Engine.Foundation.OcctTypeNames.Of(TB));
 
         public override bool IsSplit(in Shape S, Containment ToBuild)
         {
-            count("IsSplit " + Kerf.Engine.Foundation.OcctTypeNames.Of(S.ShapeType()) + " " + Kerf.Engine.Foundation.OcctTypeNames.Of(ToBuild));
+            count("IsSplit " + Kerf.Engine.Foundation.OcctTypeNames.Of(S.Type) + " " + Kerf.Engine.Foundation.OcctTypeNames.Of(ToBuild));
             return false;
         }
 
         public override NCollection_List<Shape> Splits(in Shape S, Containment ToBuild)
         {
-            count("Splits " + Kerf.Engine.Foundation.OcctTypeNames.Of(S.ShapeType()) + " " + Kerf.Engine.Foundation.OcctTypeNames.Of(ToBuild));
+            count("Splits " + Kerf.Engine.Foundation.OcctTypeNames.Of(S.Type) + " " + Kerf.Engine.Foundation.OcctTypeNames.Of(ToBuild));
             return new();
         }
 
         public override NCollection_List<Shape> Merged(in Shape S, Containment ToBuild)
         {
-            count("Merged " + Kerf.Engine.Foundation.OcctTypeNames.Of(S.ShapeType()) + " " + Kerf.Engine.Foundation.OcctTypeNames.Of(ToBuild));
+            count("Merged " + Kerf.Engine.Foundation.OcctTypeNames.Of(S.Type) + " " + Kerf.Engine.Foundation.OcctTypeNames.Of(ToBuild));
             return new();
         }
 

@@ -46,7 +46,7 @@ public class LegacyWireEdgeSet : BuildShapeSet
     public override void AddShape(in Shape s)
     {
         bool tocheck = true;
-        bool iswire = s.ShapeType() == ShapeType.Wire;
+        bool iswire = s.Type == ShapeType.Wire;
         if (iswire)
         {
             FaceSurfaceAdaptor bas = new(_face, false);
@@ -75,7 +75,7 @@ public class LegacyWireEdgeSet : BuildShapeSet
     public override void AddStartElement(in Shape s)
     {
         bool tocheck = true;
-        bool isedge = s.ShapeType() == ShapeType.Edge;
+        bool isedge = s.Type == ShapeType.Edge;
         if (isedge)
         {
             EdgeCurveAdaptor cac = new(ShapeCasts.Edge(s));
@@ -194,7 +194,7 @@ public class LegacyWireEdgeSet : BuildShapeSet
                     LocalD1(f, e, v, out pE, out d1E);
                 }
 
-                Orientation eori = e.Orientation();
+                Orientation eori = e.Orientation;
                 if (eori == Reversed)
                 {
                     d1E = d1E.Reversed();
@@ -223,7 +223,7 @@ public class LegacyWireEdgeSet : BuildShapeSet
                         LocalD1(f, ee, v, out pEE, out d1EE);
                     }
 
-                    Orientation eEori = ee.Orientation();
+                    Orientation eEori = ee.Orientation;
                     if (eEori == Reversed)
                     {
                         d1EE = d1EE.Reversed();
@@ -274,8 +274,8 @@ public class LegacyWireEdgeSet : BuildShapeSet
                 {
                     if (v.IsSame(ex2.Current()))
                     {
-                        o1 = ex1.Current().Orientation();
-                        o2 = ex2.Current().Orientation();
+                        o1 = ex1.Current().Orientation;
+                        o2 = ex2.Current().Orientation;
                         if (o1 != o2)
                         {
                             return true;
@@ -323,8 +323,8 @@ public class LegacyWireEdgeSet : BuildShapeSet
             // cto 012 O2 arete de couture de face cylindrique
             // chaque arete de couture est en double dans le WES
             // (une FORWARD et une REVERSED)
-            Orientation oe1 = e1.Orientation();
-            Orientation oe2 = e2.Orientation();
+            Orientation oe1 = e1.Orientation;
+            Orientation oe2 = e2.Orientation;
             bool iseq = e1.IsEqual(e2);
             if ((c1 && c2) && (oe1 == oe2) && (!iseq))
             {
@@ -357,7 +357,7 @@ public class LegacyWireEdgeSet : BuildShapeSet
         double parE = Tool.Parameter(V, e);
 
         Curve3D ce = Tool.Curve(e, out Placement loc, out _, out _)!;
-        ce = (Curve3D)ce.Transformed(loc.Transformation());
+        ce = (Curve3D)ce.Transformed(loc.Transformation);
 
         ce.D1(parE, out Point3D p3dE, out Vector3D d3dE);
 
@@ -395,7 +395,7 @@ public class LegacyWireEdgeSet : BuildShapeSet
         if (pc.GetType() == typeof(LineCurve2D))
         {
             LineCurve2D hl = (LineCurve2D)pc;
-            Direction2D d = hl.Direction();
+            Direction2D d = hl.Direction;
             double tol = global::Kerf.Engine.Foundation.Precision.Angular();
 
             if (d.IsParallel(new Direction2D(Direction2D.D.Y), tol))

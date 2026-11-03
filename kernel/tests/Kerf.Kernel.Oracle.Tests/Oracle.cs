@@ -49,7 +49,7 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
         while (true)
         {
             var aV = new Vector3D(Real(-1, 1), Real(-1, 1), Real(-1, 1));
-            if (aV.Magnitude() > 0.1)
+            if (aV.Magnitude > 0.1)
             {
                 return new Direction3D(aV);
             }
@@ -114,7 +114,7 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
     {
         for (int i = 0; i < 8; i++)
         {
-            var aNext = new Direction3D(theD.X(), theD.Y(), theD.Z());
+            var aNext = new Direction3D(theD.X, theD.Y, theD.Z);
             if (aNext == theD)
             {
                 break;
@@ -130,7 +130,7 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
     {
         for (int i = 0; i < 8; i++)
         {
-            var aNext = new Direction2D(theD.X(), theD.Y());
+            var aNext = new Direction2D(theD.X, theD.Y);
             if (aNext == theD)
             {
                 break;
@@ -151,7 +151,7 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
         while (true)
         {
             var aV = new Vector2D(Real(-1, 1), Real(-1, 1));
-            if (aV.Magnitude() > 0.1)
+            if (aV.Magnitude > 0.1)
             {
                 return Settled(new Direction2D(aV));
             }
@@ -182,59 +182,59 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
         }
     }
 
-    public static N.gp_Pnt2d ToNative(in Point2D theP) => new(theP.X(), theP.Y());
+    public static N.gp_Pnt2d ToNative(in Point2D theP) => new(theP.X, theP.Y);
 
-    public static N.gp_Dir2d ToNative(in Direction2D theD) => new(theD.X(), theD.Y());
+    public static N.gp_Dir2d ToNative(in Direction2D theD) => new(theD.X, theD.Y);
 
     public static N.gp_Ax2d ToNative(in Axis2D theA)
     {
-        using var aP = ToNative(theA.Location());
-        using var aD = ToNative(theA.Direction());
+        using var aP = ToNative(theA.Location);
+        using var aD = ToNative(theA.Direction);
         return new N.gp_Ax2d(aP, aD);
     }
 
     /// <summary>A native gp_Ax22d with exactly the port's two directions.</summary>
     public static N.gp_Ax22d ToNative(in Frame2D theA)
     {
-        using var aP = ToNative(theA.Location());
-        using var aX = ToNative(theA.XDirection());
-        using var aY = ToNative(theA.YDirection());
+        using var aP = ToNative(theA.Location);
+        using var aX = ToNative(theA.XDirection);
+        using var aY = ToNative(theA.YDirection);
         return new N.gp_Ax22d(aP, aX, aY);
     }
 
     public static Point2D FromNative(N.gp_Pnt2d theP) => new(theP.X(), theP.Y());
 
-    public static N.gp_Pnt ToNative(in Point3D theP) => new(theP.X(), theP.Y(), theP.Z());
+    public static N.gp_Pnt ToNative(in Point3D theP) => new(theP.X, theP.Y, theP.Z);
 
-    public static N.gp_Vec ToNative(in Vector3D theV) => new(theV.X(), theV.Y(), theV.Z());
+    public static N.gp_Vec ToNative(in Vector3D theV) => new(theV.X, theV.Y, theV.Z);
 
-    public static N.gp_Dir ToNative(in Direction3D theD) => new(theD.X(), theD.Y(), theD.Z());
+    public static N.gp_Dir ToNative(in Direction3D theD) => new(theD.X, theD.Y, theD.Z);
 
     public static N.gp_XYZ ToNative(in Xyz theXYZ) => new(theXYZ.X(), theXYZ.Y(), theXYZ.Z());
 
     public static N.gp_Ax1 ToNative(in Axis3D theA)
     {
-        using var aP = ToNative(theA.Location());
-        using var aD = ToNative(theA.Direction());
+        using var aP = ToNative(theA.Location);
+        using var aD = ToNative(theA.Direction);
         return new N.gp_Ax1(aP, aD);
     }
 
     public static N.gp_Ax2 ToNative(in Frame3D theA)
     {
-        using var aP = ToNative(theA.Location());
-        using var aN = ToNative(theA.Direction());
-        using var aX = ToNative(theA.XDirection());
+        using var aP = ToNative(theA.Location);
+        using var aN = ToNative(theA.Direction);
+        using var aX = ToNative(theA.XDirection);
         return new N.gp_Ax2(aP, aN, aX);
     }
 
     /// <summary>A native gp_Ax3 with exactly the port's three directions (a left-handed system stays left-handed).</summary>
     public static N.gp_Ax3 ToNative(in CoordinateSystem theA)
     {
-        using var aP = ToNative(theA.Location());
-        using var aN = ToNative(theA.Direction());
-        using var aX = ToNative(theA.XDirection());
+        using var aP = ToNative(theA.Location);
+        using var aN = ToNative(theA.Direction);
+        using var aX = ToNative(theA.XDirection);
         var aNative = new N.gp_Ax3(aP, aN, aX);
-        if (!theA.Direct())
+        if (!theA.IsDirect)
         {
             aNative.YReverse();
         }
@@ -242,7 +242,7 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
         return aNative;
     }
 
-    public static N.gp_Vec2d ToNative(in Vector2D theV) => new(theV.X(), theV.Y());
+    public static N.gp_Vec2d ToNative(in Vector2D theV) => new(theV.X, theV.Y);
 
     public static N.TColStd_Array1OfReal ToNative(NCollection_Array1<double> theArray)
     {
@@ -386,20 +386,20 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
     // coordinate (at least 1), so a coordinate that is small next to the others isn't held to its own magnitude.
 
     public void Same(N.gp_Pnt theNative, in Point3D thePort, string theWhat, double theTolerance = Tolerance)
-        => Same3(theNative.X(), theNative.Y(), theNative.Z(), thePort.X(), thePort.Y(), thePort.Z(), theWhat, theTolerance);
+        => Same3(theNative.X(), theNative.Y(), theNative.Z(), thePort.X, thePort.Y, thePort.Z, theWhat, theTolerance);
 
     public void Same(N.gp_Vec theNative, in Vector3D thePort, string theWhat, double theTolerance = Tolerance)
-        => Same3(theNative.X(), theNative.Y(), theNative.Z(), thePort.X(), thePort.Y(), thePort.Z(), theWhat, theTolerance);
+        => Same3(theNative.X(), theNative.Y(), theNative.Z(), thePort.X, thePort.Y, thePort.Z, theWhat, theTolerance);
 
     public void Same(N.gp_Pnt2d theNative, in Point2D thePort, string theWhat, double theTolerance = Tolerance)
-        => Same2(theNative.X(), theNative.Y(), thePort.X(), thePort.Y(), theWhat, theTolerance);
+        => Same2(theNative.X(), theNative.Y(), thePort.X, thePort.Y, theWhat, theTolerance);
 
     public void Same(N.gp_Vec2d theNative, in Vector2D thePort, string theWhat, double theTolerance = Tolerance)
-        => Same2(theNative.X(), theNative.Y(), thePort.X(), thePort.Y(), theWhat, theTolerance);
+        => Same2(theNative.X(), theNative.Y(), thePort.X, thePort.Y, theWhat, theTolerance);
 
     /// <summary>As <see cref="Same(N.gp_Pnt, in Point3D, string, double)"/>, for native's coordinates already read.</summary>
     public void Same(double theNX, double theNY, double theNZ, in Point3D thePort, string theWhat, double theTolerance = Tolerance)
-        => Same3(theNX, theNY, theNZ, thePort.X(), thePort.Y(), thePort.Z(), theWhat, theTolerance);
+        => Same3(theNX, theNY, theNZ, thePort.X, thePort.Y, thePort.Z, theWhat, theTolerance);
 
     private void Same3(double theNX, double theNY, double theNZ, double thePX, double thePY, double thePZ,
                        string theWhat, double theTolerance)
@@ -449,8 +449,8 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
 
     public void Same(in Point2D theNative, in Point2D thePort, string theWhat, double theTolerance = Tolerance)
     {
-        Same(theNative.X(), thePort.X(), $"{theWhat}.X", theTolerance);
-        Same(theNative.Y(), thePort.Y(), $"{theWhat}.Y", theTolerance);
+        Same(theNative.X, thePort.X, $"{theWhat}.X", theTolerance);
+        Same(theNative.Y, thePort.Y, $"{theWhat}.Y", theTolerance);
     }
 
     // 2D comparisons against the port's gp_XY coordinates (the Geom2d tests compare XY() of points, vectors and directions)
@@ -480,7 +480,7 @@ internal sealed class Oracle(ITestOutputHelper output, int seed = 20261028)
 
     public void Same(N.gp_Trsf theNative, in Transform3D thePort, string theWhat, double theTolerance = Tolerance)
     {
-        Assert.Equal((int)theNative.Form(), (int)thePort.Form());
+        Assert.Equal((int)theNative.Form(), (int)thePort.Form);
         for (int i = 1; i <= 3; i++)
         {
             for (int j = 1; j <= 4; j++)

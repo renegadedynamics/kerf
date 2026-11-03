@@ -212,7 +212,7 @@ public abstract class LocationLaw : Transient
         }
 
         // Is the law periodical ?
-        if (_path.Closed())
+        if (_path.IsClosed)
         {
             _laws.Value(_laws.Length()).D0(last, ref m1, ref v);
             _laws.Value(1).GetDomain(out first, out last);
@@ -316,7 +316,7 @@ public abstract class LocationLaw : Transient
         if (index <= _edges!.Length())
         {
             e = ShapeCasts.Edge(_edges.Value(index));
-            if (e.Orientation() == Reversed)
+            if (e.Orientation == Reversed)
             {
                 v = Exploration.LastVertex(e);
             }
@@ -328,7 +328,7 @@ public abstract class LocationLaw : Transient
         else if (index == _edges.Length() + 1)
         {
             e = ShapeCasts.Edge(_edges.Value(index - 1));
-            if (e.Orientation() == Reversed)
+            if (e.Orientation == Reversed)
             {
                 v = Exploration.FirstVertex(e);
             }
@@ -393,7 +393,7 @@ public abstract class LocationLaw : Transient
 
         if (index == 0 || index == _laws!.Length())
         {
-            if (!_path.Closed() || (IsG1(index, tolMin) != 1))
+            if (!_path.IsClosed || (IsG1(index, tolMin) != 1))
             {
                 isBary = false;
                 if (index == 0)
@@ -483,7 +483,7 @@ public abstract class LocationLaw : Transient
     /// <summary>True if the path is closed (by its flag or by its end vertices).</summary>
     public bool IsClosed()
     {
-        if (_path.Closed())
+        if (_path.IsClosed)
         {
             return true;
         }
@@ -536,7 +536,7 @@ public abstract class LocationLaw : Transient
         }
         if (index == 0 || index == _laws!.Length())
         {
-            if (!_path.Closed())
+            if (!_path.IsClosed)
             {
                 return -1;
             }
@@ -561,7 +561,7 @@ public abstract class LocationLaw : Transient
             e = ShapeCasts.Edge(_edges!.Value(1));
         }
 
-        if (e.Orientation() == Reversed)
+        if (e.Orientation == Reversed)
         {
             v = Exploration.LastVertex(e);
         }
@@ -575,7 +575,7 @@ public abstract class LocationLaw : Transient
         bool isG0 = true;
         bool isG1 = true;
 
-        if ((v1 - v2).Magnitude() > tolEps)
+        if ((v1 - v2).Magnitude > tolEps)
         {
             isG0 = false;
         }
@@ -593,8 +593,8 @@ public abstract class LocationLaw : Transient
             return 0; // No control of the derivative
         }
 
-        if ((dv1.Magnitude() > epsNul) && (dv2.Magnitude() > epsNul)
-            && (dv1.Angle(dv2) > angularTolerance))
+        if ((dv1.Magnitude > epsNul) && (dv2.Magnitude > epsNul)
+            && (dv1.AngleTo(dv2) > angularTolerance))
         {
             isG1 = false;
         }
@@ -721,15 +721,15 @@ public abstract class LocationLaw : Transient
             fila = fila.WithValues(m[1, 1],
                            m[1, 2],
                            m[1, 3],
-                           v.X(),
+                           v.X,
                            m[2, 1],
                            m[2, 2],
                            m[2, 3],
-                           v.Y(),
+                           v.Y,
                            m[3, 1],
                            m[3, 2],
                            m[3, 3],
-                           v.Z());
+                           v.Z);
             // TopLoc_Location Loc(fila);
             // W.Location(Loc.Multiplied(W.Location()));
             w = new Transform(w, fila, true).InternalShape(); // copy

@@ -23,18 +23,18 @@ public class gce_MakeConeTest
         Assert.Equal(Done, aMaker.Status());
 
         Cone aCone = aMaker.Value();
-        double anExpectedRadius = aBaseCone.RefRadius() + aDist / Math.Cos(aBaseCone.SemiAngle());
-        Assert.Equal(anExpectedRadius, aCone.RefRadius(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(aBaseCone.SemiAngle(), aCone.SemiAngle(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.True(aCone.Location().IsEqual(aBaseCone.Location(), global::Kerf.Engine.Foundation.Precision.Confusion()));
-        Assert.True(aCone.Axis().Direction().IsParallel(aBaseCone.Axis().Direction(), global::Kerf.Engine.Foundation.Precision.Angular()));
+        double anExpectedRadius = aBaseCone.RefRadius + aDist / Math.Cos(aBaseCone.SemiAngle);
+        Assert.Equal(anExpectedRadius, aCone.RefRadius, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aBaseCone.SemiAngle, aCone.SemiAngle, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(aCone.Location.IsEqual(aBaseCone.Location, global::Kerf.Engine.Foundation.Precision.Confusion()));
+        Assert.True(aCone.Axis.Direction.IsParallel(aBaseCone.Axis.Direction, global::Kerf.Engine.Foundation.Precision.Angular()));
     }
 
     [Fact]
     public void FromConeAndDist_TooNegative_NegativeRadius()
     {
         Cone aBaseCone = BaseCone();
-        double aDist = -(aBaseCone.RefRadius() * Math.Cos(aBaseCone.SemiAngle()) + 1.0);
+        double aDist = -(aBaseCone.RefRadius * Math.Cos(aBaseCone.SemiAngle) + 1.0);
 
         MakeCone aMaker = new(aBaseCone, aDist);
         Assert.False(aMaker.IsDone);
@@ -47,7 +47,7 @@ public class gce_MakeConeTest
         Cone aBaseCone = BaseCone();
         double aVParam = 4.0;
         double aTargetRadius = 12.0;
-        double aPointRadius = aTargetRadius + aVParam * Math.Tan(aBaseCone.SemiAngle());
+        double aPointRadius = aTargetRadius + aVParam * Math.Tan(aBaseCone.SemiAngle);
         Point3D aPoint = new(aPointRadius, 0.0, aVParam);
 
         MakeCone aMaker = new(aBaseCone, aPoint);
@@ -55,7 +55,7 @@ public class gce_MakeConeTest
         Assert.Equal(Done, aMaker.Status());
 
         Cone aCone = aMaker.Value();
-        Assert.Equal(aTargetRadius, aCone.RefRadius(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aTargetRadius, aCone.RefRadius, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -79,17 +79,17 @@ public class gce_MakeConeTest
         Assert.True(aMaker.IsDone);
         Assert.Equal(Done, aMaker.Status());
 
-        double aRadius = new Line3D(aBaseCone.Axis()).Distance(aPoint);
-        double aVParam = (aPoint.XYZ() - aBaseCone.Location().XYZ()).Dot(aBaseCone.Axis().Direction().XYZ());
-        double aTan = Math.Tan(aBaseCone.SemiAngle());
-        double aCos = Math.Cos(aBaseCone.SemiAngle());
+        double aRadius = new Line3D(aBaseCone.Axis).DistanceTo(aPoint);
+        double aVParam = (aPoint.XYZ() - aBaseCone.Location.XYZ()).Dot(aBaseCone.Axis.Direction.XYZ());
+        double aTan = Math.Tan(aBaseCone.SemiAngle);
+        double aCos = Math.Cos(aBaseCone.SemiAngle);
         double aCand1 = aRadius - aVParam * aTan;
         double aCand2 = -aRadius - aVParam * aTan;
-        double aDist1 = Math.Abs((aCand1 - aBaseCone.RefRadius()) * aCos);
-        double aDist2 = Math.Abs((aCand2 - aBaseCone.RefRadius()) * aCos);
+        double aDist1 = Math.Abs((aCand1 - aBaseCone.RefRadius) * aCos);
+        double aDist2 = Math.Abs((aCand2 - aBaseCone.RefRadius) * aCos);
         double anExpR = (aDist1 <= aDist2) ? aCand1 : aCand2;
 
-        Assert.Equal(anExpR, aMaker.Value().RefRadius(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(anExpR, aMaker.Value().RefRadius, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -104,8 +104,8 @@ public class gce_MakeConeTest
 
         Cone aCone = aMaker.Value();
         Direction3D aAxis = new(aP2.XYZ() - aP1.XYZ());
-        Assert.True(aCone.Axis().Direction().IsParallel(aAxis, global::Kerf.Engine.Foundation.Precision.Angular()));
-        double aDot = aCone.Axis().Direction().XYZ().Dot(aCone.Position().XDirection().XYZ());
+        Assert.True(aCone.Axis.Direction.IsParallel(aAxis, global::Kerf.Engine.Foundation.Precision.Angular()));
+        double aDot = aCone.Axis.Direction.XYZ().Dot(aCone.Position.XDirection.XYZ());
         Assert.Equal(0.0, aDot, global::Kerf.Engine.Foundation.Precision.Angular());
     }
 
@@ -120,8 +120,8 @@ public class gce_MakeConeTest
         Assert.Equal(Done, aMaker.Status());
 
         Cone aCone = aMaker.Value();
-        Assert.True(aCone.Axis().Direction().IsParallel(new Direction3D(aP2.XYZ() - aP1.XYZ()), global::Kerf.Engine.Foundation.Precision.Angular()));
-        double aDot = aCone.Axis().Direction().XYZ().Dot(aCone.Position().XDirection().XYZ());
+        Assert.True(aCone.Axis.Direction.IsParallel(new Direction3D(aP2.XYZ() - aP1.XYZ()), global::Kerf.Engine.Foundation.Precision.Angular()));
+        double aDot = aCone.Axis.Direction.XYZ().Dot(aCone.Position.XDirection.XYZ());
         Assert.Equal(0.0, aDot, global::Kerf.Engine.Foundation.Precision.Angular());
     }
 
@@ -139,8 +139,8 @@ public class gce_MakeConeTest
 
         Cone aCone = aMaker.Value();
         Direction3D aAxis = new(aP2.XYZ() - aP1.XYZ());
-        Assert.True(aCone.Axis().Direction().IsParallel(aAxis, global::Kerf.Engine.Foundation.Precision.Angular()));
-        double aDot = aCone.Axis().Direction().XYZ().Dot(aCone.Position().XDirection().XYZ());
+        Assert.True(aCone.Axis.Direction.IsParallel(aAxis, global::Kerf.Engine.Foundation.Precision.Angular()));
+        double aDot = aCone.Axis.Direction.XYZ().Dot(aCone.Position.XDirection.XYZ());
         Assert.Equal(0.0, aDot, global::Kerf.Engine.Foundation.Precision.Angular());
     }
 
@@ -157,8 +157,8 @@ public class gce_MakeConeTest
         Assert.Equal(Done, aMaker.Status());
 
         Cone aCone = aMaker.Value();
-        Assert.True(aCone.Axis().Direction().IsParallel(new Direction3D(aP2.XYZ() - aP1.XYZ()), global::Kerf.Engine.Foundation.Precision.Angular()));
-        double aDot = aCone.Axis().Direction().XYZ().Dot(aCone.Position().XDirection().XYZ());
+        Assert.True(aCone.Axis.Direction.IsParallel(new Direction3D(aP2.XYZ() - aP1.XYZ()), global::Kerf.Engine.Foundation.Precision.Angular()));
+        double aDot = aCone.Axis.Direction.XYZ().Dot(aCone.Position.XDirection.XYZ());
         Assert.Equal(0.0, aDot, global::Kerf.Engine.Foundation.Precision.Angular());
     }
 }

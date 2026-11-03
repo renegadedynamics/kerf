@@ -13,7 +13,7 @@ namespace Kerf.Engine.Geometry.Bvh;
 /// An abstract BVH builder based on a work queue. It can build with a fixed number of threads (best with the number
 /// of CPU cores plus one); in parallel mode, the primitive set must be thread-safe (Swap, Box, Center).
 /// </summary>
-public abstract class QueueBuilder<T, TVec> : Builder<T, TVec>
+internal abstract class QueueBuilder<T, TVec> : Builder<T, TVec>
     where T : unmanaged, INumber<T>, IMinMaxValue<T>
     where TVec : unmanaged, INCollection_Vec<T, TVec>
 {

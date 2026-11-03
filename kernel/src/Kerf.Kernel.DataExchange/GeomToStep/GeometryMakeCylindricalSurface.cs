@@ -30,9 +30,9 @@ public sealed class GeometryMakeCylindricalSurface : GeometryRoot
         StepAxis2Placement3d position;
         double radius;
 
-        Axis2Placement3dMaker mkAxis2 = new Axis2Placement3dMaker(cs.Position(), localFactors);
+        Axis2Placement3dMaker mkAxis2 = new Axis2Placement3dMaker(cs.Position, localFactors);
         position = mkAxis2.Value();
-        radius = cs.Radius();
+        radius = cs.Radius;
         cSstep = new StepCylindricalSurface();
         TCollection_HAsciiString name = new TCollection_HAsciiString("");
         cSstep.Init(name, position, radius / localFactors.LengthFactor());

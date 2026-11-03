@@ -15,7 +15,7 @@ internal static class ShapeExtensions
     public static ulong StdHash(this global::Kerf.Topology.Shape shape) => unchecked((uint)shape.GetHashCode());
 
     /// <summary>Whether the shape isn't null and is of <paramref name="type"/>.</summary>
-    public static bool Is(this global::Kerf.Topology.Shape shape, global::Kerf.Topology.ShapeType type) => !shape.IsNull && shape.ShapeType() == type;
+    public static bool Is(this global::Kerf.Topology.Shape shape, global::Kerf.Topology.ShapeType type) => !shape.IsNull && shape.Type == type;
 
     public static bool IsVertex(this global::Kerf.Topology.Shape shape) => shape.Is(global::Kerf.Topology.ShapeType.Vertex);
 

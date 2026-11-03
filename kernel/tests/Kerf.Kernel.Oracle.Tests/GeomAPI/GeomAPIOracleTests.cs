@@ -49,7 +49,7 @@ public class GeomAPIOracleTests(ITestOutputHelper output)
     private static void SameCurve(Oracle theO, N.Geom_BSplineCurve theNative, BSplineCurve3D thePort, string theWhat,
                                   double theTolerance = Oracle.Tolerance)
     {
-        theO.Same(theNative.Degree(), thePort.Degree(), $"{theWhat} degree");
+        theO.Same(theNative.Degree(), thePort.Degree, $"{theWhat} degree");
         theO.Same(theNative.IsPeriodic(), thePort.IsPeriodic, $"{theWhat} periodic");
         theO.Same(theNative.NbPoles(), thePort.PoleCount, $"{theWhat} NbPoles");
         theO.Same(theNative.NbKnots(), thePort.KnotCount, $"{theWhat} NbKnots");
@@ -79,8 +79,8 @@ public class GeomAPIOracleTests(ITestOutputHelper output)
             (N.Geom_Curve aNC, Curve3D aPC, string aKind) = TestAdaptorOracleTests.RandomCurve(anOracle);
             using (aNC)
             {
-                (double aFirst, double aLast) = TestAdaptorOracleTests.Bounds(anOracle, aPC.FirstParameter(),
-                    aPC.LastParameter(), aPC.IsPeriodic);
+                (double aFirst, double aLast) = TestAdaptorOracleTests.Bounds(anOracle, aPC.FirstParameter,
+                    aPC.LastParameter, aPC.IsPeriodic);
                 string aW = $"{aKind} #{c} [{aFirst:R}, {aLast:R}]";
                 using var aN = new N.GeomAPI_ProjectPointOnCurve();
                 var aPort = new ProjectPointOnCurve();
@@ -145,7 +145,7 @@ public class GeomAPIOracleTests(ITestOutputHelper output)
             (N.Geom_Surface aNS, Surface aPS) = AdaptorOracleInputs.RandomSurface(anOracle, aKind);
             using (aNS)
             {
-                aPS.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+                aPS.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
                 (double aWU1, double aWU2) = Window(anOracle, aU1, aU2);
                 (double aWV1, double aWV2) = Window(anOracle, aV1, aV2);
                 bool aWithTol = anOracle.Bool();

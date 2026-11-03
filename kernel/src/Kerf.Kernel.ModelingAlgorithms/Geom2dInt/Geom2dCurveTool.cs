@@ -119,7 +119,7 @@ public readonly struct Geom2dCurveTool : ICurveCurveTool<Curve2DAdaptorBase>
         {
             // Try to reach deflection = eps*R, eps = 0.01
             const double minR = 1.0; // eps = 0.01
-            double r = c.Circle().Radius();
+            double r = c.Circle().Radius;
             if (r > minR)
             {
                 double angl = 0.283079; // 2.*std::acos(1. - eps);
@@ -144,7 +144,7 @@ public readonly struct Geom2dCurveTool : ICurveCurveTool<Curve2DAdaptorBase>
         {
             // Try to reach deflection = eps*R, eps = 0.01
             const double minR = 1.0; // eps = 0.01
-            double r = c.Circle().Radius();
+            double r = c.Circle().Radius;
             if (r > minR)
             {
                 double angl = 0.283079; // 2.*std::acos(1. - eps);

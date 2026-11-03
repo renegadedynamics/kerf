@@ -21,7 +21,7 @@ namespace Kerf.Geometry;
 /// curve is replaced by its own basis). <see cref="BasisCurve"/> returns that copy frozen, as OCCT returns its
 /// handle; this curve's internal mutators then copy the basis curve again before changing it (decision 132).
 /// </remarks>
-public class TrimmedCurve2D : BoundedCurve2D
+public sealed class TrimmedCurve2D : BoundedCurve2D
 {
     private Curve2D _basisCurve;
     private double _uTrim1;
@@ -101,8 +101,8 @@ public class TrimmedCurve2D : BoundedCurve2D
             throw new ConstructionErrorException("Geom2d_TrimmedCurve::U1 == U2");
         }
 
-        double udeb = _basisCurve.FirstParameter();
-        double ufin = _basisCurve.LastParameter();
+        double udeb = _basisCurve.FirstParameter;
+        double ufin = _basisCurve.LastParameter;
 
         if (_basisCurve.IsPeriodic)
         {
@@ -157,10 +157,13 @@ public class TrimmedCurve2D : BoundedCurve2D
     }
 
     /// <summary>The basis curve, frozen (it is shared with this trimmed curve).</summary>
-    public Curve2D BasisCurve()
+    public Curve2D BasisCurve
     {
-        _basisCurve.Freeze();
-        return _basisCurve;
+        get
+        {
+            _basisCurve.Freeze();
+            return _basisCurve;
+        }
     }
 
     /// <summary>
@@ -170,21 +173,21 @@ public class TrimmedCurve2D : BoundedCurve2D
     internal Curve2D ChangeBasisCurve() => _basisCurve;
 
     /// <summary>The basis curve's continuity.</summary>
-    public sealed override Continuity Continuity() => _basisCurve.Continuity();
+    public sealed override Continuity Continuity => _basisCurve.Continuity;
 
     /// <summary>The basis curve's IsCN.</summary>
     /// <exception cref="RangeErrorException">N &lt; 0.</exception>
-    public sealed override bool IsCN(int n)
+    internal sealed override bool IsCN(int n)
     {
         Standard_RangeError_Raise_if(n < 0, " ");
         return _basisCurve.IsCN(n);
     }
 
     /// <summary>The point of the basis curve at the last trim parameter.</summary>
-    public sealed override Point2D EndPoint() => _basisCurve.Value(_uTrim2);
+    public sealed override Point2D EndPoint => _basisCurve.Value(_uTrim2);
 
     /// <summary>The first trim parameter.</summary>
-    public sealed override double FirstParameter() => _uTrim1;
+    public sealed override double FirstParameter => _uTrim1;
 
     /// <summary>
     /// True if the trimmed range of a periodic basis curve is a whole number of periods, or if the end points are
@@ -196,15 +199,15 @@ public class TrimmedCurve2D : BoundedCurve2D
         {
             if (_basisCurve.IsPeriodic)
             {
-                double period = _basisCurve.Period();
-                double length = LastParameter() - FirstParameter();
+                double period = _basisCurve.Period;
+                double length = LastParameter - FirstParameter;
                 if (length > global::Kerf.Engine.Foundation.Precision.PConfusion()
                     && Math.Abs(Math.IEEERemainder(length, period)) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     return true;
                 }
             }
-            return Value(FirstParameter()).SquareDistance(Value(LastParameter()))
+            return Value(FirstParameter).SquareDistanceTo(Value(LastParameter))
                    <= global::Kerf.Engine.Foundation.Precision.Computational();
         }
     }
@@ -216,8 +219,8 @@ public class TrimmedCurve2D : BoundedCurve2D
         {
             if (_basisCurve.IsPeriodic)
             {
-                double period = _basisCurve.Period();
-                double length = LastParameter() - FirstParameter();
+                double period = _basisCurve.Period;
+                double length = LastParameter - FirstParameter;
                 if (length > global::Kerf.Engine.Foundation.Precision.PConfusion()
                     && Math.Abs(Math.IEEERemainder(length, period)) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
@@ -230,28 +233,31 @@ public class TrimmedCurve2D : BoundedCurve2D
 
     /// <summary>The basis curve's period.</summary>
     /// <exception cref="NoSuchObjectException">The basis curve is not periodic.</exception>
-    public sealed override double Period() => _basisCurve.Period();
+    public sealed override double Period => _basisCurve.Period;
 
     /// <summary>The last trim parameter.</summary>
-    public sealed override double LastParameter() => _uTrim2;
+    public sealed override double LastParameter => _uTrim2;
 
     /// <summary>The point of the basis curve at the first trim parameter.</summary>
-    public sealed override Point2D StartPoint()
+    public sealed override Point2D StartPoint
     {
-        Point2D p;
-        p = _basisCurve.Value(_uTrim1);
-        return p;
+        get
+        {
+            Point2D p;
+            p = _basisCurve.Value(_uTrim1);
+            return p;
+        }
     }
 
-    public sealed override Point2D EvalD0(double u) => _basisCurve.EvalD0(u);
+    internal sealed override Point2D EvalD0(double u) => _basisCurve.EvalD0(u);
 
-    public sealed override ResD1 EvalD1(double u) => _basisCurve.EvalD1(u);
+    internal sealed override ResD1 EvalD1(double u) => _basisCurve.EvalD1(u);
 
-    public sealed override ResD2 EvalD2(double u) => _basisCurve.EvalD2(u);
+    internal sealed override ResD2 EvalD2(double u) => _basisCurve.EvalD2(u);
 
-    public sealed override ResD3 EvalD3(double u) => _basisCurve.EvalD3(u);
+    internal sealed override ResD3 EvalD3(double u) => _basisCurve.EvalD3(u);
 
-    public sealed override Vector2D EvalDN(double u, int n) => _basisCurve.EvalDN(u, n);
+    internal sealed override Vector2D EvalDN(double u, int n) => _basisCurve.EvalDN(u, n);
 
     /// <summary>Transforms the basis curve and the trim parameters.</summary>
     protected internal sealed override void Transform(in Transform2D t)
@@ -265,10 +271,10 @@ public class TrimmedCurve2D : BoundedCurve2D
     }
 
     /// <summary>The basis curve's transformed parameter.</summary>
-    public sealed override double TransformedParameter(double u, in Transform2D t) =>
+    internal sealed override double TransformedParameter(double u, in Transform2D t) =>
         _basisCurve.TransformedParameter(u, t);
 
     /// <summary>The basis curve's parametric transformation.</summary>
-    public sealed override double ParametricTransformation(in Transform2D t) =>
+    internal sealed override double ParametricTransformation(in Transform2D t) =>
         _basisCurve.ParametricTransformation(t);
 }

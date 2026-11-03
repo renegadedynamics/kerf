@@ -80,41 +80,41 @@ public class SurfaceSet
 
     private static void Print(in Point3D p, TextWriter os, bool compact)
     {
-        Out(os, p.X());
+        Out(os, p.X);
         if (!compact)
         {
             os.Write(",");
         }
 
         os.Write(" ");
-        Out(os, p.Y());
+        Out(os, p.Y);
         if (!compact)
         {
             os.Write(",");
         }
 
         os.Write(" ");
-        Out(os, p.Z());
+        Out(os, p.Z);
         os.Write(" ");
     }
 
     private static void Print(in Direction3D d, TextWriter os, bool compact)
     {
-        Out(os, d.X());
+        Out(os, d.X);
         if (!compact)
         {
             os.Write(",");
         }
 
         os.Write(" ");
-        Out(os, d.Y());
+        Out(os, d.Y);
         if (!compact)
         {
             os.Write(",");
         }
 
         os.Write(" ");
-        Out(os, d.Z());
+        Out(os, d.Z);
         os.Write(" ");
     }
 
@@ -130,31 +130,31 @@ public class SurfaceSet
             os.Write("Plane");
         }
 
-        Plane3D p = s.Pln();
+        Plane3D p = s.Plane;
         if (!compact)
         {
             os.Write("\n  Origin :");
         }
 
-        Print(p.Location(), os, compact);
+        Print(p.Location, os, compact);
         if (!compact)
         {
             os.Write("\n  Axis   :");
         }
 
-        Print(p.Axis().Direction(), os, compact);
+        Print(p.Axis.Direction, os, compact);
         if (!compact)
         {
             os.Write("\n  XAxis  :");
         }
 
-        Print(p.XAxis().Direction(), os, compact);
+        Print(p.XAxis.Direction, os, compact);
         if (!compact)
         {
             os.Write("\n  YAxis  :");
         }
 
-        Print(p.YAxis().Direction(), os, compact);
+        Print(p.YAxis.Direction, os, compact);
         os.Write("\n");
         if (!compact)
         {
@@ -174,37 +174,37 @@ public class SurfaceSet
             os.Write("CylindricalSurface");
         }
 
-        Cylinder p = s.Cylinder();
+        Cylinder p = s.Cylinder;
         if (!compact)
         {
             os.Write("\n  Origin :");
         }
 
-        Print(p.Location(), os, compact);
+        Print(p.Location, os, compact);
         if (!compact)
         {
             os.Write("\n  Axis   :");
         }
 
-        Print(p.Axis().Direction(), os, compact);
+        Print(p.Axis.Direction, os, compact);
         if (!compact)
         {
             os.Write("\n  XAxis  :");
         }
 
-        Print(p.XAxis().Direction(), os, compact);
+        Print(p.XAxis.Direction, os, compact);
         if (!compact)
         {
             os.Write("\n  YAxis  :");
         }
 
-        Print(p.YAxis().Direction(), os, compact);
+        Print(p.YAxis.Direction, os, compact);
         if (!compact)
         {
             os.Write("\n  Radius :");
         }
 
-        Out(os, p.Radius());
+        Out(os, p.Radius);
         os.Write("\n");
         if (!compact)
         {
@@ -224,44 +224,44 @@ public class SurfaceSet
             os.Write("ConicalSurface");
         }
 
-        Cone p = s.Cone();
+        Cone p = s.Cone;
         if (!compact)
         {
             os.Write("\n  Origin :");
         }
 
-        Print(p.Location(), os, compact);
+        Print(p.Location, os, compact);
         if (!compact)
         {
             os.Write("\n  Axis   :");
         }
 
-        Print(p.Axis().Direction(), os, compact);
+        Print(p.Axis.Direction, os, compact);
         if (!compact)
         {
             os.Write("\n  XAxis  :");
         }
 
-        Print(p.XAxis().Direction(), os, compact);
+        Print(p.XAxis.Direction, os, compact);
         if (!compact)
         {
             os.Write("\n  YAxis  :");
         }
 
-        Print(p.YAxis().Direction(), os, compact);
+        Print(p.YAxis.Direction, os, compact);
         if (!compact)
         {
             os.Write("\n  Radius :");
         }
 
-        Out(os, p.RefRadius());
+        Out(os, p.RefRadius);
         os.Write("\n");
         if (!compact)
         {
             os.Write("\n  Angle :");
         }
 
-        Out(os, p.SemiAngle());
+        Out(os, p.SemiAngle);
         os.Write("\n");
         if (!compact)
         {
@@ -281,37 +281,37 @@ public class SurfaceSet
             os.Write("SphericalSurface");
         }
 
-        Sphere p = s.Sphere();
+        Sphere p = s.Sphere;
         if (!compact)
         {
             os.Write("\n  Center :");
         }
 
-        Print(p.Location(), os, compact);
+        Print(p.Location, os, compact);
         if (!compact)
         {
             os.Write("\n  Axis   :");
         }
 
-        Print(p.Position().Axis().Direction(), os, compact);
+        Print(p.Position.Axis.Direction, os, compact);
         if (!compact)
         {
             os.Write("\n  XAxis  :");
         }
 
-        Print(p.XAxis().Direction(), os, compact);
+        Print(p.XAxis.Direction, os, compact);
         if (!compact)
         {
             os.Write("\n  YAxis  :");
         }
 
-        Print(p.YAxis().Direction(), os, compact);
+        Print(p.YAxis.Direction, os, compact);
         if (!compact)
         {
             os.Write("\n  Radius :");
         }
 
-        Out(os, p.Radius());
+        Out(os, p.Radius);
         os.Write("\n");
         if (!compact)
         {
@@ -331,39 +331,39 @@ public class SurfaceSet
             os.Write("ToroidalSurface");
         }
 
-        Torus p = s.Torus();
+        Torus p = s.Torus;
         if (!compact)
         {
             os.Write("\n  Origin :");
         }
 
-        Print(p.Location(), os, compact);
+        Print(p.Location, os, compact);
         if (!compact)
         {
             os.Write("\n  Axis   :");
         }
 
-        Print(p.Axis().Direction(), os, compact);
+        Print(p.Axis.Direction, os, compact);
         if (!compact)
         {
             os.Write("\n  XAxis  :");
         }
 
-        Print(p.XAxis().Direction(), os, compact);
+        Print(p.XAxis.Direction, os, compact);
         if (!compact)
         {
             os.Write("\n  YAxis  :");
         }
 
-        Print(p.YAxis().Direction(), os, compact);
+        Print(p.YAxis.Direction, os, compact);
         if (!compact)
         {
             os.Write("\n  Radii  :");
         }
 
-        Out(os, p.MajorRadius());
+        Out(os, p.MajorRadius);
         os.Write(" ");
-        Out(os, p.MinorRadius());
+        Out(os, p.MinorRadius);
         os.Write("\n");
         if (!compact)
         {
@@ -388,14 +388,14 @@ public class SurfaceSet
             os.Write("\n  Direction :");
         }
 
-        Print(s.Direction(), os, compact);
+        Print(s.Direction, os, compact);
         if (!compact)
         {
             os.Write("\n  Basis curve : ");
         }
 
         os.Write("\n");
-        CurveSet.PrintCurve(s.BasisCurve(), os, compact);
+        CurveSet.PrintCurve(s.BasisCurve, os, compact);
     }
 
     private static void Print(RevolutionSurface s, TextWriter os, bool compact)
@@ -415,20 +415,20 @@ public class SurfaceSet
             os.Write("\n  Origin    :");
         }
 
-        Print(s.Location(), os, compact);
+        Print(s.Location, os, compact);
         if (!compact)
         {
             os.Write("\n  Direction :");
         }
 
-        Print(s.Direction(), os, compact);
+        Print(s.Direction, os, compact);
         if (!compact)
         {
             os.Write("\n  Basis curve : ");
         }
 
         os.Write("\n");
-        CurveSet.PrintCurve(s.BasisCurve(), os, compact);
+        CurveSet.PrintCurve(s.BasisCurve, os, compact);
     }
 
     private static void Print(BezierSurface s, TextWriter os, bool compact)
@@ -488,8 +488,8 @@ public class SurfaceSet
 
         // poles and weights
         int i, j, udegree, vdegree;
-        udegree = s.UDegree();
-        vdegree = s.VDegree();
+        udegree = s.UDegree;
+        vdegree = s.VDegree;
         if (!compact)
         {
             os.Write("\n  Degrees :");
@@ -621,8 +621,8 @@ public class SurfaceSet
 
         // poles and weights
         int i, j, udegree, vdegree, nbupoles, nbvpoles, nbuknots, nbvknots;
-        udegree = s.UDegree();
-        vdegree = s.VDegree();
+        udegree = s.UDegree;
+        vdegree = s.VDegree;
         nbupoles = s.UPoleCount;
         nbvpoles = s.VPoleCount;
         nbuknots = s.UKnotCount;
@@ -751,7 +751,7 @@ public class SurfaceSet
         }
 
         double u1, u2, v1, v2;
-        s.Bounds(out u1, out u2, out v1, out v2);
+        s.ParameterBounds(out u1, out u2, out v1, out v2);
         if (!compact)
         {
             os.Write("\nParameters : ");
@@ -770,7 +770,7 @@ public class SurfaceSet
             os.Write("BasisSurface :\n");
         }
 
-        PrintSurface(s.BasisSurface(), os, compact);
+        PrintSurface(s.BasisSurface, os, compact);
     }
 
     private static void Print(OffsetSurface s, TextWriter os, bool compact)
@@ -790,14 +790,14 @@ public class SurfaceSet
             os.Write("\nOffset : ");
         }
 
-        Out(os, s.Offset());
+        Out(os, s.Offset);
         os.Write("\n");
         if (!compact)
         {
             os.Write("BasisSurface :\n");
         }
 
-        PrintSurface(s.BasisSurface(), os, compact);
+        PrintSurface(s.BasisSurface, os, compact);
     }
 
     /// <summary>

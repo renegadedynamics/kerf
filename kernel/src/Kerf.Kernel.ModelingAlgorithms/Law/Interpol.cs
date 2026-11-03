@@ -56,7 +56,7 @@ public class Interpol : BSpFunc
     public void SetInRelative(NCollection_Array1<Point2D> parAndRad, double ud, double uf, bool periodic = false)
     {
         int l = parAndRad.Lower(), u = parAndRad.Upper();
-        double wd = parAndRad[l].X(), wf = parAndRad[u].X();
+        double wd = parAndRad[l].X, wf = parAndRad[u].X;
         int nbp = parAndRad.Length();
         NCollection_HArray1<double> par = new NCollection_HArray1<double>(1, nbp);
         NCollection_HArray1<double> rad;
@@ -122,7 +122,7 @@ public class Interpol : BSpFunc
                               bool periodic = false)
     {
         int l = parAndRad.Lower(), u = parAndRad.Upper();
-        double wd = parAndRad[l].X(), wf = parAndRad[u].X();
+        double wd = parAndRad[l].X, wf = parAndRad[u].X;
         int nbp = parAndRad.Length();
         NCollection_HArray1<double> par = new NCollection_HArray1<double>(1, nbp);
         NCollection_HArray1<double> rad;

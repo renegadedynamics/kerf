@@ -13,7 +13,7 @@ namespace Kerf.Engine.Geometry;
 
 /// <summary>The constants of the gp package: the resolution, and the origin, axes and planes of the global system.</summary>
 /// <remarks>The 2D constants are in gp_2d.cs.</remarks>
-public static partial class Constants
+internal static partial class Constants
 {
     private static readonly Point3D OriginPoint = new(0, 0, 0);
     private static readonly Direction3D Dx = new(Direction3D.D.X);

@@ -29,8 +29,8 @@ public sealed class GeometryMakeLine : GeometryRoot
     /// <summary>A 3D line, its location divided by the length factor.</summary>
     public GeometryMakeLine(in Line3D l, in Factors localFactors)
     {
-        Make(new MakeCartesianPoint(l.Location(), localFactors.LengthFactor()),
-             new MakeVector(new Vector3D(l.Direction()), localFactors));
+        Make(new MakeCartesianPoint(l.Location, localFactors.LengthFactor()),
+             new MakeVector(new Vector3D(l.Direction), localFactors));
     }
 
     /// <summary>A 3D line (default factors).</summary>
@@ -45,8 +45,8 @@ public sealed class GeometryMakeLine : GeometryRoot
     /// <summary>A 2D line.</summary>
     public GeometryMakeLine(in Line2D l, in Factors localFactors)
     {
-        Make(new MakeCartesianPoint(l.Location(), localFactors.LengthFactor()),
-             new MakeVector(new Vector2D(l.Direction()), localFactors));
+        Make(new MakeCartesianPoint(l.Location, localFactors.LengthFactor()),
+             new MakeVector(new Vector2D(l.Direction), localFactors));
     }
 
     /// <summary>A 2D line.</summary>
@@ -62,9 +62,9 @@ public sealed class GeometryMakeLine : GeometryRoot
     public GeometryMakeLine(LineCurve3D gline, in Factors localFactors)
     {
         Line3D l;
-        l = gline.Lin();
-        Make(new MakeCartesianPoint(l.Location(), localFactors.LengthFactor()),
-             new MakeVector(new Vector3D(l.Direction()), localFactors));
+        l = gline.Line;
+        Make(new MakeCartesianPoint(l.Location, localFactors.LengthFactor()),
+             new MakeVector(new Vector3D(l.Direction), localFactors));
     }
 
     /// <summary>A 3D line (default factors).</summary>
@@ -80,9 +80,9 @@ public sealed class GeometryMakeLine : GeometryRoot
     public GeometryMakeLine(LineCurve2D gline, in Factors localFactors)
     {
         Line2D l;
-        l = gline.Lin2d();
-        Make(new MakeCartesianPoint(l.Location(), localFactors.LengthFactor()),
-             new MakeVector(new Vector2D(l.Direction()), localFactors));
+        l = gline.Line;
+        Make(new MakeCartesianPoint(l.Location, localFactors.LengthFactor()),
+             new MakeVector(new Vector2D(l.Direction), localFactors));
     }
 
     /// <summary>A 2D line.</summary>

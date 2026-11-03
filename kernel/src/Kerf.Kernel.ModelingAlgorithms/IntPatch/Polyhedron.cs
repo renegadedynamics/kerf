@@ -202,11 +202,11 @@ public sealed class Polyhedron : IPolyhedron
             Point3D P1 = Point(p1);
             Point3D P2 = Point(p2);
             Point3D P3 = Point(p3);
-            if (P1.SquareDistance(P2) > LONGUEUR_MINI_EDGE_TRIANGLE)
+            if (P1.SquareDistanceTo(P2) > LONGUEUR_MINI_EDGE_TRIANGLE)
             {
-                if (P1.SquareDistance(P3) > LONGUEUR_MINI_EDGE_TRIANGLE)
+                if (P1.SquareDistanceTo(P3) > LONGUEUR_MINI_EDGE_TRIANGLE)
                 {
-                    if (P2.SquareDistance(P3) > LONGUEUR_MINI_EDGE_TRIANGLE)
+                    if (P2.SquareDistanceTo(P3) > LONGUEUR_MINI_EDGE_TRIANGLE)
                     {
                         boite.Add(P1);
                         boite.Add(P2);
@@ -476,13 +476,13 @@ public sealed class Polyhedron : IPolyhedron
         //-- Alors on retourne OtherP a 0
         //-- et Tricon = Triangle
         //--
-        if (pedge != 0 && Point(pivot).SquareDistance(Point(pedge)) <= LONGUEUR_MINI_EDGE_TRIANGLE)
+        if (pedge != 0 && Point(pivot).SquareDistanceTo(Point(pedge)) <= LONGUEUR_MINI_EDGE_TRIANGLE)
         {
             otherP = 0;
             triCon = triang;
             return (triCon);
         }
-        if (pedge != 0 && Point(otherP).SquareDistance(Point(pedge)) <= LONGUEUR_MINI_EDGE_TRIANGLE)
+        if (pedge != 0 && Point(otherP).SquareDistanceTo(Point(pedge)) <= LONGUEUR_MINI_EDGE_TRIANGLE)
         {
             // OCCT: "BUG NON CORRIGE": 0 where the next triangle should be looked up (occt-issues.md, 5D)
             return (0); //-- BUG NON CORRIGE ( a revoir le role de nbdeltaU et nbdeltaV)

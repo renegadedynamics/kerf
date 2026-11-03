@@ -135,7 +135,7 @@ public class NetworkSurface
         for (int curveIdx = 1; curveIdx < curves.Size(); ++curveIdx)
         {
             BSplineCurve3D? curve = curves.At(curveIdx);
-            if (curve is null || curve.IsRational != isRational || curve.Degree() != reference.Degree()
+            if (curve is null || curve.IsRational != isRational || curve.Degree != reference.Degree
                 || curve.PoleCount != reference.PoleCount || curve.KnotCount != reference.KnotCount)
             {
                 return false;
@@ -277,7 +277,7 @@ public class NetworkSurface
         SurfaceBSplSLib.HomogeneousD0(u, v, 0, 0, surface.InternalPoles(), surface.InternalWeightsArray(),
                                surface.InternalUKnots(), surface.InternalVKnots(),
                                surface.InternalUMultiplicities(), surface.InternalVMultiplicities(),
-                               surface.UDegree(), surface.VDegree(), true, true, false, false,
+                               surface.UDegree, surface.VDegree, true, true, false, false,
                                out double weight, out Point3D _);
         return weight;
     }
@@ -316,7 +316,7 @@ public class NetworkSurface
                                                NCollection_Array1<double> productFlatKnots)
     {
         productDegree = 3 * degree;
-        if (productDegree > BSplineSurface.MaxDegree())
+        if (productDegree > BSplineSurface.MaxDegree)
         {
             return false;
         }
@@ -352,7 +352,7 @@ public class NetworkSurface
     {
         DenominatorProductEvaluator multiplier = new(firstDenominator, secondDenominator);
 
-        SurfaceBSplSLib.FunctionMultiply(multiplier, surface.UDegree(), surface.VDegree(), surface.InternalUKnots(),
+        SurfaceBSplSLib.FunctionMultiply(multiplier, surface.UDegree, surface.VDegree, surface.InternalUKnots(),
                                   surface.InternalVKnots(), surface.InternalUMultiplicities(),
                                   surface.InternalVMultiplicities(), surface.InternalPoles(),
                                   surface.InternalWeightsArray(), uFlatKnots, vFlatKnots, uDegree,
@@ -394,7 +394,7 @@ public class NetworkSurface
         }
 
         return new BSplineSurface(poles, weights, baseProfile.InternalKnots(), vKnots,
-                                       baseProfile.InternalMultiplicities(), vMults, baseProfile.Degree(),
+                                       baseProfile.InternalMultiplicities(), vMults, baseProfile.Degree,
                                        vDegree);
     }
 
@@ -431,7 +431,7 @@ public class NetworkSurface
         }
 
         return new BSplineSurface(poles, weights, uKnots, baseGuide.InternalKnots(), uMults,
-                                       baseGuide.InternalMultiplicities(), uDegree, baseGuide.Degree());
+                                       baseGuide.InternalMultiplicities(), uDegree, baseGuide.Degree);
     }
 
     private static double NormalizedKnot(double start, double end, double knot)
@@ -528,8 +528,8 @@ public class NetworkSurface
     private static bool AlignSurfaces(BSplineSurface profileSurface, BSplineSurface guideSurface,
                                       BSplineSurface referenceSurface)
     {
-        int uDegree = Max(Max(profileSurface.UDegree(), guideSurface.UDegree()), referenceSurface.UDegree());
-        int vDegree = Max(Max(profileSurface.VDegree(), guideSurface.VDegree()), referenceSurface.VDegree());
+        int uDegree = Max(Max(profileSurface.UDegree, guideSurface.UDegree), referenceSurface.UDegree);
+        int vDegree = Max(Max(profileSurface.VDegree, guideSurface.VDegree), referenceSurface.VDegree);
 
         profileSurface.IncreaseDegree(uDegree, vDegree);
         guideSurface.IncreaseDegree(uDegree, vDegree);
@@ -609,8 +609,8 @@ public class NetworkSurface
             return new BSplineSurface(resultPoles, profileSurface.InternalUKnots(),
                                            profileSurface.InternalVKnots(),
                                            profileSurface.InternalUMultiplicities(),
-                                           profileSurface.InternalVMultiplicities(), profileSurface.UDegree(),
-                                           profileSurface.VDegree());
+                                           profileSurface.InternalVMultiplicities(), profileSurface.UDegree,
+                                           profileSurface.VDegree);
         }
 
         NCollection_Array1<double> uKnots = new();
@@ -622,9 +622,9 @@ public class NetworkSurface
         int uDegree = 0;
         int vDegree = 0;
         if (!MakeTripleProductBasis(profileSurface.InternalUKnots(), profileSurface.InternalUMultiplicities(),
-                                    profileSurface.UDegree(), out uDegree, uKnots, uMults, uFlatKnots)
+                                    profileSurface.UDegree, out uDegree, uKnots, uMults, uFlatKnots)
             || !MakeTripleProductBasis(profileSurface.InternalVKnots(),
-                                       profileSurface.InternalVMultiplicities(), profileSurface.VDegree(),
+                                       profileSurface.InternalVMultiplicities(), profileSurface.VDegree,
                                        out vDegree, vKnots, vMults, vFlatKnots))
         {
             status = ResultStatus.RationalDegreeOverflow;
@@ -694,7 +694,7 @@ public class NetworkSurface
             Point3D firstPole = alongU ? surface.Pole(1, checkIdx) : surface.Pole(checkIdx, 1);
             Point3D lastPole = alongU ? surface.Pole(surface.UPoleCount, checkIdx)
                                          : surface.Pole(checkIdx, surface.VPoleCount);
-            if (firstPole.Distance(lastPole) > tolerance)
+            if (firstPole.DistanceTo(lastPole) > tolerance)
             {
                 return false;
             }
@@ -729,7 +729,7 @@ public class NetworkSurface
         for (int profileIdx = 0; profileIdx < profiles.Size(); ++profileIdx)
         {
             BSplineCurve3D profile = profiles.At(profileIdx)!;
-            points.SetValue(profileIdx + 1, profile.Value(profile.FirstParameter()));
+            points.SetValue(profileIdx + 1, profile.Value(profile.FirstParameter));
             parameters.SetValue(profileIdx + 1, profileParameters.At(profileIdx));
         }
 
@@ -750,8 +750,8 @@ public class NetworkSurface
                                                 ref NCollection_Array2<Point3D> closedIntersectionPoints,
                                                 ref NCollection_Array2<double> closedIntersectionWeights)
     {
-        double profileStart = profiles.At(0)!.FirstParameter();
-        double profileEnd = profiles.At(0)!.LastParameter();
+        double profileStart = profiles.At(0)!.FirstParameter;
+        double profileEnd = profiles.At(0)!.LastParameter;
         bool needsStartSeam = guideParameters.First() > profileStart + global::Kerf.Engine.Foundation.Precision.PConfusion();
         bool needsEndSeam = guideParameters.Last() < profileEnd - global::Kerf.Engine.Foundation.Precision.PConfusion();
         if (!needsStartSeam && !needsEndSeam)
@@ -796,7 +796,7 @@ public class NetworkSurface
             for (int profileIdx = 0; profileIdx < intersectionPoints.NbColumns(); ++profileIdx)
             {
                 closedIntersectionPoints.ChangeAt(0, profileIdx) =
-                  profiles.At(profileIdx)!.Value(profiles.At(profileIdx)!.FirstParameter());
+                  profiles.At(profileIdx)!.Value(profiles.At(profileIdx)!.FirstParameter);
                 closedIntersectionWeights.ChangeAt(0, profileIdx) = PoleWeight(profiles.At(profileIdx)!, 1);
             }
         }
@@ -839,8 +839,8 @@ public class NetworkSurface
         NCollection_Array2<double> closedIntersectionWeights = new();
         bool shouldCompleteUSeam =
           isUClosed
-          && (guideParameters.First() > profiles.At(0)!.FirstParameter() + global::Kerf.Engine.Foundation.Precision.PConfusion()
-              || guideParameters.Last() < profiles.At(0)!.LastParameter() - global::Kerf.Engine.Foundation.Precision.PConfusion());
+          && (guideParameters.First() > profiles.At(0)!.FirstParameter + global::Kerf.Engine.Foundation.Precision.PConfusion()
+              || guideParameters.Last() < profiles.At(0)!.LastParameter - global::Kerf.Engine.Foundation.Precision.PConfusion());
         if (shouldCompleteUSeam
             && !CompleteClosedGuideSeam(profiles, profileParameters, guides, guideParameters,
                                         intersectionPoints, intersectionWeights, ref closedGuides,

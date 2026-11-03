@@ -355,8 +355,8 @@ public sealed partial class DraftModification : Modification
             //  if (!BRep_Tool::IsClosed(E,F)) {
             Tool.Range(newE, out fp, out lp);
             TrimmedCurve3D tc = new(_eMap.GetValue(e).Geometry()!, fp, lp);
-            fp = tc.FirstParameter();
-            lp = tc.LastParameter();
+            fp = tc.FirstParameter;
+            lp = tc.LastParameter;
             BrepBuilder b = new();
             b.Range(newE, fp, lp);
             c = global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(tc, fp, lp, sb, ref tol);
@@ -365,14 +365,14 @@ public sealed partial class DraftModification : Modification
         Type typs = sb.GetType();
         if (typs == typeof(TrimmedSurface))
         {
-            sb = ((TrimmedSurface)sb).BasisSurface();
+            sb = ((TrimmedSurface)sb).BasisSurface;
             typs = sb.GetType();
         }
 
         bool jeRecadre = false;
         if (typs == typeof(ExtrusionSurface))
         {
-            Curve3D aC = ((ExtrusionSurface)sb).BasisCurve();
+            Curve3D aC = ((ExtrusionSurface)sb).BasisCurve;
             Type typc = aC.GetType();
             if (typc == typeof(CircleCurve3D))
             {
@@ -398,15 +398,15 @@ public sealed partial class DraftModification : Modification
             //
             newPF = c!.Value(0.5 * (fp + lp));
             //
-            d2 = newPF.SquareDistance(pf);
+            d2 = newPF.SquareDistanceTo(pf);
             //
             bTranslate = false;
-            if (newPF.Translated(vectra).SquareDistance(pf) < d2)
+            if (newPF.Translated(vectra).SquareDistanceTo(pf) < d2)
             {
                 v2DT = vectra;
                 bTranslate = !bTranslate; // True
             }
-            else if (newPF.Translated(-vectra).SquareDistance(pf) < d2)
+            else if (newPF.Translated(-vectra).SquareDistanceTo(pf) < d2)
             {
                 v2DT = -vectra;
                 bTranslate = !bTranslate; // True
@@ -467,28 +467,28 @@ public sealed partial class DraftModification : Modification
             }
 
             // Patch
-            double firstPar = gc.FirstParameter(), lastPar = gc.LastParameter();
+            double firstPar = gc.FirstParameter, lastPar = gc.LastParameter;
             double pconf = global::Kerf.Engine.Foundation.Precision.PConfusion();
             if (Math.Abs(paramf - lastPar) <= pconf)
             {
                 paramf = firstPar;
-                fv.Orientation(e.Orientation());
+                fv.Orient(e.Orientation);
                 if (v.IsEqual(fv))
                 {
                     p = paramf;
                 }
             }
 
-            fv.Orientation(e.Orientation());
+            fv.Orient(e.Orientation);
             if (!v.IsEqual(fv) && p <= paramf)
             {
                 if (gc.IsPeriodic)
                 {
-                    p += gc.Period();
+                    p += gc.Period;
                 }
                 else
                 {
-                    p = gc.LastParameter();
+                    p = gc.LastParameter;
                 }
             }
         }

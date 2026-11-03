@@ -118,7 +118,7 @@ public class FaceDivideArea : FaceDivide
         }
 
         Shape result = InternalResult();
-        if (result.ShapeType() == ShapeType.Face)
+        if (result.Type == ShapeType.Face)
         {
             return false;
         }
@@ -153,7 +153,7 @@ public class FaceDivideArea : FaceDivide
             }
             if (isModified)
             {
-                if (copyRes.ShapeType() == ShapeType.Wire || copyRes.ShapeType() == ShapeType.Shell)
+                if (copyRes.Type == ShapeType.Wire || copyRes.Type == ShapeType.Shell)
                 {
                     copyRes.Closed(Tool.IsClosed(copyRes));
                 }

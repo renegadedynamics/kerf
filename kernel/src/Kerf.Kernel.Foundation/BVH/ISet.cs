@@ -36,7 +36,7 @@ public interface ISet<T, TVec>
 }
 
 /// <summary>OCCT's default implementation of <c>BVH_Set::Box()</c>.</summary>
-public static class Set
+internal static class Set
 {
     /// <summary>The AABB of the entire set: the combination of the boxes of its objects.</summary>
     public static Box<T, TVec> Box<T, TVec>(global::Kerf.Engine.Geometry.Bvh.ISet<T, TVec> set)

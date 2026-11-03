@@ -116,9 +116,9 @@ public sealed class WireVertexAnalysis
             Point3D p2 = c2.Value(ufol);
 
             //   Est-ce que le jeu de vertex convient ? (meme si V1 == V2, on verifie)
-            double d1 = pv1.Distance(p1);
-            double d2 = pv2.Distance(p2);
-            double dd = pv1.Distance(pv2);
+            double d1 = pv1.DistanceTo(p1);
+            double d2 = pv2.DistanceTo(p2);
+            double dd = pv1.DistanceTo(pv2);
             if (d1 <= tol1 && d2 <= tol2 && dd <= (tol1 + tol2))
             {
                 stat = 1;

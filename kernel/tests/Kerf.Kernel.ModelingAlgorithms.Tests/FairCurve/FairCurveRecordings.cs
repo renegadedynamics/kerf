@@ -78,13 +78,13 @@ internal static class FairCurveRecordings
 
     private static string Hex(double theValue) => BitConverter.DoubleToInt64Bits(theValue).ToString("x", CultureInfo.InvariantCulture);
 
-    private static string Hex(Point2D theP) => Hex(theP.X()) + "," + Hex(theP.Y());
+    private static string Hex(Point2D theP) => Hex(theP.X) + "," + Hex(theP.Y);
 
     private static string Str(int theValue) => theValue.ToString(CultureInfo.InvariantCulture);
 
     private static string Curve(BSplineCurve2D theC)
     {
-        StringBuilder aS = new(Str(theC.Degree()) + "," + Str(theC.PoleCount));
+        StringBuilder aS = new(Str(theC.Degree) + "," + Str(theC.PoleCount));
         for (int i = 1; i <= theC.PoleCount; i++)
         {
             aS.Append(',').Append(Hex(theC.Pole(i)));

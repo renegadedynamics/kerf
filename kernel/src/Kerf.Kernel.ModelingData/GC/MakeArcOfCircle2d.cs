@@ -50,10 +50,10 @@ public sealed class MakeArcOfCircle2d : Root
         // where OCCT's release build computes NaN parameters.
         MakeLin2d cordeMaker = new MakeLin2d(p1, p2);
         Line2D corde = cordeMaker.IsDone ? cordeMaker.Value() : new Line2D();
-        Direction2D dir = corde.Direction();
-        Line2D bis = new Line2D(new Point2D((p1.X() + p2.X()) / 2.0, (p1.Y() + p2.Y()) / 2.0),
-                                    new Direction2D(-dir.Y(), dir.X()));
-        Line2D norm = new Line2D(p1, new Direction2D(-v.Y(), v.X()));
+        Direction2D dir = corde.Direction;
+        Line2D bis = new Line2D(new Point2D((p1.X + p2.X) / 2.0, (p1.Y + p2.Y) / 2.0),
+                                    new Direction2D(-dir.Y, dir.X));
+        Line2D norm = new Line2D(p1, new Direction2D(-v.Y, v.X));
         _theError = ConfusedPoints;
         AnalyticIntersection intp = new AnalyticIntersection(bis, norm);
         if (intp.IsDone)
@@ -61,7 +61,7 @@ public sealed class MakeArcOfCircle2d : Root
             if (!intp.IsEmpty)
             {
                 Point2D center = intp.Point(1).Value();
-                double rad = (center.Distance(p1) + center.Distance(p2)) / 2.0;
+                double rad = (center.DistanceTo(p1) + center.DistanceTo(p2)) / 2.0;
                 // gce_MakeCirc2d(center, rad) can't fail: rad is not negative.
                 cir = new MakeCirc2d(center, rad).Value();
                 _theError = Done;

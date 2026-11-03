@@ -40,7 +40,7 @@ internal sealed class SearchSing : FunctionWithDerivative
         _c2.D2(x, out Point3D p2, out Vector3D v2, out Vector3D w2);
         Vector3D v = new(p1, p2), vPrim;
         vPrim = v2 - v1;
-        d = vPrim.SquareMagnitude() + (v * (w2 - w1));
+        d = vPrim.SquareMagnitude + (v * (w2 - w1));
         return true;
     }
 
@@ -51,7 +51,7 @@ internal sealed class SearchSing : FunctionWithDerivative
         Vector3D v = new(p1, p2), vPrim;
         vPrim = v2 - v1;
         f = v * vPrim;
-        d = vPrim.SquareMagnitude() + (v * (w2 - w1));
+        d = vPrim.SquareMagnitude + (v * (w2 - w1));
         return true;
     }
 }

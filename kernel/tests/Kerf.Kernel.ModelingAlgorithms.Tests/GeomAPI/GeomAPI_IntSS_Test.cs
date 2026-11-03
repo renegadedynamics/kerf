@@ -101,8 +101,8 @@ public class GeomAPI_IntSS_Test
         Curve3D aCurve = anIntersection.Line(1);
         Assert.NotNull(aCurve);
 
-        double aU1 = aCurve.FirstParameter();
-        double aU2 = aCurve.LastParameter();
+        double aU1 = aCurve.FirstParameter;
+        double aU2 = aCurve.LastParameter;
         double aSpan = aU2 - aU1;
         Assert.True(aSpan > 1.0e-20, $"Curve range is degenerate: U2 - U1 = {aSpan}");
     }
@@ -147,8 +147,8 @@ public class GeomAPI_IntSS_Test
             Curve3D aCurve = anIntersection.Line(anIdx);
             Assert.NotNull(aCurve);
 
-            double aU1 = aCurve.FirstParameter();
-            double aU2 = aCurve.LastParameter();
+            double aU1 = aCurve.FirstParameter;
+            double aU2 = aCurve.LastParameter;
             // Intersection of two cones yields hyperbolic curves which may be unbounded;
             // clamp to a finite window to verify the span is non-degenerate.
             if (aU1 < -20.0)

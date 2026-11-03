@@ -26,7 +26,7 @@ namespace Kerf.Engine.Topology.Brep;
 /// are <c>out</c> parameters. <see cref="SetUVPoints(in Edge, Surface?, in Placement, in Point2D, in Point2D)"/>
 /// changes an edge and is internal.
 /// </remarks>
-public static class Tool
+internal static class Tool
 {
     // Checks trim range against the effective basis curve.
     private static bool IsValidTrimRange(Curve3D curve, double first, double last)
@@ -43,19 +43,19 @@ public static class Tool
         for (TrimmedCurve3D? trim = basisCurve as TrimmedCurve3D; trim is not null;
              trim = basisCurve as TrimmedCurve3D)
         {
-            basisCurve = trim.BasisCurve();
+            basisCurve = trim.BasisCurve;
         }
 
         return basisCurve.IsPeriodic
-               || (basisCurve.FirstParameter() - trimFirst <= global::Kerf.Engine.Foundation.Precision.PConfusion()
-                   && trimLast - basisCurve.LastParameter() <= global::Kerf.Engine.Foundation.Precision.PConfusion());
+               || (basisCurve.FirstParameter - trimFirst <= global::Kerf.Engine.Foundation.Precision.PConfusion()
+                   && trimLast - basisCurve.LastParameter <= global::Kerf.Engine.Foundation.Precision.PConfusion());
     }
 
     /// <summary>The surface of the face, with in <paramref name="l"/> the location for it.</summary>
     public static Surface? Surface(in Face f, out Placement l)
     {
         BrepTFace tf = (BrepTFace)f.TShape()!;
-        l = f.Location() * tf.Location();
+        l = f.Placement * tf.Location();
         return tf.Surface();
     }
 
@@ -70,10 +70,10 @@ public static class Tool
             return s;
         }
 
-        Placement l = f.Location() * tf.Location();
+        Placement l = f.Placement * tf.Location();
         if (!l.IsIdentity)
         {
-            Geometry3D copy = s.Transformed(l.Transformation());
+            Geometry3D copy = s.Transformed(l.Transformation);
             return (Surface)copy;
         }
 
@@ -88,7 +88,7 @@ public static class Tool
                                                     out Placement location,
                                                     MeshPurpose meshPurpose = MeshPurpose_NONE)
     {
-        location = face.Location();
+        location = face.Placement;
         BrepTFace tFace = (BrepTFace)face.TShape()!;
         return tFace.Triangulation(meshPurpose);
     }
@@ -98,7 +98,7 @@ public static class Tool
     internal static NCollection_List<Triangulation> Triangulations(in Face face,
                                                                        out Placement location)
     {
-        location = face.Location();
+        location = face.Placement;
         BrepTFace tFace = (BrepTFace)face.TShape()!;
         return tFace.Triangulations();
     }
@@ -142,7 +142,7 @@ public static class Tool
             if (cr.IsCurve3D)
             {
                 Curve3DRepresentation gc = (Curve3DRepresentation)cr;
-                l = e.Location() * gc.Location();
+                l = e.Placement * gc.Location();
                 gc.Range(out first, out last);
                 return gc.Curve3D();
             }
@@ -166,7 +166,7 @@ public static class Tool
         {
             if (!l.IsIdentity)
             {
-                Geometry3D copy = c.Transformed(l.Transformation());
+                Geometry3D copy = c.Transformed(l.Transformation);
                 return (Curve3D)copy;
             }
         }
@@ -224,7 +224,7 @@ public static class Tool
             if (cr.IsPolygon3D)
             {
                 Polygon3DRepresentation gc = (Polygon3DRepresentation)cr;
-                l = e.Location() * gc.Location();
+                l = e.Placement * gc.Location();
                 return gc.Polygon3D();
             }
 
@@ -254,7 +254,7 @@ public static class Tool
     {
         Surface? s = Tool.Surface(f, out Placement l);
         Edge localEdge = e;
-        if (f.Orientation() == Reversed)
+        if (f.Orientation == Reversed)
         {
             localEdge.Reverse();
         }
@@ -284,7 +284,7 @@ public static class Tool
                                                out double last,
                                                out bool isStored)
     {
-        bool eisreversed = (e.Orientation() == Reversed);
+        bool eisreversed = (e.Orientation == Reversed);
         isStored = true;
 
         // find the representation
@@ -292,7 +292,7 @@ public static class Tool
         var itcr = new NCollection_List<CurveRepresentation>.Iterator(te.Curves());
         if (itcr.More())
         {
-            Placement loc = l.Predivided(e.Location());
+            Placement loc = l.Predivided(e.Placement);
             while (itcr.More())
             {
                 CurveRepresentation cr = itcr.Value();
@@ -336,7 +336,7 @@ public static class Tool
         TrimmedSurface? grts = s as TrimmedSurface;
         if (grts is not null)
         {
-            gp = grts.BasisSurface() as PlaneSurface;
+            gp = grts.BasisSurface as PlaneSurface;
         }
         else
         {
@@ -364,7 +364,7 @@ public static class Tool
         // Transform curve and update parameters in account of scale factor
         if (!curveLocation.IsIdentity)
         {
-            Transform3D trsf = curveLocation.Transformation();
+            Transform3D trsf = curveLocation.Transformation;
             c3D = (Curve3D)c3D.Transformed(trsf);
             f = c3D.TransformedParameter(f, trsf);
             l = c3D.TransformedParameter(l, trsf);
@@ -378,7 +378,7 @@ public static class Tool
         var trimmedCurve = new TrimmedCurve3D(c3D, f, l, true, false);
 
         // Perform projection
-        Curve3D? projOnPlane = global::Kerf.Engine.Geometry.Projection.GeomProjLib.ProjectOnPlane(trimmedCurve, gp, gp.Position().Direction(), true);
+        Curve3D? projOnPlane = global::Kerf.Engine.Geometry.Projection.GeomProjLib.ProjectOnPlane(trimmedCurve, gp, gp.Position.Direction, true);
 
         var hs = new SurfaceAdaptor(gp);
         var hc = new CurveAdaptor(projOnPlane!);
@@ -388,7 +388,7 @@ public static class Tool
 
         if (pc is TrimmedCurve2D tc)
         {
-            pc = tc.BasisCurve();
+            pc = tc.BasisCurve;
         }
 
         return pc;
@@ -414,7 +414,7 @@ public static class Tool
                 GCurve gc = (GCurve)cr;
                 c = gc.PCurve();
                 s = gc.Surface();
-                l = e.Location() * gc.Location();
+                l = e.Placement * gc.Location();
                 gc.Range(out first, out last);
                 return;
             }
@@ -472,7 +472,7 @@ public static class Tool
                 }
 
                 s = gc.Surface();
-                l = e.Location() * gc.Location();
+                l = e.Placement * gc.Location();
                 gc.Range(out first, out last);
                 return;
             }
@@ -489,7 +489,7 @@ public static class Tool
     {
         Surface? s = Tool.Surface(f, out Placement l);
         Edge localEdge = e;
-        if (f.Orientation() == Reversed)
+        if (f.Orientation == Reversed)
         {
             localEdge.Reverse();
         }
@@ -500,8 +500,8 @@ public static class Tool
     /// <summary>The polygon of the edge in the parametric space of the surface, or null.</summary>
     public static Polygon2D? PolygonOnSurface(in Edge e, Surface? s, in Placement L)
     {
-        Placement l = L.Predivided(e.Location());
-        bool eisreversed = (e.Orientation() == Reversed);
+        Placement l = L.Predivided(e.Placement);
+        bool eisreversed = (e.Orientation == Reversed);
 
         // find the representation
         BrepTEdge te = (BrepTEdge)e.TShape()!;
@@ -546,7 +546,7 @@ public static class Tool
                 PolygonOnSurface ps = (PolygonOnSurface)cr;
                 p = ps.Polygon();
                 s = ps.Surface();
-                l = e.Location() * ps.Location();
+                l = e.Placement * ps.Location();
                 return;
             }
 
@@ -587,7 +587,7 @@ public static class Tool
                 {
                     p = ps.Polygon();
                     s = ps.Surface();
-                    l = e.Location() * ps.Location();
+                    l = e.Placement * ps.Location();
                     return;
                 }
             }
@@ -605,8 +605,8 @@ public static class Tool
                                                                       Triangulation? t,
                                                                       in Placement L)
     {
-        Placement l = L.Predivided(e.Location());
-        bool eisreversed = (e.Orientation() == Reversed);
+        Placement l = L.Predivided(e.Placement);
+        bool eisreversed = (e.Orientation == Reversed);
 
         // find the representation
         BrepTEdge te = (BrepTEdge)e.TShape()!;
@@ -651,7 +651,7 @@ public static class Tool
                 PolygonOnTriangulationRepresentation pt = (PolygonOnTriangulationRepresentation)cr;
                 p = pt.PolygonOnTriangulation();
                 t = pt.Triangulation();
-                l = e.Location() * pt.Location();
+                l = e.Placement * pt.Location();
                 return;
             }
 
@@ -695,7 +695,7 @@ public static class Tool
                 {
                     t = pt.Triangulation();
                     p = pt.PolygonOnTriangulation();
-                    l = e.Location() * pt.Location();
+                    l = e.Placement * pt.Location();
                     return;
                 }
             }
@@ -736,7 +736,7 @@ public static class Tool
             return false;
         }
 
-        Placement l = L.Predivided(e.Location());
+        Placement l = L.Predivided(e.Placement);
 
         // find the representation
         BrepTEdge te = (BrepTEdge)e.TShape()!;
@@ -764,7 +764,7 @@ public static class Tool
             return false;
         }
 
-        Placement l = L.Predivided(e.Location());
+        Placement l = L.Predivided(e.Placement);
 
         // find the representation
         BrepTEdge te = (BrepTEdge)e.TShape()!;
@@ -859,7 +859,7 @@ public static class Tool
     /// <remarks>OCCT sets the edge's Modified flag here; the port does too, unless the edge is frozen.</remarks>
     public static void Range(in Edge e, Surface? s, in Placement L, out double first, out double last)
     {
-        Placement l = L.Predivided(e.Location());
+        Placement l = L.Predivided(e.Placement);
 
         // find the representation
         BrepTEdge te = (BrepTEdge)e.TShape()!;
@@ -908,8 +908,8 @@ public static class Tool
                                 out Point2D pFirst,
                                 out Point2D pLast)
     {
-        Placement l = L.Predivided(e.Location());
-        bool eisreversed = (e.Orientation() == Reversed);
+        Placement l = L.Predivided(e.Placement);
+        bool eisreversed = (e.Orientation == Reversed);
 
         // find the representation
         BrepTEdge te = (BrepTEdge)e.TShape()!;
@@ -943,7 +943,7 @@ public static class Tool
         TrimmedSurface? grts = s as TrimmedSurface;
         if (grts is not null)
         {
-            gp = grts.BasisSurface() as PlaneSurface;
+            gp = grts.BasisSurface as PlaneSurface;
         }
         else
         {
@@ -960,7 +960,7 @@ public static class Tool
             vf.Move(linverted, false);
             vl.Move(linverted, false);
             double u, v;
-            Plane3D pln = gp.Pln();
+            Plane3D pln = gp.Plane;
 
             u = v = 0.0;
             if (!vf.IsNull)
@@ -992,7 +992,7 @@ public static class Tool
     {
         Surface? s = Tool.Surface(f, out Placement l);
         Edge localEdge = e;
-        if (f.Orientation() == Reversed)
+        if (f.Orientation == Reversed)
         {
             localEdge.Reverse();
         }
@@ -1008,8 +1008,8 @@ public static class Tool
                                      in Point2D pFirst,
                                      in Point2D pLast)
     {
-        Placement l = L.Predivided(e.Location());
-        bool eisreversed = (e.Orientation() == Reversed);
+        Placement l = L.Predivided(e.Placement);
+        bool eisreversed = (e.Orientation == Reversed);
 
         // find the representation
         BrepTEdge te = (BrepTEdge)e.TShape()!;
@@ -1042,7 +1042,7 @@ public static class Tool
     {
         Surface? s = Tool.Surface(f, out Placement l);
         Edge localEdge = e;
-        if (f.Orientation() == Reversed)
+        if (f.Orientation == Reversed)
         {
             localEdge.Reverse();
         }
@@ -1073,7 +1073,7 @@ public static class Tool
                                      in Placement L1,
                                      in Placement L2)
     {
-        Placement eloc = e.Location();
+        Placement eloc = e.Placement;
         Placement l1 = L1.Predivided(eloc);
         Placement l2 = L2.Predivided(eloc);
 
@@ -1102,8 +1102,8 @@ public static class Tool
                                            in Placement L1,
                                            in Placement L2)
     {
-        Placement l1 = L1.Predivided(e.Location());
-        Placement l2 = L2.Predivided(e.Location());
+        Placement l1 = L1.Predivided(e.Placement);
+        Placement l2 = L2.Predivided(e.Placement);
 
         // find the representation
         // OCCT reads ChangeCurves(), which the port guards against frozen edges: Curves() is the same list
@@ -1175,12 +1175,12 @@ public static class Tool
         }
 
         Point3D p = tv.Pnt();
-        if (v.Location().IsIdentity)
+        if (v.Placement.IsIdentity)
         {
             return p;
         }
 
-        return p.Transformed(v.Location().Transformation());
+        return p.Transformed(v.Placement.Transformation);
     }
 
     /// <summary>The tolerance of the vertex, at least Precision::Confusion().</summary>
@@ -1227,7 +1227,7 @@ public static class Tool
 
         if (!itv.More() && Tool.Degenerated(e))
         {
-            orient = v.Orientation();
+            orient = v.Orientation;
         }
 
         while (itv.More())
@@ -1241,8 +1241,8 @@ public static class Tool
                 }
                 else
                 {
-                    rev = e.Orientation() == Reversed;
-                    if (vcur.Orientation() == v.Orientation())
+                    rev = e.Orientation == Reversed;
+                    if (vcur.Orientation == v.Orientation)
                     {
                         vf = vcur;
                     }
@@ -1254,7 +1254,7 @@ public static class Tool
 
         if (!vf.IsNull)
         {
-            orient = vf.Orientation();
+            orient = vf.Orientation;
         }
 
         double f, l;
@@ -1276,7 +1276,7 @@ public static class Tool
         else
         {
             Curve3D? c = Tool.Curve(e, out Placement L, out f, out l);
-            L = L.Predivided(v.Location());
+            L = L.Predivided(v.Placement);
             if (c is not null || Tool.Degenerated(e))
             {
                 BrepTVertex tv = (BrepTVertex)v.TShape()!;
@@ -1304,14 +1304,14 @@ public static class Tool
                                 return true;
                             }
 
-                            Point3D pf = c.Value(f).Transformed(L.Transformation());
-                            Point3D pl = c.Value(l).Transformed(L.Transformation());
+                            Point3D pf = c.Value(f).Transformed(L.Transformation);
+                            Point3D pl = c.Value(l).Transformed(L.Transformation);
                             double tol = Tool.Tolerance(v);
-                            if (pf.Distance(pl) < tol)
+                            if (pf.DistanceTo(pl) < tol)
                             {
-                                if (pf.Distance(Tool.Pnt(v)) < tol)
+                                if (pf.DistanceTo(Tool.Pnt(v)) < tol)
                                 {
-                                    if (v.Orientation() == Forward)
+                                    if (v.Orientation == Forward)
                                     {
                                         res = f; // p = f;
                                     }
@@ -1335,7 +1335,7 @@ public static class Tool
                 // no 3d curve !!
                 // let us try with the first pcurve
                 Tool.CurveOnSurface(e, out Curve2D? pc, out Surface? s, out L, out f, out l);
-                L = L.Predivided(v.Location());
+                L = L.Predivided(v.Placement);
                 BrepTVertex tv = (BrepTVertex)v.TShape()!;
                 var itpr = new NCollection_List<PointRepresentation>.Iterator(tv.Points());
 
@@ -1348,15 +1348,15 @@ public static class Tool
                         // Closed curves RLE 16 june 94
                         if (pc!.IsClosed)
                         {
-                            if ((p == pc.FirstParameter()) || (p == pc.LastParameter()))
+                            if ((p == pc.FirstParameter) || (p == pc.LastParameter))
                             {
-                                if (v.Orientation() == Forward)
+                                if (v.Orientation == Forward)
                                 {
-                                    p = pc.FirstParameter();
+                                    p = pc.FirstParameter;
                                 }
                                 else
                                 {
-                                    p = pc.LastParameter();
+                                    p = pc.LastParameter;
                                 }
                             }
                         }
@@ -1413,8 +1413,8 @@ public static class Tool
                 }
                 else
                 {
-                    rev = e.Orientation() == Reversed;
-                    if (itv.Value().Orientation() == v.Orientation())
+                    rev = e.Orientation == Reversed;
+                    if (itv.Value().Orientation == v.Orientation)
                     {
                         vf = itv.Value();
                     }
@@ -1427,7 +1427,7 @@ public static class Tool
         Orientation orient = Internal;
         if (!vf.IsNull)
         {
-            orient = vf.Orientation();
+            orient = vf.Orientation;
         }
 
         double f, l;
@@ -1464,7 +1464,7 @@ public static class Tool
         //----------------------------------------------------------
 
         Curve3D? c = Tool.Curve(e, out Placement l1, out f, out l);
-        l1 = l1.Predivided(v.Location());
+        l1 = l1.Predivided(v.Placement);
         if (c is not null || Degenerated(e))
         {
             BrepTVertex tv = (BrepTVertex)v.TShape()!;
@@ -1490,14 +1490,14 @@ public static class Tool
                             return res;
                         }
 
-                        Point3D pf = c.Value(f).Transformed(l1.Transformation());
-                        Point3D pl = c.Value(l).Transformed(l1.Transformation());
+                        Point3D pf = c.Value(f).Transformed(l1.Transformation);
+                        Point3D pl = c.Value(l).Transformed(l1.Transformation);
                         double tol = Tool.Tolerance(v);
-                        if (pf.Distance(pl) < tol)
+                        if (pf.DistanceTo(pl) < tol)
                         {
-                            if (pf.Distance(Tool.Pnt(v)) < tol)
+                            if (pf.DistanceTo(Tool.Pnt(v)) < tol)
                             {
-                                if (v.Orientation() == Forward)
+                                if (v.Orientation == Forward)
                                 {
                                     res = f;
                                 }
@@ -1526,7 +1526,7 @@ public static class Tool
     public static Point2D Parameters(in Vertex v, in Face f)
     {
         Surface? s = Tool.Surface(f, out Placement l);
-        l = l.Predivided(v.Location());
+        l = l.Predivided(v.Placement);
         BrepTVertex tv = (BrepTVertex)v.TShape()!;
         var itpr = new NCollection_List<PointRepresentation>.Iterator(tv.Points());
 
@@ -1573,7 +1573,7 @@ public static class Tool
     /// </summary>
     public static bool IsClosed(in Shape shape)
     {
-        if (shape.ShapeType() == ShapeType.Shell)
+        if (shape.Type == ShapeType.Shell)
         {
             var map = new HashSet<Shape>(ShapeHasher.Instance);
             var exp = new Explorer(shape.Oriented(Forward), ShapeType.Edge);
@@ -1581,7 +1581,7 @@ public static class Tool
             for (; exp.More(); exp.Next())
             {
                 Edge e = ShapeCasts.Edge(exp.Current());
-                if (Tool.Degenerated(e) || e.Orientation() == Internal || e.Orientation() == External)
+                if (Tool.Degenerated(e) || e.Orientation == Internal || e.Orientation == External)
                 {
                     continue;
                 }
@@ -1595,7 +1595,7 @@ public static class Tool
 
             return hasBound && map.Count == 0;
         }
-        else if (shape.ShapeType() == ShapeType.Wire)
+        else if (shape.Type == ShapeType.Wire)
         {
             var map = new HashSet<Shape>(ShapeHasher.Instance);
             var exp = new Explorer(shape.Oriented(Forward), ShapeType.Vertex);
@@ -1603,7 +1603,7 @@ public static class Tool
             for (; exp.More(); exp.Next())
             {
                 Shape v = exp.Current();
-                if (v.Orientation() == Internal || v.Orientation() == External)
+                if (v.Orientation == Internal || v.Orientation == External)
                 {
                     continue;
                 }
@@ -1617,13 +1617,13 @@ public static class Tool
 
             return hasBound && map.Count == 0;
         }
-        else if (shape.ShapeType() == ShapeType.Edge)
+        else if (shape.Type == ShapeType.Edge)
         {
             Exploration.Vertices(ShapeCasts.Edge(shape), out Vertex vFirst, out Vertex vLast);
             return !vFirst.IsNull && vFirst.IsSame(vLast);
         }
 
-        return shape.Closed();
+        return shape.IsClosed;
     }
 
     // modified by NIZNHY-PKV Fri Oct 17 14:09:58 2008 f
@@ -1636,11 +1636,11 @@ public static class Tool
 
         if (gofs is not null)
         {
-            gp = gofs.BasisSurface() as PlaneSurface;
+            gp = gofs.BasisSurface as PlaneSurface;
         }
         else if (grts is not null)
         {
-            gp = grts.BasisSurface() as PlaneSurface;
+            gp = grts.BasisSurface as PlaneSurface;
         }
         else
         {

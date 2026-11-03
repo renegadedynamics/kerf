@@ -67,15 +67,15 @@ public sealed class AnalyticCirc2dTanCen
         Direction2D dirx = new(Direction2D.D.X);
         double tol = Math.Abs(tolerance);
         Circle2D c1 = qualified1.Qualified();
-        double r1 = c1.Radius();
-        Point2D center1 = c1.Location();
+        double r1 = c1.Radius;
+        Point2D center1 = c1.Location;
         double dist;
         int signe = 0;
         int signe1 = 0;
 
         if (!qualified1.IsUnqualified)
         {
-            dist = pcenter.Distance(center1);
+            dist = pcenter.DistanceTo(center1);
             if (qualified1.IsEnclosed)
             {
                 //   ============================
@@ -121,7 +121,7 @@ public sealed class AnalyticCirc2dTanCen
                 else
                 {
                     _theSame1[_nbrSol] = 0;
-                    Direction2D d = new(pcenter.X() - center1.X(), pcenter.Y() - center1.Y());
+                    Direction2D d = new(pcenter.X - center1.X, pcenter.Y - center1.Y);
                     _pnttg1sol[_nbrSol] = new Point2D(pcenter.XY() + signe * radius * d.XY());
                     // a solution of radius 0 (Pcenter on C1) and a circle C1 of radius 0 put the tangency point at
                     // their centre
@@ -134,7 +134,7 @@ public sealed class AnalyticCirc2dTanCen
         else
         {
             // ====
-            dist = pcenter.Distance(center1);
+            dist = pcenter.DistanceTo(center1);
             if (dist >= Constants.Resolution())
             {
                 signe = 1;
@@ -153,7 +153,7 @@ public sealed class AnalyticCirc2dTanCen
                     _nbrSol++;
                     _cirsol[_nbrSol] = new Circle2D(new Axis2D(pcenter, dirx), radius);
                     //       ========================================================
-                    double distcc1 = pcenter.Distance(center1);
+                    double distcc1 = pcenter.DistanceTo(center1);
                     if (!qualified1.IsUnqualified)
                     {
                         _qualifier1[_nbrSol] = qualified1.Qualifier();
@@ -172,7 +172,7 @@ public sealed class AnalyticCirc2dTanCen
                     }
                     _theSame1[_nbrSol] = 0;
                     _wellDone = true;
-                    Direction2D d = new(pcenter.X() - center1.X(), pcenter.Y() - center1.Y());
+                    Direction2D d = new(pcenter.X - center1.X, pcenter.Y - center1.Y);
                     _pnttg1sol[_nbrSol] = new Point2D(pcenter.XY() + signe1 * radius * d.XY());
                     // a solution of radius 0 (Pcenter on C1) and a circle C1 of radius 0 put the tangency point at
                     // their centre
@@ -202,17 +202,17 @@ public sealed class AnalyticCirc2dTanCen
     public AnalyticCirc2dTanCen(in Line2D linetan, in Point2D pcenter) : this(1)
     {
         Direction2D dirx = new(Direction2D.D.X);
-        double rayon = linetan.Distance(pcenter);
+        double rayon = linetan.DistanceTo(pcenter);
         _cirsol[1] = new Circle2D(new Axis2D(pcenter, dirx), rayon);
         // ==================================================
         _qualifier1[1] = Qualifier.Noqualifier;
         _theSame1[1] = 0;
-        double xloc = linetan.Location().X();
-        double yloc = linetan.Location().Y();
-        double xdir = linetan.Direction().X();
-        double ydir = linetan.Direction().Y();
+        double xloc = linetan.Location.X;
+        double yloc = linetan.Location.Y;
+        double xdir = linetan.Direction.X;
+        double ydir = linetan.Direction.Y;
 
-        if (new Direction2D(xloc - pcenter.X(), yloc - pcenter.Y()).Dot(new Direction2D(-ydir, xdir)) > 0.0)
+        if (new Direction2D(xloc - pcenter.X, yloc - pcenter.Y).Dot(new Direction2D(-ydir, xdir)) > 0.0)
         {
             _pnttg1sol[1] = new Point2D(pcenter.XY() + rayon * new Xy(-ydir, xdir));
             _par1sol[1] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[1], _pnttg1sol[1]);
@@ -238,7 +238,7 @@ public sealed class AnalyticCirc2dTanCen
     public AnalyticCirc2dTanCen(in Point2D point1, in Point2D pcenter) : this(1)
     {
         Direction2D dirx = new(Direction2D.D.X);
-        double rayon = point1.Distance(pcenter);
+        double rayon = point1.DistanceTo(pcenter);
         _cirsol[1] = new Circle2D(new Axis2D(pcenter, dirx), rayon);
         // =================================================
         _qualifier1[1] = Qualifier.Noqualifier;

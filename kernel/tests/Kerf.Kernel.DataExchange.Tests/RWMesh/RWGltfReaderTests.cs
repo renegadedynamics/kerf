@@ -100,9 +100,9 @@ public class RWGltfReaderTests
         Assert.Equal(1, aTri.TriangleCount);
         Assert.True(aTri.IsFrozen);
         // glTF's (1, 0, 0) m is (1000, 0, 0) mm; its (0, 1, 0), Y up, is (0, 0, 1000)
-        Assert.Equal(1000.0, aTri.Node(2).X(), 9);
-        Assert.Equal(1000.0, aTri.Node(3).Z(), 9);
-        Assert.Equal(0.0, aTri.Node(3).Y(), 9);
+        Assert.Equal(1000.0, aTri.Node(2).X, 9);
+        Assert.Equal(1000.0, aTri.Node(3).Z, 9);
+        Assert.Equal(0.0, aTri.Node(3).Y, 9);
         Assert.Equal("M", anItem.Product.Name);
         Assert.Equal("N", anItem.Path[0].Name);
         Assert.Empty(aReader.Warnings);
@@ -110,7 +110,7 @@ public class RWGltfReaderTests
         // without the conversions
         aTree = Read(Model(), out _, new ReadOptions { YUpToZUp = false, OutputLengthUnit = 1.0 });
         aTri = SingleTriangulation(aTree!, out _);
-        Assert.Equal(1.0, aTri.Node(3).Y(), 9);
+        Assert.Equal(1.0, aTri.Node(3).Y, 9);
     }
 
     [Fact]
@@ -141,14 +141,14 @@ public class RWGltfReaderTests
         Assert.Same(aTree.Roots[0].Product, aTree.Roots[1].Product);
         Assert.False(aTree.Roots[0].Location.IsIdentity);
         // glTF's Z (2 m) is OCCT's -Y
-        Assert.Equal(-2000.0, aTree.Roots[1].Location.Transformation().TranslationPart().Y(), 9);
+        Assert.Equal(-2000.0, aTree.Roots[1].Location.Transformation.TranslationXyz().Y(), 9);
 
         // a scale: applied to the mesh (a copy for the node)
         JsonObject aScaled = Model();
         aScaled["nodes"]![0]!["scale"] = new JsonArray(2.0, 1.0, 1.0);
         Triangulation aTri = SingleTriangulation(Read(aScaled, out _)!, out FlatItem anItem);
         Assert.True(anItem.Location.IsIdentity);
-        Assert.Equal(2000.0, aTri.Node(2).X(), 9);
+        Assert.Equal(2000.0, aTri.Node(2).X, 9);
 
         // a mirror: applied, the winding swapped so the triangle keeps facing the same way
         JsonObject aMirrored = Model();

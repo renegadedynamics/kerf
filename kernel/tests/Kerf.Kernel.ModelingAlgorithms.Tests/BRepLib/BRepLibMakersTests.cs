@@ -53,7 +53,7 @@ public class BRepLibMakersTests
     }
 
     private static void AssertPoint(in Point3D theExpected, in Point3D theActual, double theTol = 1e-12)
-        => Assert.True(theExpected.Distance(theActual) <= theTol, $"{theExpected} != {theActual}");
+        => Assert.True(theExpected.DistanceTo(theActual) <= theTol, $"{theExpected} != {theActual}");
 
     // ---------------------------------------------------------------- vertices
 
@@ -99,9 +99,9 @@ public class BRepLibMakersTests
         Assert.Equal(new Point3D(1, 0, 0), Tool.Pnt(aV1));
         Assert.Equal(new Point3D(1, 3, 4), Tool.Pnt(aV2));
         Assert.True(aV1.IsSame(aME.Vertex1()));
-        Assert.Equal(Forward, aME.Vertex1().Orientation());
-        Assert.Equal(Reversed, aME.Vertex2().Orientation());
-        Assert.False(anE.Closed());
+        Assert.Equal(Forward, aME.Vertex1().Orientation);
+        Assert.Equal(Reversed, aME.Vertex2().Orientation);
+        Assert.False(anE.IsClosed);
         Assert.False(Tool.Degenerated(anE));
         Assert.Equal(BrepLibrary.Precision(), Tool.Tolerance(anE));
     }
@@ -162,7 +162,7 @@ public class BRepLibMakersTests
         var aCirc = new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
         var aME = new LibraryMakeEdge(aCirc);
         Edge anE = aME.Edge();
-        Assert.True(anE.Closed());
+        Assert.True(anE.IsClosed);
         Assert.False(Tool.Degenerated(anE));
         Assert.Equal(1, Count(anE, ShapeType.Vertex));
         Assert.True(aME.Vertex1().IsSame(aME.Vertex2()));
@@ -258,7 +258,7 @@ public class BRepLibMakersTests
         Edge anE = new LibraryMakeEdge(aT).Edge();
         // Geom_TrimmedCurve keeps a copy of its basis; the edge gets that B-spline, not a trimmed curve
         Curve3D? anEC = Tool.Curve(anE, out double f, out double l);
-        Assert.Same(aT.BasisCurve(), anEC);
+        Assert.Same(aT.BasisCurve, anEC);
         Assert.IsType<BSplineCurve3D>(anEC);
         Assert.Equal(0.2, f, 1e-15);
         Assert.Equal(0.8, l, 1e-15);
@@ -314,11 +314,11 @@ public class BRepLibMakersTests
         Assert.Equal(0.0, f);
         Assert.Equal(2.0, l);
         Assert.Equal(new Point3D(3, 1, 1), Tool.Pnt(aME.Vertex2()));
-        Assert.Equal(Forward, anE.Orientation());
+        Assert.Equal(Forward, anE.Orientation);
 
         // reversed parameters reverse the edge
         Edge aR = new LibraryMakeEdge(new LineCurve2D(new Point2D(1, 1), new Direction2D(1, 0)), aPlane, 2.0, 0.0).Edge();
-        Assert.Equal(Reversed, aR.Orientation());
+        Assert.Equal(Reversed, aR.Orientation);
     }
 
     [Fact]
@@ -380,14 +380,14 @@ public class BRepLibMakersTests
         Assert.Equal(LibraryWireError.WireDone, aMW.Error());
         Wire aW = aMW.Wire();
         Assert.True(aW.TShape()!.IsFrozen);
-        Assert.False(aW.Closed());
+        Assert.False(aW.IsClosed);
         Assert.True(aMW.Edge().IsSame(e2));
         Assert.True(aMW.Vertex().IsSame(b));
         aMW.Add(e3);
         Wire aClosed = aMW.Wire();
-        Assert.True(aClosed.Closed());
+        Assert.True(aClosed.IsClosed);
         Assert.Equal(3, Count(aClosed, ShapeType.Edge));
-        Assert.False(aW.Closed()); // the published wire didn't change
+        Assert.False(aW.IsClosed); // the published wire didn't change
         Assert.Equal(2, Count(aW, ShapeType.Edge));
         s1.AssertUnchanged(e1);
         s2.AssertUnchanged(e2);
@@ -420,7 +420,7 @@ public class BRepLibMakersTests
         var aMW = new LibraryMakeWire(e1, e2, e3);
         Assert.Equal(LibraryWireError.WireDone, aMW.Error());
         Wire aW = aMW.Wire();
-        Assert.True(aW.Closed());
+        Assert.True(aW.IsClosed);
         Assert.Equal(3, Count(aW, ShapeType.Edge));
         Assert.Equal(3, Count(aW, ShapeType.Vertex));
         var anExp = new Explorer(aW, ShapeType.Edge);
@@ -467,7 +467,7 @@ public class BRepLibMakersTests
         Assert.True(aMW.IsDone);
         Wire aW = aMW.Wire();
         Assert.Equal(3, Count(aW, ShapeType.Edge));
-        Assert.False(aW.Closed());
+        Assert.False(aW.IsClosed);
     }
 
     [Fact]
@@ -487,7 +487,7 @@ public class BRepLibMakersTests
         Wire aW = aMW.Wire();
         Assert.Equal(4, Count(aW, ShapeType.Edge));
         Assert.Equal(4, Count(aW, ShapeType.Vertex));
-        Assert.True(aW.Closed());
+        Assert.True(aW.IsClosed);
         s1.AssertUnchanged(e1);
 
         // a list that can't be connected
@@ -525,7 +525,7 @@ public class BRepLibMakersTests
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aW0);
         var aMW = new LibraryMakeWire(aW0, E(1, 1, 0, 0, 0, 0));
         Assert.True(aMW.IsDone);
-        Assert.True(aMW.Wire().Closed());
+        Assert.True(aMW.Wire().IsClosed);
         aSnap.AssertUnchanged(aW0);
     }
 
@@ -537,15 +537,15 @@ public class BRepLibMakersTests
         var aMP = new LibraryMakePolygon(new Point3D(0, 0, 0), new Point3D(2, 0, 0), new Point3D(2, 2, 0));
         Assert.True(aMP.IsDone);
         Wire aOpen = aMP.Wire();
-        Assert.False(aOpen.Closed());
+        Assert.False(aOpen.IsClosed);
         Assert.Equal(2, Count(aOpen, ShapeType.Edge));
         Assert.Equal(new Point3D(0, 0, 0), Tool.Pnt(aMP.FirstVertex()));
         Assert.Equal(new Point3D(2, 2, 0), Tool.Pnt(aMP.LastVertex()));
         aMP.Close();
         Wire aClosed = aMP.Wire();
-        Assert.True(aClosed.Closed());
+        Assert.True(aClosed.IsClosed);
         Assert.Equal(3, Count(aClosed, ShapeType.Edge));
-        Assert.False(aOpen.Closed()); // published before: unchanged
+        Assert.False(aOpen.IsClosed); // published before: unchanged
         Assert.Equal(2, Count(aOpen, ShapeType.Edge));
         Assert.True(aMP.Edge().TShape()!.IsFrozen);
     }
@@ -555,7 +555,7 @@ public class BRepLibMakersTests
     {
         Wire aW = new LibraryMakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0),
                                                  new Point3D(0, 1, 0), true).Wire();
-        Assert.True(aW.Closed());
+        Assert.True(aW.IsClosed);
         Assert.Equal(4, Count(aW, ShapeType.Edge));
         Assert.Equal(4, Count(aW, ShapeType.Vertex));
         Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), Tool.Tolerance(ShapeCasts.Edge(new Explorer(aW, ShapeType.Edge).Current())));
@@ -574,7 +574,7 @@ public class BRepLibMakersTests
         aMP.Add(new Point3D(0, 0, 0));
         Assert.True(aMP.Added());
         Wire aW = aMP.Wire();
-        Assert.True(aW.Closed());
+        Assert.True(aW.IsClosed);
         Assert.Equal(3, Count(aW, ShapeType.Edge));
         Assert.True(aMP.LastVertex().IsSame(aMP.FirstVertex()));
     }
@@ -585,7 +585,7 @@ public class BRepLibMakersTests
         Vertex a = V(0, 0, 0), b = V(3, 0, 0), c = V(0, 4, 0);
         ShapeSnapshot aSa = ShapeSnapshot.Of(a);
         Wire aW = new LibraryMakePolygon(a, b, c, true).Wire();
-        Assert.True(aW.Closed());
+        Assert.True(aW.IsClosed);
         Assert.Equal(3, Count(aW, ShapeType.Vertex));
         var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aW, ShapeType.Vertex, aMap);
@@ -722,13 +722,13 @@ public class BRepLibMakersTests
             Assert.Equal(Out, new FClass2d(aF, 0).PerformInfinitePoint());
             var anIt = new Iterator(aF);
             Assert.True(anIt.Value().IsSame(aW));
-            Assert.Equal(aCcw ? Forward : Reversed, anIt.Value().Orientation());
+            Assert.Equal(aCcw ? Forward : Reversed, anIt.Value().Orientation);
             aSnap.AssertUnchanged(aW);
         }
 
         // Inside false keeps the wire as given
         Face aKept = new LibraryMakeFace(aPln, Square(0, 0, 1, false), false).Face();
-        Assert.Equal(Forward, new Iterator(aKept).Value().Orientation());
+        Assert.Equal(Forward, new Iterator(aKept).Value().Orientation);
     }
 
     [Fact]
@@ -798,7 +798,7 @@ public class BRepLibMakersTests
         }
         Assert.Equal(4, Count(aF, ShapeType.Edge));
         var aPlane = Assert.IsType<PlaneSurface>(Tool.Surface(aF));
-        Assert.Equal(1.0, Math.Abs(aPlane.Position().Direction().Z()), 1e-12);
+        Assert.Equal(1.0, Math.Abs(aPlane.Position.Direction.Z), 1e-12);
         Assert.Equal(Out, new FClass2d(aF, 0).PerformInfinitePoint());
         for (var anExp = new Explorer(aF, ShapeType.Edge); anExp.More(); anExp.Next())
         {
@@ -944,7 +944,7 @@ public class BRepLibMakersTests
         Assert.Equal(2, Count(aSh, ShapeType.Face));
         Assert.Equal(7, Count(aSh, ShapeType.Edge)); // the shared edge once
         Assert.Equal(6, Count(aSh, ShapeType.Vertex));
-        Assert.False(aSh.Closed());
+        Assert.False(aSh.IsClosed);
         for (var anExp = new Explorer(aSh, ShapeType.Edge); anExp.More(); anExp.Next())
         {
             Assert.NotNull(Tool.Curve(ShapeCasts.Edge(anExp.Current()), out _, out _)); // BuildCurves3d
@@ -1035,7 +1035,7 @@ public class BRepLibMakersTests
         Assert.Equal(1, Count(aS, ShapeType.Shell));
         Assert.Equal(5, Count(aS, ShapeType.Face));
         Assert.Equal(LibraryShapeModification.Deleted, aMS.FaceStatus(aShared));
-        Assert.True(ShapeCasts.Shell(new Iterator(aS).Value()).Closed() == false);
+        Assert.True(ShapeCasts.Shell(new Iterator(aS).Value()).IsClosed == false);
     }
 
     // ---------------------------------------------------------------- FindSurface
@@ -1055,9 +1055,9 @@ public class BRepLibMakersTests
             Assert.True(aFS.ToleranceReached() < 1e-15);
             var aPlane = Assert.IsType<PlaneSurface>(aFS.Surface());
             Assert.True(aPlane.IsFrozen);
-            Direction3D aN = aPlane.Position().Direction();
-            Assert.Equal(aCcw ? 1.0 : -1.0, aN.Z(), 1e-12);
-            AssertPoint(new Point3D(1, 1, 0), aPlane.Position().Location(), 1e-12);
+            Direction3D aN = aPlane.Position.Direction;
+            Assert.Equal(aCcw ? 1.0 : -1.0, aN.Z, 1e-12);
+            AssertPoint(new Point3D(1, 1, 0), aPlane.Position.Location, 1e-12);
             aSnap.AssertUnchanged(aW);
         }
     }

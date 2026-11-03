@@ -173,7 +173,7 @@ internal sealed partial class BOPReconstruction : Reconstruction
         for (int i = 1; i <= ds.NbShapes(); i++)
         {
             Shape s = ds.Shape(i);
-            if (s.IsNull || s.ShapeType() != ShapeType.Face)
+            if (s.IsNull || s.Type != ShapeType.Face)
             {
                 continue;
             }
@@ -357,7 +357,7 @@ internal sealed partial class BOPReconstruction : Reconstruction
         for (int i = 1; i <= ds.NbShapes(); i++)
         {
             Shape s = ds.Shape(i);
-            if (s.IsNull || s.ShapeType() != ShapeType.Edge)
+            if (s.IsNull || s.Type != ShapeType.Edge)
             {
                 continue;
             }
@@ -404,7 +404,7 @@ internal sealed partial class BOPReconstruction : Reconstruction
         for (int i = 1; i <= ds.NbShapes(); i++)
         {
             Shape s = ds.Shape(i);
-            if (s.IsNull || s.ShapeType() != ShapeType.Edge)
+            if (s.IsNull || s.Type != ShapeType.Edge)
             {
                 continue;
             }
@@ -450,11 +450,11 @@ internal sealed partial class BOPReconstruction : Reconstruction
             {
                 break;
             }
-            if (c.T > l + tolPar && c.Before == In && c.T <= c3d.LastParameter())
+            if (c.T > l + tolPar && c.Before == In && c.T <= c3d.LastParameter)
             {
                 end = (c.T, c.V);
             }
-            else if (c.T < f - tolPar && c.After == In && c.T >= c3d.FirstParameter() && start.T == f)
+            else if (c.T < f - tolPar && c.After == In && c.T >= c3d.FirstParameter && start.T == f)
             {
                 start = (c.T, c.V);
             }
@@ -613,7 +613,7 @@ internal sealed partial class BOPReconstruction : Reconstruction
                 changed = true;
                 foreach (Shape p in pieces)
                 {
-                    faces.Append(p.Oriented(f.Orientation()));
+                    faces.Append(p.Oriented(f.Orientation));
                     origin[p] = exs.Current();
                 }
             }
@@ -666,7 +666,7 @@ internal sealed partial class BOPReconstruction : Reconstruction
                 }
             }
         }
-        if (s.ShapeType() == ShapeType.Shell)
+        if (s.Type == ShapeType.Shell)
         {
             foreach (Shell shell in shells)
             {
@@ -856,7 +856,7 @@ internal sealed partial class BOPReconstruction : Reconstruction
                 {
                     if (state != Out)
                     {
-                        le.Append(part.Oriented(e.Orientation()));
+                        le.Append(part.Oriented(e.Orientation));
                         AddVertices(part, keptVertices);
                     }
                 }
@@ -886,7 +886,7 @@ internal sealed partial class BOPReconstruction : Reconstruction
         for (Iterator itw = new(ff); itw.More(); itw.Next())
         {
             Shape w = itw.Value();
-            if (w.ShapeType() != ShapeType.Wire)
+            if (w.Type != ShapeType.Wire)
             {
                 continue;
             }
@@ -1026,7 +1026,7 @@ internal sealed partial class BOPReconstruction : Reconstruction
         for (int k = 0; k + 1 < aParams.Count; k++)
         {
             AlgoTools.MakeSplitEdge(ef, v, aParams[k], v, aParams[k + 1], out Edge part);
-            parts.Add(ShapeCasts.Edge(part.Oriented(e.Orientation())));
+            parts.Add(ShapeCasts.Edge(part.Oriented(e.Orientation)));
         }
         return parts;
     }

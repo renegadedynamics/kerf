@@ -154,7 +154,7 @@ public partial class UnifySameDomain : Transient
     /// </summary>
     public void KeepShape(in Shape shape)
     {
-        if (shape.ShapeType() == ShapeType.Edge || shape.ShapeType() == ShapeType.Vertex)
+        if (shape.Type == ShapeType.Edge || shape.Type == ShapeType.Vertex)
         {
             _keepShapes.Add(shape);
         }
@@ -168,7 +168,7 @@ public partial class UnifySameDomain : Transient
     {
         foreach (Shape shape in shapes)
         {
-            if (shape.ShapeType() == ShapeType.Edge || shape.ShapeType() == ShapeType.Vertex)
+            if (shape.Type == ShapeType.Edge || shape.Type == ShapeType.Vertex)
             {
                 _keepShapes.Add(shape);
             }
@@ -403,18 +403,18 @@ public partial class UnifySameDomain : Transient
 
             // surface and location to construct result
             var                baseLocation      = new Placement();
-            Orientation refFaceOrientation = face.Orientation();
+            Orientation refFaceOrientation = face.Orientation;
 
             // Take original surface
             var refFace = new Face();
             var bb      = new BrepBuilder();
             bb.MakeFace(ref refFace, baseSurface, baseLocation, 0.0);
-            refFace.Orientation(refFaceOrientation);
+            refFace.Orient(refFaceOrientation);
             // map of edges not lying on RefFace; these edges may be updated by temporary pcurves
             var mapEdgesWithTemporaryPCurves = new HashSet<Shape>(ShapeHasher.Instance);
 
-            double uperiod = (baseSurface.IsUPeriodic) ? baseSurface.UPeriod() : 0.0;
-            double vperiod = (baseSurface.IsVPeriodic) ? baseSurface.VPeriod() : 0.0;
+            double uperiod = (baseSurface.IsUPeriodic) ? baseSurface.UPeriod : 0.0;
+            double vperiod = (baseSurface.IsVPeriodic) ? baseSurface.VPeriod : 0.0;
 
             // Get shells connected to the face (in normal cases should not be more than 2)
             HashSet<Shape>? pFShells1 =
@@ -494,7 +494,7 @@ public partial class UnifySameDomain : Transient
                         if (GetNormalToSurface(checkedFace, edge, tMid, ref dn2))
                         {
                             // and check if the adjacent faces are having approximately same normals
-                            double angle = dn1.Angle(dn2);
+                            double angle = dn1.AngleTo(dn2);
                             if (angle > _angTol)
                             {
                                 continue;
@@ -527,7 +527,7 @@ public partial class UnifySameDomain : Transient
                 }
                 // Add correct pcurves for the reference surface to the edges of other faces
                 Face F_RefFace0 = refFace;
-                F_RefFace0.Orientation(Forward);
+                F_RefFace0.Orient(Forward);
                 AddPCurves(faces, F_RefFace0, mapEdgesWithTemporaryPCurves);
 
                 // fill in the connectivity map for selected faces
@@ -660,10 +660,10 @@ public partial class UnifySameDomain : Transient
                 NCollection_List<Shape> lf    = mapEF.ValueAt(indE - 1);
                 if (_allowInternal && _keepShapes.Contains(anEdge) && lf.Extent() == 2)
                 {
-                    edges[ii].Orientation(Internal);
+                    edges[ii].Orient(Internal);
                 }
 
-                if (anEdge.Orientation() != Internal)
+                if (anEdge.Orientation != Internal)
                 {
                     edges[ii] = mapEF.KeyAt(indE - 1);
                 }
@@ -675,7 +675,7 @@ public partial class UnifySameDomain : Transient
             while (ind_e <= edges.Length())
             {
                 Shape anEdge = edges[ind_e];
-                if (anEdge.Orientation() == Internal)
+                if (anEdge.Orientation == Internal)
                 {
                     internalEdges.Add(anEdge);
                     edges.Remove(ind_e);
@@ -694,7 +694,7 @@ public partial class UnifySameDomain : Transient
                 }
             }
             Face F_RefFace = refFace;
-            F_RefFace.Orientation(Forward);
+            F_RefFace.Orient(Forward);
 
             // all faces collected in the sequence. Perform union of faces
             if (faces.Length() > 1)
@@ -762,7 +762,7 @@ public partial class UnifySameDomain : Transient
                     Curve2D pc2       = Tool.CurveOnSurface(edgeWith2pcurves, F_RefFace, out first, out last)!;
                     Point2D     pnt1      = pc1.Value(first);
                     Point2D     pnt2      = pc2.Value(first);
-                    bool         isUclosed = (Math.Abs(pnt1.X() - pnt2.X()) > Math.Abs(pnt1.Y() - pnt2.Y()));
+                    bool         isUclosed = (Math.Abs(pnt1.X - pnt2.X) > Math.Abs(pnt1.Y - pnt2.Y));
                     bool         toMakeUPeriodic = false, toMakeVPeriodic = false;
                     if (isUclosed && uperiod == 0.0)
                     {
@@ -806,12 +806,12 @@ public partial class UnifySameDomain : Transient
                         if (toMakeUPeriodic)
                         {
                             bSplineSurface.SetUPeriodic();
-                            uperiod = bSplineSurface.UPeriod();
+                            uperiod = bSplineSurface.UPeriod;
                         }
                         if (toMakeVPeriodic)
                         {
                             bSplineSurface.SetVPeriodic();
-                            vperiod = bSplineSurface.VPeriod();
+                            vperiod = bSplineSurface.VPeriod;
                         }
 
                         if (isPeriodicCopy)
@@ -838,7 +838,7 @@ public partial class UnifySameDomain : Transient
                                 bb.UpdateEdge(anEdge, pCurve, refFace, 0.0);
                             }
                             F_RefFace = refFace;
-                            F_RefFace.Orientation(Forward);
+                            F_RefFace.Orient(Forward);
                         }
                     }
                 } // if (myConcatBSplines && !EdgeWith2pcurves.IsNull() && !SeamFound)
@@ -849,7 +849,7 @@ public partial class UnifySameDomain : Transient
                 Span<bool>   isSeamFound = [useamFound, vseamFound];
                 Span<double> surfMin      = [0.0, 0.0];
                 Span<double> surfMax      = [0.0, 0.0];
-                baseSurface.Bounds(out surfMin[0], out surfMax[0], out surfMin[1], out surfMax[1]);
+                baseSurface.ParameterBounds(out surfMin[0], out surfMax[0], out surfMin[1], out surfMax[1]);
 
                 for (int ii = 0; ii < 2; ii++)
                 {
@@ -939,8 +939,8 @@ public partial class UnifySameDomain : Transient
                                 {
                                     Curve2D pCurve = edgeNewPCurve.GetValue(edges[jj]);
                                     UpdateBoundaries(pCurve,
-                                                     pCurve.FirstParameter(),
-                                                     pCurve.LastParameter(),
+                                                     pCurve.FirstParameter,
+                                                     pCurve.LastParameter,
                                                      ii + 1,
                                                      ref newCoordMin,
                                                      ref newCoordMax);
@@ -997,7 +997,7 @@ public partial class UnifySameDomain : Transient
                 vseamFound = isSeamFound[1];
                 ////////////////////////////////////
                 F_RefFace = refFace;
-                F_RefFace.Orientation(Forward);
+                F_RefFace.Orient(Forward);
 
                 var newFaces = new NCollection_Sequence<Shape>();
                 var newWires = new NCollection_Sequence<Shape>();
@@ -1008,9 +1008,9 @@ public partial class UnifySameDomain : Transient
                     Surface surf = Tool.Surface(refFace, out Placement _)!;
                     if (surf is TrimmedSurface rts)
                     {
-                        surf = rts.BasisSurface();
+                        surf = rts.BasisSurface;
                     }
-                    surf.Bounds(out double ufirst, out double ulast, out double vfirst, out double vlast);
+                    surf.ParameterBounds(out double ufirst, out double ulast, out double vfirst, out double vlast);
                     if (uperiod == 0 && surf.IsUClosed)
                     {
                         uperiod = ulast - ufirst;
@@ -1038,22 +1038,22 @@ public partial class UnifySameDomain : Transient
                     Point2D firstPoint = bAcurve.Value(bAcurve.FirstParameter());
                     Point2D lastPoint  = bAcurve.Value(bAcurve.LastParameter());
 
-                    if (firstPoint.X() < faceUmin)
+                    if (firstPoint.X < faceUmin)
                     {
-                        faceUmin = firstPoint.X();
+                        faceUmin = firstPoint.X;
                     }
-                    if (lastPoint.X() < faceUmin)
+                    if (lastPoint.X < faceUmin)
                     {
-                        faceUmin = lastPoint.X();
+                        faceUmin = lastPoint.X;
                     }
 
-                    if (firstPoint.Y() < faceVmin)
+                    if (firstPoint.Y < faceVmin)
                     {
-                        faceVmin = firstPoint.Y();
+                        faceVmin = firstPoint.Y;
                     }
-                    if (lastPoint.Y() < faceVmin)
+                    if (lastPoint.Y < faceVmin)
                     {
-                        faceVmin = lastPoint.Y();
+                        faceVmin = lastPoint.Y;
                     }
                 }
 
@@ -1085,7 +1085,7 @@ public partial class UnifySameDomain : Transient
                     }
                     Exploration.Vertices(startEdge, out Vertex startVertex, out Vertex curVertex, true); // with orientation
                     double startParam, curParam;
-                    if (startEdge.Orientation() == Forward)
+                    if (startEdge.Orientation == Forward)
                     {
                         startParam = fpar;
                         curParam   = lpar;
@@ -1116,9 +1116,9 @@ public partial class UnifySameDomain : Transient
                             if (curVertex.IsSame(startVertex))
                             {
                                 // Points of two vertices coincide in 3d but may be not in 2d
-                                if ((uperiod != 0.0 && Math.Abs(startPoint.X() - curPoint.X()) > uperiod / 2)
+                                if ((uperiod != 0.0 && Math.Abs(startPoint.X - curPoint.X) > uperiod / 2)
                                     || (vperiod != 0.0
-                                        && Math.Abs(startPoint.Y() - curPoint.Y()) > vperiod / 2)) // end of parametric space
+                                        && Math.Abs(startPoint.Y - curPoint.Y) > vperiod / 2)) // end of parametric space
                                 {
                                     //<edges> do not contain seams => we must reconstruct the seam up to <NextEdge>
                                     ReconstructMissedSeam(removedEdges,
@@ -1175,12 +1175,12 @@ public partial class UnifySameDomain : Transient
                                 // we must choose the closest direction - the biggest angle
                                 double maxAngle = RealFirst();
                                 var    trueEdge = new Edge();
-                                curParam = (curEdge.Orientation() == Forward) ? lpar : fpar;
+                                curParam = (curEdge.Orientation == Forward) ? lpar : fpar;
                                 Curve2D.ResD1 curD1 = curPCurve.EvalD1(curParam);
                                 curPoint = curD1.Point;
                                 Vector2D curDir = curD1.D1;
                                 curDir = curDir.Normalized();
-                                if (curEdge.Orientation() == Reversed)
+                                if (curEdge.Orientation == Reversed)
                                 {
                                     curDir = curDir.Reversed();
                                 }
@@ -1193,14 +1193,14 @@ public partial class UnifySameDomain : Transient
                                         // edge has no pcurve on the reference face, skip it as a direction candidate
                                         continue;
                                     }
-                                    double   param = (anEdge.Orientation() == Forward) ? fpar : lpar;
+                                    double   param = (anEdge.Orientation == Forward) ? fpar : lpar;
                                     Vector2D dir   = pCurve.EvalD1(param).D1;
                                     dir = dir.Normalized();
-                                    if (anEdge.Orientation() == Reversed)
+                                    if (anEdge.Orientation == Reversed)
                                     {
                                         dir = dir.Reversed();
                                     }
-                                    double angle = curDir.Angle(dir);
+                                    double angle = curDir.AngleTo(dir);
                                     if (angle > maxAngle)
                                     {
                                         maxAngle = angle;
@@ -1224,10 +1224,10 @@ public partial class UnifySameDomain : Transient
                                     // edge has no pcurve on the reference face, skip it as a next-edge candidate
                                     continue;
                                 }
-                                double   param = (anEdge.Orientation() == Forward) ? fpar : lpar;
+                                double   param = (anEdge.Orientation == Forward) ? fpar : lpar;
                                 Point2D point = pCurve.Value(param);
-                                double   diffU  = Math.Abs(point.X() - curPoint.X());
-                                double   diffV  = Math.Abs(point.Y() - curPoint.Y());
+                                double   diffU  = Math.Abs(point.X - curPoint.X);
+                                double   diffV  = Math.Abs(point.Y - curPoint.Y);
                                 if (uperiod != 0.0 && diffU > coordTol && Math.Abs(diffU - uperiod) > coordTol)
                                 { // may be it is a deg.vertex
                                     continue;
@@ -1257,7 +1257,7 @@ public partial class UnifySameDomain : Transient
                                     // Check: may be it is the end
                                     // OCCT: LastVertexOfSeam and StartOfNextEdge are never set, so this never holds
                                     if (lastVertexOfSeam.IsSame(startVertex)
-                                        && Math.Abs(startPoint.X() - startOfNextEdge.X()) < uperiod / 2)
+                                        && Math.Abs(startPoint.X - startOfNextEdge.X) < uperiod / 2)
                                     {
                                         endOfWire = true;
                                     }
@@ -1267,7 +1267,7 @@ public partial class UnifySameDomain : Transient
                                 else
                                 {
                                     nextEdge = anEdge;
-                                    double lastParam = (nextEdge.Orientation() == Forward) ? lpar : fpar;
+                                    double lastParam = (nextEdge.Orientation == Forward) ? lpar : fpar;
                                     nextPoint = pCurve.Value(lastParam);
                                     break;
                                 }
@@ -1284,8 +1284,8 @@ public partial class UnifySameDomain : Transient
                             if (uperiod != 0.0 || vperiod != 0.0)
                             {
                                 if (curVertex.IsSame(startVertex)
-                                    && (uperiod == 0.0 || Math.Abs(startPoint.X() - curPoint.X()) < uperiod / 2)
-                                    && (vperiod == 0.0 || Math.Abs(startPoint.Y() - curPoint.Y()) < vperiod / 2))
+                                    && (uperiod == 0.0 || Math.Abs(startPoint.X - curPoint.X) < uperiod / 2)
+                                    && (vperiod == 0.0 || Math.Abs(startPoint.Y - curPoint.Y) < vperiod / 2))
                                 {
                                     break; // end of wire
                                 }
@@ -1359,7 +1359,7 @@ public partial class UnifySameDomain : Transient
                         var           result = new Face();
                         bb.MakeFace(ref result, surf, loc, 0);
                         bb.Add(result, newWire);
-                        result.Orientation(refFaceOrientation);
+                        result.Orient(refFaceOrientation);
                         newFaces.Append(result);
                     }
                     else // may be this wire is a hole
@@ -1452,7 +1452,7 @@ public partial class UnifySameDomain : Transient
                     {
                         bb.Add(result, internalWires[ii]);
                     }
-                    result.Orientation(refFaceOrientation);
+                    result.Orient(refFaceOrientation);
                     _context.Merge(faces, result);
                     // Update the map Face-NewFace
                     for (int jj = 1; jj <= faces.Length(); jj++)

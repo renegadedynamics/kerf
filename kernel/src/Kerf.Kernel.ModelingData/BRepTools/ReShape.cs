@@ -178,16 +178,16 @@ public class ReShape : Transient
         else
         {
             res = _shapeToReplacement.GetValue(shape).Result();
-            if (shape.Orientation() == Reversed)
+            if (shape.Orientation == Reversed)
             {
                 res.Reverse();
             }
             fromMap = true;
         }
         // for INTERNAL/EXTERNAL, since they are not fully supported, keep orientation
-        if (shape.Orientation() == Internal || shape.Orientation() == External)
+        if (shape.Orientation == Internal || shape.Orientation == External)
         {
-            res.Orientation(shape.Orientation());
+            res.Orient(shape.Orientation);
         }
 
         if (_considerLocation)
@@ -196,11 +196,11 @@ public class ReShape : Transient
             // whether result is from map or not
             if (fromMap)
             {
-                res.Location(ashape.Location() * res.Location(), false);
+                res.Location(ashape.Placement * res.Placement, false);
             }
             else
             {
-                res.Location(ashape.Location(), false);
+                res.Location(ashape.Placement, false);
             }
         }
 
@@ -276,7 +276,7 @@ public class ReShape : Transient
         }
 
         Shape shape = ashape;
-        Placement locSh = shape.Location();
+        Placement locSh = shape.Placement;
         if (_considerLocation)
         {
             Placement nullLoc = new();
@@ -323,7 +323,7 @@ public class ReShape : Transient
         if (_considerLocation && !newsh.IsNull)
         {
             Placement resLoc =
-                (res > 0 && !newsh.Location().IsIdentity ? locSh * newsh.Location() : locSh);
+                (res > 0 && !newsh.Placement.IsIdentity ? locSh * newsh.Placement : locSh);
             newsh.Location(resLoc, false);
         }
         return res;
@@ -431,7 +431,7 @@ public class ReShape : Transient
             return res;
         }
 
-        ShapeType st = shape.ShapeType();
+        ShapeType st = shape.Type;
         if (st > until || (st == until && until > ShapeType.Compound))
         {
             return newsh; // stopping criteria
@@ -445,8 +445,8 @@ public class ReShape : Transient
         BrepBuilder B = new();
 
         Shape result = shape.EmptyCopied();
-        Orientation orien = shape.Orientation();
-        result.Orientation(Forward); // protect against INTERNAL or EXTERNAL shapes
+        Orientation orien = shape.Orientation;
+        result.Orient(Forward); // protect against INTERNAL or EXTERNAL shapes
         bool modif = false;
         int locStatus = _status;
 
@@ -475,7 +475,7 @@ public class ReShape : Transient
                 isEmpty = false;
             }
             locStatus |= EncodeStatus(3); // ShapeExtend::EncodeStatus ( ShapeExtend_DONE3 );
-            if (st == ShapeType.Compound || newsh.ShapeType() == sh.ShapeType())
+            if (st == ShapeType.Compound || newsh.Type == sh.Type)
             { // fix for SAMTECH bug OCC322 about absent internal vertices after sewing.
                 B.Add(result, newsh);
                 continue;
@@ -484,7 +484,7 @@ public class ReShape : Transient
             for (var subit = new Iterator(newsh); subit.More(); subit.Next(), nitems++)
             {
                 Shape subsh = subit.Value();
-                if (subsh.ShapeType() == sh.ShapeType())
+                if (subsh.Type == sh.Type)
                 {
                     B.Add(result, subsh); //fix for SAMTECH bug OCC322 about absent internal vertices after sewing.
                 }
@@ -531,7 +531,7 @@ public class ReShape : Transient
                 result.Closed(Tool.IsClosed(result));
             }
 
-            result.Orientation(orien);
+            result.Orient(orien);
         }
 
         ReplaceCore(shape, result, result.IsNull ? TReplacementKind.TReplacementKind_Remove : TReplacementKind.TReplacementKind_Modify);
@@ -658,23 +658,23 @@ public class ReShape : Transient
             return;
         }
 
-        if (shape.Orientation() == Reversed)
+        if (shape.Orientation == Reversed)
         {
             shape.Reverse();
             newshape.Reverse();
         }
         // protect against INTERNAL or EXTERNAL shape
-        else if (shape.Orientation() == Internal || shape.Orientation() == External)
+        else if (shape.Orientation == Internal || shape.Orientation == External)
         {
-            newshape.Orientation((newshape.Orientation() == shape.Orientation()) ? Forward
+            newshape.Orient((newshape.Orientation == shape.Orientation) ? Forward
                                                                                  : Reversed);
-            shape.Orientation(Forward);
+            shape.Orient(Forward);
         }
 
         if (_considerLocation)
         {
             // sln 29.11.01 Bug22: Change location of 'newshape' in accordance with location of 'shape'
-            newshape.Location(newshape.Location().Multiplied(shape.Location().Inverted()), false);
+            newshape.Location(newshape.Placement.Multiplied(shape.Placement.Inverted()), false);
             Placement nullLoc = new();
             shape.Location(nullLoc);
         }
@@ -751,7 +751,7 @@ public class ReShape : Transient
     // adds the sub-shapes of the shape instead.
     private static void Add(HashSet<Shape> map, in Shape shape)
     {
-        ShapeType type = shape.ShapeType();
+        ShapeType type = shape.Type;
         if (type != ShapeType.Wire && type != ShapeType.Shell && type != ShapeType.CompSolid)
         {
             map.Add(shape);
@@ -767,7 +767,7 @@ public class ReShape : Transient
     // The same, for an indexed map.
     private static void Add(IndexedSet<Shape> map, in Shape shape)
     {
-        ShapeType type = shape.ShapeType();
+        ShapeType type = shape.Type;
         if (type != ShapeType.Wire && type != ShapeType.Shell && type != ShapeType.CompSolid)
         {
             map.Add(shape);
@@ -838,7 +838,7 @@ public class ReShape : Transient
                         continue;
                     }
                 }
-                else if (!toGC.IsCurveOnSurface() || !ReferenceEquals(surface, toGC.Surface()) || l != toGC.Location())
+                else if (!toGC.IsCurveOnSurface() || !ReferenceEquals(surface, toGC.Surface()) || !l.IsEqual(toGC.Location()))
                 {
                     continue;
                 }

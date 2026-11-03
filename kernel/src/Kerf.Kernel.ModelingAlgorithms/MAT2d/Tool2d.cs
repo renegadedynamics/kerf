@@ -97,8 +97,8 @@ public sealed class Tool2d
         {
             Point2D p1 = _circuit.Connexion(anitem).PointOnFirst();
             Point2D p2 = _circuit.Connexion(anitem).PointOnSecond();
-            _geomPnts[_numberOfPnts] = new Point2D((p1.X() + p2.X()) * 0.5, (p1.Y() + p2.Y()) * 0.5);
-            dist = p1.Distance(p2) * 0.5;
+            _geomPnts[_numberOfPnts] = new Point2D((p1.X + p2.X) * 0.5, (p1.Y + p2.Y) * 0.5);
+            dist = p1.DistanceTo(p2) * 0.5;
             return _numberOfPnts;
         }
 
@@ -108,7 +108,7 @@ public sealed class Tool2d
         if (type != typeof(CartesianPoint2))
         {
             curve = (Curve2D)_circuit.Value(anitem);
-            _geomPnts[_numberOfPnts] = curve.Value(curve.FirstParameter());
+            _geomPnts[_numberOfPnts] = curve.Value(curve.FirstParameter);
         }
         else
         {
@@ -145,14 +145,14 @@ public sealed class Tool2d
         if (type != typeof(CartesianPoint2))
         {
             curve = (Curve2D)_circuit.Value(anitem);
-            _geomVecs[_numberOfVecs] = curve.DN(curve.LastParameter(), 1);
+            _geomVecs[_numberOfVecs] = curve.DN(curve.LastParameter, 1);
         }
         else
         {
             curve = (Curve2D)_circuit.Value(item);
             double param = (isOpenResult && anitem == _circuit.NumberOfItems())
-                ? curve.LastParameter()
-                : curve.FirstParameter();
+                ? curve.LastParameter
+                : curve.FirstParameter;
             _geomVecs[_numberOfVecs] = curve.DN(param, 1);
         }
 
@@ -179,7 +179,7 @@ public sealed class Tool2d
         if (type != typeof(CartesianPoint2))
         {
             curve = (Curve2D)_circuit.Value(anitem);
-            thevector = curve.DN(curve.FirstParameter(), 1);
+            thevector = curve.DN(curve.FirstParameter, 1);
         }
         else
         {
@@ -192,7 +192,7 @@ public sealed class Tool2d
                 item = (anitem == 1) ? 2 : (anitem - 1);
             }
             curve = (Curve2D)_circuit.Value(item);
-            double param = (isOpenResult && anitem == 1) ? curve.FirstParameter() : curve.LastParameter();
+            double param = (isOpenResult && anitem == 1) ? curve.FirstParameter : curve.LastParameter;
             thevector = curve.DN(param, 1);
         }
         _geomVecs[_numberOfVecs] = thevector.Reversed();
@@ -203,7 +203,7 @@ public sealed class Tool2d
     public int Tangent(int bisector)
     {
         _numberOfVecs++;
-        _geomVecs[_numberOfVecs] = GeomBis(bisector).Value().DN(GeomBis(bisector).Value().LastParameter(), 1);
+        _geomVecs[_numberOfVecs] = GeomBis(bisector).Value().DN(GeomBis(bisector).Value().LastParameter, 1);
         return _numberOfVecs;
     }
 
@@ -296,16 +296,16 @@ public sealed class Tool2d
         {
             if (!initialNeighbour)
             {
-                curve = ((TrimmedCurve2D)_circuit.Value(indexEdge)).BasisCurve();
+                curve = ((TrimmedCurve2D)_circuit.Value(indexEdge)).BasisCurve;
                 edgeType = curve.GetType();
                 // The edge is linked to its previous neighbour by a connexion.
                 if (_circuit.ConnexionOn(indexEdge) && startOrEnd == 1)
                 {
                     if (edgeType == typeof(CircleCurve2D))
                     {
-                        ori = ((CircleCurve2D)curve).Location();
+                        ori = ((CircleCurve2D)curve).Location;
                         Point2D p2 = _circuit.Connexion(indexEdge).PointOnFirst();
-                        line1 = new LineCurve2D(ori, new Direction2D(p2.X() - ori.X(), p2.Y() - ori.Y()));
+                        line1 = new LineCurve2D(ori, new Direction2D(p2.X - ori.X, p2.Y - ori.Y));
                     }
                 }
 
@@ -314,9 +314,9 @@ public sealed class Tool2d
                 {
                     if (edgeType == typeof(CircleCurve2D))
                     {
-                        ori = ((CircleCurve2D)curve).Location();
+                        ori = ((CircleCurve2D)curve).Location;
                         Point2D p2 = _circuit.Connexion(iNext).PointOnSecond();
-                        line2 = new LineCurve2D(ori, new Direction2D(p2.X() - ori.X(), p2.Y() - ori.Y()));
+                        line2 = new LineCurve2D(ori, new Direction2D(p2.X - ori.X, p2.Y - ori.Y));
                     }
                 }
                 if (line1 is null && line2 is null)
@@ -349,18 +349,18 @@ public sealed class Tool2d
 
         if (bisector.ChangeBasisCurve().IsPeriodic && param == global::Kerf.Engine.Foundation.Precision.Infinite())
         {
-            param = bisector.FirstParameter() + 2 * M_PI;
+            param = bisector.FirstParameter + 2 * M_PI;
         }
-        if (param > bisector.ChangeBasisCurve().LastParameter())
+        if (param > bisector.ChangeBasisCurve().LastParameter)
         {
-            param = bisector.ChangeBasisCurve().LastParameter();
+            param = bisector.ChangeBasisCurve().LastParameter;
         }
-        if (bisector.FirstParameter() == param)
+        if (bisector.FirstParameter == param)
         {
             return false;
         }
 
-        bisector.SetTrim(bisector.FirstParameter(), param);
+        bisector.SetTrim(bisector.FirstParameter, param);
         return true;
     }
 
@@ -377,20 +377,20 @@ public sealed class Tool2d
 
         if (bisector.ChangeBasisCurve().IsPeriodic)
         {
-            if (bisector.FirstParameter() > param)
+            if (bisector.FirstParameter > param)
             {
                 param = param + 2 * M_PI;
             }
         }
-        if (bisector.FirstParameter() >= param)
+        if (bisector.FirstParameter >= param)
         {
             return false;
         }
-        if (bisector.LastParameter() < param)
+        if (bisector.LastParameter < param)
         {
             return false;
         }
-        bisector.SetTrim(bisector.FirstParameter(), param);
+        bisector.SetTrim(bisector.FirstParameter, param);
 
         return true;
     }
@@ -409,7 +409,7 @@ public sealed class Tool2d
         if (type == typeof(CartesianPoint2))
         {
             pEdge = ((Point2)elt).Pnt2d();
-            distance = pCom.Distance(pEdge);
+            distance = pCom.DistanceTo(pEdge);
         }
         else
         {
@@ -417,8 +417,8 @@ public sealed class Tool2d
             curve = (TrimmedCurve2D)elt;
             // The parameters on the edge: if it is linked to its neighbours by connexions, the curve is limited by
             // them.
-            double paramMin = curve.FirstParameter();
-            double paramMax = curve.LastParameter();
+            double paramMin = curve.FirstParameter;
+            double paramMax = curve.LastParameter;
             if (_circuit.ConnexionOn(iEdge))
             {
                 paramMin = _circuit.Connexion(iEdge).ParameterOnSecond();
@@ -427,7 +427,7 @@ public sealed class Tool2d
             if (_circuit.ConnexionOn(iNext))
             {
                 paramMax = _circuit.Connexion(iNext).ParameterOnFirst();
-                if (curve.BasisCurve().IsPeriodic)
+                if (curve.BasisCurve.IsPeriodic)
                 {
                     global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(0.0, 2 * M_PI, eps, ref paramMin, ref paramMax);
                 }
@@ -437,7 +437,7 @@ public sealed class Tool2d
             CurveKind typeC1 = c1.GetType();
             if (typeC1 == Circle)
             {
-                double r = c1.Circle().Radius();
+                double r = c1.Circle().Radius;
                 double epsCirc = 100.0 * eps;
                 if (r < 1.0)
                 {
@@ -476,7 +476,7 @@ public sealed class Tool2d
             {
                 if (typeC1 == Circle)
                 {
-                    distance = c1.Circle().Radius();
+                    distance = c1.Circle().Radius;
                 }
             }
         }
@@ -697,7 +697,7 @@ public sealed class Tool2d
                     double segmentLength;
                     p1 = segment.FirstPoint().Value();
                     p2 = segment.LastPoint().Value();
-                    segmentLength = p1.Distance(p2);
+                    segmentLength = p1.DistanceTo(p2);
                     if (segmentLength <= tolerance)
                     {
                         pointOnSegment = p1;
@@ -708,7 +708,7 @@ public sealed class Tool2d
                     }
                     else if (segmentLength <= maxSegmentLength)
                     {
-                        Direction2D dir = new(p2.X() - p1.X(), p2.Y() - p1.Y());
+                        Direction2D dir = new(p2.X - p1.X, p2.Y - p1.Y);
                         double dist = 0.0;
                         while (dist <= segmentLength + tolerance)
                         {
@@ -813,11 +813,11 @@ public sealed class Tool2d
 
         if (extremiteControle)
         {
-            if (bisector1.StartPoint().Distance(pointSolution) < tolerance)
+            if (bisector1.StartPoint.DistanceTo(pointSolution) < tolerance)
             {
                 return global::Kerf.Engine.Foundation.Precision.Infinite();
             }
-            if (bisector2.StartPoint().Distance(pointSolution) < tolerance)
+            if (bisector2.StartPoint.DistanceTo(pointSolution) < tolerance)
             {
                 return global::Kerf.Engine.Foundation.Precision.Infinite();
             }
@@ -851,7 +851,7 @@ public sealed class Tool2d
         {
             Point2D p1 = GeomBis(bis.BisectorNumber()).Value().Value(param1);
             Point2D p2 = GeomBis(bis.BisectorNumber()).Value().Value(param2);
-            dist = p1.Distance(p2);
+            dist = p1.DistanceTo(p2);
         }
         return dist;
     }
@@ -889,8 +889,8 @@ public sealed class Tool2d
 
         bisector1 = GeomBis(i1).Value();
         bisector2 = GeomBis(i2).Value();
-        uf1 = bisector1.FirstParameter();
-        ul1 = bisector1.LastParameter();
+        uf1 = bisector1.FirstParameter;
+        ul1 = bisector1.LastParameter;
 
         Type type1 = bisector1.ChangeBasisCurve().GetType();
         if (type1 == typeof(BisecCC))
@@ -902,22 +902,22 @@ public sealed class Tool2d
 
             Bisec bis = new();
             Vector2D vBid = new(1, 0);
-            Point2D p2 = bisector2.Value(bisector2.LastParameter());
-            Point2D p1 = bisector1.Value(bisector1.LastParameter());
+            Point2D p2 = bisector2.Value(bisector2.LastParameter);
+            Point2D p1 = bisector1.Value(bisector1.LastParameter);
             BisecCC bcc1 = (BisecCC)bisector1.ChangeBasisCurve();
 
             bis.Perform(bcc1.Curve(2), bcc1.Curve(1), p2, vBid, vBid, _direction, _joinType, tolerance, false);
 
             bisector1 = bis.Value();
             bcc1 = (BisecCC)bisector1.ChangeBasisCurve();
-            uf1 = bcc1.FirstParameter();
+            uf1 = bcc1.FirstParameter;
             ul1 = bcc1.Parameter(p1);
             bisector1.SetTrim(uf1, ul1);
             _geomBisectors[i1] = bis;
         }
         else
         {
-            du = bisector2.LastParameter() - bisector2.FirstParameter();
+            du = bisector2.LastParameter - bisector2.FirstParameter;
             uf1 = uf1 - du;
 
             // OCCT assumes a bisector that isn't curve/curve is analytic: a Bisector_BisecPC gives a null handle,
@@ -953,8 +953,8 @@ public sealed class Tool2d
         TrimmedCurve2D bisector = bis.ChangeValue();
 
         TwoDDomain domain1 = Domain(bisector, tolerance);
-        double ub1 = bisector.FirstParameter();
-        double ub2 = bisector.LastParameter();
+        double ub1 = bisector.FirstParameter;
+        double ub2 = bisector.LastParameter;
 
         Point2D firstPointBisector = bisector.Value(ub1);
         double uTrim = global::Kerf.Engine.Foundation.Precision.Infinite();
@@ -968,7 +968,7 @@ public sealed class Tool2d
             for (int i = 1; i <= intersect.PointCount; i++)
             {
                 Point2D pInt = intersect.Point(i).Value();
-                distance = firstPointBisector.Distance(pInt);
+                distance = firstPointBisector.DistanceTo(pInt);
                 if (distance > 10.0 * tolerance && intersect.Point(i).ParamOnFirst() < uTrim)
                 {
                     uTrim = intersect.Point(i).ParamOnFirst();
@@ -998,8 +998,8 @@ public sealed class Tool2d
 
     private static TwoDDomain Domain(TrimmedCurve2D bisector1, double tolerance)
     {
-        double param1 = bisector1.FirstParameter();
-        double param2 = bisector1.LastParameter();
+        double param1 = bisector1.FirstParameter;
+        double param2 = bisector1.LastParameter;
         if (param2 > 10000.0)
         {
             param2 = 10000.0;
@@ -1016,17 +1016,17 @@ public sealed class Tool2d
             double limit = 50000.0;
             if (type1 == typeof(ParabolaCurve2D))
             {
-                gpParabola = ((ParabolaCurve2D)basisCurve!).Parab2d();
-                focus = gpParabola.Focal();
+                gpParabola = ((ParabolaCurve2D)basisCurve!).Parabola;
+                focus = gpParabola.Focal;
                 double val1 = Math.Sqrt(limit * focus);
                 double val2 = Math.Sqrt(limit * limit);
                 param2 = (val1 <= val2 ? val1 : val2);
             }
             else if (type1 == typeof(HyperbolaCurve2D))
             {
-                gpHyperbola = ((HyperbolaCurve2D)basisCurve!).Hypr2d();
-                double majr = gpHyperbola.MajorRadius();
-                double minr = gpHyperbola.MinorRadius();
+                gpHyperbola = ((HyperbolaCurve2D)basisCurve!).Hyperbola;
+                double majr = gpHyperbola.MajorRadius;
+                double minr = gpHyperbola.MinorRadius;
                 double valu1 = limit / majr;
                 double valu2 = limit / minr;
                 double val1 = Math.Log(valu1 + Math.Sqrt(valu1 * valu1 - 1));
@@ -1056,10 +1056,10 @@ public sealed class Tool2d
         else
         {
             curve = (TrimmedCurve2D)elt;
-            Point2D pf = curve.StartPoint();
-            Point2D pl = curve.EndPoint();
-            double df = pCom.Distance(pf);
-            double dl = pCom.Distance(pl);
+            Point2D pf = curve.StartPoint;
+            Point2D pl = curve.EndPoint;
+            double df = pCom.DistanceTo(pf);
+            double dl = pCom.DistanceTo(pl);
             if (Math.Abs(df - distance) <= tol)
             {
                 return true;

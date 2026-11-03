@@ -124,9 +124,9 @@ public static class Poly
                 os.Write(Setw(10, Int(i)) + " : ");
             }
 
-            os.Write(Field(compact, 17, Real(node.X())) + " ");
-            os.Write(Field(compact, 17, Real(node.Y())) + " ");
-            os.Write(Field(compact, 17, Real(node.Z())) + "\n");
+            os.Write(Field(compact, 17, Real(node.X)) + " ");
+            os.Write(Field(compact, 17, Real(node.Y)) + " ");
+            os.Write(Field(compact, 17, Real(node.Z)) + "\n");
         }
 
         if (t.HasUVNodes)
@@ -144,8 +144,8 @@ public static class Poly
                     os.Write(Setw(10, Int(i)) + " : ");
                 }
 
-                os.Write(Field(compact, 17, Real(node2d.X())) + " ");
-                os.Write(Field(compact, 17, Real(node2d.Y())) + "\n");
+                os.Write(Field(compact, 17, Real(node2d.X)) + " ");
+                os.Write(Field(compact, 17, Real(node2d.Y)) + "\n");
             }
         }
 
@@ -212,9 +212,9 @@ public static class Poly
                 os.Write(Setw(10, Int(i)) + " : ");
             }
 
-            os.Write(Field(compact, 17, Real(nodes[i].X())) + " ");
-            os.Write(Field(compact, 17, Real(nodes[i].Y())) + " ");
-            os.Write(Field(compact, 17, Real(nodes[i].Z())) + "\n");
+            os.Write(Field(compact, 17, Real(nodes[i].X)) + " ");
+            os.Write(Field(compact, 17, Real(nodes[i].Y)) + " ");
+            os.Write(Field(compact, 17, Real(nodes[i].Z)) + "\n");
         }
 
         if (p.HasParameters)
@@ -275,8 +275,8 @@ public static class Poly
                 os.Write(Setw(10, Int(i)) + " : ");
             }
 
-            os.Write(Field(compact, 17, Real(nodes[i].X())) + " ");
-            os.Write(Field(compact, 17, Real(nodes[i].Y())) + "\n");
+            os.Write(Field(compact, 17, Real(nodes[i].X)) + " ");
+            os.Write(Field(compact, 17, Real(nodes[i].Y)) + "\n");
         }
     }
 
@@ -562,8 +562,8 @@ public static class Poly
     public static bool Intersect(Triangulation tri, in Axis3D axis, bool isClosest, ref Triangle1 triangle, ref double distance)
     {
         const double conf = 1E-15;
-        Xyz loc = axis.Location().XYZ();
-        Direction3D dir = axis.Direction();
+        Xyz loc = axis.Location.XYZ();
+        Direction3D dir = axis.Direction;
 
         double result = isClosest ? RealLast() : 0.0;
         double param = 0.0;
@@ -628,9 +628,9 @@ public static class Poly
 
         ReadOnlySpan<double> mat34 =
         [
-            -dir.X(), v1.X() - v0.X(), v2.X() - v0.X(), start.X() - v0.X(),
-            -dir.Y(), v1.Y() - v0.Y(), v2.Y() - v0.Y(), start.Y() - v0.Y(),
-            -dir.Z(), v1.Z() - v0.Z(), v2.Z() - v0.Z(), start.Z() - v0.Z(),
+            -dir.X, v1.X() - v0.X(), v2.X() - v0.X(), start.X() - v0.X(),
+            -dir.Y, v1.Y() - v0.Y(), v2.Y() - v0.Y(), start.Y() - v0.Y(),
+            -dir.Z, v1.Z() - v0.Z(), v2.Z() - v0.Z(), start.Z() - v0.Z(),
         ];
 
         double d = Determinant(mat34, 0, 1, 2);

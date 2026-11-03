@@ -30,7 +30,7 @@ namespace Kerf.Engine.Topology.Tools;
 /// The pcurves are recomputed with ProjLib_ComputeApprox (on planes) and ProjLib_ComputeApproxOnPolarSurface. The maps
 /// of converted geometry compare handles by reference, as OCCT's do.
 /// </remarks>
-public class NurbsConvertModification : CopyModification
+internal class NurbsConvertModification : CopyModification
 {
     private readonly NCollection_List<Shape> _myled = new();
     private readonly NCollection_List<Transient?> _mylcu = new();
@@ -68,7 +68,7 @@ public class NurbsConvertModification : CopyModification
         if (curve is not null && map.ContainsKey(curve))
         {
             newCurve = (Curve3D)map.GetValue(curve);
-            newCurve = (Curve3D)newCurve.Transformed(loc.Transformation());
+            newCurve = (Curve3D)newCurve.Transformed(loc.Transformation);
         }
         return newCurve;
     }
@@ -95,7 +95,7 @@ public class NurbsConvertModification : CopyModification
         if (surf is not null && map.ContainsKey(surf))
         {
             newSurf = (Surface)map.GetValue(surf);
-            newSurf = (Surface)newSurf.Transformed(loc.Transformation());
+            newSurf = (Surface)newSurf.Transformed(loc.Transformation);
         }
         return newSurf;
     }
@@ -176,7 +176,7 @@ public class NurbsConvertModification : CopyModification
     {
         SurfaceAdaptor adaptor = new SurfaceAdaptor(surf);
         GenLocateExtPS proj = new GenLocateExtPS(adaptor);
-        proj.Perform(point, uv.X(), uv.Y());
+        proj.Perform(point, uv.X, uv.Y);
         if (proj.IsDone)
         {
             double dist2Min = proj.SquareDistance();
@@ -230,7 +230,7 @@ public class NurbsConvertModification : CopyModification
         u2 = curvU2;
         v1 = curvV1;
         v2 = curvV2;
-        s.Bounds(out surfU1, out surfU2, out surfV1, out surfV2);
+        s.ParameterBounds(out surfU1, out surfU2, out surfV1, out surfV2);
 
         if (Math.Abs(u1 - surfU1) <= tolPar)
         {
@@ -263,7 +263,7 @@ public class NurbsConvertModification : CopyModification
 
         if (isUp)
         {
-            double up = s.UPeriod();
+            double up = s.UPeriod;
             if (u2 - u1 > up)
             {
                 u2 = u1 + up;
@@ -271,7 +271,7 @@ public class NurbsConvertModification : CopyModification
         }
         if (isVp)
         {
-            double vp = s.VPeriod();
+            double vp = s.VPeriod;
             if (v2 - v1 > vp)
             {
                 v2 = v1 + vp;
@@ -283,7 +283,7 @@ public class NurbsConvertModification : CopyModification
         {
             s = new TrimmedSurface(s, u1, u2, v1, v2);
         }
-        s.Bounds(out surfU1, out surfU2, out surfV1, out surfV2);
+        s.ParameterBounds(out surfU1, out surfU2, out surfV1, out surfV2);
 
         s = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SurfaceToBSplineSurface(s);
         BSplineSurface bs = (BSplineSurface)s;
@@ -351,7 +351,7 @@ public class NurbsConvertModification : CopyModification
                 for (int ind = 1; ind <= tri.NodeCount; ++ind)
                 {
                     Point2D uv = tri.UVNode(ind);
-                    Point3D point = surf.Value(uv.X(), uv.Y());
+                    Point3D point = surf.Value(uv.X, uv.Y);
                     if (NewUV(point, newSurf, tol, ref uv))
                     {
                         tri.SetUVNode(ind, uv);
@@ -402,7 +402,7 @@ public class NurbsConvertModification : CopyModification
 
         if (c.IsPeriodic)
         {
-            double p = c.Period();
+            double p = c.Period;
             double d = Math.Abs(l - f);
             if (Math.Abs(d - p) <= tolPar && l <= p)
             {
@@ -425,7 +425,7 @@ public class NurbsConvertModification : CopyModification
 
         c = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(c);
 
-        double fnew = c.FirstParameter(), lnew = c.LastParameter(), uTol;
+        double fnew = c.FirstParameter, lnew = c.LastParameter, uTol;
 
         BSplineCurve3D bc = (BSplineCurve3D)c;
 
@@ -524,10 +524,10 @@ public class NurbsConvertModification : CopyModification
             if (theTypeC2d == typeof(TrimmedCurve2D))
             {
                 TrimmedCurve2D tc = (TrimmedCurve2D)c2d;
-                c2d = tc.BasisCurve();
+                c2d = tc.BasisCurve;
             }
 
-            double fc = c2d.FirstParameter(), lc = c2d.LastParameter();
+            double fc = c2d.FirstParameter, lc = c2d.LastParameter;
 
             if (!c2d.IsPeriodic)
             {
@@ -594,13 +594,13 @@ public class NurbsConvertModification : CopyModification
                         S = newS;
                     }
                 }
-                S.Bounds(out uinf, out usup, out vinf, out vsup);
+                S.ParameterBounds(out uinf, out usup, out vinf, out vsup);
                 // Uinf -= 1e-9; Usup += 1e-9; Vinf -= 1e-9; Vsup += 1e-9;
                 u = (usup - uinf) * 0.1;
                 v = (vsup - vinf) * 0.1;
                 if (S.IsUPeriodic)
                 {
-                    double uperiod = S.UPeriod();
+                    double uperiod = S.UPeriod;
                     if (uperiod < (usup + 2 * u - uinf))
                     {
                         if (uperiod <= (usup - uinf))
@@ -615,7 +615,7 @@ public class NurbsConvertModification : CopyModification
                 }
                 if (S.IsVPeriodic)
                 {
-                    double vperiod = S.VPeriod();
+                    double vperiod = S.VPeriod;
                     if (vperiod < (vsup + 2 * v - vinf))
                     {
                         if (vperiod <= (vsup - vinf))
@@ -676,11 +676,11 @@ public class NurbsConvertModification : CopyModification
                         double minDist = global::Kerf.Engine.Foundation.Precision.Infinite();
                         if (S.IsUPeriodic)
                         {
-                            minDist = Min(0.5 * S.UPeriod(), minDist);
+                            minDist = Min(0.5 * S.UPeriod, minDist);
                         }
                         if (S.IsVPeriodic)
                         {
-                            minDist = Min(0.5 * S.VPeriod(), minDist);
+                            minDist = Min(0.5 * S.VPeriod, minDist);
                         }
                         minDist *= minDist;
                         // Old domain
@@ -688,7 +688,7 @@ public class NurbsConvertModification : CopyModification
                         // New domain
                         Point2D newPf = curve2d.Value(f2d);
                         Vector2D t = new Vector2D(newPf, pf);
-                        if (t.SquareMagnitude() > minDist)
+                        if (t.SquareMagnitude > minDist)
                         {
                             curve2d = (Curve2D)curve2d.Translated(t);
                         }
@@ -803,13 +803,13 @@ public class NurbsConvertModification : CopyModification
                     s = Tool.Surface(newF)!; // S is a BSplineSurface: no need for the trimmed one
                 }
                 double uinf, usup, vinf, vsup, u = 0, v = 0;
-                s.Bounds(out uinf, out usup, out vinf, out vsup);
+                s.ParameterBounds(out uinf, out usup, out vinf, out vsup);
                 // Uinf -= 1e-9; Usup += 1e-9; Vinf -= 1e-9; Vsup += 1e-9;
                 u = (usup - uinf) * 0.1;
                 v = (vsup - vinf) * 0.1;
                 if (s.IsUPeriodic)
                 {
-                    double uperiod = s.UPeriod();
+                    double uperiod = s.UPeriod;
                     if (uperiod < (usup + 2 * u - uinf))
                     {
                         if (uperiod <= (usup - uinf))
@@ -824,7 +824,7 @@ public class NurbsConvertModification : CopyModification
                 }
                 if (s.IsVPeriodic)
                 {
-                    double vperiod = s.VPeriod();
+                    double vperiod = s.VPeriod;
                     if (vperiod < (vsup + 2 * v - vinf))
                     {
                         if (vperiod <= (vsup - vinf))
@@ -911,7 +911,7 @@ public class NurbsConvertModification : CopyModification
                 {
                     double param = poly.Parameter(ind);
                     Point2D uv = c2d.Value(param);
-                    Point3D point = surf.Value(uv.X(), uv.Y());
+                    Point3D point = surf.Value(uv.X, uv.Y);
                     if (NewUV(point, newSurf, tol, ref uv)
                         && NewParameterCore(uv, newC2d, first, last, tol2D, ref param))
                     {

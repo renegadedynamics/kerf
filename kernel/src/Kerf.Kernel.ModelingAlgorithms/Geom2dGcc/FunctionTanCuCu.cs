@@ -113,8 +113,8 @@ public sealed class FunctionTanCuCu : FunctionSetWithDerivatives
     {
         InitDerivative(x, out Point2D point1, out Point2D point2, out Vector2D vect11, out Vector2D vect21,
                        out _, out _);
-        double   normeD11     = vect11.Magnitude();
-        double   normeD21     = vect21.Magnitude();
+        double   normeD11     = vect11.Magnitude;
+        double   normeD21     = vect21.Magnitude;
         Vector2D theDirection = new(point1, point2);
         double   squaredir    = theDirection.Dot(theDirection);
         fval[1]               = theDirection.Crossed(vect11) / (normeD11 * squaredir);
@@ -126,8 +126,8 @@ public sealed class FunctionTanCuCu : FunctionSetWithDerivatives
     {
         InitDerivative(x, out Point2D point1, out Point2D point2, out Vector2D vect11, out Vector2D vect21,
                        out Vector2D vect12, out Vector2D vect22);
-        double   normeD11     = vect11.Magnitude();
-        double   normeD21     = vect21.Magnitude();
+        double   normeD11     = vect11.Magnitude;
+        double   normeD21     = vect21.Magnitude;
         Vector2D theDirection = new(point1, point2);
         double   squaredir    = theDirection.Dot(theDirection);
         deriv[1, 1]           = theDirection.Crossed(vect12) / (normeD11 * squaredir)
@@ -149,8 +149,8 @@ public sealed class FunctionTanCuCu : FunctionSetWithDerivatives
     {
         InitDerivative(x, out Point2D point1, out Point2D point2, out Vector2D vect11, out Vector2D vect21,
                        out Vector2D vect12, out Vector2D vect22);
-        double   normeD11     = vect11.Magnitude();
-        double   normeD21     = vect21.Magnitude();
+        double   normeD11     = vect11.Magnitude;
+        double   normeD21     = vect21.Magnitude;
         Vector2D theDirection = new(point1, point2);
         double   squaredir    = theDirection.Dot(theDirection);
         fval[1]               = theDirection.Crossed(vect11) / (normeD11 * squaredir);

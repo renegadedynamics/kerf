@@ -40,13 +40,13 @@ public class ExtPRevS : Transient
             case Line:
                 {
                     Line3D l = c.Line();
-                    Direction3D n = s.AxeOfRevolution().Direction();
-                    if (n.IsParallel(l.Direction(), global::Kerf.Engine.Foundation.Precision.Angular()))
+                    Direction3D n = s.AxeOfRevolution().Direction;
+                    if (n.IsParallel(l.Direction, global::Kerf.Engine.Foundation.Precision.Angular()))
                     {
-                        Vector3D oo = new(l.Location(), s.AxeOfRevolution().Location());
-                        if (oo.Magnitude() <= Constants.Resolution())
+                        Vector3D oo = new(l.Location, s.AxeOfRevolution().Location);
+                        if (oo.Magnitude <= Constants.Resolution())
                         {
-                            oo = new Vector3D(l.Location(), global::Kerf.Engine.Geometry.ElCLib.Value(100, l));
+                            oo = new Vector3D(l.Location, global::Kerf.Engine.Geometry.ElCLib.Value(100, l));
                             if (n.IsParallel(new Direction3D(oo), global::Kerf.Engine.Foundation.Precision.Angular()))
                             {
                                 return new Frame3D(); // Line and axe of revolution coincide
@@ -56,18 +56,18 @@ public class ExtPRevS : Transient
                     }
                     else
                     {
-                        n = n.Crossed(l.Direction());
+                        n = n.Crossed(l.Direction);
                     }
-                    return new Frame3D(l.Location(), n, l.Direction());
+                    return new Frame3D(l.Location, n, l.Direction);
                 }
             case Circle:
-                return c.Circle().Position();
+                return c.Circle().Position;
             case Ellipse:
-                return c.Ellipse().Position();
+                return c.Ellipse().Position;
             case Hyperbola:
-                return c.Hyperbola().Position();
+                return c.Hyperbola().Position;
             case Parabola:
-                return c.Parabola().Position();
+                return c.Parabola().Position;
             default:
                 return new Frame3D();
         }
@@ -76,21 +76,21 @@ public class ExtPRevS : Transient
     private static bool HasSingularity(RevolutionSurfaceAdaptor s)
     {
         CurveAdaptorBase c = s.BasisCurve();
-        Direction3D n = s.AxeOfRevolution().Direction();
-        Point3D p = s.AxeOfRevolution().Location();
+        Direction3D n = s.AxeOfRevolution().Direction;
+        Point3D p = s.AxeOfRevolution().Location;
 
         Line3D l = new(p, n);
 
         p = c.Value(c.FirstParameter());
 
-        if (l.SquareDistance(p) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+        if (l.SquareDistanceTo(p) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             return true;
         }
 
         p = c.Value(c.LastParameter());
 
-        return l.SquareDistance(p) < global::Kerf.Engine.Foundation.Precision.SquareConfusion();
+        return l.SquareDistanceTo(p) < global::Kerf.Engine.Foundation.Precision.SquareConfusion();
     }
 
     private static void PerformExtPElC(ExtPElC e, in Point3D p, CurveAdaptorBase c, double tol)
@@ -133,13 +133,13 @@ public class ExtPRevS : Transient
                 return false;
         }
         //  the axe of revolution must be in the plane of the curve.
-        Plane3D pl = new(curvePos.Location(), curvePos.Direction());
-        Point3D p1 = axeOfRevolution.Location();
+        Plane3D pl = new(curvePos.Location, curvePos.Direction);
+        Point3D p1 = axeOfRevolution.Location;
         double dist = 100.0, dist2 = dist * dist;
         double threshold = global::Kerf.Engine.Foundation.Precision.Angular() * global::Kerf.Engine.Foundation.Precision.Angular() * dist2;
-        Point3D p2 = new(axeOfRevolution.Location().XYZ() + dist * axeOfRevolution.Direction().XYZ());
+        Point3D p2 = new(axeOfRevolution.Location.XYZ() + dist * axeOfRevolution.Direction.XYZ());
 
-        return (pl.SquareDistance(p1) < threshold) && (pl.SquareDistance(p2) < threshold);
+        return (pl.SquareDistanceTo(p1) < threshold) && (pl.SquareDistanceTo(p2) < threshold);
     }
 
     private static bool IsOriginalPnt(in Point3D p, POnSurf[] points, int nbPoints)
@@ -158,16 +158,16 @@ public class ExtPRevS : Transient
         out double dist2, bool isVSup, bool isMin)
     {
         e = s.Value(u, v);
-        dist2 = p.SquareDistance(e);
+        dist2 = p.SquareDistanceTo(e);
         if (isMin)
         {
-            return (dist2 < p.SquareDistance(s.Value(u + 1, v)) && dist2 < p.SquareDistance(s.Value(u - 1, v))
-                    && dist2 < p.SquareDistance(s.Value(u, isVSup ? v - 1 : v + 1)));
+            return (dist2 < p.SquareDistanceTo(s.Value(u + 1, v)) && dist2 < p.SquareDistanceTo(s.Value(u - 1, v))
+                    && dist2 < p.SquareDistanceTo(s.Value(u, isVSup ? v - 1 : v + 1)));
         }
         else
         {
-            return (dist2 > p.SquareDistance(s.Value(u + 1, v)) && dist2 > p.SquareDistance(s.Value(u - 1, v))
-                    && dist2 > p.SquareDistance(s.Value(u, isVSup ? v - 1 : v + 1)));
+            return (dist2 > p.SquareDistanceTo(s.Value(u + 1, v)) && dist2 > p.SquareDistanceTo(s.Value(u - 1, v))
+                    && dist2 > p.SquareDistanceTo(s.Value(u, isVSup ? v - 1 : v + 1)));
         }
     }
 
@@ -255,8 +255,8 @@ public class ExtPRevS : Transient
         CurveAdaptorBase aCurve = _s!.BasisCurve();
 
         Axis3D ax = _s.AxeOfRevolution();
-        Vector3D dir = new(ax.Direction()), z = new(_position.Direction());
-        Point3D o = ax.Location();
+        Vector3D dir = new(ax.Direction), z = new(_position.Direction);
+        Point3D o = ax.Location;
 
         double oPdir = new Vector3D(o, p).Dot(dir);
         Point3D pp = p.Translated(dir.Multiplied(-oPdir));
@@ -289,7 +289,7 @@ public class ExtPRevS : Transient
         Vector3D oPpp = new(o, ppp), oPq = new(o, _s.Value(M_PI / 2, 0));
         if (u != M_PI / 2)
         {
-            if (Math.Abs(oPq.Magnitude()) <= Constants.Resolution())
+            if (Math.Abs(oPq.Magnitude) <= Constants.Resolution())
             {
                 oPq = new Vector3D(o, _s.Value(M_PI / 2, aCurve.LastParameter() / 10));
             }
@@ -377,7 +377,7 @@ public class ExtPRevS : Transient
                 else
                 {
                     e = _s.Value(u, v);
-                    dist2 = p.SquareDistance(e);
+                    dist2 = p.SquareDistanceTo(e);
                 }
                 if (IsOriginalPnt(e, _point, _nbExt))
                 {
@@ -462,7 +462,7 @@ public class ExtPRevS : Transient
                 else
                 {
                     e = _s.Value(u, v);
-                    dist2 = p.SquareDistance(e);
+                    dist2 = p.SquareDistanceTo(e);
                 }
                 if (IsOriginalPnt(e, _point, _nbExt))
                 {

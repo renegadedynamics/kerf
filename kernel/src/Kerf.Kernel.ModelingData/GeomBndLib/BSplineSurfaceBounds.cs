@@ -17,7 +17,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// the patch (selected through the knots), grid sampling outside the surface's bounds, sampling + PSO/Powell
 /// optimization for <c>BoxOptimal</c>.
 /// </summary>
-public sealed class BSplineSurfaceBounds : SurfaceBounds.ISurfaceEvaluator
+internal sealed class BSplineSurfaceBounds : SurfaceBounds.ISurfaceEvaluator
 {
     private readonly BSplineSurface _geom;
 
@@ -63,7 +63,7 @@ public sealed class BSplineSurfaceBounds : SurfaceBounds.ISurfaceEvaluator
     /// <summary>Compute bounding box for full surface.</summary>
     public Box Box(double tol)
     {
-        _geom.Bounds(out double uMin, out double uMax, out double vMin, out double vMax);
+        _geom.ParameterBounds(out double uMin, out double uMax, out double vMin, out double vMax);
         return Box(uMin, uMax, vMin, vMax, tol);
     }
 
@@ -74,7 +74,7 @@ public sealed class BSplineSurfaceBounds : SurfaceBounds.ISurfaceEvaluator
         double pTol = global::Kerf.Engine.Foundation.Precision.Parametric(global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // Get geometry bounds.
-        _geom.Bounds(out double uMinParam, out double uMaxParam, out double vMinParam, out double vMaxParam);
+        _geom.ParameterBounds(out double uMinParam, out double uMaxParam, out double vMinParam, out double vMaxParam);
 
         // Check if parameters lie inside geometry bounds for convex hull applicability.
         bool isOutOfBounds = ((uMin - uMinParam) < -pTol || (vMin - vMinParam) < -pTol
@@ -98,7 +98,7 @@ public sealed class BSplineSurfaceBounds : SurfaceBounds.ISurfaceEvaluator
                 NCollection_Array1<double> knots = _geom.InternalUKnots();
                 ComputePolesIndexes(knots,
                                     mults,
-                                    _geom.UDegree(),
+                                    _geom.UDegree,
                                     uMin,
                                     uMax,
                                     nbUPoles,
@@ -112,7 +112,7 @@ public sealed class BSplineSurfaceBounds : SurfaceBounds.ISurfaceEvaluator
                 NCollection_Array1<double> knots = _geom.InternalVKnots();
                 ComputePolesIndexes(knots,
                                     mults,
-                                    _geom.VDegree(),
+                                    _geom.VDegree,
                                     vMin,
                                     vMax,
                                     nbVPoles,
@@ -176,7 +176,7 @@ public sealed class BSplineSurfaceBounds : SurfaceBounds.ISurfaceEvaluator
     /// <summary>Compute precise bounding box for full surface.</summary>
     public Box BoxOptimal(double tol)
     {
-        _geom.Bounds(out double uMin, out double uMax, out double vMin, out double vMax);
+        _geom.ParameterBounds(out double uMin, out double uMax, out double vMin, out double vMax);
         return BoxOptimal(uMin, uMax, vMin, vMax, tol);
     }
 

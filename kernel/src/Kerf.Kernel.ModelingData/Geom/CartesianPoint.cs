@@ -61,11 +61,11 @@ public class CartesianPoint : Point
 
     public override Point3D Pnt() => _gpPnt;
 
-    public override double X() => _gpPnt.X();
+    public override double X() => _gpPnt.X;
 
-    public override double Y() => _gpPnt.Y();
+    public override double Y() => _gpPnt.Y;
 
-    public override double Z() => _gpPnt.Z();
+    public override double Z() => _gpPnt.Z;
 
     /// <summary>Applies T to this point.</summary>
     protected internal override void Transform(in Transform3D t)

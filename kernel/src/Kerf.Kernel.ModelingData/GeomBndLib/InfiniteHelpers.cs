@@ -29,21 +29,21 @@ internal static class InfiniteHelpers
     {
         if (dir.IsParallel(Constants.DX(), global::Kerf.Engine.Foundation.Precision.Angular()))
         {
-            if (dir.X() > 0.0)
+            if (dir.X > 0.0)
                 box.OpenXmin();
             else
                 box.OpenXmax();
         }
         else if (dir.IsParallel(Constants.DY(), global::Kerf.Engine.Foundation.Precision.Angular()))
         {
-            if (dir.Y() > 0.0)
+            if (dir.Y > 0.0)
                 box.OpenYmin();
             else
                 box.OpenYmax();
         }
         else if (dir.IsParallel(Constants.DZ(), global::Kerf.Engine.Foundation.Precision.Angular()))
         {
-            if (dir.Z() > 0.0)
+            if (dir.Z > 0.0)
                 box.OpenZmin();
             else
                 box.OpenZmax();
@@ -61,21 +61,21 @@ internal static class InfiniteHelpers
     {
         if (dir.IsParallel(Constants.DX(), global::Kerf.Engine.Foundation.Precision.Angular()))
         {
-            if (dir.X() > 0.0)
+            if (dir.X > 0.0)
                 box.OpenXmax();
             else
                 box.OpenXmin();
         }
         else if (dir.IsParallel(Constants.DY(), global::Kerf.Engine.Foundation.Precision.Angular()))
         {
-            if (dir.Y() > 0.0)
+            if (dir.Y > 0.0)
                 box.OpenYmax();
             else
                 box.OpenYmin();
         }
         else if (dir.IsParallel(Constants.DZ(), global::Kerf.Engine.Foundation.Precision.Angular()))
         {
-            if (dir.Z() > 0.0)
+            if (dir.Z > 0.0)
                 box.OpenZmax();
             else
                 box.OpenZmin();
@@ -125,14 +125,14 @@ internal static class InfiniteHelpers
     {
         if (dir.IsParallel(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
         {
-            if (dir.X() > 0.0)
+            if (dir.X > 0.0)
                 box.OpenXmin();
             else
                 box.OpenXmax();
         }
         else if (dir.IsParallel(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
         {
-            if (dir.Y() > 0.0)
+            if (dir.Y > 0.0)
                 box.OpenYmin();
             else
                 box.OpenYmax();
@@ -148,14 +148,14 @@ internal static class InfiniteHelpers
     {
         if (dir.IsParallel(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
         {
-            if (dir.X() > 0.0)
+            if (dir.X > 0.0)
                 box.OpenXmax();
             else
                 box.OpenXmin();
         }
         else if (dir.IsParallel(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
         {
-            if (dir.Y() > 0.0)
+            if (dir.Y > 0.0)
                 box.OpenYmax();
             else
                 box.OpenYmin();

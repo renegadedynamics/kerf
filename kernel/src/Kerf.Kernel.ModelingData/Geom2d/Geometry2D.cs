@@ -22,6 +22,11 @@ namespace Kerf.Geometry;
 /// </remarks>
 public abstract class Geometry2D : Transient
 {
+    /// <summary>Only the kernel derives from it (unit 10L1).</summary>
+    private protected Geometry2D()
+    {
+    }
+
     /// <summary>Mirrors this geometry about the point P.</summary>
     internal void Mirror(in Point2D p)
     {

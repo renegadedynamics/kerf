@@ -83,7 +83,7 @@ public class GeomGridEval_BSplineSurfaceTest
             for (int iV = 1; iV <= theVParams.Length(); ++iV)
             {
                 Point3D aExpected = theSurf.Value(theUParams.Value(iU), theVParams.Value(iV));
-                Assert.Equal(0.0, theGrid.Value(iU, iV).Distance(aExpected), THE_TOLERANCE);
+                Assert.Equal(0.0, theGrid.Value(iU, iV).DistanceTo(aExpected), THE_TOLERANCE);
             }
         }
     }
@@ -102,7 +102,7 @@ public class GeomGridEval_BSplineSurfaceTest
             for (int iV = 1; iV <= aNbV; ++iV)
             {
                 theSurf.D0(theUParams.Value(iU), theVParams.Value(iV), out Point3D aExpected);
-                Assert.Equal(0.0, theGrid.Value(iU, iV).Distance(aExpected), THE_TOLERANCE);
+                Assert.Equal(0.0, theGrid.Value(iU, iV).DistanceTo(aExpected), THE_TOLERANCE);
             }
         }
     }
@@ -136,10 +136,10 @@ public class GeomGridEval_BSplineSurfaceTest
 
         NCollection_Array2<Point3D> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
 
-        Assert.Equal(0.0, aGrid.Value(1, 1).Distance(new Point3D(0, 0, 0)), THE_TOLERANCE);
-        Assert.Equal(0.0, aGrid.Value(2, 1).Distance(new Point3D(1, 0, 0)), THE_TOLERANCE);
-        Assert.Equal(0.0, aGrid.Value(1, 2).Distance(new Point3D(0, 1, 0)), THE_TOLERANCE);
-        Assert.Equal(0.0, aGrid.Value(2, 2).Distance(new Point3D(1, 1, 1)), THE_TOLERANCE);
+        Assert.Equal(0.0, aGrid.Value(1, 1).DistanceTo(new Point3D(0, 0, 0)), THE_TOLERANCE);
+        Assert.Equal(0.0, aGrid.Value(2, 1).DistanceTo(new Point3D(1, 0, 0)), THE_TOLERANCE);
+        Assert.Equal(0.0, aGrid.Value(1, 2).DistanceTo(new Point3D(0, 1, 0)), THE_TOLERANCE);
+        Assert.Equal(0.0, aGrid.Value(2, 2).DistanceTo(new Point3D(1, 1, 1)), THE_TOLERANCE);
     }
 
     [Fact]
@@ -273,9 +273,9 @@ public class GeomGridEval_BSplineSurfaceTest
             for (int iV = 1; iV <= 5; ++iV)
             {
                 aSurf.D1(aUParams.Value(iU), aVParams.Value(iV), out Point3D aPnt, out Vector3D aD1U, out Vector3D aD1V);
-                Assert.Equal(0.0, aGrid.Value(iU, iV).Point.Distance(aPnt), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(iU, iV).D1U - aD1U).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(iU, iV).D1V - aD1V).Magnitude(), THE_TOLERANCE);
+                Assert.Equal(0.0, aGrid.Value(iU, iV).Point.DistanceTo(aPnt), THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(iU, iV).D1U - aD1U).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(iU, iV).D1V - aD1V).Magnitude, THE_TOLERANCE);
             }
         }
     }
@@ -297,12 +297,12 @@ public class GeomGridEval_BSplineSurfaceTest
             {
                 aSurf.D2(aUParams.Value(iU), aVParams.Value(iV), out Point3D aPnt, out Vector3D aD1U, out Vector3D aD1V,
                          out Vector3D aD2U, out Vector3D aD2V, out Vector3D aD2UV);
-                Assert.Equal(0.0, aGrid.Value(iU, iV).Point.Distance(aPnt), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(iU, iV).D1U - aD1U).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(iU, iV).D1V - aD1V).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(iU, iV).D2U - aD2U).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(iU, iV).D2V - aD2V).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(iU, iV).D2UV - aD2UV).Magnitude(), THE_TOLERANCE);
+                Assert.Equal(0.0, aGrid.Value(iU, iV).Point.DistanceTo(aPnt), THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(iU, iV).D1U - aD1U).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(iU, iV).D1V - aD1V).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(iU, iV).D2U - aD2U).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(iU, iV).D2V - aD2V).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(iU, iV).D2UV - aD2UV).Magnitude, THE_TOLERANCE);
             }
         }
     }
@@ -326,16 +326,16 @@ public class GeomGridEval_BSplineSurfaceTest
                 anAdaptor.D3(aUParams.Value(iU), aVParams.Value(iV), out Point3D aPnt, out Vector3D aD1U,
                              out Vector3D aD1V, out Vector3D aD2U, out Vector3D aD2V, out Vector3D aD2UV, out Vector3D aD3U,
                              out Vector3D aD3V, out Vector3D aD3UUV, out Vector3D aD3UVV);
-                Assert.Equal(0.0, aGrid.Value(iU, iV).Point.Distance(aPnt), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(iU, iV).D1U - aD1U).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(iU, iV).D1V - aD1V).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(iU, iV).D2U - aD2U).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(iU, iV).D2V - aD2V).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(iU, iV).D2UV - aD2UV).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(iU, iV).D3U - aD3U).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(iU, iV).D3V - aD3V).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(iU, iV).D3UUV - aD3UUV).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(iU, iV).D3UVV - aD3UVV).Magnitude(), THE_TOLERANCE);
+                Assert.Equal(0.0, aGrid.Value(iU, iV).Point.DistanceTo(aPnt), THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(iU, iV).D1U - aD1U).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(iU, iV).D1V - aD1V).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(iU, iV).D2U - aD2U).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(iU, iV).D2V - aD2V).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(iU, iV).D2UV - aD2UV).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(iU, iV).D3U - aD3U).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(iU, iV).D3V - aD3V).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(iU, iV).D3UUV - aD3UUV).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(iU, iV).D3UVV - aD3UVV).Magnitude, THE_TOLERANCE);
             }
         }
     }
@@ -358,7 +358,7 @@ public class GeomGridEval_BSplineSurfaceTest
             for (int iV = 1; iV <= theNbPoints; ++iV)
             {
                 Vector3D aExpected = theSurf.DN(aUParams.Value(iU), aVParams.Value(iV), theNU, theNV);
-                Assert.Equal(0.0, (aGrid.Value(iU, iV) - aExpected).Magnitude(), THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(iU, iV) - aExpected).Magnitude, THE_TOLERANCE);
             }
         }
     }
@@ -396,7 +396,7 @@ public class GeomGridEval_BSplineSurfaceTest
         {
             for (int iV = 1; iV <= 5; ++iV)
             {
-                Assert.Equal(0.0, aGrid.Value(iU, iV).Magnitude(), THE_TOLERANCE);
+                Assert.Equal(0.0, aGrid.Value(iU, iV).Magnitude, THE_TOLERANCE);
             }
         }
     }

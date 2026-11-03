@@ -25,7 +25,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// C0BSplineToArrayOfC1BSplineCurve). The caller's curves are never modified: where OCCT changes a curve of the
 /// input array (the weight normalisation of ConcatG1 and ConcatC1), the port puts a modified copy in the array.
 /// </remarks>
-public static class Geom2dConvert2D
+internal static class Geom2dConvert2D
 {
     private static BSplineCurve2D BSplineCurveBuilder(ConicCurve2D theConic, ConicToBSplineCurve convert)
     {
@@ -37,15 +37,15 @@ public static class Geom2dConvert2D
                                            convert.Degree(),
                                            convert.IsPeriodic);
 
-        Frame2D axis = theConic.Position();
-        if ((axis.XDirection() ^ axis.YDirection()) < 0.0)
+        Frame2D axis = theConic.Position;
+        if ((axis.XDirection ^ axis.YDirection) < 0.0)
         {
             // Then the axis is left-handed, apply a symmetry to the curve.
             Transform2D sym = new Transform2D().WithMirror(Constants.OX2d());
             theCurve.Transform(sym);
         }
 
-        Transform2D t = new Transform2D().WithTransformation(theConic.XAxis(), Constants.OX2d());
+        Transform2D t = new Transform2D().WithTransformation(theConic.XAxis, Constants.OX2d());
         BSplineCurve2D cres = (BSplineCurve2D)theCurve.Transformed(t);
         return cres;
     }
@@ -142,35 +142,35 @@ public static class Geom2dConvert2D
         if (c is TrimmedCurve2D ctrim)
         {
             Curve2D curv;
-            curv = ctrim.BasisCurve();
-            double u1 = ctrim.FirstParameter();
-            double u2 = ctrim.LastParameter();
+            curv = ctrim.BasisCurve;
+            double u1 = ctrim.FirstParameter;
+            double u2 = ctrim.LastParameter;
 
             // If the curve is not truly restricted, there is no risk of
             // a Raise in BS->Segment.
             if (!curv.IsPeriodic)
             {
-                if (u1 < curv.FirstParameter())
+                if (u1 < curv.FirstParameter)
                 {
-                    u1 = curv.FirstParameter();
+                    u1 = curv.FirstParameter;
                 }
 
-                if (u2 > curv.LastParameter())
+                if (u2 > curv.LastParameter)
                 {
-                    u2 = curv.LastParameter();
+                    u2 = curv.LastParameter;
                 }
             }
 
             if (curv is LineCurve2D)
             {
-                Point2D pdeb = ctrim.StartPoint();
-                Point2D pfin = ctrim.EndPoint();
+                Point2D pdeb = ctrim.StartPoint;
+                Point2D pfin = ctrim.EndPoint;
                 NCollection_Array1<Point2D> poles = new(1, 2);
                 poles[1] = pdeb;
                 poles[2] = pfin;
                 NCollection_Array1<double> knots = new(1, 2);
-                knots[1] = ctrim.FirstParameter();
-                knots[2] = ctrim.LastParameter();
+                knots[1] = ctrim.FirstParameter;
+                knots[2] = ctrim.LastParameter;
                 NCollection_Array1<int> mults = new(1, 2);
                 mults[1] = 2;
                 mults[2] = 2;
@@ -180,7 +180,7 @@ public static class Geom2dConvert2D
 
             else if (curv is CircleCurve2D theCircle)
             {
-                Circle2D c2d = new(Constants.OX2d(), theCircle.Radius());
+                Circle2D c2d = new(Constants.OX2d(), theCircle.Radius);
                 if (parameterisation != RationalC1)
                 {
                     CircleToBSplineCurve convert = new(c2d, u1, u2, parameterisation);
@@ -217,7 +217,7 @@ public static class Geom2dConvert2D
 
             else if (curv is EllipseCurve2D theEllipse)
             {
-                Ellipse2D e2d = new(Constants.OX2d(), theEllipse.MajorRadius(), theEllipse.MinorRadius());
+                Ellipse2D e2d = new(Constants.OX2d(), theEllipse.MajorRadius, theEllipse.MinorRadius);
                 if (parameterisation != RationalC1)
                 {
                     EllipseToBSplineCurve convert = new(e2d, u1, u2, parameterisation);
@@ -254,14 +254,14 @@ public static class Geom2dConvert2D
 
             else if (curv is HyperbolaCurve2D theHyperbola)
             {
-                Hyperbola2D h2d = new(Constants.OX2d(), theHyperbola.MajorRadius(), theHyperbola.MinorRadius());
+                Hyperbola2D h2d = new(Constants.OX2d(), theHyperbola.MajorRadius, theHyperbola.MinorRadius);
                 HyperbolaToBSplineCurve convert = new(h2d, u1, u2);
                 theCurve = BSplineCurveBuilder(theHyperbola, convert);
             }
 
             else if (curv is ParabolaCurve2D theParabola)
             {
-                Parabola2D prb2d = new(Constants.OX2d(), theParabola.Focal());
+                Parabola2D prb2d = new(Constants.OX2d(), theParabola.Focal);
                 ParabolaToBSplineCurve convert = new(prb2d, u1, u2);
                 theCurve = BSplineCurveBuilder(theParabola, convert);
             }
@@ -271,7 +271,7 @@ public static class Geom2dConvert2D
                 BezierCurve2D cBez = (BezierCurve2D)curv.Copy();
 
                 cBez.Segment(u1, u2);
-                int degree = cBez.Degree();
+                int degree = cBez.Degree;
                 NCollection_Array1<double> knots = new(1, 2);
                 NCollection_Array1<int> mults = new(1, 2);
                 knots[1] = 0.0;
@@ -321,7 +321,7 @@ public static class Geom2dConvert2D
         {
             if (c is EllipseCurve2D theEllipse)
             {
-                Ellipse2D e2d = new(Constants.OX2d(), theEllipse.MajorRadius(), theEllipse.MinorRadius());
+                Ellipse2D e2d = new(Constants.OX2d(), theEllipse.MajorRadius, theEllipse.MinorRadius);
                 EllipseToBSplineCurve convert = new(e2d, parameterisation);
                 theCurve = BSplineCurveBuilder(theEllipse, convert);
                 theCurve.SetPeriodic();
@@ -329,7 +329,7 @@ public static class Geom2dConvert2D
 
             else if (c is CircleCurve2D theCircle)
             {
-                Circle2D c2d = new(Constants.OX2d(), theCircle.Radius());
+                Circle2D c2d = new(Constants.OX2d(), theCircle.Radius);
                 CircleToBSplineCurve convert = new(c2d, parameterisation);
                 theCurve = BSplineCurveBuilder(theCircle, convert);
                 theCurve.SetPeriodic();
@@ -337,7 +337,7 @@ public static class Geom2dConvert2D
 
             else if (c is BezierCurve2D cBez)
             {
-                int degree = cBez.Degree();
+                int degree = cBez.Degree;
                 NCollection_Array1<double> knots = new(1, 2);
                 NCollection_Array1<int> mults = new(1, 2);
                 knots[1] = 0.0;
@@ -427,22 +427,22 @@ public static class Geom2dConvert2D
         NCollection_Array1<double> knots = new(a.InternalKnots());
         NCollection_Array1<Point2D> poles = a.InternalPoles();
         NCollection_Array1<int> mults = a.InternalMultiplicities();
-        global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(bs.FirstParameter(), bs.LastParameter(), knots);
-        BSplineCurve2D ancore = new(poles, knots, mults, a.Degree());
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Reparametrize(bs.FirstParameter, bs.LastParameter, knots);
+        BSplineCurve2D ancore = new(poles, knots, mults, a.Degree);
 
         global::Kerf.Engine.Geometry.Splines.BSplCLib.MergeBSplineKnots(tolerance,
                                    start_value,
                                    end_value,
-                                   a.Degree(),
+                                   a.Degree,
                                    knots,
                                    mults,
-                                   bs.Degree(),
+                                   bs.Degree,
                                    bsKnots,
                                    bsMults,
                                    out resNbPoles,
                                    out NCollection_HArray1<double> resKnots,
                                    out NCollection_HArray1<int> resMults);
-        degree = bs.Degree() + a.Degree();
+        degree = bs.Degree + a.Degree;
         NCollection_Array1<Point2D> resNumPoles = new(1, resNbPoles);
         NCollection_Array1<double> resDenPoles = new(1, resNbPoles);
         NCollection_Array1<Point2D> resPoles = new(1, resNbPoles);
@@ -458,8 +458,8 @@ public static class Geom2dConvert2D
 
         // POP for NT
         Geom2dConvert_law_evaluator ev = new(ancore);
-        global::Kerf.Engine.Geometry.Splines.BSplCLib.FunctionMultiply(ev, bs.Degree(), bsFlatKnots, bsPoles, resFlatKnots, degree, resNumPoles, out status);
-        global::Kerf.Engine.Geometry.Splines.BSplCLib.FunctionMultiply(ev, bs.Degree(), bsFlatKnots, bsWeights, resFlatKnots, degree, resDenPoles, out status);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.FunctionMultiply(ev, bs.Degree, bsFlatKnots, bsPoles, resFlatKnots, degree, resNumPoles, out status);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.FunctionMultiply(ev, bs.Degree, bsFlatKnots, bsWeights, resFlatKnots, degree, resDenPoles, out status);
         for (ii = 1; ii <= resNbPoles; ii++)
         {
             for (jj = 1; jj <= 2; jj++)
@@ -527,9 +527,9 @@ public static class Geom2dConvert2D
 
         for (i = 0; i <= tab.Length() - 2; i++)
         {
-            tab[i + 1].D1(tab[i + 1].FirstParameter(), out _, out vec1);
-            tab[i].D1(tab[i].LastParameter(), out _, out vec2);
-            rapport = rapport * vec2.Magnitude() / vec1.Magnitude();
+            tab[i + 1].D1(tab[i + 1].FirstParameter, out _, out vec1);
+            tab[i].D1(tab[i].LastParameter, out _, out vec2);
+            rapport = rapport * vec2.Magnitude / vec1.Magnitude;
         }
 
         return (rapport > (1.0e0 + global::Kerf.Engine.Foundation.Precision.Confusion())) || (rapport < (1.0e0 - global::Kerf.Engine.Foundation.Precision.Confusion()));
@@ -539,12 +539,12 @@ public static class Geom2dConvert2D
     {
         int i, index = 0, degree;
 
-        degree = tab[0].Degree();
+        degree = tab[0].Degree;
         for (i = 0; i <= tab.Length() - 1; i++)
         {
-            if (tab[i].Degree() <= degree)
+            if (tab[i].Degree <= degree)
             {
-                degree = tab[i].Degree();
+                degree = tab[i].Degree;
                 index = i;
             }
         }
@@ -651,7 +651,7 @@ public static class Geom2dConvert2D
         Vector2D d1, d2;
         Point2D point1, point2;
         int cont1, cont2;
-        Continuity gcont1 = c1.Continuity(), gcont2 = c2.Continuity();
+        Continuity gcont1 = c1.Continuity, gcont2 = c2.Continuity;
         cont1 = GeomAbsToInteger(gcont1);
         cont2 = GeomAbsToInteger(gcont2);
 
@@ -659,12 +659,12 @@ public static class Geom2dConvert2D
         Curve2D curve2 = c2;
         if (c1 is TrimmedCurve2D trimmed1)
         {
-            curve1 = trimmed1.BasisCurve();
+            curve1 = trimmed1.BasisCurve;
         }
 
         if (c2 is TrimmedCurve2D trimmed2)
         {
-            curve2 = trimmed2.BasisCurve();
+            curve2 = trimmed2.BasisCurve;
         }
 
         if (curve1 is BSplineCurve2D bSplineCurve1)
@@ -674,7 +674,7 @@ public static class Geom2dConvert2D
 
             if (index1 > 1 && index2 < bSplineCurve1.KnotCount && index1 == index2)
             {
-                cont1 = bSplineCurve1.Degree() - bSplineCurve1.Multiplicity(index1);
+                cont1 = bSplineCurve1.Degree - bSplineCurve1.Multiplicity(index1);
             }
             else
             {
@@ -689,7 +689,7 @@ public static class Geom2dConvert2D
 
             if (index1 > 1 && index2 < bSplineCurve2.KnotCount && index1 == index2)
             {
-                cont2 = bSplineCurve2.Degree() - bSplineCurve2.Multiplicity(index1);
+                cont2 = bSplineCurve2.Degree - bSplineCurve2.Multiplicity(index1);
             }
             else
             {
@@ -699,25 +699,25 @@ public static class Geom2dConvert2D
 
         curve1.D1(u1, out point1, out d1);
         curve2.D1(u2, out point2, out d2);
-        if (point1.SquareDistance(point2) <= tl * tl)
+        if (point1.SquareDistanceTo(point2) <= tl * tl)
         {
             if (cont1 != 0 && cont2 != 0)
             {
-                if (d1.SquareMagnitude() >= tl * tl && d2.SquareMagnitude() >= tl * tl)
+                if (d1.SquareMagnitude >= tl * tl && d2.SquareMagnitude >= tl * tl)
                 {
                     if (r1)
                     {
-                        d1 = d1.WithCoord(-d1.X(), -d1.Y());
+                        d1 = d1.WithCoord(-d1.X, -d1.Y);
                     }
 
                     if (r2)
                     {
-                        d2 = d2.WithCoord(-d2.X(), -d2.Y());
+                        d2 = d2.WithCoord(-d2.X, -d2.Y);
                     }
 
                     value = d1.Dot(d2);
-                    if ((d1.Magnitude() <= (d2.Magnitude() + tl)) && (d1.Magnitude() >= (d2.Magnitude() - tl))
-                        && (value / (d1.Magnitude() * d2.Magnitude()) >= 1.0e0 - ta * ta))
+                    if ((d1.Magnitude <= (d2.Magnitude + tl)) && (d1.Magnitude >= (d2.Magnitude - tl))
+                        && (value / (d1.Magnitude * d2.Magnitude) >= 1.0e0 - ta * ta))
                     {
                         cont = global::Kerf.Geometry.Continuity.C1;
                     }
@@ -802,7 +802,7 @@ public static class Geom2dConvert2D
         {
             if (i >= 1)
             {
-                first = arrayOfCurves[i].FirstParameter();
+                first = arrayOfCurves[i].FirstParameter;
                 if (Continuity(arrayOfCurves[i - 1], arrayOfCurves[i], preLast, first, true, true) < C0)
                 {
                     throw new ConstructionErrorException("Geom2dConvert curves not C0"); // renvoi d'une erreur
@@ -820,7 +820,7 @@ public static class Geom2dConvert2D
                 }
             }
 
-            preLast = arrayOfCurves[i].LastParameter();
+            preLast = arrayOfCurves[i].LastParameter;
         }
 
         while (index <= nb_curve - 1)
@@ -858,7 +858,7 @@ public static class Geom2dConvert2D
         if (nb_group == 1 && closedFlag && needDoubleDegRepara)
         {
             curve1 = arrayOfCurves[nb_curve - 1];
-            if (curve1.Degree() > BSplineCurve2D.MaxDegree() / 2)
+            if (curve1.Degree > BSplineCurve2D.MaxDegree / 2)
             {
                 closedFlag = false;
             }
@@ -878,15 +878,15 @@ public static class Geom2dConvert2D
                 curve1 = arrayOfCurves[j];
                 if ((j == (nb_curve - 1)) && (needDoubleDegRepara))
                 {
-                    int newCurveDegree = 2 * curve1.Degree();
-                    curve2.D1(curve2.LastParameter(), out _, out vec1);
-                    curve1.D1(curve1.FirstParameter(), out _, out vec2);
-                    lambda = vec2.Magnitude() / vec1.Magnitude();
+                    int newCurveDegree = 2 * curve1.Degree;
+                    curve2.D1(curve2.LastParameter, out _, out vec1);
+                    curve1.D1(curve1.FirstParameter, out _, out vec2);
+                    lambda = vec2.Magnitude / vec1.Magnitude;
                     NCollection_Array1<double> knotC1 = new(curve1.InternalKnots());
-                    curve1.D1(curve1.LastParameter(), out _, out vec2);
-                    arrayOfCurves[0].D1(arrayOfCurves[0].FirstParameter(), out _, out vec1);
-                    double lambda2 = vec1.Magnitude() / vec2.Magnitude();
-                    double tmax, a, b, c, umin = curve1.FirstParameter(), umax = curve1.LastParameter();
+                    curve1.D1(curve1.LastParameter, out _, out vec2);
+                    arrayOfCurves[0].D1(arrayOfCurves[0].FirstParameter, out _, out vec1);
+                    double lambda2 = vec1.Magnitude / vec2.Magnitude;
+                    double tmax, a, b, c, umin = curve1.FirstParameter, umax = curve1.LastParameter;
                     tmax = 2 * lambda * (umax - umin) / (1 + lambda * lambda2);
                     a = (lambda * lambda2 - 1) / (2 * lambda * tmax);
                     polynomialCoefficient[2] = a;
@@ -894,7 +894,7 @@ public static class Geom2dConvert2D
                     polynomialCoefficient[1] = b;
                     c = umin;
                     polynomialCoefficient[0] = c;
-                    NCollection_Array1<double> curve1FlatKnots = new(1, curve1.PoleCount + curve1.Degree() + 1);
+                    NCollection_Array1<double> curve1FlatKnots = new(1, curve1.PoleCount + curve1.Degree + 1);
                     NCollection_Array1<int> knotC1Mults = new(curve1.InternalMultiplicities());
                     global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequence(knotC1, knotC1Mults, curve1FlatKnots);
                     knotC1[1] = 0.0;
@@ -907,13 +907,13 @@ public static class Geom2dConvert2D
 
                     for (ii = 1; ii <= curve1.KnotCount; ii++)
                     {
-                        knotC1Mults[ii] = (curve1.Degree() + knotC1Mults[ii]);
+                        knotC1Mults[ii] = (curve1.Degree + knotC1Mults[ii]);
                     }
 
-                    NCollection_Array1<double> flatKnots = new(1, curve1FlatKnots.Length() + (curve1.Degree() * curve1.KnotCount));
+                    NCollection_Array1<double> flatKnots = new(1, curve1FlatKnots.Length() + (curve1.Degree * curve1.KnotCount));
 
                     global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequence(knotC1, knotC1Mults, flatKnots);
-                    NCollection_Array1<Point2D> newPoles = new(1, flatKnots.Length() - (2 * curve1.Degree() + 1));
+                    NCollection_Array1<Point2D> newPoles = new(1, flatKnots.Length() - (2 * curve1.Degree + 1));
                     int status;
                     NCollection_Array1<double> curve1Weights = curve1.InternalWeightsArray();
                     for (ii = 1; ii <= curve1.PoleCount; ii++)
@@ -926,10 +926,10 @@ public static class Geom2dConvert2D
 
                     // POP for NT
                     Geom2dConvert_reparameterise_evaluator ev = new(polynomialCoefficient);
-                    global::Kerf.Engine.Geometry.Splines.BSplCLib.FunctionReparameterise(ev, curve1.Degree(), curve1FlatKnots, curve1Poles, flatKnots,
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.FunctionReparameterise(ev, curve1.Degree, curve1FlatKnots, curve1Poles, flatKnots,
                                                     newCurveDegree, newPoles, out status);
-                    NCollection_Array1<double> newWeights = new(1, flatKnots.Length() - (2 * curve1.Degree() + 1));
-                    global::Kerf.Engine.Geometry.Splines.BSplCLib.FunctionReparameterise(ev, curve1.Degree(), curve1FlatKnots, curve1Weights, flatKnots,
+                    NCollection_Array1<double> newWeights = new(1, flatKnots.Length() - (2 * curve1.Degree + 1));
+                    global::Kerf.Engine.Geometry.Splines.BSplCLib.FunctionReparameterise(ev, curve1.Degree, curve1FlatKnots, curve1Weights, flatKnots,
                                                     newCurveDegree, newWeights, out status);
                     for (ii = 1; ii <= newPoles.Length(); ii++)
                     {
@@ -1051,7 +1051,7 @@ public static class Geom2dConvert2D
         {
             if (i >= 1)
             {
-                first = arrayOfCurves[i].FirstParameter();
+                first = arrayOfCurves[i].FirstParameter;
                 if (Continuity(arrayOfCurves[i - 1], arrayOfCurves[i], preLast, first, true, true, arrayOfToler[i - 1],
                                angularTolerance)
                     < C0)
@@ -1073,7 +1073,7 @@ public static class Geom2dConvert2D
                 }
             }
 
-            preLast = arrayOfCurves[i].LastParameter();
+            preLast = arrayOfCurves[i].LastParameter;
         }
 
         while (index <= nb_curve - 1)
@@ -1112,7 +1112,7 @@ public static class Geom2dConvert2D
         if (nb_group == 1 && closedFlag && needDoubleDegRepara)
         {
             curve1 = arrayOfCurves[nb_curve - 1];
-            if (curve1.Degree() > BSplineCurve2D.MaxDegree() / 2)
+            if (curve1.Degree > BSplineCurve2D.MaxDegree / 2)
             {
                 closedFlag = false;
             }
@@ -1139,7 +1139,7 @@ public static class Geom2dConvert2D
                     curve1 = arrayOfCurves[j];
                 }
 
-                int newCurveDegree = 2 * curve1.Degree();
+                int newCurveDegree = 2 * curve1.Degree;
 
                 if (j == 0)
                 { // initialisation en debut de groupe
@@ -1149,14 +1149,14 @@ public static class Geom2dConvert2D
                 {
                     if ((j == (nb_curve - 1)) && (needDoubleDegRepara))
                     {
-                        curve2.D1(curve2.LastParameter(), out _, out vec1);
-                        curve1.D1(curve1.FirstParameter(), out _, out vec2);
-                        lambda = vec2.Magnitude() / vec1.Magnitude();
+                        curve2.D1(curve2.LastParameter, out _, out vec1);
+                        curve1.D1(curve1.FirstParameter, out _, out vec2);
+                        lambda = vec2.Magnitude / vec1.Magnitude;
                         NCollection_Array1<double> knotC1 = new(curve1.InternalKnots());
-                        curve1.D1(curve1.LastParameter(), out _, out vec2);
-                        arrayOfCurves[0].D1(arrayOfCurves[0].FirstParameter(), out _, out vec1);
-                        double lambda2 = vec1.Magnitude() / vec2.Magnitude();
-                        double tmax, a, b, c, umin = curve1.FirstParameter(), umax = curve1.LastParameter();
+                        curve1.D1(curve1.LastParameter, out _, out vec2);
+                        arrayOfCurves[0].D1(arrayOfCurves[0].FirstParameter, out _, out vec1);
+                        double lambda2 = vec1.Magnitude / vec2.Magnitude;
+                        double tmax, a, b, c, umin = curve1.FirstParameter, umax = curve1.LastParameter;
                         tmax = 2 * lambda * (umax - umin) / (1 + lambda * lambda2);
                         a = (lambda * lambda2 - 1) / (2 * lambda * tmax);
                         polynomialCoefficient[2] = a;
@@ -1164,7 +1164,7 @@ public static class Geom2dConvert2D
                         polynomialCoefficient[1] = b;
                         c = umin;
                         polynomialCoefficient[0] = c;
-                        NCollection_Array1<double> curve1FlatKnots = new(1, curve1.PoleCount + curve1.Degree() + 1);
+                        NCollection_Array1<double> curve1FlatKnots = new(1, curve1.PoleCount + curve1.Degree + 1);
                         NCollection_Array1<int> knotC1Mults = new(curve1.InternalMultiplicities());
                         global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequence(knotC1, knotC1Mults, curve1FlatKnots);
                         knotC1[1] = 0.0;
@@ -1177,10 +1177,10 @@ public static class Geom2dConvert2D
 
                         for (ii = 1; ii <= curve1.KnotCount; ii++)
                         {
-                            knotC1Mults[ii] = (curve1.Degree() + knotC1Mults[ii]);
+                            knotC1Mults[ii] = (curve1.Degree + knotC1Mults[ii]);
                         }
 
-                        NCollection_Array1<double> flatKnots = new(1, curve1FlatKnots.Length() + (curve1.Degree() * curve1.KnotCount));
+                        NCollection_Array1<double> flatKnots = new(1, curve1FlatKnots.Length() + (curve1.Degree * curve1.KnotCount));
 
                         global::Kerf.Engine.Geometry.Splines.BSplCLib.KnotSequence(knotC1, knotC1Mults, flatKnots);
                         NCollection_Array1<Point2D> newPoles = new(1, flatKnots.Length() - (newCurveDegree + 1));
@@ -1196,10 +1196,10 @@ public static class Geom2dConvert2D
 
                         // POP for NT
                         Geom2dConvert_reparameterise_evaluator ev = new(polynomialCoefficient);
-                        global::Kerf.Engine.Geometry.Splines.BSplCLib.FunctionReparameterise(ev, curve1.Degree(), curve1FlatKnots, curve1Poles, flatKnots,
+                        global::Kerf.Engine.Geometry.Splines.BSplCLib.FunctionReparameterise(ev, curve1.Degree, curve1FlatKnots, curve1Poles, flatKnots,
                                                         newCurveDegree, newPoles, out status);
                         NCollection_Array1<double> newWeights = new(1, flatKnots.Length() - (newCurveDegree + 1));
-                        global::Kerf.Engine.Geometry.Splines.BSplCLib.FunctionReparameterise(ev, curve1.Degree(), curve1FlatKnots, curve1Weights, flatKnots,
+                        global::Kerf.Engine.Geometry.Splines.BSplCLib.FunctionReparameterise(ev, curve1.Degree, curve1FlatKnots, curve1Weights, flatKnots,
                                                         newCurveDegree, newWeights, out status);
                         for (ii = 1; ii <= newPoles.Length(); ii++)
                         {
@@ -1316,7 +1316,7 @@ public static class Geom2dConvert2D
         bool fusion;
         for (i = bs.FirstUKnotIndex() + 1; i <= (bs.LastUKnotIndex() - 1); i++)
         {
-            if (bsMults[i] == bs.Degree())
+            if (bsMults[i] == bs.Degree)
             {
                 nbcurveC1++;
             }
@@ -1334,13 +1334,13 @@ public static class Geom2dConvert2D
                 arrayOfToler[i] = tolerance;
             }
 
-            u2 = bs.FirstParameter();
+            u2 = bs.FirstParameter;
             j = bs.FirstUKnotIndex() + 1;
             for (i = 0; i < nbcurveC1; i++)
             {
                 u1 = u2;
 
-                while (j < bs.LastUKnotIndex() && bsMults[j] < bs.Degree())
+                while (j < bs.LastUKnotIndex() && bsMults[j] < bs.Degree)
                 {
                     j++;
                 }
@@ -1354,10 +1354,10 @@ public static class Geom2dConvert2D
 
             const double angularToler = 1.0e-7;
 
-            bs.D1(bs.FirstParameter(), out point1, out v1); // a verifier
-            bs.D1(bs.LastParameter(), out point2, out v2);
+            bs.D1(bs.FirstParameter, out point1, out v1); // a verifier
+            bs.D1(bs.LastParameter, out point2, out v2);
 
-            if ((point1.SquareDistance(point2) < tolerance * tolerance) && (v1.IsParallel(v2, angularToler)))
+            if ((point1.SquareDistanceTo(point2) < tolerance * tolerance) && (v1.IsParallel(v2, angularToler)))
             {
                 closed_flag = true;
             }
@@ -1412,7 +1412,7 @@ public static class Geom2dConvert2D
         Vector2D v1, v2;
         for (i = bs.FirstUKnotIndex(); i <= (bs.LastUKnotIndex() - 1); i++)
         {
-            if (bsMults[i] == bs.Degree())
+            if (bsMults[i] == bs.Degree)
             {
                 nbcurveC1++;
             }
@@ -1430,12 +1430,12 @@ public static class Geom2dConvert2D
                 arrayOfToler[i] = tolerance;
             }
 
-            u2 = bs.FirstParameter();
+            u2 = bs.FirstParameter;
             j = bs.FirstUKnotIndex() + 1;
             for (i = 0; i < nbcurveC1; i++)
             {
                 u1 = u2;
-                while (j < bs.LastUKnotIndex() && bsMults[j] < bs.Degree())
+                while (j < bs.LastUKnotIndex() && bsMults[j] < bs.Degree)
                 {
                     j++;
                 }
@@ -1447,11 +1447,11 @@ public static class Geom2dConvert2D
                 arrayOfCurves[i] = bSbis;
             }
 
-            bs.D1(bs.FirstParameter(), out point1, out v1);
-            bs.D1(bs.LastParameter(), out point2, out v2);
+            bs.D1(bs.FirstParameter, out point1, out v1);
+            bs.D1(bs.LastParameter, out point2, out v2);
 
             // OCCT compares the squared distance with Tolerance, not its square (C0BSplineToC1BSplineCurve squares it)
-            if (((point1.SquareDistance(point2) < tolerance)) && (v1.IsParallel(v2, angularTolerance)))
+            if (((point1.SquareDistanceTo(point2) < tolerance)) && (v1.IsParallel(v2, angularTolerance)))
             {
                 closed_flag = true;
             }

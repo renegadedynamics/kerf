@@ -9,7 +9,7 @@ using static Kerf.Engine.Geometry.Bvh.Constants;
 namespace Kerf.Engine.Geometry.Bvh;
 
 /// <summary>Builds a BVH tree with the spatial median split algorithm (a binned builder with two bins).</summary>
-public class SpatialMedianBuilder<T, TVec> : BinnedBuilder<T, TVec>
+internal class SpatialMedianBuilder<T, TVec> : BinnedBuilder<T, TVec>
     where T : unmanaged, INumber<T>, IMinMaxValue<T>
     where TVec : unmanaged, INCollection_Vec<T, TVec>
 {

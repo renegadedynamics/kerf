@@ -54,7 +54,7 @@ public sealed class Circ2dTanCen
             if (type1 == Circle)
             {
                 CircleCurve2D        ccc1 = (cc1 as CircleCurve2D)!;
-                Circle2D            c1   = ccc1.Circ2d();
+                Circle2D            c1   = ccc1.Circle;
                 QualifiedCirc qc1  = new(c1, qualified1.Qualifier());
                 AnalyticCirc2dTanCen  circ = new(qc1, pcenter, tolerance);
                 _wellDone                  = circ.IsDone;
@@ -77,7 +77,7 @@ public sealed class Circ2dTanCen
             else
             {
                 LineCurve2D         ll1  = (cc1 as LineCurve2D)!;
-                Line2D            l1   = ll1.Lin2d();
+                Line2D            l1   = ll1.Line;
                 AnalyticCirc2dTanCen circ = new(l1, pcenter);
                 _wellDone                 = circ.IsDone;
                 _nbrSol                   = circ.SolutionCount;

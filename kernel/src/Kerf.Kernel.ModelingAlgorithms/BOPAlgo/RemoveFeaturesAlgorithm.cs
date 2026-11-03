@@ -172,7 +172,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
         _shape = _inputShape;
 
         // Check the type of input shape
-        ShapeType type = _inputShape.ShapeType();
+        ShapeType type = _inputShape.Type;
 
         if (type == ShapeType.Solid || type == ShapeType.CompSolid)
         {
@@ -199,7 +199,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
             for (; it.More(); it.Next())
             {
                 Shape s = it.Value();
-                if (s.ShapeType() == ShapeType.Solid || s.ShapeType() == ShapeType.CompSolid)
+                if (s.Type == ShapeType.Solid || s.Type == ShapeType.CompSolid)
                 {
                     solids.Append(s);
                 }
@@ -1237,8 +1237,8 @@ public class RemoveFeaturesAlgorithm : BuilderShape
     /// <summary>Post treatment: restores the type of the input shape.</summary>
     protected void PostTreat()
     {
-        ShapeType inputType = _inputShape.ShapeType();
-        ShapeType resType = _shape.ShapeType();
+        ShapeType inputType = _inputShape.Type;
+        ShapeType resType = _shape.Type;
         if (resType == inputType)
         {
             return;
@@ -1308,7 +1308,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
         for (; itS.More(); itS.Next())
         {
             Shape ss = itS.Value();
-            if (ss.Orientation() == Internal)
+            if (ss.Orientation == Internal)
             {
                 lInt.Append(ss);
             }
@@ -1317,7 +1317,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
                 Iterator itSS = new(ss);
                 for (; itSS.More(); itSS.Next())
                 {
-                    if (itSS.Value().Orientation() == Internal)
+                    if (itSS.Value().Orientation == Internal)
                     {
                         lInt.Append(ss);
                         break;
@@ -1448,7 +1448,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
             for (; itSh.More(); itSh.Next())
             {
                 Shape sh = itSh.Value();
-                if (sh.ShapeType() != ShapeType.Shell)
+                if (sh.Type != ShapeType.Shell)
                 {
                     internalShapes.Append(sh);
                     continue;
@@ -1470,7 +1470,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
                         continue;
                     }
 
-                    if (f.Orientation() != Internal)
+                    if (f.Orientation != Internal)
                     {
                         facesToBeKept.Add(f);
 
@@ -1492,7 +1492,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
     // Find the shape in the other shape
     private static void FindShape(in Shape sWhat, in Shape sWhere, ref Shape sFound)
     {
-        Explorer exp = new(sWhere, sWhat.ShapeType());
+        Explorer exp = new(sWhere, sWhat.Type);
         for (; exp.More(); exp.Next())
         {
             Shape s = exp.Current();

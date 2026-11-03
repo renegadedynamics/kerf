@@ -135,8 +135,8 @@ public class Convert_TorusToBSplineSurfaceTest
 
                 // Verify the point lies on the torus:
                 // (sqrt(x^2 + y^2) - R_major)^2 + z^2 = R_minor^2
-                double aRxy = Math.Sqrt(aPnt.X() * aPnt.X() + aPnt.Y() * aPnt.Y());
-                double aDistSq = (aRxy - aMajorRadius) * (aRxy - aMajorRadius) + aPnt.Z() * aPnt.Z();
+                double aRxy = Math.Sqrt(aPnt.X * aPnt.X + aPnt.Y * aPnt.Y);
+                double aDistSq = (aRxy - aMajorRadius) * (aRxy - aMajorRadius) + aPnt.Z * aPnt.Z;
                 Assert.Equal(aMinorRadius * aMinorRadius, aDistSq, aTol);
             }
         }

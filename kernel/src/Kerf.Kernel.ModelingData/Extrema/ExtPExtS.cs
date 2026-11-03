@@ -41,9 +41,9 @@ public class ExtPExtS : Transient
     // Returns the projection of a point Point on a plane ThePlane along a direction TheDir.
     private static Point3D ProjectPnt(in Frame3D thePlane, in Direction3D theDir, in Point3D point)
     {
-        Vector3D po = new(point, thePlane.Location());
-        double alpha = po * new Vector3D(thePlane.Direction());
-        alpha /= theDir * thePlane.Direction();
+        Vector3D po = new(point, thePlane.Location);
+        double alpha = po * new Vector3D(thePlane.Direction);
+        alpha /= theDir * thePlane.Direction;
         Point3D p = new Point3D().WithXYZ(point.XYZ() + alpha * theDir.XYZ());
         return p;
     }
@@ -77,9 +77,9 @@ public class ExtPExtS : Transient
             Point3D pe = ProjectPnt(ortogSection, direction, GetValue(u, _c!)),
                    pprev = ProjectPnt(ortogSection, direction, GetValue(u - step, _c!)),
                    pnext = ProjectPnt(ortogSection, direction, GetValue(u + step, _c!));
-            d2e = p.SquareDistance(pe);
-            d2next = p.SquareDistance(pnext);
-            d2prev = p.SquareDistance(pprev);
+            d2e = p.SquareDistanceTo(pe);
+            d2next = p.SquareDistanceTo(pnext);
+            d2prev = p.SquareDistanceTo(pprev);
             bool notFound;
             if (isMin)
             {
@@ -112,7 +112,7 @@ public class ExtPExtS : Transient
                 d2e = d2next;
                 pe = pnext;
                 pnext = ProjectPnt(ortogSection, direction, GetValue(u + step, _c!));
-                d2next = p.SquareDistance(pnext);
+                d2next = p.SquareDistanceTo(pnext);
                 if (isMin)
                 {
                     notFound = d2e > d2next;
@@ -249,7 +249,7 @@ public class ExtPExtS : Transient
 
         Frame3D ortogSection = new(p, direction);
         double U, V;
-        bool isMin, isSimpleCase = _direction.IsParallel(new Vector3D(_position.Direction()), global::Kerf.Engine.Foundation.Precision.Angular());
+        bool isMin, isSimpleCase = _direction.IsParallel(new Vector3D(_position.Direction), global::Kerf.Engine.Foundation.Precision.Angular());
         int i, nbExt = ext.ExtCount;
         math_Vector uv = new(1, 2), tol = new(1, 2), uVinf = new(1, 2), uVsup = new(1, 2);
         tol[1] = _mytolu;
@@ -345,8 +345,8 @@ public class ExtPExtS : Transient
                         uv[2] = v;
                         _f.Value(uv, vals);
                         _s!.D1(u, v, out pe, out Vector3D du, out Vector3D dv);
-                        double mdu = du.Magnitude();
-                        double mdv = dv.Magnitude();
+                        double mdu = du.Magnitude;
+                        double mdv = dv.Magnitude;
                         u = Math.Abs(vals[1]);
                         v = Math.Abs(vals[2]);
                         if (mdu > global::Kerf.Engine.Foundation.Precision.PConfusion())
@@ -443,19 +443,19 @@ public class ExtPExtS : Transient
             case Line:
                 {
                     Line3D l = c.Line();
-                    Plane3D pln = new(l.Location(), l.Direction());
+                    Plane3D pln = new(l.Location, l.Direction);
                     //: abv 30.05.02: OCC  - use constructor instead of Set...s() to avoid exception
-                    Frame3D pos = new(pln.Location(), pln.Position().Direction(), pln.Position().XDirection());
+                    Frame3D pos = new(pln.Location, pln.Position.Direction, pln.Position.XDirection);
                     return pos;
                 }
             case Circle:
-                return c.Circle().Position();
+                return c.Circle().Position;
             case Ellipse:
-                return c.Ellipse().Position();
+                return c.Ellipse().Position;
             case Hyperbola:
-                return c.Hyperbola().Position();
+                return c.Hyperbola().Position;
             case Parabola:
-                return c.Parabola().Position();
+                return c.Parabola().Position;
             default:
                 return new Frame3D();
         }
@@ -501,7 +501,7 @@ public class ExtPExtS : Transient
                 return false;
         }
         // check if it is a plane
-        return Math.Abs(curvePos.Direction() * surfaceDirection) > Constants.Resolution();
+        return Math.Abs(curvePos.Direction * surfaceDirection) > Constants.Resolution();
     }
 
     private static Point3D GetValue(double u, CurveAdaptorBase c)

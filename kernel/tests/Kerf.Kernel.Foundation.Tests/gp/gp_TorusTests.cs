@@ -44,16 +44,16 @@ public class gp_TorusTest
             double aVPar = 0.0;
             for (int aVind = 0; aVind <= aNbPtsMax; aVind++)
             {
-                Point3D aPt = TorusD0(aUPar, aVPar, aTorus.Position(), aTorus.MajorRadius(), aTorus.MinorRadius());
-                double aX1 = aPt.X();
+                Point3D aPt = TorusD0(aUPar, aVPar, aTorus.Position, aTorus.MajorRadius, aTorus.MinorRadius);
+                double aX1 = aPt.X;
                 double aX2 = aX1 * aX1;
                 double aX3 = aX2 * aX1;
                 double aX4 = aX2 * aX2;
-                double aY1 = aPt.Y();
+                double aY1 = aPt.Y;
                 double aY2 = aY1 * aY1;
                 double aY3 = aY2 * aY1;
                 double aY4 = aY2 * aY2;
-                double aZ1 = aPt.Z();
+                double aZ1 = aPt.Z;
                 double aZ2 = aZ1 * aZ1;
                 double aZ3 = aZ2 * aZ1;
                 double aZ4 = aZ2 * aZ2;
@@ -110,10 +110,10 @@ public class gp_TorusTest
     // ElSLib::TorusD0, the evaluation behind Geom_ToroidalSurface::Value.
     private static Point3D TorusD0(double U, double V, in CoordinateSystem Pos, double MajorRadius, double MinorRadius)
     {
-        Xyz XDir = Pos.XDirection().XYZ();
-        Xyz YDir = Pos.YDirection().XYZ();
-        Xyz ZDir = Pos.Direction().XYZ();
-        Xyz PLoc = Pos.Location().XYZ();
+        Xyz XDir = Pos.XDirection.XYZ();
+        Xyz YDir = Pos.YDirection.XYZ();
+        Xyz ZDir = Pos.Direction.XYZ();
+        Xyz PLoc = Pos.Location.XYZ();
         double R = MajorRadius + MinorRadius * Math.Cos(V);
         double A3 = MinorRadius * Math.Sin(V);
         double A1 = R * Math.Cos(U);

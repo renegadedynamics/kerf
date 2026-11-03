@@ -67,9 +67,9 @@ public class ZerCSParFunc<ThePSurface, ThePSurfaceTool, TheCurve, TheCurveTool>
         Point3D psurf = ThePSurfaceTool.Value(_surface, x[1], x[2]);
         Point3D pcurv = TheCurveTool.Value(_curve, x[3]);
         double f1, f2, f3;
-        f[1] = f1 = psurf.X() - pcurv.X();
-        f[2] = f2 = psurf.Y() - pcurv.Y();
-        f[3] = f3 = psurf.Z() - pcurv.Z();
+        f[1] = f1 = psurf.X - pcurv.X;
+        f[2] = f2 = psurf.Y - pcurv.Y;
+        f[3] = f3 = psurf.Z - pcurv.Z;
         _f = f1 * f1 + f2 * f2 + f3 * f3;
         _p = new Point3D((psurf.XYZ() + pcurv.XYZ()) * 0.5);
         return true;
@@ -79,15 +79,15 @@ public class ZerCSParFunc<ThePSurface, ThePSurfaceTool, TheCurve, TheCurveTool>
     {
         ThePSurfaceTool.D1(_surface, x[1], x[2], out _, out Vector3D d1u, out Vector3D d1v);
         TheCurveTool.D1(_curve, x[3], out _, out Vector3D d1w);
-        d[1, 1] = d1u.X();
-        d[1, 2] = d1v.X();
-        d[1, 3] = -d1w.X();
-        d[2, 1] = d1u.Y();
-        d[2, 2] = d1v.Y();
-        d[2, 3] = -d1w.Y();
-        d[3, 1] = d1u.Z();
-        d[3, 2] = d1v.Z();
-        d[3, 3] = -d1w.Z();
+        d[1, 1] = d1u.X;
+        d[1, 2] = d1v.X;
+        d[1, 3] = -d1w.X;
+        d[2, 1] = d1u.Y;
+        d[2, 2] = d1v.Y;
+        d[2, 3] = -d1w.Y;
+        d[3, 1] = d1u.Z;
+        d[3, 2] = d1v.Z;
+        d[3, 3] = -d1w.Z;
         return true;
     }
 
@@ -95,20 +95,20 @@ public class ZerCSParFunc<ThePSurface, ThePSurfaceTool, TheCurve, TheCurveTool>
     {
         ThePSurfaceTool.D1(_surface, x[1], x[2], out Point3D psurf, out Vector3D d1u, out Vector3D d1v);
         TheCurveTool.D1(_curve, x[3], out Point3D pcurv, out Vector3D d1w);
-        d[1, 1] = d1u.X();
-        d[1, 2] = d1v.X();
-        d[1, 3] = -d1w.X();
-        d[2, 1] = d1u.Y();
-        d[2, 2] = d1v.Y();
-        d[2, 3] = -d1w.Y();
-        d[3, 1] = d1u.Z();
-        d[3, 2] = d1v.Z();
-        d[3, 3] = -d1w.Z();
+        d[1, 1] = d1u.X;
+        d[1, 2] = d1v.X;
+        d[1, 3] = -d1w.X;
+        d[2, 1] = d1u.Y;
+        d[2, 2] = d1v.Y;
+        d[2, 3] = -d1w.Y;
+        d[3, 1] = d1u.Z;
+        d[3, 2] = d1v.Z;
+        d[3, 3] = -d1w.Z;
 
         double f1, f2, f3;
-        f[1] = f1 = psurf.X() - pcurv.X();
-        f[2] = f2 = psurf.Y() - pcurv.Y();
-        f[3] = f3 = psurf.Z() - pcurv.Z();
+        f[1] = f1 = psurf.X - pcurv.X;
+        f[2] = f2 = psurf.Y - pcurv.Y;
+        f[3] = f3 = psurf.Z - pcurv.Z;
         _f = f1 * f1 + f2 * f2 + f3 * f3;
         _p = new Point3D((psurf.XYZ() + pcurv.XYZ()) * 0.5);
         return true;

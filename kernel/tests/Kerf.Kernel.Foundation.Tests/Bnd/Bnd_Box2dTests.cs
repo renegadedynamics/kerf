@@ -459,8 +459,8 @@ public class Bnd_Box2dTest
         aBox.Update(0.0, 0.0, 10.0, 20.0);
         var aCenter = aBox.Center();
         Assert.True(aCenter.HasValue);
-        GTest.ExpectDoubleEq(aCenter.Value.X(), 5.0);
-        GTest.ExpectDoubleEq(aCenter.Value.Y(), 10.0);
+        GTest.ExpectDoubleEq(aCenter.Value.X, 5.0);
+        GTest.ExpectDoubleEq(aCenter.Value.Y, 10.0);
     }
 
     [Fact]

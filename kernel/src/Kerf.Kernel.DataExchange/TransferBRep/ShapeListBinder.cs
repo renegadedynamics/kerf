@@ -76,7 +76,7 @@ public class ShapeListBinder : Binder
 
     public ShapeType ShapeType(int num)
     {
-        return _theres.Value(num).ShapeType();
+        return _theres.Value(num).Type;
     }
 
     public Vertex Vertex(int num)

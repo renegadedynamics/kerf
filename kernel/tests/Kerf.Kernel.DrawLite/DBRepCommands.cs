@@ -526,7 +526,7 @@ internal static class DBRepCommands
             OrderInd.SetValue(Index, Index);
             Shape aS = aShapes[Index];
             Point3D GPoint;
-            if (aS.ShapeType() != ShapeType.Vertex)
+            if (aS.Type != ShapeType.Vertex)
             {
                 MassPropertiesBuilder.LinearProperties(aS, GPr);
                 GPoint = GPr.CentreOfMass();
@@ -536,7 +536,7 @@ internal static class DBRepCommands
                 GPoint = Tool.Pnt(ShapeCasts.Vertex(aS));
             }
 
-            MidXYZ.SetValue(Index, GPoint.X() * 999 + GPoint.Y() * 99 + GPoint.Z() * 0.9);
+            MidXYZ.SetValue(Index, GPoint.X * 999 + GPoint.Y * 99 + GPoint.Z * 0.9);
         }
 
         // sorting
@@ -581,7 +581,7 @@ internal static class DBRepCommands
         }
 
         Shape S = theDI.GetShape(a[1]);
-        if (S.IsNull || S.ShapeType() != ShapeType.Wire)
+        if (S.IsNull || S.Type != ShapeType.Wire)
         {
             return 0;
         }
@@ -612,7 +612,7 @@ internal static class DBRepCommands
 
         var B = new BrepBuilder();
         Shape NS = S.EmptyCopied();
-        NS.Closed(S.Closed());
+        NS.Closed(S.IsClosed);
         for (var itr = new Iterator(S); itr.More(); itr.Next())
         {
             B.Add(NS, itr.Value().Reversed());

@@ -26,7 +26,7 @@ public class GeomAPITests
         Curve3D aC = Projections.To3d(aL2d, aPln);
         LineCurve3D aLine = Assert.IsType<LineCurve3D>(aC);
         Assert.True(aLine.Value(0.0).IsEqual(new Point3D(1, 2, 2), Tol));
-        Assert.True(aLine.Lin().Direction().IsEqual(new Direction3D(0, 1, 0), Tol));
+        Assert.True(aLine.Line.Direction.IsEqual(new Direction3D(0, 1, 0), Tol));
     }
 
     [Fact]
@@ -36,7 +36,7 @@ public class GeomAPITests
         Curve2D? aC = Projections.To2d(Line(0, 0, 3, 1, 0, 0), new Plane3D());
         LineCurve2D aLine = Assert.IsType<LineCurve2D>(aC);
         Assert.True(aLine.Value(0.0).IsEqual(new Point2D(0, 0), Tol));
-        Assert.True(aLine.Lin2d().Direction().IsEqual(new Direction2D(1, 0), Tol));
+        Assert.True(aLine.Line.Direction.IsEqual(new Direction2D(1, 0), Tol));
     }
 
     [Fact]
@@ -252,7 +252,7 @@ public class GeomAPITests
                 {
                     if (i > 1)
                     {
-                        aU += aPnts[i - 1].Distance(aPnts[i]);
+                        aU += aPnts[i - 1].DistanceTo(aPnts[i]);
                     }
                     Assert.True(aCurve.Value(aU).IsEqual(aPnts[i], 1.0e-9), $"{aPeriodic} {aNb} point {i}");
                 }
@@ -327,8 +327,8 @@ public class GeomAPITests
         }
         anApprox.Init(aPoints, aParams);
         Assert.True(anApprox.IsDone);
-        Assert.Equal(11.0, anApprox.Curve().FirstParameter(), Tol);
-        Assert.Equal(30.0, anApprox.Curve().LastParameter(), Tol);
+        Assert.Equal(11.0, anApprox.Curve().FirstParameter, Tol);
+        Assert.Equal(30.0, anApprox.Curve().LastParameter, Tol);
 
         anApprox.Init(aPoints, 1.0, 0.0, 0.0);
         Assert.True(anApprox.IsDone);

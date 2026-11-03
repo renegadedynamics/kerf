@@ -69,12 +69,12 @@ internal static class GeomBndLibSurfaceTestUtils
                 double aV = theVMin + j * aVStep;
                 Point3D aPnt = theSurf.Value(aU, aV);
                 string aWhere = $"Point outside box at U={aU} V={aV}";
-                ExpectGE(aPnt.X(), aXmin - aConf, aWhere);
-                ExpectLE(aPnt.X(), aXmax + aConf, aWhere);
-                ExpectGE(aPnt.Y(), aYmin - aConf, aWhere);
-                ExpectLE(aPnt.Y(), aYmax + aConf, aWhere);
-                ExpectGE(aPnt.Z(), aZmin - aConf, aWhere);
-                ExpectLE(aPnt.Z(), aZmax + aConf, aWhere);
+                ExpectGE(aPnt.X, aXmin - aConf, aWhere);
+                ExpectLE(aPnt.X, aXmax + aConf, aWhere);
+                ExpectGE(aPnt.Y, aYmin - aConf, aWhere);
+                ExpectLE(aPnt.Y, aYmax + aConf, aWhere);
+                ExpectGE(aPnt.Z, aZmin - aConf, aWhere);
+                ExpectLE(aPnt.Z, aZmax + aConf, aWhere);
             }
         }
     }
@@ -616,12 +616,12 @@ public class GeomBndLib_SurfaceTest
             {
                 double aV = aV1 + (aV2 - aV1) * j / 16.0;
                 Point3D aP = aTorus.Value(aU, aV);
-                ExpectGE(aP.X(), aXmin - Conf);
-                ExpectLE(aP.X(), aXmax + Conf);
-                ExpectGE(aP.Y(), aYmin - Conf);
-                ExpectLE(aP.Y(), aYmax + Conf);
-                ExpectGE(aP.Z(), aZmin - Conf);
-                ExpectLE(aP.Z(), aZmax + Conf);
+                ExpectGE(aP.X, aXmin - Conf);
+                ExpectLE(aP.X, aXmax + Conf);
+                ExpectGE(aP.Y, aYmin - Conf);
+                ExpectLE(aP.Y, aYmax + Conf);
+                ExpectGE(aP.Z, aZmin - Conf);
+                ExpectLE(aP.Z, aZmax + Conf);
             }
         }
     }

@@ -20,17 +20,17 @@ public class Geom2dGcc_Circ2d3TanTests
                                                   int theSolutionIndex,
                                                   double theTolerance = 1e-6)
     {
-        Point2D aSolCenter = theSolution.Location();
-        double aSolRadius = theSolution.Radius();
+        Point2D aSolCenter = theSolution.Location;
+        double aSolRadius = theSolution.Radius;
 
         // Check tangency to each input circle
         for (int i = 1; i <= 3; i++)
         {
             Circle2D aCircle = (i == 1) ? theCircle1 : (i == 2) ? theCircle2 : theCircle3;
-            Point2D aCircCenter = aCircle.Location();
-            double aCircRadius = aCircle.Radius();
+            Point2D aCircCenter = aCircle.Location;
+            double aCircRadius = aCircle.Radius;
 
-            double aDistanceCenters = aSolCenter.Distance(aCircCenter);
+            double aDistanceCenters = aSolCenter.DistanceTo(aCircCenter);
 
             // For tangency: distance = |R1 - R2| (internal) or R1 + R2 (external)
             double aExpectedDistExt = aSolRadius + aCircRadius;
@@ -66,14 +66,14 @@ public class Geom2dGcc_Circ2d3TanTests
                                                double theMaxY = 10000.0,
                                                double theMaxRadius = 100000.0)
     {
-        Assert.True(theSolution.Radius() > 0, $"Solution {theSolutionIndex} should have positive radius");
-        Assert.True(theSolution.Radius() < theMaxRadius, $"Solution {theSolutionIndex} should have reasonable radius");
+        Assert.True(theSolution.Radius > 0, $"Solution {theSolutionIndex} should have positive radius");
+        Assert.True(theSolution.Radius < theMaxRadius, $"Solution {theSolutionIndex} should have reasonable radius");
 
-        Point2D aCenter = theSolution.Location();
-        Assert.True(aCenter.X() > theMinX, $"Solution {theSolutionIndex} X coordinate should be reasonable");
-        Assert.True(aCenter.X() < theMaxX, $"Solution {theSolutionIndex} X coordinate should be reasonable");
-        Assert.True(aCenter.Y() > theMinY, $"Solution {theSolutionIndex} Y coordinate should be reasonable");
-        Assert.True(aCenter.Y() < theMaxY, $"Solution {theSolutionIndex} Y coordinate should be reasonable");
+        Point2D aCenter = theSolution.Location;
+        Assert.True(aCenter.X > theMinX, $"Solution {theSolutionIndex} X coordinate should be reasonable");
+        Assert.True(aCenter.X < theMaxX, $"Solution {theSolutionIndex} X coordinate should be reasonable");
+        Assert.True(aCenter.Y > theMinY, $"Solution {theSolutionIndex} Y coordinate should be reasonable");
+        Assert.True(aCenter.Y < theMaxY, $"Solution {theSolutionIndex} Y coordinate should be reasonable");
     }
 
     // Test the exact BUC60622 regression case
@@ -109,9 +109,9 @@ public class Geom2dGcc_Circ2d3TanTests
         {
             // Solution 1: center(500, 1900), radius=400 - this is actually one of the input circles
             Circle2D aSol1 = aTangentSolver.ThisSolution(1);
-            Assert.Equal(500.0, aSol1.Location().X(), 1.0);
-            Assert.Equal(1900.0, aSol1.Location().Y(), 1.0);
-            Assert.Equal(400.0, aSol1.Radius(), 1.0);
+            Assert.Equal(500.0, aSol1.Location.X, 1.0);
+            Assert.Equal(1900.0, aSol1.Location.Y, 1.0);
+            Assert.Equal(400.0, aSol1.Radius, 1.0);
         }
     }
 
@@ -335,9 +335,9 @@ public class Geom2dGcc_Circ2d3TanTests
         Assert.True(aSolver.IsDone);
         Assert.Equal(1, aSolver.SolutionCount);
         Circle2D aSol = aSolver.ThisSolution(1);
-        Assert.Equal(2.0, aSol.Location().X(), 1.0e-9);
-        Assert.Equal(1.5, aSol.Location().Y(), 1.0e-9);
-        Assert.Equal(1.5, aSol.Radius(), 1.0e-9);
+        Assert.Equal(2.0, aSol.Location.X, 1.0e-9);
+        Assert.Equal(1.5, aSol.Location.Y, 1.0e-9);
+        Assert.Equal(1.5, aSol.Radius, 1.0e-9);
         aSolver.Tangency1(1, out _, out double aPar1, out _);
         Assert.Equal(anA, aPar1, 1.0e-12);
         // OCCT: Geom2dGcc_Circ2d3TanIter::IsTheSame3 is always true, so the third tangency is never given.

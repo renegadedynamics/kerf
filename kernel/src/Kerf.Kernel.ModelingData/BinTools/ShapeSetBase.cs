@@ -100,8 +100,8 @@ public class ShapeSetBase
     // operator<<(Standard_OStream&, const gp_Pnt&)
     internal static void Write(Stream os, in Point3D p)
     {
-        global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutReal(os, p.X());
-        global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutReal(os, p.Y());
-        global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutReal(os, p.Z());
+        global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutReal(os, p.X);
+        global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutReal(os, p.Y);
+        global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutReal(os, p.Z);
     }
 }

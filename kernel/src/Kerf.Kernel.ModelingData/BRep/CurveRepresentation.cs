@@ -25,7 +25,7 @@ namespace Kerf.Engine.Topology.Brep;
 /// meshes a representation holds are frozen as soon as it takes them (section 4.1). OCCT's virtual accessors throw
 /// <see cref="DomainErrorException"/> where a representation has no such data.
 /// </remarks>
-public abstract class CurveRepresentation : Transient
+internal abstract class CurveRepresentation : Transient
 {
     protected Placement _location;
 

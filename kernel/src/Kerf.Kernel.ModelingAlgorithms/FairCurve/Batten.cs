@@ -275,8 +275,8 @@ public class Batten
                 }
             }
 
-            oldDist = _oldP1.Distance(_oldP2);
-            newDist = _newP1.Distance(_newP2);
+            oldDist = _oldP1.DistanceTo(_oldP2);
+            newDist = _newP1.DistanceTo(_newP2);
             fraction = Math.Abs(oldDist - newDist) / (oldDist / 3);
             if (fraction > 1)
             {
@@ -354,7 +354,7 @@ public class Batten
         // Definition of constraints of interpolation
         NCollection_Array1<Xy> aDelta = new(1, l);
         Vector2D vOld = new(_oldP1, _oldP2), vNew = new(-(_oldP1.XY() + deltaP1.XY()) + (_oldP2.XY() + deltaP2.XY()));
-        double dAngleRef = vNew.Angle(vOld);
+        double dAngleRef = vNew.AngleTo(vOld);
 
         aDelta[1] = deltaP1.XY();
         kk = 2;
@@ -417,15 +417,15 @@ public class Batten
 
         double angle1, angle2, slidingLength,
           alph1 = _oldAngle1 + deltaAngle1, alph2 = _oldAngle2 + deltaAngle2,
-          dist = nPoles.Value(nPoles.Upper()).Distance(nPoles.Value(nPoles.Lower())),
+          dist = nPoles.Value(nPoles.Upper()).DistanceTo(nPoles.Value(nPoles.Lower())),
           lReference = SlidingOfReference(dist, alph1, alph2);
         Vector2D ox = new(1, 0),
           p1P2 = new(nPoles.Value(nPoles.Upper()).Coord() - nPoles.Value(nPoles.Lower()).Coord());
 
         // Angles corresponding to axis ox
 
-        angle1 = ox.Angle(p1P2) + alph1;
-        angle2 = -ox.Angle(p1P2) + alph2;
+        angle1 = ox.AngleTo(p1P2) + alph1;
+        angle2 = -ox.AngleTo(p1P2) + alph2;
 
         // Calculation of the length of sliding (imposed or initial);
 
@@ -470,7 +470,7 @@ public class Batten
 
         // Minimisation
         Newton newton = new(eBatten,
-                                      tolerance * p1P2.Magnitude() / 10,
+                                      tolerance * p1P2.Magnitude / 10,
                                       tolerance,
                                       nbIterations,
                                       vConvex);
@@ -494,7 +494,7 @@ public class Batten
             {
                 Vector2D tangente = new(_poles.Value(_poles.Lower() + 1).Coord()
                                         - _poles.Value(_poles.Lower()).Coord());
-                _oldAngle1 = p1P2.Angle(tangente);
+                _oldAngle1 = p1P2.AngleTo(tangente);
             }
             else
             {
@@ -505,7 +505,7 @@ public class Batten
             {
                 Vector2D tangente = new(_poles.Value(_poles.Upper()).Coord()
                                         - _poles.Value(_poles.Upper() - 1).Coord());
-                _oldAngle2 = (-tangente).Angle(-p1P2);
+                _oldAngle2 = (-tangente).AngleTo(-p1P2);
             }
             else
             {
@@ -597,7 +597,7 @@ public class Batten
     /// </summary>
     public double SlidingOfReference()
     {
-        return SlidingOfReference(_newP1.Distance(_newP2), _newAngle1, _newAngle2);
+        return SlidingOfReference(_newP1.DistanceTo(_newP2), _newAngle1, _newAngle2);
     }
 
     protected double SlidingOfReference(double dist, double angle1, double angle2)
@@ -766,13 +766,13 @@ public class Batten
         o.Write(Width7("Old  |   New"));
         o.Write('\n');
         o.Write("  P1    X      |");
-        DumpPair(o, _oldP1.X(), _newP1.X());
+        DumpPair(o, _oldP1.X, _newP1.X);
         o.Write("        Y      |");
-        DumpPair(o, _oldP1.Y(), _newP1.Y());
+        DumpPair(o, _oldP1.Y, _newP1.Y);
         o.Write("  P2    X      |");
-        DumpPair(o, _oldP2.X(), _newP2.X());
+        DumpPair(o, _oldP2.X, _newP2.X);
         o.Write("        Y      |");
-        DumpPair(o, _oldP2.Y(), _newP2.Y());
+        DumpPair(o, _oldP2.Y, _newP2.Y);
         o.Write("      Angle1   |");
         DumpPair(o, _oldAngle1, _newAngle1);
         o.Write("      Angle2   |");
@@ -842,7 +842,7 @@ public class Batten
     private void Angles(in Point2D p1, in Point2D p2)
     {
         Vector2D vOld = new(_newP1, _newP2), vNew = new(p1, p2);
-        double dangle = vOld.Angle(vNew);
+        double dangle = vOld.AngleTo(vNew);
         _newAngle1 -= dangle;
         _newAngle2 += dangle;
     }

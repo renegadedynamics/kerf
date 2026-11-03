@@ -62,7 +62,7 @@ internal static class ShapeLog
                 if (!Register(wrapped))
                     return;
                 var text = Extras.WriteBRep(wrapped);
-                var header = $"@@ {++s_seq} {shape.GetType().Name} {Kerf.Engine.Foundation.OcctTypeNames.Of(wrapped.ShapeType())} {text.Length} {api} {inner} {ExactPoints(wrapped)}\n";
+                var header = $"@@ {++s_seq} {shape.GetType().Name} {Kerf.Engine.Foundation.OcctTypeNames.Of(wrapped.Type)} {text.Length} {api} {inner} {ExactPoints(wrapped)}\n";
                 Directory.CreateDirectory(Folder!);
                 using var file = new FileStream(Path.Combine(Folder!, FileName(test) + ".brlog"), FileMode.Append, FileAccess.Write);
                 file.Write(Encoding.ASCII.GetBytes(header));
@@ -87,7 +87,7 @@ internal static class ShapeLog
         for (; explorer.More(); explorer.Next())
         {
             var point = Tool.Pnt(ShapeCasts.Vertex(explorer.Current()));
-            foreach (var c in (ReadOnlySpan<double>)[point.X(), point.Y(), point.Z()])
+            foreach (var c in (ReadOnlySpan<double>)[point.X, point.Y, point.Z])
                 hash = (hash ^ (ulong)BitConverter.DoubleToInt64Bits(c)) * 1099511628211UL;
         }
         return hash.ToString("x16", System.Globalization.CultureInfo.InvariantCulture);

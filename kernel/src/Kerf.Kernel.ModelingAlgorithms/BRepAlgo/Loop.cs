@@ -263,7 +263,7 @@ public sealed class Loop
         Face ff = ShapeCasts.Face(localF);
         Curve2D c1 = Tool.CurveOnSurface(e1, ff, out double f1, out double l1)!;
         Curve2D c2 = Tool.CurveOnSurface(e2, ff, out double f2, out double l2)!;
-        if (e1.Orientation() == Forward)
+        if (e1.Orientation == Forward)
         {
             p1 = c1.Value(f1);
         }
@@ -272,7 +272,7 @@ public sealed class Loop
             p1 = c1.Value(l1);
         }
 
-        if (e2.Orientation() == Forward)
+        if (e2.Orientation == Forward)
         {
             p2 = c2.Value(l2);
         }
@@ -281,7 +281,7 @@ public sealed class Loop
             p2 = c2.Value(f2);
         }
         double tol = 100 * Tool.Tolerance(v);
-        double dist = p1.Distance(p2);
+        double dist = p1.DistanceTo(p2);
         return dist < tol;
     }
 
@@ -316,13 +316,13 @@ public sealed class Loop
             // discrimination on tangents.
             //--------------------------------------------------------------
             Face fForward = F;
-            fForward.Orientation(Forward);
+            fForward.Orient(Forward);
 
             Curve2D c = Tool.CurveOnSurface(ce, fForward, out double f, out double l)!;
             int k = 1, kmin = 0;
             double dist, distmin = 100 * Tool.Tolerance(cv);
             double u;
-            if (ce.Orientation() == Forward)
+            if (ce.Orientation == Forward)
             {
                 u = l;
             }
@@ -339,7 +339,7 @@ public sealed class Loop
                 if (!e.IsSame(ce))
                 {
                     c = Tool.CurveOnSurface(e, fForward, out f, out l)!;
-                    if (e.Orientation() == Forward)
+                    if (e.Orientation == Forward)
                     {
                         u = f;
                     }
@@ -348,7 +348,7 @@ public sealed class Loop
                         u = l;
                     }
                     p2 = c.Value(u);
-                    dist = pv.Distance(p2);
+                    dist = pv.DistanceTo(p2);
                     if (dist <= distmin)
                     {
                         kmin = k;
@@ -438,7 +438,7 @@ public sealed class Loop
                 p1 = Tool.Pnt(v1);
                 if (p.IsEqual(p1, tolConf) && !v.IsSame(v1))
                 {
-                    v.Orientation(v1.Orientation());
+                    v.Orient(v1.Orientation);
                     if (verticesForSubstitute.ContainsKey(v1))
                     {
                         Shape oldNewV = verticesForSubstitute.GetValue(v1);
@@ -603,7 +603,7 @@ public sealed class Loop
             //--------------------------------
             // VF vertex start of new wire
             //--------------------------------
-            if (ce.Orientation() == Forward)
+            if (ce.Orientation == Forward)
             {
                 cv = vf = v1;
             }
@@ -770,7 +770,7 @@ public sealed class Loop
 
         while (!sv.IsEmpty())
         {
-            while (!sv.IsEmpty() && sv.First().Orientation() != Forward)
+            while (!sv.IsEmpty() && sv.First().Orientation != Forward)
             {
                 sv.Remove(1);
             }
@@ -784,7 +784,7 @@ public sealed class Loop
             {
                 break;
             }
-            if (sv.First().Orientation() == Reversed)
+            if (sv.First().Orientation == Reversed)
             {
                 v2 = ShapeCasts.Vertex(sv.First());
                 sv.Remove(1);
@@ -815,7 +815,7 @@ public sealed class Loop
                     u2 = Tool.Parameter(ShapeCasts.Vertex(localV), we);
                 }
                 b.Range(ShapeCasts.Edge(newEdge), u1, u2);
-                ne.Append(newEdge.Oriented(e.Orientation()));
+                ne.Append(newEdge.Oriented(e.Orientation));
             }
         }
 
@@ -834,7 +834,7 @@ public sealed class Loop
             else
             {
                 Tool.UVPoints(ee, _face, out Point2D pf, out Point2D pl);
-                if (pf.Distance(pl) <= tol && !Tool.IsClosed(ee))
+                if (pf.DistanceTo(pl) <= tol && !Tool.IsClosed(ee))
                 {
                     ne.Remove(it);
                 }
@@ -867,7 +867,7 @@ public sealed class Loop
 
             if (fr.IsDone)
             {
-                Orientation oriF = _face.Orientation();
+                Orientation oriF = _face.Orientation;
                 for (; fr.More(); fr.Next())
                 {
                     _newFaces.Append(fr.InternalCurrent().Oriented(oriF));
@@ -956,11 +956,11 @@ public sealed class Loop
             }
 
             global::Kerf.Engine.Geometry.Library.GeomLib.AxeOfInertia(points, out Frame3D axis, out _);
-            Point3D centre = axis.Location();
+            Point3D centre = axis.Location;
             double maxDist = 0.0;
             for (jj = 1; jj <= points.Upper(); jj++)
             {
-                double sqDist = centre.SquareDistance(points[jj]);
+                double sqDist = centre.SquareDistanceTo(points[jj]);
                 maxDist = Max(maxDist, sqDist);
             }
             maxDist = Math.Sqrt(maxDist);
@@ -1003,12 +1003,12 @@ public sealed class Loop
 
                 NCollection_List<Shape> elist = vEmap.GetValue(vertex);
                 Edge edge = ShapeCasts.Edge(elist.First());
-                edge.Orientation(Forward);
+                edge.Orient(Forward);
                 Exploration.Vertices(edge, out Vertex v1, out Vertex v2);
                 Vertex vertexToRemove = v1.IsSame(vertex) ? v1 : v2;
                 edge.Free(true);
                 bb.Remove(edge, vertexToRemove);
-                bb.Add(edge, constVertex.Oriented(vertexToRemove.Orientation()));
+                bb.Add(edge, constVertex.Oriented(vertexToRemove.Orientation));
             }
         }
 

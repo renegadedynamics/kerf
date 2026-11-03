@@ -92,18 +92,18 @@ public sealed class ContourLine
     /// <summary>Makes the line the straight line <paramref name="l"/>.</summary>
     public void SetValue(in Line3D l)
     {
-        _pt = l.Location();
-        _dir1 = l.Direction();
+        _pt = l.Location;
+        _dir1 = l.Direction;
         _typL = ContourLineType.Lin;
     }
 
     /// <summary>Makes the line the circle <paramref name="c"/>.</summary>
     public void SetValue(in Circle3D c)
     {
-        _pt = c.Location();
-        _dir1 = c.Position().Direction();
-        _dir2 = c.Position().XDirection();
-        _rad = c.Radius();
+        _pt = c.Location;
+        _dir1 = c.Position.Direction;
+        _dir2 = c.Position.XDirection;
+        _rad = c.Radius;
         _typL = ContourLineType.Circle;
     }
 

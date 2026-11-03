@@ -64,10 +64,10 @@ public partial struct BlendPoint : IEquatable<BlendPoint>
         _v1 = v1;
         _u2 = u2;
         _v2 = v2;
-        _utg12d = tg12d.X();
-        _vtg12d = tg12d.Y();
-        _utg22d = tg22d.X();
-        _vtg22d = tg22d.Y();
+        _utg12d = tg12d.X;
+        _vtg12d = tg12d.Y;
+        _utg22d = tg22d.X;
+        _vtg22d = tg22d.Y;
         _hass1 = true;
         _hass2 = true;
         _hasc1 = false;
@@ -104,8 +104,8 @@ public partial struct BlendPoint : IEquatable<BlendPoint>
         _u1 = u;
         _v1 = v;
         _pc2 = w;
-        _utg12d = tg2d.X();
-        _vtg12d = tg2d.Y();
+        _utg12d = tg2d.X;
+        _vtg12d = tg2d.Y;
         _hass1 = true;
         _hass2 = false;
         _hasc1 = false;
@@ -143,10 +143,10 @@ public partial struct BlendPoint : IEquatable<BlendPoint>
         _u2 = u2;
         _v2 = v2;
         _pc2 = pc;
-        _utg12d = tg12d.X();
-        _vtg12d = tg12d.Y();
-        _utg22d = tg22d.X();
-        _vtg22d = tg22d.Y();
+        _utg12d = tg12d.X;
+        _vtg12d = tg12d.Y;
+        _utg22d = tg22d.X;
+        _vtg22d = tg22d.Y;
         _hass1 = true;
         _hass2 = true;
         _hasc1 = false;
@@ -188,10 +188,10 @@ public partial struct BlendPoint : IEquatable<BlendPoint>
         _v2 = v2;
         _pc1 = pc1;
         _pc2 = pc2;
-        _utg12d = tg12d.X();
-        _vtg12d = tg12d.Y();
-        _utg22d = tg22d.X();
-        _vtg22d = tg22d.Y();
+        _utg12d = tg12d.X;
+        _vtg12d = tg12d.Y;
+        _utg22d = tg22d.X;
+        _vtg22d = tg22d.Y;
         _hass1 = true;
         _hass2 = true;
         _hasc1 = true;
@@ -236,10 +236,10 @@ public partial struct BlendPoint : IEquatable<BlendPoint>
         _istgt = false;
         _tg1 = tg1;
         _tg2 = tg2;
-        _utg12d = tg12d.X();
-        _vtg12d = tg12d.Y();
-        _utg22d = tg22d.X();
-        _vtg22d = tg22d.Y();
+        _utg12d = tg12d.X;
+        _vtg12d = tg12d.Y;
+        _utg22d = tg22d.X;
+        _vtg22d = tg22d.Y;
     }
 
     internal void SetValue(in Point3D p1, in Point3D p2, double param, double u1, double v1, double u2, double v2)
@@ -274,8 +274,8 @@ public partial struct BlendPoint : IEquatable<BlendPoint>
         _istgt = false;
         _tg1 = tgs;
         _tg2 = tgc;
-        _utg12d = tg2d.X();
-        _vtg12d = tg2d.Y();
+        _utg12d = tg2d.X;
+        _vtg12d = tg2d.Y;
     }
 
     internal void SetValue(in Point3D ps, in Point3D pc, double param, double u, double v, double w)
@@ -311,10 +311,10 @@ public partial struct BlendPoint : IEquatable<BlendPoint>
         _istgt = false;
         _tg1 = tg1;
         _tg2 = tg2;
-        _utg12d = tg12d.X();
-        _vtg12d = tg12d.Y();
-        _utg22d = tg22d.X();
-        _vtg22d = tg22d.Y();
+        _utg12d = tg12d.X;
+        _vtg12d = tg12d.Y;
+        _utg22d = tg22d.X;
+        _vtg22d = tg22d.Y;
     }
 
     internal void SetValue(in Point3D p1, in Point3D p2, double param, double u1, double v1, double u2, double v2,
@@ -355,10 +355,10 @@ public partial struct BlendPoint : IEquatable<BlendPoint>
         _istgt = false;
         _tg1 = tg1;
         _tg2 = tg2;
-        _utg12d = tg12d.X();
-        _vtg12d = tg12d.Y();
-        _utg22d = tg22d.X();
-        _vtg22d = tg22d.Y();
+        _utg12d = tg12d.X;
+        _vtg12d = tg12d.Y;
+        _utg22d = tg22d.X;
+        _vtg22d = tg22d.Y;
     }
 
     internal void SetValue(in Point3D p1, in Point3D p2, double param, double u1, double v1, double u2, double v2,
@@ -651,5 +651,5 @@ public partial struct BlendPoint : IEquatable<BlendPoint>
     public static bool operator !=(in BlendPoint left, in BlendPoint right) => !left.Equals(right);
 
     public override readonly string ToString()
-        => Constants.Format("Blend_Point", _prm, _pt1.X(), _pt1.Y(), _pt1.Z(), _pt2.X(), _pt2.Y(), _pt2.Z(), _u1, _v1, _u2, _v2, _pc1, _pc2);
+        => Constants.Format("Blend_Point", _prm, _pt1.X, _pt1.Y, _pt1.Z, _pt2.X, _pt2.Y, _pt2.Z, _u1, _v1, _u2, _v2, _pc1, _pc2);
 }

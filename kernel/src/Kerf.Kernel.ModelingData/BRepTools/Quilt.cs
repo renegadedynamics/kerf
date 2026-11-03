@@ -32,7 +32,7 @@ namespace Kerf.Engine.Topology.Tools;
 /// passes edges it built itself.
 /// </para>
 /// </remarks>
-public sealed class Quilt
+internal sealed class Quilt
 {
     private readonly IndexedMap<Shape, Shape> _bounds = new(ShapeHasher.Instance);
     private bool _hasCopy;
@@ -64,7 +64,7 @@ public sealed class Quilt
     {
         Edge ne = e;
         ne.EmptyCopy();
-        ne.Orientation(Forward);
+        ne.Orient(Forward);
         BrepBuilder b = new();
         // add the edges
         var itv = new Iterator();
@@ -74,7 +74,7 @@ public sealed class Quilt
             Shape v = itv.Value();
             if (myBounds.ContainsKey(v))
             {
-                b.Add(ne, myBounds.GetValue(v).Oriented(v.Orientation()));
+                b.Add(ne, myBounds.GetValue(v).Oriented(v.Orientation));
             }
             else
             {
@@ -161,7 +161,7 @@ public sealed class Quilt
                 // copy of a face
 
                 nf.EmptyCopy();
-                nf.Orientation(Forward);
+                nf.Orient(Forward);
 
                 for (var itw = new Iterator(f, false); itw.More(); itw.Next())
                 {
@@ -177,12 +177,12 @@ public sealed class Quilt
                     for (; ite.More(); ite.Next())
                     {
                         Edge e = ShapeCasts.Edge(ite.Value());
-                        Orientation oe = e.Orientation();
+                        Orientation oe = e.Orientation;
                         if (_bounds.ContainsKey(e))
                         {
                             Edge ne = ShapeCasts.Edge(_bounds.GetValue(e));
                             // pcurve.
-                            if (ne.Orientation() == Forward)
+                            if (ne.Orientation == Forward)
                             {
                                 b.UpdateEdge(ne,
                                              Tool.CurveOnSurface(e, f, out uFirst, out uLast),
@@ -215,10 +215,10 @@ public sealed class Quilt
                             b.Add(nw, e);
                         }
                     }
-                    nw.Orientation(w.Orientation());
+                    nw.Orient(w.Orientation);
                     b.Add(nf, nw);
                 }
-                nf.Orientation(f.Orientation());
+                nf.Orient(f.Orientation);
             }
 
             // binds the face to itself or its copy
@@ -253,10 +253,10 @@ public sealed class Quilt
             if (IsCopied(enew))
             {
                 eNew = ShapeCasts.Edge(InternalCopy(enew));
-                eNew.Orientation(enew.Orientation());
+                eNew.Orient(enew.Orientation);
             }
 
-            if (eold.Orientation() != eNew.Orientation())
+            if (eold.Orientation != eNew.Orientation)
             {
                 _bounds.Add(eold.Oriented(Forward), eNew.Oriented(Reversed));
             }
@@ -271,11 +271,11 @@ public sealed class Quilt
                 if (!_bounds.ContainsKey(itold.Value()))
                 {
                     // find the vertex of Enew with same orientation
-                    Orientation orien = itold.Value().Orientation();
+                    Orientation orien = itold.Value().Orientation;
                     var itnew = new Iterator(eNew);
                     while (itnew.More())
                     {
-                        if (itnew.Value().Orientation() == orien)
+                        if (itnew.Value().Orientation == orien)
                         {
                             Vertex vNew = ShapeCasts.Vertex(itnew.Value());
                             if (IsCopied(vNew))
@@ -368,7 +368,7 @@ public sealed class Quilt
         for (int ii = 0; ii < _bounds.Count; ii++)
         {
             Shape shape = _bounds.ValueAt(ii); // it.Value();
-            if (shape.ShapeType() == ShapeType.Face)
+            if (shape.Type == ShapeType.Face)
             {
                 for (var expEdg = new Explorer(shape, ShapeType.Edge); expEdg.More(); expEdg.Next())
                 { // gka
@@ -385,13 +385,13 @@ public sealed class Quilt
                     if (m.ContainsKey(e))
                     {
                         SH = ShapeCasts.Shell(m.GetValue(e));
-                        if (SH.Orientation() == e.Orientation())
+                        if (SH.Orientation == e.Orientation)
                         {
-                            newO = global::Kerf.Engine.Topology.TopAbs.Reverse(shape.Orientation());
+                            newO = global::Kerf.Engine.Topology.TopAbs.Reverse(shape.Orientation);
                         }
                         else
                         {
-                            newO = shape.Orientation();
+                            newO = shape.Orientation;
                         }
 
                         mf[shape] = SH.Oriented(newO);
@@ -405,13 +405,13 @@ public sealed class Quilt
                     b.MakeShell(ref SH);
                     SH.Closed(true);
                     b.Add(result, SH);
-                    mf[shape] = SH.Oriented(shape.Orientation());
+                    mf[shape] = SH.Oriented(shape.Orientation);
                 }
 
                 // Add the face to the shell
                 SH.Free(true);
                 Shape arefShape = SH.Oriented(Forward);
-                b.Add(arefShape, shape.Oriented(mf.GetValue(shape).Orientation()));
+                b.Add(arefShape, shape.Oriented(mf.GetValue(shape).Orientation));
 
                 var itf = new Explorer(shape.Oriented(Forward), ShapeType.Edge);
 
@@ -426,13 +426,13 @@ public sealed class Quilt
                         {
                             // Fuse the old shell with the new one
                             // Compare the orientation of E in SH and in oldshell.
-                            Orientation orien = e.Orientation();
-                            if (mf.GetValue(shape).Orientation() == Reversed)
+                            Orientation orien = e.Orientation;
+                            if (mf.GetValue(shape).Orientation == Reversed)
                             {
                                 orien = global::Kerf.Engine.Topology.TopAbs.Reverse(orien);
                             }
 
-                            bool rev = (orien == oldShell.Orientation());
+                            bool rev = (orien == oldShell.Orientation);
                             // if rev = True oldShell has to be reversed.
 
                             // Add the faces of oldShell in SH.
@@ -443,11 +443,11 @@ public sealed class Quilt
                                 // update the orientation of Fo in SH.
                                 if (rev)
                                 {
-                                    newOFo = global::Kerf.Engine.Topology.TopAbs.Reverse(mf.GetValue(fo).Orientation());
+                                    newOFo = global::Kerf.Engine.Topology.TopAbs.Reverse(mf.GetValue(fo).Orientation);
                                 }
                                 else
                                 {
-                                    newOFo = mf.GetValue(fo).Orientation();
+                                    newOFo = mf.GetValue(fo).Orientation;
                                 }
 
                                 mf[fo] = SH.Oriented(newOFo);
@@ -470,11 +470,11 @@ public sealed class Quilt
                                     // update the orientation of free edges in SH.
                                     if (rev)
                                     {
-                                        newO = global::Kerf.Engine.Topology.TopAbs.Reverse(@as.Orientation());
+                                        newO = global::Kerf.Engine.Topology.TopAbs.Reverse(@as.Orientation);
                                     }
                                     else
                                     {
-                                        newO = @as.Orientation();
+                                        newO = @as.Orientation;
                                     }
 
                                     m[ae] = SH.Oriented(newO);
@@ -485,13 +485,13 @@ public sealed class Quilt
                         }
                         {
                             // Test if SH is always orientable.
-                            Orientation orien = e.Orientation();
-                            if (mf.GetValue(shape).Orientation() == Reversed)
+                            Orientation orien = e.Orientation;
+                            if (mf.GetValue(shape).Orientation == Reversed)
                             {
                                 orien = global::Kerf.Engine.Topology.TopAbs.Reverse(orien);
                             }
 
-                            if (m.GetValue(e).Orientation() == orien)
+                            if (m.GetValue(e).Orientation == orien)
                             {
                                 SH.Orientable(false);
                             }
@@ -502,8 +502,8 @@ public sealed class Quilt
                     }
                     else
                     {
-                        newO = e.Orientation();
-                        if (mf.GetValue(shape).Orientation() == Reversed)
+                        newO = e.Orientation;
+                        if (mf.GetValue(shape).Orientation == Reversed)
                         {
                             newO = global::Kerf.Engine.Topology.TopAbs.Reverse(newO);
                         }

@@ -20,7 +20,12 @@ namespace Kerf.Geometry;
 /// </remarks>
 public abstract class ElementarySurface : Surface
 {
-    protected CoordinateSystem _pos = new CoordinateSystem();
+    /// <summary>Only the kernel derives from it (unit 10L1).</summary>
+    private protected ElementarySurface()
+    {
+    }
+
+    private protected CoordinateSystem _pos = new CoordinateSystem();
 
     /// <summary>Changes the main axis (Z axis).</summary>
     /// <exception cref="ConstructionErrorException">theA1 is parallel to the X axis of the coordinate system.</exception>
@@ -67,13 +72,13 @@ public abstract class ElementarySurface : Surface
     }
 
     /// <summary>The main axis (Z axis) of the surface.</summary>
-    public Axis3D Axis() => _pos.Axis();
+    public Axis3D Axis => _pos.Axis;
 
     /// <summary>The origin of the local coordinate system.</summary>
-    public Point3D Location() => _pos.Location();
+    public Point3D Location => _pos.Location;
 
     /// <summary>The local coordinate system.</summary>
-    public CoordinateSystem Position() => _pos;
+    public CoordinateSystem Position => _pos;
 
     /// <summary>Reverses the U direction (reverses the Y direction of the local coordinate system).</summary>
     protected internal override void UReverse()
@@ -90,11 +95,11 @@ public abstract class ElementarySurface : Surface
     }
 
     /// <summary>CN, the continuity of every elementary surface.</summary>
-    public override Continuity Continuity() => CN;
+    public override Continuity Continuity => CN;
 
     /// <summary>True.</summary>
-    public override bool IsCNu(int n) => true;
+    internal override bool IsCNu(int n) => true;
 
     /// <summary>True.</summary>
-    public override bool IsCNv(int n) => true;
+    internal override bool IsCNv(int n) => true;
 }

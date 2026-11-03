@@ -107,7 +107,7 @@ internal static class BRepTestSurfaceCommands
 
         // OCCT dereferences the surface without a test
         Surface C = Tool.Surface(ShapeCasts.Face(S), out Placement L) ?? throw new global::Kerf.Engine.Foundation.NullObjectException();
-        DrawTrSurf.Set(theDI, a[1], C.Transformed(L.Transformation()));
+        DrawTrSurf.Set(theDI, a[1], C.Transformed(L.Transformation));
         return 0;
     }
 
@@ -155,14 +155,14 @@ internal static class BRepTestSurfaceCommands
     // the pcurve itself when it is a trimmed part of a non-periodic curve, else the curve trimmed to the edge's range
     private static Curve2D Trimmed(Curve2D c, double f, double l)
     {
-        double fr = c.FirstParameter(), lr = c.LastParameter();
+        double fr = c.FirstParameter, lr = c.LastParameter;
         bool IsPeriodic = c.IsPeriodic;
         if (c.GetType() == typeof(TrimmedCurve2D))
         {
-            Curve2D aC = ((TrimmedCurve2D)c).BasisCurve();
+            Curve2D aC = ((TrimmedCurve2D)c).BasisCurve;
             IsPeriodic = aC.IsPeriodic;
-            fr = aC.FirstParameter();
-            lr = aC.LastParameter();
+            fr = aC.FirstParameter;
+            lr = aC.LastParameter;
         }
 
         return !IsPeriodic && (fr - f > global::Kerf.Engine.Foundation.Precision.PConfusion() || l - lr > global::Kerf.Engine.Foundation.Precision.PConfusion())
@@ -307,7 +307,7 @@ internal static class BRepTestSurfaceCommands
             return 0;
         }
 
-        if (aS.ShapeType() != ShapeType.Face)
+        if (aS.Type != ShapeType.Face)
         {
             di.Append("not a face\n");
             return 0;
@@ -342,8 +342,8 @@ internal static class BRepTestSurfaceCommands
         }
 
         Surface aSurf = Tool.Surface(aFace, out Placement aLoc)!;
-        aP = aP.Transformed(aLoc.Transformation().Inverted());
-        aSurf.Bounds(out double aUMin, out double aUMax, out double aVMin, out double aVMax);
+        aP = aP.Transformed(aLoc.Transformation.Inverted());
+        aSurf.ParameterBounds(out double aUMin, out double aUMax, out double aVMin, out double aVMax);
 
         var aProjPS = new ProjectPointOnSurface();
         aProjPS.Init(aSurf, aUMin, aUMax, aVMin, aVMax);
@@ -354,10 +354,10 @@ internal static class BRepTestSurfaceCommands
         {
             double aDist = aProjPS.LowerDistance();
             aProjPS.LowerDistanceParameters(out double U, out double V);
-            Point3D aPProj = aProjPS.NearestPoint().Transformed(aLoc.Transformation());
+            Point3D aPProj = aProjPS.NearestPoint().Transformed(aLoc.Transformation);
             di.Append("proj dist = ").Append(aDist).Append("\n");
             di.Append("uvproj = ").Append(U).Append(" ").Append(V).Append("\n");
-            di.Append("pproj = ").Append(aPProj.X()).Append(" ").Append(aPProj.Y()).Append(" ").Append(aPProj.Z()).Append("\n");
+            di.Append("pproj = ").Append(aPProj.X).Append(" ").Append(aPProj.Y).Append(" ").Append(aPProj.Z).Append("\n");
         }
         else if (!aProjPS.IsDone)
         {

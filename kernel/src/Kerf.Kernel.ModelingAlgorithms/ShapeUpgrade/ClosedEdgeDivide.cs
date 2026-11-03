@@ -54,7 +54,7 @@ public class ClosedEdgeDivide : EdgeDivide
                 for (int i = 1; i < 23; i++, param += step)
                 {
                     Point3D curPnt = curve3d!.Value(param);
-                    double dist = pntV.SquareDistance(curPnt);
+                    double dist = pntV.SquareDistanceTo(curPnt);
                     if (dist > dMax)
                     {
                         maxPar = param;
@@ -95,8 +95,8 @@ public class ClosedEdgeDivide : EdgeDivide
                 for (int i = 1; i < 23; i++, param += step)
                 {
                     Point2D p2d = pcurve1!.Value(param);
-                    Point3D curPnt = surf.Value(p2d.X(), p2d.Y());
-                    double dist = pntV.SquareDistance(curPnt);
+                    Point3D curPnt = surf.Value(p2d.X, p2d.Y);
+                    double dist = pntV.SquareDistanceTo(curPnt);
                     if (dist > dMax)
                     {
                         maxPar = param;

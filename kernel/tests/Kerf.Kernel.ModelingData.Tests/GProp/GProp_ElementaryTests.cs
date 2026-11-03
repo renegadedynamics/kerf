@@ -32,9 +32,9 @@ public class GProp_ElementaryTests
 
     private static void AssertPnt(Point3D theP, double theX, double theY, double theZ, double theTol = Tol)
     {
-        Assert.Equal(theX, theP.X(), theTol);
-        Assert.Equal(theY, theP.Y(), theTol);
-        Assert.Equal(theZ, theP.Z(), theTol);
+        Assert.Equal(theX, theP.X, theTol);
+        Assert.Equal(theY, theP.Y, theTol);
+        Assert.Equal(theZ, theP.Z, theTol);
     }
 
     // ---- HOperator and GProp_GProps -------------------------------------------------------------------------
@@ -156,10 +156,10 @@ public class GProp_ElementaryTests
     private static readonly CoordinateSystem Tilted = new(new Point3D(1.0, -2.0, 0.5), new Direction3D(0.2, -0.3, 1.0), new Direction3D(1.0, 0.0, -0.2));
     private static readonly Point3D Loc = new(3.0, 1.0, -2.0);
 
-    private static Axis3D AxisOf(CoordinateSystem theFrame) => new(theFrame.Location(), theFrame.Direction());
+    private static Axis3D AxisOf(CoordinateSystem theFrame) => new(theFrame.Location, theFrame.Direction);
 
     // An axis through the centre of mass perpendicular to the frame's axis.
-    private static Axis3D Across(CoordinateSystem theFrame, Point3D theCentre) => new(theCentre, theFrame.XDirection());
+    private static Axis3D Across(CoordinateSystem theFrame, Point3D theCentre) => new(theCentre, theFrame.XDirection);
 
     // The mass, centre and central matrix of inertia (absolute axes) of the measure theJ on the parameter box, by
     // Simpson's rule with theN intervals on each side that isn't degenerate.
@@ -198,7 +198,7 @@ public class GProp_ElementaryTests
                 {
                     double w = aWa[i] * aWb[j] * aWc[k] * theJ(aX[i], aY[j], aZ[k]);
                     Point3D p = thePoint(aX[i], aY[j], aZ[k]);
-                    double[] q = [p.X(), p.Y(), p.Z()];
+                    double[] q = [p.X, p.Y, p.Z];
                     aM += w;
                     for (int r = 0; r < 3; r++)
                     {
@@ -237,7 +237,7 @@ public class GProp_ElementaryTests
     {
         double aScale = Math.Abs(theRef.M);
         Assert.Equal(theRef.M, theProps.Mass(), theRelTol * aScale);
-        Assert.True(theProps.CentreOfMass().Distance(theRef.G) < 1e-5, $"centre {theProps.CentreOfMass().X()} {theProps.CentreOfMass().Y()} {theProps.CentreOfMass().Z()}");
+        Assert.True(theProps.CentreOfMass().DistanceTo(theRef.G) < 1e-5, $"centre {theProps.CentreOfMass().X} {theProps.CentreOfMass().Y} {theProps.CentreOfMass().Z}");
         Matrix3x3 aMat = theProps.MatrixOfInertia();
         double aNorm = Math.Abs(theRef.I[0, 0]) + Math.Abs(theRef.I[1, 1]) + Math.Abs(theRef.I[2, 2]);
         for (int r = 0; r < 3; r++)
@@ -252,22 +252,22 @@ public class GProp_ElementaryTests
 
     // The point (w cos u, w sin u, h) of the frame
     private static Point3D InFrame(CoordinateSystem theFrame, double theW, double theU, double theH)
-        => theFrame.Location().Translated(new Vector3D(theFrame.XDirection()) * (theW * Math.Cos(theU))
-                                          + new Vector3D(theFrame.YDirection()) * (theW * Math.Sin(theU))
-                                          + new Vector3D(theFrame.Direction()) * theH);
+        => theFrame.Location.Translated(new Vector3D(theFrame.XDirection) * (theW * Math.Cos(theU))
+                                          + new Vector3D(theFrame.YDirection) * (theW * Math.Sin(theU))
+                                          + new Vector3D(theFrame.Direction) * theH);
 
     [Fact]
     public void Circle_ring_and_arc()
     {
         const double R = 2.0;
-        var aCirc = new Circle3D(new Frame3D(Tilted.Location(), Tilted.Direction(), Tilted.XDirection()), R);
+        var aCirc = new Circle3D(new Frame3D(Tilted.Location, Tilted.Direction, Tilted.XDirection), R);
         var aProps = new global::Kerf.Engine.Measurement.CelGProps(aCirc, Loc);
         double m = 2.0 * Math.PI * R;
         Assert.Equal(m, aProps.Mass(), Tol);
-        Assert.True(aProps.CentreOfMass().Distance(Tilted.Location()) < Tol);
+        Assert.True(aProps.CentreOfMass().DistanceTo(Tilted.Location) < Tol);
         // a ring: m R^2 about its axis, m R^2 / 2 about a diameter
         Assert.Equal(m * R * R, aProps.MomentOfInertia(AxisOf(Tilted)), Tol);
-        Assert.Equal(m * R * R / 2.0, aProps.MomentOfInertia(Across(Tilted, Tilted.Location())), Tol);
+        Assert.Equal(m * R * R / 2.0, aProps.MomentOfInertia(Across(Tilted, Tilted.Location)), Tol);
 
         // a quarter arc: its centroid at 2 R sqrt(2) / pi from the centre, on the bisector
         var anArc = new global::Kerf.Engine.Measurement.CelGProps(new Circle3D(Constants.XOY(), 3.0), 0.0, Math.PI / 2.0, Loc);
@@ -290,12 +290,12 @@ public class GProp_ElementaryTests
         AssertMat(aProps.MatrixOfInertia(), 0.0, 18.0, 18.0);
 
         // a tilted one
-        var aTilted = new Line3D(Tilted.Location(), Tilted.Direction());
+        var aTilted = new Line3D(Tilted.Location, Tilted.Direction);
         var aT = new global::Kerf.Engine.Measurement.CelGProps(aTilted, -1.0, 3.0, Loc);
         Assert.Equal(4.0, aT.Mass(), Tol);
-        Assert.True(aT.CentreOfMass().Distance(Tilted.Location().Translated(new Vector3D(Tilted.Direction()))) < Tol);
-        Assert.Equal(0.0, aT.MomentOfInertia(new Axis3D(aT.CentreOfMass(), Tilted.Direction())), Tol);
-        Assert.Equal(64.0 / 12.0, aT.MomentOfInertia(new Axis3D(aT.CentreOfMass(), Tilted.XDirection())), Tol);
+        Assert.True(aT.CentreOfMass().DistanceTo(Tilted.Location.Translated(new Vector3D(Tilted.Direction))) < Tol);
+        Assert.Equal(0.0, aT.MomentOfInertia(new Axis3D(aT.CentreOfMass(), Tilted.Direction)), Tol);
+        Assert.Equal(64.0 / 12.0, aT.MomentOfInertia(new Axis3D(aT.CentreOfMass(), Tilted.XDirection)), Tol);
     }
 
     [Fact]
@@ -303,12 +303,12 @@ public class GProp_ElementaryTests
     {
         const double R = 2.0, H = 5.0;
         var aCyl = new Cylinder(Tilted, R);
-        Point3D aCentre = Tilted.Location().Translated(new Vector3D(Tilted.Direction()) * (H / 2.0));
+        Point3D aCentre = Tilted.Location.Translated(new Vector3D(Tilted.Direction) * (H / 2.0));
 
         var aShell = new global::Kerf.Engine.Measurement.SelGProps(aCyl, 0.0, 2.0 * Math.PI, 0.0, H, Loc);
         double m = 2.0 * Math.PI * R * H;
         Assert.Equal(m, aShell.Mass(), Tol);
-        Assert.True(aShell.CentreOfMass().Distance(aCentre) < Tol);
+        Assert.True(aShell.CentreOfMass().DistanceTo(aCentre) < Tol);
         Assert.Equal(m * R * R, aShell.MomentOfInertia(AxisOf(Tilted)), 1e-8);
         Assert.Equal(m * (R * R / 2.0 + H * H / 12.0), aShell.MomentOfInertia(Across(Tilted, aCentre)), 1e-8);
 
@@ -316,7 +316,7 @@ public class GProp_ElementaryTests
         var aSolid = new global::Kerf.Engine.Measurement.VelGProps(aCyl, 0.0, 2.0 * Math.PI, 0.0, H, Loc);
         double v = Math.PI * R * R * H;
         Assert.Equal(v, aSolid.Mass(), Tol);
-        Assert.True(aSolid.CentreOfMass().Distance(aCentre) < Tol);
+        Assert.True(aSolid.CentreOfMass().DistanceTo(aCentre) < Tol);
         Assert.Equal(v * R * R / 2.0, aSolid.MomentOfInertia(AxisOf(Tilted)), 1e-8);
         Assert.Equal(v * (3.0 * R * R + H * H) / 12.0, aSolid.MomentOfInertia(Across(Tilted, aCentre)), 1e-8);
 
@@ -333,12 +333,12 @@ public class GProp_ElementaryTests
         // a = L sin t
         double t = Math.PI / 6.0, L = 2.0, h = L * Math.Cos(t), a = L * Math.Sin(t);
         var aCone = new Cone(Tilted, t, 0.0);
-        Point3D Axial(double theZ) => Tilted.Location().Translated(new Vector3D(Tilted.Direction()) * theZ);
+        Point3D Axial(double theZ) => Tilted.Location.Translated(new Vector3D(Tilted.Direction) * theZ);
 
         // the lateral area pi a L (OCCT multiplied it by cos t), its centroid at 2 h / 3
         var aShell = new global::Kerf.Engine.Measurement.SelGProps(aCone, 0.0, 2.0 * Math.PI, 0.0, L, Loc);
         Assert.Equal(Math.PI * a * L, aShell.Mass(), Tol);
-        Assert.True(aShell.CentreOfMass().Distance(Axial(2.0 * h / 3.0)) < Tol);
+        Assert.True(aShell.CentreOfMass().DistanceTo(Axial(2.0 * h / 3.0)) < Tol);
         Assert.Equal(aShell.Mass() * a * a / 2.0, aShell.MomentOfInertia(AxisOf(Tilted)), 1e-9);
 
         // the solid: pi a^2 h / 3, its centroid at 3 h / 4, moments 3 m a^2 / 10 about the axis and
@@ -347,7 +347,7 @@ public class GProp_ElementaryTests
         double m = Math.PI * a * a * h / 3.0;
         Assert.Equal(m, aSolid.Mass(), Tol);
         Point3D aCentre = Axial(3.0 * h / 4.0);
-        Assert.True(aSolid.CentreOfMass().Distance(aCentre) < Tol);
+        Assert.True(aSolid.CentreOfMass().DistanceTo(aCentre) < Tol);
         Assert.Equal(3.0 * m * a * a / 10.0, aSolid.MomentOfInertia(AxisOf(Tilted)), 1e-9);
         Assert.Equal(m * (3.0 * a * a / 20.0 + 3.0 * h * h / 80.0), aSolid.MomentOfInertia(Across(Tilted, aCentre)), 1e-9);
 
@@ -369,18 +369,18 @@ public class GProp_ElementaryTests
         var aShell = new global::Kerf.Engine.Measurement.SelGProps(aSph, 0.0, 2.0 * Math.PI, -Math.PI / 2.0, Math.PI / 2.0, Loc);
         double m = 4.0 * Math.PI * R * R;
         Assert.Equal(m, aShell.Mass(), Tol);
-        Assert.True(aShell.CentreOfMass().Distance(Tilted.Location()) < Tol);
+        Assert.True(aShell.CentreOfMass().DistanceTo(Tilted.Location) < Tol);
         Assert.Equal(2.0 / 3.0 * m * R * R, aShell.MomentOfInertia(AxisOf(Tilted)), 1e-9);
-        Assert.Equal(2.0 / 3.0 * m * R * R, aShell.MomentOfInertia(Across(Tilted, Tilted.Location())), 1e-9);
+        Assert.Equal(2.0 / 3.0 * m * R * R, aShell.MomentOfInertia(Across(Tilted, Tilted.Location)), 1e-9);
 
         // the upper hemisphere's centroid at R / 2
         aShell.Perform(aSph, 0.0, 2.0 * Math.PI, 0.0, Math.PI / 2.0);
-        Assert.True(aShell.CentreOfMass().Distance(Tilted.Location().Translated(new Vector3D(Tilted.Direction()) * (R / 2.0))) < Tol);
+        Assert.True(aShell.CentreOfMass().DistanceTo(Tilted.Location.Translated(new Vector3D(Tilted.Direction) * (R / 2.0))) < Tol);
 
         var aSolid = new global::Kerf.Engine.Measurement.VelGProps(aSph, 0.0, 2.0 * Math.PI, -Math.PI / 2.0, Math.PI / 2.0, Loc);
         double v = 4.0 / 3.0 * Math.PI * R * R * R;
         Assert.Equal(v, aSolid.Mass(), Tol);
-        Assert.True(aSolid.CentreOfMass().Distance(Tilted.Location()) < Tol);
+        Assert.True(aSolid.CentreOfMass().DistanceTo(Tilted.Location) < Tol);
         Assert.Equal(0.4 * v * R * R, aSolid.MomentOfInertia(AxisOf(Tilted)), 1e-9);
 
         aShell.Perform(aSph, 0.5, 2.5, -0.3, 1.2);
@@ -401,25 +401,25 @@ public class GProp_ElementaryTests
         var aShell = new global::Kerf.Engine.Measurement.SelGProps(aTor, 0.0, 2.0 * Math.PI, 0.0, 2.0 * Math.PI, Loc);
         double m = 4.0 * Math.PI * Math.PI * RMaj * RMin;
         Assert.Equal(m, aShell.Mass(), 1e-9);
-        Assert.True(aShell.CentreOfMass().Distance(Tilted.Location()) < Tol);
+        Assert.True(aShell.CentreOfMass().DistanceTo(Tilted.Location) < Tol);
         Assert.Equal(m * (RMaj * RMaj + 1.5 * RMin * RMin), aShell.MomentOfInertia(AxisOf(Tilted)), 1e-8);
-        Assert.Equal(m * (RMaj * RMaj / 2.0 + 1.25 * RMin * RMin), aShell.MomentOfInertia(Across(Tilted, Tilted.Location())), 1e-8);
+        Assert.Equal(m * (RMaj * RMaj / 2.0 + 1.25 * RMin * RMin), aShell.MomentOfInertia(Across(Tilted, Tilted.Location)), 1e-8);
 
         // the solid: 2 pi^2 R r^2, moments m (R^2 + 3 r^2 / 4) and m (R^2 / 2 + 5 r^2 / 8)
         var aSolid = new global::Kerf.Engine.Measurement.VelGProps(aTor, 0.0, 2.0 * Math.PI, 0.0, 2.0 * Math.PI, Loc);
         double v = 2.0 * Math.PI * Math.PI * RMaj * RMin * RMin;
         Assert.Equal(v, aSolid.Mass(), 1e-9);
-        Assert.True(aSolid.CentreOfMass().Distance(Tilted.Location()) < Tol);
+        Assert.True(aSolid.CentreOfMass().DistanceTo(Tilted.Location) < Tol);
         Assert.Equal(v * (RMaj * RMaj + 0.75 * RMin * RMin), aSolid.MomentOfInertia(AxisOf(Tilted)), 1e-8);
-        Assert.Equal(v * (RMaj * RMaj / 2.0 + 0.625 * RMin * RMin), aSolid.MomentOfInertia(Across(Tilted, Tilted.Location())), 1e-8);
+        Assert.Equal(v * (RMaj * RMaj / 2.0 + 0.625 * RMin * RMin), aSolid.MomentOfInertia(Across(Tilted, Tilted.Location)), 1e-8);
 
         // half of it, u in [0, pi]: the shell's centroid at 2 (R + r^2 / (2R)) / pi from the axis, the solid's at
         // 2 (R + r^2 / (4R)) / pi (OCCT's solid kept it on the axis, reading cos and sin of alpha2 for teta2)
-        Vector3D aY = new(Tilted.YDirection());
+        Vector3D aY = new(Tilted.YDirection);
         aShell.Perform(aTor, 0.0, Math.PI, 0.0, 2.0 * Math.PI);
-        Assert.True(aShell.CentreOfMass().Distance(Tilted.Location().Translated(aY * (2.0 * (RMaj + RMin * RMin / (2.0 * RMaj)) / Math.PI))) < Tol);
+        Assert.True(aShell.CentreOfMass().DistanceTo(Tilted.Location.Translated(aY * (2.0 * (RMaj + RMin * RMin / (2.0 * RMaj)) / Math.PI))) < Tol);
         aSolid.Perform(aTor, 0.0, Math.PI, 0.0, 2.0 * Math.PI);
-        Assert.True(aSolid.CentreOfMass().Distance(Tilted.Location().Translated(aY * (2.0 * (RMaj + RMin * RMin / (4.0 * RMaj)) / Math.PI))) < Tol);
+        Assert.True(aSolid.CentreOfMass().DistanceTo(Tilted.Location.Translated(aY * (2.0 * (RMaj + RMin * RMin / (4.0 * RMaj)) / Math.PI))) < Tol);
 
         aShell.Perform(aTor, 0.5, 2.5, -0.7, 2.0);
         AssertSame(aShell, Integrate((u, w, _) => InFrame(Tilted, RMaj + RMin * Math.Cos(w), u, RMin * Math.Sin(w)),

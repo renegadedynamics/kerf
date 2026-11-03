@@ -13,7 +13,7 @@ namespace Kerf.Engine.Geometry.Evaluation.Grid;
 /// P(u, v) = Center + R * (cos(u) * XDir + sin(u) * YDir) + v * ZDir. The trigonometric values are computed
 /// once per U parameter.
 /// </summary>
-public sealed class CylinderGrid : GeomGridEvalGrid.ISurfaceEvaluator
+internal sealed class CylinderGrid : GeomGridEvalGrid.ISurfaceEvaluator
 {
     private struct Data
     {
@@ -44,26 +44,26 @@ public sealed class CylinderGrid : GeomGridEvalGrid.ISurfaceEvaluator
 
     private Data ExtractData()
     {
-        Cylinder cyl = _geom!.Cylinder();
-        Point3D center = cyl.Location();
-        Direction3D xDir = cyl.Position().XDirection();
-        Direction3D yDir = cyl.Position().YDirection();
-        Direction3D zDir = cyl.Position().Direction();
+        Cylinder cyl = _geom!.Cylinder;
+        Point3D center = cyl.Location;
+        Direction3D xDir = cyl.Position.XDirection;
+        Direction3D yDir = cyl.Position.YDirection;
+        Direction3D zDir = cyl.Position.Direction;
         return new Data
         {
-            CX = center.X(),
-            CY = center.Y(),
-            CZ = center.Z(),
-            XX = xDir.X(),
-            XY = xDir.Y(),
-            XZ = xDir.Z(),
-            YX = yDir.X(),
-            YY = yDir.Y(),
-            YZ = yDir.Z(),
-            ZX = zDir.X(),
-            ZY = zDir.Y(),
-            ZZ = zDir.Z(),
-            Radius = cyl.Radius(),
+            CX = center.X,
+            CY = center.Y,
+            CZ = center.Z,
+            XX = xDir.X,
+            XY = xDir.Y,
+            XZ = xDir.Z,
+            YX = yDir.X,
+            YY = yDir.Y,
+            YZ = yDir.Z,
+            ZX = zDir.X,
+            ZY = zDir.Y,
+            ZZ = zDir.Z,
+            Radius = cyl.Radius,
         };
     }
 

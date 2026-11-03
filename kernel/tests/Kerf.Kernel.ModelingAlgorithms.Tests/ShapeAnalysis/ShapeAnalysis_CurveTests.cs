@@ -42,7 +42,7 @@ public class ShapeAnalysis_CurveTests
         double aDist = SAC.Project(aLine, new Point3D(1, 2, 0), 1e-7, out Point3D aProj, out double aParam);
         Assert.Equal(2.0, aDist, Tol);
         Assert.Equal(1.0, aParam, Tol);
-        Assert.Equal(1.0, aProj.X(), Tol);
+        Assert.Equal(1.0, aProj.X, Tol);
     }
 
     [Fact]
@@ -52,7 +52,7 @@ public class ShapeAnalysis_CurveTests
         double aDist = SAC.Project(aCircle, new Point3D(0, 5, 0), 1e-7, out Point3D aProj, out double aParam);
         Assert.Equal(3.0, aDist, Tol);
         Assert.Equal(M_PI / 2, aParam, Tol);
-        Assert.Equal(2.0, aProj.Y(), Tol);
+        Assert.Equal(2.0, aProj.Y, Tol);
 
         aDist = SAC.Project(aCircle, new Point3D(3, 0, 1), 1e-7, out _, out aParam);
         Assert.Equal(Math.Sqrt(2), aDist, Tol);
@@ -66,7 +66,7 @@ public class ShapeAnalysis_CurveTests
         double aDist = SAC.Project(anArch, new Point3D(1, 3, 0), 1e-7, out Point3D aProj, out double aParam);
         Assert.Equal(2.0, aDist, 1e-7);
         Assert.Equal(0.5, aParam, 1e-7);
-        Assert.Equal(1.0, aProj.Y(), 1e-7);
+        Assert.Equal(1.0, aProj.Y, 1e-7);
 
         // within preci of an end of a bounded curve: the end, with AdjustToEnds
         aDist = SAC.Project(anArch, new Point3D(0, 0, 0.001), 0.01, out aProj, out aParam);
@@ -78,7 +78,7 @@ public class ShapeAnalysis_CurveTests
         // restricted to [0.6, 1]: the nearest end, or the curve point
         aDist = SAC.Project(anArch, new Point3D(1, 3, 0), 1e-7, out aProj, out aParam, 0.6, 1.0);
         Assert.True(aParam >= 0.6 - 0.1, $"param {aParam}");
-        Assert.Equal(aProj.Distance(new Point3D(1, 3, 0)), aDist, 1e-12);
+        Assert.Equal(aProj.DistanceTo(new Point3D(1, 3, 0)), aDist, 1e-12);
 
         // NextProject from a neighbour finds the same point
         aDist = SAC.NextProject(0.45, anArch, new Point3D(1, 3, 0), 1e-7, out aProj, out aParam, 0.0, 1.0);
@@ -97,7 +97,7 @@ public class ShapeAnalysis_CurveTests
         var anOffset = new OffsetCurve3D(Circle(1), 0.5, new Direction3D(0, 0, 1));
         aDist = SAC.Project(anOffset, new Point3D(-3, 0, 0), 1e-7, out Point3D aProj, out aParam);
         Assert.Equal(1.5, aDist, 1e-7);
-        Assert.Equal(-1.5, aProj.X(), 1e-7);
+        Assert.Equal(-1.5, aProj.X, 1e-7);
 
         // the adaptor form
         var anAdaptor = new CurveAdaptor(aTrimmed);
@@ -118,7 +118,7 @@ public class ShapeAnalysis_CurveTests
         double aDist = SAC.ProjectAct(anAdaptor, new Point3D(0, 0, 0), 1e-7, out Point3D aProj, out double aParam);
         Assert.Equal(2.0, aDist, Tol);
         Assert.Equal(0.0, aParam);
-        Assert.Equal(2.0, aProj.X(), Tol);
+        Assert.Equal(2.0, aProj.X, Tol);
     }
 
     [Fact]
@@ -144,7 +144,7 @@ public class ShapeAnalysis_CurveTests
         Assert.True(SAC.ValidateRange(anArch, ref aFirst, ref aLast, 1e-7));
         Assert.Equal(0.2, aFirst, 1e-15);
         Assert.Equal(0.8, aLast, 1e-15);
-        Assert.Equal(2.0, anArch.StartPoint().X(), 1e-15);
+        Assert.Equal(2.0, anArch.StartPoint.X, 1e-15);
 
         // equal parameters on an open B-spline: made up, false
         aFirst = aLast = 0.3;
@@ -204,7 +204,7 @@ public class ShapeAnalysis_CurveTests
         Assert.True(SAC.ValidateRange(anArc, ref aFirst, ref aLast, 1e-7));
         Assert.Equal(2.0, aFirst);
         Assert.Equal(4.0, aLast);
-        Assert.True(aLast > anArc.LastParameter());
+        Assert.True(aLast > anArc.LastParameter);
     }
 
     [Fact]
@@ -298,7 +298,7 @@ public class ShapeAnalysis_CurveTests
         var aSeq = new NCollection_Sequence<Point3D>();
         Assert.True(CurveAnalysis.GetSamplePoints(new TrimmedCurve3D(Circle(1), 0, M_PI), 0, M_PI, aSeq));
         Assert.Equal(360, aSeq.Length()); // the basis circle: 360 per period
-        Assert.Equal(-1.0, aSeq[360].X(), 1e-15);
+        Assert.Equal(-1.0, aSeq[360].X, 1e-15);
 
         aSeq = new NCollection_Sequence<Point3D>();
         Assert.True(CurveAnalysis.GetSamplePoints(Arch(), 0, 1, aSeq));
@@ -307,7 +307,7 @@ public class ShapeAnalysis_CurveTests
         aSeq = new NCollection_Sequence<Point3D>();
         Assert.True(CurveAnalysis.GetSamplePoints(new TrimmedCurve3D(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 3), 0, 3, aSeq));
         Assert.Equal(2, aSeq.Length());
-        Assert.Equal(3.0, aSeq[2].X());
+        Assert.Equal(3.0, aSeq[2].X);
 
         var aBezier = new BezierCurve3D(Array(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0)));
         aSeq = new NCollection_Sequence<Point3D>();
@@ -317,7 +317,7 @@ public class ShapeAnalysis_CurveTests
         var aSeq2 = new NCollection_Sequence<Point2D>();
         Assert.True(CurveAnalysis.GetSamplePoints(new LineCurve2D(new Point2D(0, 0), new Direction2D(1, 0)), 0, 2, aSeq2));
         Assert.True(aSeq2.Length() >= 2);
-        Assert.Equal(2.0, aSeq2[aSeq2.Length()].X());
+        Assert.Equal(2.0, aSeq2[aSeq2.Length()].X);
     }
 
     [Fact]
@@ -347,8 +347,8 @@ public class ShapeAnalysis_CurveTests
         {
             myCurves =
             [
-                new TrimmedCurve3D(new LineCurve3D(theP0, new Direction3D(new Vector3D(theP0, theP1))), 0, theP0.Distance(theP1)),
-                new TrimmedCurve3D(new LineCurve3D(theP1, new Direction3D(new Vector3D(theP1, theP2))), 0, theP1.Distance(theP2)),
+                new TrimmedCurve3D(new LineCurve3D(theP0, new Direction3D(new Vector3D(theP0, theP1))), 0, theP0.DistanceTo(theP1)),
+                new TrimmedCurve3D(new LineCurve3D(theP1, new Direction3D(new Vector3D(theP1, theP2))), 0, theP1.DistanceTo(theP2)),
             ];
         }
 
@@ -361,57 +361,57 @@ public class ShapeAnalysis_CurveTests
             int anInd = U < 0.5 ? 1 : 2;
             Curve3D aC = myCurves[anInd - 1];
             double aLocal = anInd == 1 ? U * 2 : (U - 0.5) * 2;
-            UOut = aC.FirstParameter() + aLocal * (aC.LastParameter() - aC.FirstParameter());
+            UOut = aC.FirstParameter + aLocal * (aC.LastParameter - aC.FirstParameter);
             return anInd;
         }
 
         public override double LocalToGlobal(int index, double Ulocal)
         {
             Curve3D aC = myCurves[index - 1];
-            double aLocal = (Ulocal - aC.FirstParameter()) / (aC.LastParameter() - aC.FirstParameter());
+            double aLocal = (Ulocal - aC.FirstParameter) / (aC.LastParameter - aC.FirstParameter);
             return 0.5 * (index - 1) + 0.5 * aLocal;
         }
 
         public override double GetScaleFactor(int ind)
         {
             Curve3D aC = myCurves[ind - 1];
-            return 2 * (aC.LastParameter() - aC.FirstParameter());
+            return 2 * (aC.LastParameter - aC.FirstParameter);
         }
 
         public bool Check(double thePreci) => CheckConnectivity(thePreci);
 
         protected internal override void Reverse() => throw new global::Kerf.Engine.Foundation.MethodNotImplementedException();
 
-        public override Geometry3D Copy() => new TwoSegments(myCurves[0].Value(myCurves[0].FirstParameter()),
-                                                                 myCurves[1].Value(myCurves[1].FirstParameter()),
-                                                                 myCurves[1].Value(myCurves[1].LastParameter()));
+        public override Geometry3D Copy() => new TwoSegments(myCurves[0].Value(myCurves[0].FirstParameter),
+                                                                 myCurves[1].Value(myCurves[1].FirstParameter),
+                                                                 myCurves[1].Value(myCurves[1].LastParameter));
     }
 
     [Fact]
     public void ComplexCurve_evaluates_its_segments()
     {
         var aCurve = new TwoSegments(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 3, 0));
-        Assert.Equal(0.0, aCurve.FirstParameter());
-        Assert.Equal(1.0, aCurve.LastParameter());
+        Assert.Equal(0.0, aCurve.FirstParameter);
+        Assert.Equal(1.0, aCurve.LastParameter);
         Assert.Equal(0.25, aCurve.ReversedParameter(0.75));
-        Assert.Equal(Continuity.C0, aCurve.Continuity());
+        Assert.Equal(Continuity.C0, aCurve.Continuity);
         Assert.True(aCurve.IsCN(0));
         Assert.False(aCurve.IsCN(1));
         Assert.False(aCurve.IsPeriodic);
 
         Point3D aP = aCurve.Value(0.75);
-        Assert.Equal(1.0, aP.X(), 1e-15);
-        Assert.Equal(1.5, aP.Y(), 1e-15);
+        Assert.Equal(1.0, aP.X, 1e-15);
+        Assert.Equal(1.5, aP.Y, 1e-15);
 
         // derivatives scaled by the segment's factor: d/dU of the second segment is 2 x 3 along Y
         aCurve.D1(0.75, out _, out Vector3D aV1);
-        Assert.Equal(6.0, aV1.Y(), 1e-15);
+        Assert.Equal(6.0, aV1.Y, 1e-15);
         aCurve.D2(0.25, out _, out aV1, out Vector3D aV2);
-        Assert.Equal(2.0, aV1.X(), 1e-15);
-        Assert.Equal(0.0, aV2.Magnitude(), 1e-15);
-        Assert.Equal(6.0, aCurve.DN(0.75, 1).Y(), 1e-15);
+        Assert.Equal(2.0, aV1.X, 1e-15);
+        Assert.Equal(0.0, aV2.Magnitude, 1e-15);
+        Assert.Equal(6.0, aCurve.DN(0.75, 1).Y, 1e-15);
         aCurve.D3(0.75, out _, out aV1, out _, out _);
-        Assert.Equal(6.0, aV1.Y(), 1e-15);
+        Assert.Equal(6.0, aV1.Y, 1e-15);
 
         Assert.True(aCurve.Check(1e-7));
         Assert.False(aCurve.IsClosed);
@@ -424,7 +424,7 @@ public class ShapeAnalysis_CurveTests
         var aT = new Transform3D();
         aT = aT.WithTranslation(new Vector3D(0, 0, 5));
         var aMoved = (ComplexCurve)aCurve.Transformed(aT);
-        Assert.Equal(5.0, aMoved.Value(0.75).Z(), 1e-15);
-        Assert.Equal(0.0, aCurve.Value(0.75).Z());
+        Assert.Equal(5.0, aMoved.Value(0.75).Z, 1e-15);
+        Assert.Equal(0.0, aCurve.Value(0.75).Z);
     }
 }

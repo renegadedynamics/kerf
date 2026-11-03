@@ -114,9 +114,9 @@ public class ZerParFunc<ThePSurface, ThePSurfaceTool> : FunctionSetWithDerivativ
             break;
         }
 
-        _f[0] = f[1] = _pntsol1.X() - _pntsol2.X();
-        _f[1] = f[2] = _pntsol1.Y() - _pntsol2.Y();
-        _f[2] = f[3] = _pntsol1.Z() - _pntsol2.Z();
+        _f[0] = f[1] = _pntsol1.X - _pntsol2.X;
+        _f[1] = f[2] = _pntsol1.Y - _pntsol2.Y;
+        _f[2] = f[3] = _pntsol1.Z - _pntsol2.Z;
 
         return true;
     }
@@ -131,9 +131,9 @@ public class ZerParFunc<ThePSurface, ThePSurfaceTool> : FunctionSetWithDerivativ
     {
         FillDerivatives(x, d);
 
-        _f[0] = f[1] = _pntsol1.X() - _pntsol2.X();
-        _f[1] = f[2] = _pntsol1.Y() - _pntsol2.Y();
-        _f[2] = f[3] = _pntsol1.Z() - _pntsol2.Z();
+        _f[0] = f[1] = _pntsol1.X - _pntsol2.X;
+        _f[1] = f[2] = _pntsol1.Y - _pntsol2.Y;
+        _f[2] = f[3] = _pntsol1.Z - _pntsol2.Z;
 
         return true;
     }
@@ -147,60 +147,60 @@ public class ZerParFunc<ThePSurface, ThePSurfaceTool> : FunctionSetWithDerivativ
             {
                 ThePSurfaceTool.D1(_surf1, _paramConst, x[1], out _pntsol1, out _dpuv[0], out _dpuv[1]);
                 ThePSurfaceTool.D1(_surf2, x[2], x[3], out _pntsol2, out _dpuv[2], out _dpuv[3]);
-                d[1, 1] = _dpuv[1].X();
-                d[1, 2] = -_dpuv[2].X();
-                d[1, 3] = -_dpuv[3].X();
-                d[2, 1] = _dpuv[1].Y();
-                d[2, 2] = -_dpuv[2].Y();
-                d[2, 3] = -_dpuv[3].Y();
-                d[3, 1] = _dpuv[1].Z();
-                d[3, 2] = -_dpuv[2].Z();
-                d[3, 3] = -_dpuv[3].Z();
+                d[1, 1] = _dpuv[1].X;
+                d[1, 2] = -_dpuv[2].X;
+                d[1, 3] = -_dpuv[3].X;
+                d[2, 1] = _dpuv[1].Y;
+                d[2, 2] = -_dpuv[2].Y;
+                d[2, 3] = -_dpuv[3].Y;
+                d[3, 1] = _dpuv[1].Z;
+                d[3, 2] = -_dpuv[2].Z;
+                d[3, 3] = -_dpuv[3].Z;
             }
             break;
             case ConstIsoparametric.VIsoparametricOnCaro1:
             {
                 ThePSurfaceTool.D1(_surf1, x[1], _paramConst, out _pntsol1, out _dpuv[0], out _dpuv[1]);
                 ThePSurfaceTool.D1(_surf2, x[2], x[3], out _pntsol2, out _dpuv[2], out _dpuv[3]);
-                d[1, 1] = _dpuv[0].X();
-                d[1, 2] = -_dpuv[2].X();
-                d[1, 3] = -_dpuv[3].X();
-                d[2, 1] = _dpuv[0].Y();
-                d[2, 2] = -_dpuv[2].Y();
-                d[2, 3] = -_dpuv[3].Y();
-                d[3, 1] = _dpuv[0].Z();
-                d[3, 2] = -_dpuv[2].Z();
-                d[3, 3] = -_dpuv[3].Z();
+                d[1, 1] = _dpuv[0].X;
+                d[1, 2] = -_dpuv[2].X;
+                d[1, 3] = -_dpuv[3].X;
+                d[2, 1] = _dpuv[0].Y;
+                d[2, 2] = -_dpuv[2].Y;
+                d[2, 3] = -_dpuv[3].Y;
+                d[3, 1] = _dpuv[0].Z;
+                d[3, 2] = -_dpuv[2].Z;
+                d[3, 3] = -_dpuv[3].Z;
             }
             break;
             case ConstIsoparametric.UIsoparametricOnCaro2:
             {
                 ThePSurfaceTool.D1(_surf1, x[1], x[2], out _pntsol1, out _dpuv[0], out _dpuv[1]);
                 ThePSurfaceTool.D1(_surf2, _paramConst, x[3], out _pntsol2, out _dpuv[2], out _dpuv[3]);
-                d[1, 1] = _dpuv[0].X();
-                d[1, 2] = _dpuv[1].X();
-                d[1, 3] = -_dpuv[3].X();
-                d[2, 1] = _dpuv[0].Y();
-                d[2, 2] = _dpuv[1].Y();
-                d[2, 3] = -_dpuv[3].Y();
-                d[3, 1] = _dpuv[0].Z();
-                d[3, 2] = _dpuv[1].Z();
-                d[3, 3] = -_dpuv[3].Z();
+                d[1, 1] = _dpuv[0].X;
+                d[1, 2] = _dpuv[1].X;
+                d[1, 3] = -_dpuv[3].X;
+                d[2, 1] = _dpuv[0].Y;
+                d[2, 2] = _dpuv[1].Y;
+                d[2, 3] = -_dpuv[3].Y;
+                d[3, 1] = _dpuv[0].Z;
+                d[3, 2] = _dpuv[1].Z;
+                d[3, 3] = -_dpuv[3].Z;
             }
             break;
             case ConstIsoparametric.VIsoparametricOnCaro2:
             {
                 ThePSurfaceTool.D1(_surf1, x[1], x[2], out _pntsol1, out _dpuv[0], out _dpuv[1]);
                 ThePSurfaceTool.D1(_surf2, x[3], _paramConst, out _pntsol2, out _dpuv[2], out _dpuv[3]);
-                d[1, 1] = _dpuv[0].X();
-                d[1, 2] = _dpuv[1].X();
-                d[1, 3] = -_dpuv[2].X();
-                d[2, 1] = _dpuv[0].Y();
-                d[2, 2] = _dpuv[1].Y();
-                d[2, 3] = -_dpuv[2].Y();
-                d[3, 1] = _dpuv[0].Z();
-                d[3, 2] = _dpuv[1].Z();
-                d[3, 3] = -_dpuv[2].Z();
+                d[1, 1] = _dpuv[0].X;
+                d[1, 2] = _dpuv[1].X;
+                d[1, 3] = -_dpuv[2].X;
+                d[2, 1] = _dpuv[0].Y;
+                d[2, 2] = _dpuv[1].Y;
+                d[2, 3] = -_dpuv[2].Y;
+                d[3, 1] = _dpuv[0].Z;
+                d[3, 2] = _dpuv[1].Z;
+                d[3, 3] = -_dpuv[2].Z;
             }
             break;
         }

@@ -365,7 +365,7 @@ public class ExtCS
                                     continue;
                             }
 
-                            dist[i] = pOnC[i].SquareDistance(pOnS[i]);
+                            dist[i] = pOnC[i].SquareDistanceTo(pOnS[i]);
                         }
 
                         Span<bool> bAdd = [false, false];

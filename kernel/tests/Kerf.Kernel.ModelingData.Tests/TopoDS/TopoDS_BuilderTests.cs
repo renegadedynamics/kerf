@@ -37,7 +37,7 @@ public class TopoDS_BuilderTests
         aBuilder.MakeWire(ref aWire);
 
         Assert.False(aWire.IsNull);
-        Assert.Equal(ShapeType.Wire, aWire.ShapeType());
+        Assert.Equal(ShapeType.Wire, aWire.Type);
         Assert.True(aWire.Free());
     }
 
@@ -49,7 +49,7 @@ public class TopoDS_BuilderTests
         aBuilder.MakeShell(ref aShell);
 
         Assert.False(aShell.IsNull);
-        Assert.Equal(ShapeType.Shell, aShell.ShapeType());
+        Assert.Equal(ShapeType.Shell, aShell.Type);
     }
 
     [Fact]
@@ -60,7 +60,7 @@ public class TopoDS_BuilderTests
         aBuilder.MakeSolid(ref aSolid);
 
         Assert.False(aSolid.IsNull);
-        Assert.Equal(ShapeType.Solid, aSolid.ShapeType());
+        Assert.Equal(ShapeType.Solid, aSolid.Type);
     }
 
     [Fact]
@@ -71,7 +71,7 @@ public class TopoDS_BuilderTests
         aBuilder.MakeCompSolid(ref aCompSolid);
 
         Assert.False(aCompSolid.IsNull);
-        Assert.Equal(ShapeType.CompSolid, aCompSolid.ShapeType());
+        Assert.Equal(ShapeType.CompSolid, aCompSolid.Type);
     }
 
     [Fact]
@@ -82,7 +82,7 @@ public class TopoDS_BuilderTests
         aBuilder.MakeCompound(ref aCompound);
 
         Assert.False(aCompound.IsNull);
-        Assert.Equal(ShapeType.Compound, aCompound.ShapeType());
+        Assert.Equal(ShapeType.Compound, aCompound.Type);
     }
 
     [Fact]
@@ -123,7 +123,7 @@ public class TopoDS_BuilderTests
         int aCount = 0;
         for (var anIt = new Iterator(aWire); anIt.More(); anIt.Next())
         {
-            Assert.Equal(ShapeType.Edge, anIt.Value().ShapeType());
+            Assert.Equal(ShapeType.Edge, anIt.Value().Type);
             ++aCount;
         }
 
@@ -185,13 +185,13 @@ public class TopoDS_BuilderTests
         Assert.True(aCompound.Checked());
 
         aCompound.Closed(true);
-        Assert.True(aCompound.Closed());
+        Assert.True(aCompound.IsClosed);
 
         aCompound.Infinite(true);
-        Assert.True(aCompound.Infinite());
+        Assert.True(aCompound.IsInfinite);
 
         aCompound.Convex(true);
-        Assert.True(aCompound.Convex());
+        Assert.True(aCompound.IsConvex);
     }
 
     [Fact]
@@ -298,7 +298,7 @@ public class TopoDS_BuilderTests
         int aOuterCount = 0;
         for (var anIt = new Iterator(aOuter); anIt.More(); anIt.Next())
         {
-            Assert.Equal(ShapeType.Compound, anIt.Value().ShapeType());
+            Assert.Equal(ShapeType.Compound, anIt.Value().Type);
             ++aOuterCount;
         }
 
@@ -352,35 +352,35 @@ public class TopoDS_BuilderTests
         Wire aWire = new();
         aBuilder.MakeWire(ref aWire);
         Assert.False(aWire.IsNull);
-        Assert.Equal(ShapeType.Wire, aWire.ShapeType());
+        Assert.Equal(ShapeType.Wire, aWire.Type);
         Assert.True(aWire.Free());
 
         // Shell
         Shell aShell = new();
         aBuilder.MakeShell(ref aShell);
         Assert.False(aShell.IsNull);
-        Assert.Equal(ShapeType.Shell, aShell.ShapeType());
+        Assert.Equal(ShapeType.Shell, aShell.Type);
         Assert.True(aShell.Free());
 
         // Solid
         Solid aSolid = new();
         aBuilder.MakeSolid(ref aSolid);
         Assert.False(aSolid.IsNull);
-        Assert.Equal(ShapeType.Solid, aSolid.ShapeType());
+        Assert.Equal(ShapeType.Solid, aSolid.Type);
         Assert.True(aSolid.Free());
 
         // CompSolid
         CompSolid aCompSolid = new();
         aBuilder.MakeCompSolid(ref aCompSolid);
         Assert.False(aCompSolid.IsNull);
-        Assert.Equal(ShapeType.CompSolid, aCompSolid.ShapeType());
+        Assert.Equal(ShapeType.CompSolid, aCompSolid.Type);
         Assert.True(aCompSolid.Free());
 
         // Compound
         Compound aCompound = new();
         aBuilder.MakeCompound(ref aCompound);
         Assert.False(aCompound.IsNull);
-        Assert.Equal(ShapeType.Compound, aCompound.ShapeType());
+        Assert.Equal(ShapeType.Compound, aCompound.Type);
         Assert.True(aCompound.Free());
     }
 
@@ -413,7 +413,7 @@ public class TopoDS_BuilderTests
         int aVertexCount = 0, aEdgeCount = 0, aWireCount = 0, aShellCount = 0, aCompoundCount = 0;
         for (var anIt = new Iterator(aCompound); anIt.More(); anIt.Next())
         {
-            switch (anIt.Value().ShapeType())
+            switch (anIt.Value().Type)
             {
                 case ShapeType.Vertex:
                     ++aVertexCount;
@@ -482,8 +482,8 @@ public class TopoDS_BuilderTests
 
         // stored relative to the parent: reversed and moved by the inverse location
         Shape aStored = new Iterator(aCompound, false, false).Value();
-        Assert.Equal(Orientation.Reversed, aStored.Orientation());
-        Assert.Equal(aLoc.Inverted(), aStored.Location());
+        Assert.Equal(Orientation.Reversed, aStored.Orientation);
+        Assert.Equal(aLoc.Inverted(), aStored.Placement);
         // seen through the parent, it is the shape added
         Assert.True(new Iterator(aCompound).Value().IsEqual(aV));
         aBuilder.Remove(aCompound, aV);

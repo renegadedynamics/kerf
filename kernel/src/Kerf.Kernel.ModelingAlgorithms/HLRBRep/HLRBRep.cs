@@ -88,7 +88,7 @@ public static class HlrbRep
                 Curve3D? curve = Tool.Curve(edge, out fpar, out lpar);
                 if (curve is TrimmedCurve3D trimmed)
                 {
-                    curve = trimmed.BasisCurve();
+                    curve = trimmed.BasisCurve;
                 }
                 BSplineCurve3D bSplCurve = (BSplineCurve3D)curve!;
                 BSplineCurve3D theCurve = (BSplineCurve3D)bSplCurve.Copy();
@@ -102,13 +102,13 @@ public static class HlrbRep
                     {
                         NCollection_Array1<double> weights = new(1, theCurve.PoleCount);
                         ec.PolesAndWeights(theCurve, poles, weights);
-                        ec2d = new BSplineCurve2D(poles, weights, knots, mults, theCurve.Degree(),
+                        ec2d = new BSplineCurve2D(poles, weights, knots, mults, theCurve.Degree,
                                                        theCurve.IsPeriodic);
                     }
                     else
                     {
                         ec.Poles(theCurve, poles);
-                        ec2d = new BSplineCurve2D(poles, knots, mults, theCurve.Degree(), theCurve.IsPeriodic);
+                        ec2d = new BSplineCurve2D(poles, knots, mults, theCurve.Degree, theCurve.IsPeriodic);
                     }
                 }
                 else
@@ -189,7 +189,7 @@ public static class HlrbRep
         lpar = bAcurve.LastParameter();
 
         edg = ShapeCasts.Edge(((Shape)edge).EmptyCopied());
-        edg.Orientation(Forward);
+        edg.Orient(Forward);
         BrepBuilder bb = new();
         bb.Range(edg, u1, u2);
 
@@ -217,8 +217,8 @@ public static class HlrbRep
             v2new = new LibraryMakeVertex(pnt).InternalVertex();
         }
 
-        v1new.Orientation(Forward);
-        v2new.Orientation(Reversed);
+        v1new.Orient(Forward);
+        v2new.Orient(Reversed);
         bb.Add(edg, v1new);
         bb.Add(edg, v2new);
         return edg;

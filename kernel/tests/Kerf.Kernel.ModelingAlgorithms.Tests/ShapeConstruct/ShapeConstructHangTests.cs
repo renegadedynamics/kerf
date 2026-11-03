@@ -28,7 +28,7 @@ public class ShapeConstructHangTests
 
         public override double VReversedParameter(double V) => -V;
 
-        public override void Bounds(out double U1, out double U2, out double V1, out double V2)
+        internal override void ParameterBounds(out double U1, out double U2, out double V1, out double V2)
         {
             U1 = 0;
             U2 = 1;
@@ -48,21 +48,21 @@ public class ShapeConstructHangTests
 
         public override Curve3D VIso(double V) => throw new NotSupportedException();
 
-        public override Continuity Continuity() => CN;
+        public override Continuity Continuity => CN;
 
-        public override bool IsCNu(int N) => true;
+        internal override bool IsCNu(int N) => true;
 
-        public override bool IsCNv(int N) => true;
+        internal override bool IsCNv(int N) => true;
 
-        public override Point3D EvalD0(double U, double V) => throw new DomainErrorException("FailingSurface");
+        internal override Point3D EvalD0(double U, double V) => throw new DomainErrorException("FailingSurface");
 
-        public override ResD1 EvalD1(double U, double V) => throw new DomainErrorException("FailingSurface");
+        internal override ResD1 EvalD1(double U, double V) => throw new DomainErrorException("FailingSurface");
 
-        public override ResD2 EvalD2(double U, double V) => throw new DomainErrorException("FailingSurface");
+        internal override ResD2 EvalD2(double U, double V) => throw new DomainErrorException("FailingSurface");
 
-        public override ResD3 EvalD3(double U, double V) => throw new DomainErrorException("FailingSurface");
+        internal override ResD3 EvalD3(double U, double V) => throw new DomainErrorException("FailingSurface");
 
-        public override Vector3D EvalDN(double U, double V, int Nu, int Nv) => throw new DomainErrorException("FailingSurface");
+        internal override Vector3D EvalDN(double U, double V, int Nu, int Nv) => throw new DomainErrorException("FailingSurface");
     }
 
     [Fact]

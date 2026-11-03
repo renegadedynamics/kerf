@@ -80,7 +80,7 @@ public sealed class SweepSectionGenerator : ISectionGenerator<int>
 
         if (thePath.GetType() == Circle)
         {
-            _circPathAxis = thePath.Circle().Axis();
+            _circPathAxis = thePath.Circle().Axis;
             _type = 4;
         }
         else
@@ -104,7 +104,7 @@ public sealed class SweepSectionGenerator : ISectionGenerator<int>
 
         if (thePath.GetType() == Circle)
         {
-            _circPathAxis = thePath.Circle().Axis();
+            _circPathAxis = thePath.Circle().Axis;
             _type = 5;
         }
 
@@ -143,7 +143,7 @@ public sealed class SweepSectionGenerator : ISectionGenerator<int>
 
         if (thePath.GetType() == Circle)
         {
-            _circPathAxis = thePath.Circle().Axis();
+            _circPathAxis = thePath.Circle().Axis;
             _type = 6;
         }
         else
@@ -222,8 +222,8 @@ public sealed class SweepSectionGenerator : ISectionGenerator<int>
 
         double u;
 
-        double u1 = _path.FirstParameter();
-        double u2 = _path.LastParameter();
+        double u1 = _path.FirstParameter;
+        double u2 = _path.LastParameter;
 
         QuasiUniformDeflection samp = new QuasiUniformDeflection();
         // Calcul de la longueur approximative de la courbe
@@ -231,7 +231,7 @@ public sealed class SweepSectionGenerator : ISectionGenerator<int>
         Point3D p1 = adpPath.Value(u1);
         Point3D p2 = adpPath.Value((u1 + u2) / 2.0);
         Point3D p3 = adpPath.Value(u2);
-        double length = p1.Distance(p2) + p2.Distance(p3);
+        double length = p1.DistanceTo(p2) + p2.DistanceTo(p3);
         double fleche = 1.0e-5 * length;
         samp.Initialize(adpPath, fleche);
 
@@ -323,7 +323,7 @@ public sealed class SweepSectionGenerator : ISectionGenerator<int>
         {
             nbPoles = _firstSect!.PoleCount;
             nbKnots = _firstSect.KnotCount;
-            degree = _firstSect.Degree();
+            degree = _firstSect.Degree;
         }
         else
         { // myType == 0
@@ -395,11 +395,11 @@ public sealed class SweepSectionGenerator : ISectionGenerator<int>
         double u;
         if (p == 1)
         {
-            u = _path!.FirstParameter();
+            u = _path!.FirstParameter;
         }
         else if (p == _nbSections)
         {
-            u = _path!.LastParameter();
+            u = _path!.LastParameter;
         }
         else
         {
@@ -410,7 +410,7 @@ public sealed class SweepSectionGenerator : ISectionGenerator<int>
         Point3D pt;
 
         _path.D2(u, out pt, out d1, out d2);
-        double l = d1.Magnitude();
+        double l = d1.Magnitude;
 
         if (l < Epsilon(1.0))
         {
@@ -420,7 +420,7 @@ public sealed class SweepSectionGenerator : ISectionGenerator<int>
         Direction3D t = new Direction3D(d1);
         double m = d2.Dot(new Vector3D(t));
         Vector3D d = d2 - m * new Vector3D(t);
-        double c = d.Magnitude() / (l * l);
+        double c = d.Magnitude / (l * l);
 
         if (c < Epsilon(1.0))
         {
@@ -442,7 +442,7 @@ public sealed class SweepSectionGenerator : ISectionGenerator<int>
                 x = v * new Vector3D(t);
                 y = v * new Vector3D(n);
                 dPoles[i] = x * new Vector3D(n) - y * new Vector3D(t);
-                if (dPoles[i].Magnitude() > Epsilon(1.0))
+                if (dPoles[i].Magnitude > Epsilon(1.0))
                 {
                     dPoles[i] = dPoles[i].Normalized();
                     dPoles[i] *= Math.Sqrt(x * x + y * y);
@@ -532,7 +532,7 @@ public sealed class SweepSectionGenerator : ISectionGenerator<int>
 
             Frame3D axis = new Frame3D();
             double angle;
-            if (p1.Distance(p2) < global::Kerf.Engine.Foundation.Precision.Confusion())
+            if (p1.DistanceTo(p2) < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 angle = 0.0;
             }
@@ -586,16 +586,16 @@ public sealed class SweepSectionGenerator : ISectionGenerator<int>
     {
         if (p == 1)
         {
-            return _path!.FirstParameter();
+            return _path!.FirstParameter;
         }
         else if (p == _nbSections)
         {
-            return _path!.LastParameter();
+            return _path!.LastParameter;
         }
         else
         {
-            double u1 = _path!.FirstParameter();
-            double u2 = _path.LastParameter();
+            double u1 = _path!.FirstParameter;
+            double u2 = _path.LastParameter;
             double prm = ((_nbSections - p) * u1 + (p - 1) * u2) / (double)(_nbSections - 1);
             return prm;
         }

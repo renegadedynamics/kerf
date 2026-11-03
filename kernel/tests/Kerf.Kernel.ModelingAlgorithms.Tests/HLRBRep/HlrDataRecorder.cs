@@ -49,21 +49,21 @@ internal sealed class HlrDataRecorder
 
     private void Pnt(Point3D P)
     {
-        Hex(P.X());
-        Hex(P.Y());
-        Hex(P.Z());
+        Hex(P.X);
+        Hex(P.Y);
+        Hex(P.Z);
     }
 
     private void Pnt2d(Point2D P)
     {
-        Hex(P.X());
-        Hex(P.Y());
+        Hex(P.X);
+        Hex(P.Y);
     }
 
     private void Vec2d(Vector2D V)
     {
-        Hex(V.X());
-        Hex(V.Y());
+        Hex(V.X);
+        Hex(V.Y);
     }
 
     private void MinMaxRec(in EdgesBlock.MinMaxIndices M)
@@ -85,7 +85,7 @@ internal sealed class HlrDataRecorder
             Tag(" null");
             return;
         }
-        Int((int)V.Orientation());
+        Int((int)V.Orientation);
         Pnt(Tool.Pnt(V));
         Hex(Tool.Tolerance(V));
     }
@@ -93,7 +93,7 @@ internal sealed class HlrDataRecorder
     private void EdgeRec(string theTag, Edge E, Face F)
     {
         Tag(theTag);
-        Int((int)E.Orientation());
+        Int((int)E.Orientation);
         global::Kerf.Engine.Topology.Exploration.Vertices(E, out Vertex V1, out Vertex V2);
         VertexRec(V1);
         VertexRec(V2);

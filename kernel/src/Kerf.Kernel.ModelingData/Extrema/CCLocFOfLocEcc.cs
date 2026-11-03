@@ -172,7 +172,7 @@ public class CCLocFOfLocEcc : FunctionSetWithDerivatives
 
         Vector3D p1P2 = new(_p1, _p2);
 
-        double ndu = _du.Magnitude();
+        double ndu = _du.Magnitude;
 
         if (_maxDerivOrderC1 != 0)
         {
@@ -198,7 +198,7 @@ public class CCLocFOfLocEcc : FunctionSetWithDerivatives
                 do
                 {
                     V = CurveTool.DN(_c1!, _u, ++n);
-                    ndu = V.Magnitude();
+                    ndu = V.Magnitude;
                     isDeriveFound = (ndu > _tolC1);
                 } while (!isDeriveFound && n < _maxDerivOrderC1);
 
@@ -262,7 +262,7 @@ public class CCLocFOfLocEcc : FunctionSetWithDerivatives
                         _du = v1 - 4 * v2 + 3 * v3;
                     }
                 }
-                ndu = _du.Magnitude();
+                ndu = _du.Magnitude;
             }
         }
 
@@ -271,7 +271,7 @@ public class CCLocFOfLocEcc : FunctionSetWithDerivatives
             return false;
         }
 
-        double ndv = _dv.Magnitude();
+        double ndv = _dv.Magnitude;
 
         if (_maxDerivOrderC2 != 0)
         {
@@ -297,7 +297,7 @@ public class CCLocFOfLocEcc : FunctionSetWithDerivatives
                 do
                 {
                     V = CurveTool.DN(_c2!, _v, ++n);
-                    ndv = V.Magnitude();
+                    ndv = V.Magnitude;
                     isDeriveFound = (ndv > _tolC2);
                 } while (!isDeriveFound && n < _maxDerivOrderC2);
 
@@ -362,7 +362,7 @@ public class CCLocFOfLocEcc : FunctionSetWithDerivatives
                     }
                 }
 
-                ndv = _dv.Magnitude();
+                ndv = _dv.Magnitude;
             }
         }
 
@@ -429,7 +429,7 @@ public class CCLocFOfLocEcc : FunctionSetWithDerivatives
 
         Vector3D p1P2 = new(_p1, _p2);
 
-        if ((_maxDerivOrderC1 != 0) && (Du.Magnitude() <= _tolC1))
+        if ((_maxDerivOrderC1 != 0) && (Du.Magnitude <= _tolC1))
         {
             math_Vector ff1 = new(1, 2), ff2 = new(1, 2), ff3 = new(1, 2);
             double f1, f2, f3;
@@ -521,12 +521,12 @@ public class CCLocFOfLocEcc : FunctionSetWithDerivatives
         }
         else
         {
-            double ndu = _du.Magnitude();
+            double ndu = _du.Magnitude;
             df[1, 1] = -ndu + (p1P2.Dot(duu) / ndu) - f[1] * (_du.Dot(duu) / (ndu * ndu));
             df[1, 2] = _dv.Dot(_du) / ndu;
         }
 
-        if ((_maxDerivOrderC2 != 0) && (Dv.Magnitude() <= _tolC2))
+        if ((_maxDerivOrderC2 != 0) && (Dv.Magnitude <= _tolC2))
         {
             math_Vector ff1 = new(1, 2), ff2 = new(1, 2), ff3 = new(1, 2);
             double f1, f2, f3;
@@ -620,7 +620,7 @@ public class CCLocFOfLocEcc : FunctionSetWithDerivatives
         }
         else
         {
-            double ndv = _dv.Magnitude();
+            double ndv = _dv.Magnitude;
             df[2, 2] = ndv + (p1P2.Dot(dvv) / ndv) - f[2] * (_dv.Dot(dvv) / (ndv * ndv));
             df[2, 1] = -_du.Dot(_dv) / ndv;
         }
@@ -634,12 +634,12 @@ public class CCLocFOfLocEcc : FunctionSetWithDerivatives
         Vector3D du = _du, dv = _dv;
         Vector3D p1P2 = new(_p1, _p2);
 
-        double mod = du.Magnitude();
+        double mod = du.Magnitude;
         if (mod > _tolC1)
         {
             du /= mod;
         }
-        mod = dv.Magnitude();
+        mod = dv.Magnitude;
         if (mod > _tolC2)
         {
             dv /= mod;
@@ -647,7 +647,7 @@ public class CCLocFOfLocEcc : FunctionSetWithDerivatives
 
         if (Math.Abs(p1P2.Dot(du)) <= _tol && Math.Abs(p1P2.Dot(dv)) <= _tol)
         {
-            _sqDist.Append(_p1.SquareDistance(_p2));
+            _sqDist.Append(_p1.SquareDistanceTo(_p2));
             _points.Append(new POnCurv(_u, _p1));
             _points.Append(new POnCurv(_v, _p2));
         }
@@ -722,7 +722,7 @@ public class CCLocFOfLocEcc : FunctionSetWithDerivatives
             }
 
             CurveTool.D1(c!, u, out _, out Vector3D vDer);
-            double vm = vDer.Magnitude();
+            double vm = vDer.Magnitude;
             if (vm > max)
             {
                 max = vm;

@@ -17,7 +17,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// base built on an internal type); implemented by <see cref="CompBezierCurvesTraits3d"/> and
 /// <see cref="CompBezierCurvesTraits2d"/>.
 /// </remarks>
-public interface ICompBezierCurvesTraits<PointType, TVecType>
+internal interface ICompBezierCurvesTraits<PointType, TVecType>
     where PointType : struct
     where TVecType : struct
 {
@@ -37,13 +37,13 @@ public interface ICompBezierCurvesTraits<PointType, TVecType>
 }
 
 /// <summary>The traits of <see cref="CompBezierCurvesToBSplineCurve"/>: gp_Pnt and gp_Vec.</summary>
-public readonly struct CompBezierCurvesTraits3d : ICompBezierCurvesTraits<Point3D, Vector3D>
+internal readonly struct CompBezierCurvesTraits3d : ICompBezierCurvesTraits<Point3D, Vector3D>
 {
     public static bool Is3d => true;
 
     public static Vector3D Vec(in Point3D p1, in Point3D p2) => new(p1, p2);
 
-    public static double SquareMagnitude(in Vector3D v) => v.SquareMagnitude();
+    public static double SquareMagnitude(in Vector3D v) => v.SquareMagnitude;
 
     public static bool IsParallel(in Vector3D v1, in Vector3D v2, double angularTolerance)
         => v1.IsParallel(v2, angularTolerance);
@@ -54,13 +54,13 @@ public readonly struct CompBezierCurvesTraits3d : ICompBezierCurvesTraits<Point3
 }
 
 /// <summary>The traits of <see cref="CompBezierCurves2dToBSplineCurve2d"/>: gp_Pnt2d and gp_Vec2d.</summary>
-public readonly struct CompBezierCurvesTraits2d : ICompBezierCurvesTraits<Point2D, Vector2D>
+internal readonly struct CompBezierCurvesTraits2d : ICompBezierCurvesTraits<Point2D, Vector2D>
 {
     public static bool Is3d => false;
 
     public static Vector2D Vec(in Point2D p1, in Point2D p2) => new(p1, p2);
 
-    public static double SquareMagnitude(in Vector2D v) => v.SquareMagnitude();
+    public static double SquareMagnitude(in Vector2D v) => v.SquareMagnitude;
 
     public static bool IsParallel(in Vector2D v1, in Vector2D v2, double angularTolerance)
         => v1.IsParallel(v2, angularTolerance);
@@ -79,7 +79,7 @@ public readonly struct CompBezierCurvesTraits2d : ICompBezierCurvesTraits<Point2
 /// OCCT's template on (PointType, TVecType), ported generically with a traits type (as BSplCLib_CurveComputation).
 /// A builder: <see cref="AddCurve"/> and <see cref="Perform"/> change it.
 /// </remarks>
-public class CompBezierCurvesToBSplineCurveBase<PointType, TVecType, Traits>
+internal class CompBezierCurvesToBSplineCurveBase<PointType, TVecType, Traits>
     where PointType : struct
     where TVecType : struct
     where Traits : struct, ICompBezierCurvesTraits<PointType, TVecType>

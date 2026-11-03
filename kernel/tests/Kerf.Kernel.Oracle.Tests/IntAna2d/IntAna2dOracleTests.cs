@@ -13,14 +13,14 @@ public class IntAna2dOracleTests(ITestOutputHelper output)
 
     private static N.gp_Lin2d ToNative(in Line2D theL)
     {
-        using var anAx = Oracle.ToNative(theL.Position());
+        using var anAx = Oracle.ToNative(theL.Position);
         return new N.gp_Lin2d(anAx);
     }
 
     private static N.gp_Circ2d ToNative(in Circle2D theC)
     {
-        using var anAx = Oracle.ToNative(theC.Position());
-        return new N.gp_Circ2d(anAx, theC.Radius());
+        using var anAx = Oracle.ToNative(theC.Position);
+        return new N.gp_Circ2d(anAx, theC.Radius);
     }
 
     private static void Compare(Oracle theOracle, N.IntAna2d_AnaIntersection theNative, AnalyticIntersection thePort, string theWhat,
@@ -81,8 +81,8 @@ public class IntAna2dOracleTests(ITestOutputHelper output)
             Line2D aL1 = new(anOracle.Ax2d());
             Line2D aL2 = (i % 10) switch
             {
-                0 => new Line2D(anOracle.Pnt2d(), aL1.Direction()), // parallel
-                1 => new Line2D(aL1.Location(), aL1.Direction()), // identical
+                0 => new Line2D(anOracle.Pnt2d(), aL1.Direction), // parallel
+                1 => new Line2D(aL1.Location, aL1.Direction), // identical
                 _ => new Line2D(anOracle.Ax2d()),
             };
             using var aN1 = ToNative(aL1);
@@ -105,8 +105,8 @@ public class IntAna2dOracleTests(ITestOutputHelper output)
             Circle2D aC1 = new(anAx1, aR1);
             // Second center near the first so that most pairs intersect; concentric one time in ten
             Point2D aCenter2 = i % 10 == 0
-                                    ? anAx1.Location()
-                                    : anAx1.Location().Translated(new Vector2D(anOracle.Real(-60, 60), anOracle.Real(-60, 60)));
+                                    ? anAx1.Location
+                                    : anAx1.Location.Translated(new Vector2D(anOracle.Real(-60, 60), anOracle.Real(-60, 60)));
             Circle2D aC2 = new(new Frame2D(aCenter2, anOracle.Dir2d(), anOracle.Bool()), i % 20 == 0 ? aR1 : anOracle.Real(1, 50));
             using var aN1 = ToNative(aC1);
             using var aN2 = ToNative(aC2);
@@ -129,7 +129,7 @@ public class IntAna2dOracleTests(ITestOutputHelper output)
             double aR = anOracle.Real(1, 50);
             Circle2D aC = new(anAx, aR);
             // A line through a point near the circle, crossing it most of the time
-            Point2D aP = anAx.Location().Translated(new Vector2D(anOracle.Real(-1.2 * aR, 1.2 * aR), anOracle.Real(-1.2 * aR, 1.2 * aR)));
+            Point2D aP = anAx.Location.Translated(new Vector2D(anOracle.Real(-1.2 * aR, 1.2 * aR), anOracle.Real(-1.2 * aR, 1.2 * aR)));
             Line2D aL = new(aP, anOracle.Dir2d());
             using var aNL = ToNative(aL);
             using var aNC = ToNative(aC);

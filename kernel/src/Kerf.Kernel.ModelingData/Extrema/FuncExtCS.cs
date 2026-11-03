@@ -141,17 +141,17 @@ public class FuncExtCS : FunctionSetWithDerivatives
         f[2] = p1P2.Dot(dus);
         f[3] = p1P2.Dot(dvs);
 
-        df[1, 1] = dtc.SquareMagnitude() + p1P2.Dot(dttc);
+        df[1, 1] = dtc.SquareMagnitude + p1P2.Dot(dttc);
         df[1, 2] = -dus.Dot(dtc);
         df[1, 3] = -dvs.Dot(dtc);
 
         df[2, 1] = -df[1, 2]; // Dtc.Dot(Dus);
-        df[2, 2] = -dus.SquareMagnitude() + p1P2.Dot(duus);
+        df[2, 2] = -dus.SquareMagnitude + p1P2.Dot(duus);
         df[2, 3] = -dvs.Dot(dus) + p1P2.Dot(duvs);
 
         df[3, 1] = -df[1, 3]; // Dtc.Dot(Dvs);
         df[3, 2] = df[2, 3]; // -Dus.Dot(Dvs)+P1P2.Dot(Duvs);
-        df[3, 3] = -dvs.SquareMagnitude() + p1P2.Dot(dvvs);
+        df[3, 3] = -dvs.SquareMagnitude + p1P2.Dot(dvvs);
 
         return true;
     }
@@ -180,7 +180,7 @@ public class FuncExtCS : FunctionSetWithDerivatives
         {
             return 0;
         }
-        _sqDist.Append(_p1.SquareDistance(_p2));
+        _sqDist.Append(_p1.SquareDistanceTo(_p2));
         _point1.Append(new POnCurv(_myt, _p1));
         _point2.Append(new POnSurf(_u, _v, _p2));
         return 0;

@@ -97,14 +97,14 @@ public partial class FilletBuilderBase
         it1.Initialize(hSon1);
         it2.Initialize(hSon2);
 
-        Orientation or1 = hs1.Face().Orientation();
-        Orientation or2 = hs2.Face().Orientation();
+        Orientation or1 = hs1.Face().Orientation;
+        Orientation or2 = hs2.Face().Orientation;
         int choix = global::Kerf.Engine.Fillets.ChFi3d.NextSide(ref or1, ref or2, stripe.OrientationOnFace1(), stripe.OrientationOnFace2(),
                                                                   stripe.Choix());
-        soldep[1] = pp1.X();
-        soldep[2] = pp1.Y();
-        soldep[3] = pp2.X();
-        soldep[4] = pp2.Y();
+        soldep[1] = pp1.X;
+        soldep[2] = pp1.Y;
+        soldep[3] = pp2.X;
+        soldep[4] = pp2.Y;
 
         double thef = first, thel = last;
         bool isdone = false;
@@ -131,18 +131,18 @@ public partial class FilletBuilderBase
             {
                 hSon1 = hs3;
                 it1.Initialize(hs3);
-                or1 = hs3.Face().Orientation();
-                soldep[1] = pp3.X();
-                soldep[2] = pp3.Y();
+                or1 = hs3.Face().Orientation;
+                soldep[1] = pp3.X;
+                soldep[2] = pp3.Y;
                 reprise = true;
             }
             else if (hs4 is not null)
             {
                 hSon2 = hs4;
                 it2.Initialize(hs4);
-                or2 = hs4.Face().Orientation();
-                soldep[3] = pp4.X();
-                soldep[4] = pp4.Y();
+                or2 = hs4.Face().Orientation;
+                soldep[3] = pp4.X;
+                soldep[4] = pp4.Y;
                 reprise = true;
             }
 
@@ -189,11 +189,11 @@ public partial class FilletBuilderBase
             ff1 = ff2;
             ff2 = tmpFace;
         }
-        of1 = ff1.Orientation();
-        ff1.Orientation(Forward);
+        of1 = ff1.Orientation;
+        ff1.Orient(Forward);
         sb1.Initialize(ff1);
-        of2 = ff2.Orientation();
-        ff2.Orientation(Forward);
+        of2 = ff2.Orientation;
+        ff2.Orient(Forward);
         sb2.Initialize(ff2);
 
         choixConge = global::Kerf.Engine.Fillets.ChFi3d.ConcaveSide(sb1, sb2, spine.Edges(1), out or1, out or2);
@@ -286,30 +286,30 @@ public partial class FilletBuilderBase
                 ConexFaces(spine, iedge, ref hs1, ref hs2);
                 f1 = hs1.Face();
                 f2 = hs2.Face();
-                or1 = f1.Orientation();
-                or2 = f2.Orientation();
+                or1 = f1.Orientation;
+                or2 = f2.Orientation;
                 choix =
                     global::Kerf.Engine.Fillets.ChFi3d.NextSide(ref or1, ref or2, stripe.OrientationOnFace1(), stripe.OrientationOnFace2(), rc);
             }
 
             double woned = 0.0, resU = 0.0, resV = 0.0;
             spine.Parameter(iedge, w, out woned, true);
-            cured.Orientation(Forward);
+            cured.Orient(Forward);
             Face f1forward = f1, f2forward = f2;
-            f1forward.Orientation(Forward);
-            f2forward.Orientation(Forward);
+            f1forward.Orient(Forward);
+            f2forward.Orient(Forward);
             pc = GetCurveOnSurface(cured, f1forward);
             i1.Initialize(hs1);
             pc.D1(woned, out p1, out derive);
             // There are points on the border, and internal points are found
-            if (derive.Magnitude() > global::Kerf.Engine.Foundation.Precision.PConfusion())
+            if (derive.Magnitude > global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 derive = derive.Normalized();
                 derive = derive.Rotated(M_PI / 2);
                 AS.Initialize(f1);
                 resU = AS.UResolution(tolE);
                 resV = AS.VResolution(tolE);
-                derive *= 2 * (Math.Abs(derive.X()) * resU + Math.Abs(derive.Y()) * resV);
+                derive *= 2 * (Math.Abs(derive.X) * resU + Math.Abs(derive.Y) * resV);
                 p2d = p1.Translated(derive);
                 if (i1.Classify(p2d, Min(resU, resV), false) == In)
                 {
@@ -326,17 +326,17 @@ public partial class FilletBuilderBase
             }
             if (f1.IsSame(f2))
             {
-                cured.Orientation(Reversed);
+                cured.Orient(Reversed);
             }
             pc = GetCurveOnSurface(cured, f2forward);
             p2 = pc.Value(woned);
             SurfaceAdaptorBase? hSon2 = hs2;// to avoid ambiguity
             i2.Initialize(hSon2);
 
-            solDep[1] = p1.X();
-            solDep[2] = p1.Y();
-            solDep[3] = p2.X();
-            solDep[4] = p2.Y();
+            solDep[1] = p1.X;
+            solDep[2] = p1.Y;
+            solDep[3] = p2.X;
+            solDep[4] = p2.Y;
             EdgeCurveAdaptor ced = spine.CurrentElementarySpine(iedge);
             Point3D pnt = ced.Value(woned);
 
@@ -361,15 +361,15 @@ public partial class FilletBuilderBase
             ConexFaces(spine, iedge, ref hs1, ref hs2);
             f1 = hs1.Face();
             f2 = hs2.Face();
-            or1 = f1.Orientation();
-            or2 = f2.Orientation();
+            or1 = f1.Orientation;
+            or2 = f2.Orientation;
             choix =
                 global::Kerf.Engine.Fillets.ChFi3d.NextSide(ref or1, ref or2, stripe.OrientationOnFace1(), stripe.OrientationOnFace2(), rc);
             double woned = 0.0;
             spine.Parameter(iedge, w, out woned, true);
             Face f1forward = f1, f2forward = f2;
-            f1forward.Orientation(Forward);
-            f2forward.Orientation(Forward);
+            f1forward.Orient(Forward);
+            f2forward.Orient(Forward);
             pc = GetCurveOnSurface(cured, f1forward);
             p1 = pc.Value(woned);
             pc = GetCurveOnSurface(cured, f2forward);
@@ -378,10 +378,10 @@ public partial class FilletBuilderBase
             SurfaceAdaptorBase? hSon2 = hs2;// to avoid ambiguity
             i1.Initialize(hSon1);
             i2.Initialize(hSon2);
-            solDep[1] = p1.X();
-            solDep[2] = p1.Y();
-            solDep[3] = p2.X();
-            solDep[4] = p2.Y();
+            solDep[1] = p1.X;
+            solDep[2] = p1.Y;
+            solDep[3] = p2.X;
+            solDep[4] = p2.Y;
             EdgeCurveAdaptor ced = spine.CurrentElementarySpine(iedge);
             Point3D pnt = ced.Value(woned);
             //    Extrema_LocateExtPC ext(pnt,els,w,1.e-8);
@@ -412,8 +412,8 @@ public partial class FilletBuilderBase
                     {
                         f1 = hs1.Face();
                         f2 = hs2.Face();
-                        or1 = f1.Orientation();
-                        or2 = f2.Orientation();
+                        or1 = f1.Orientation;
+                        or2 = f2.Orientation;
                         choix = global::Kerf.Engine.Fillets.ChFi3d.NextSide(ref or1, ref or2,
                                                                           stripe.OrientationOnFace1(), stripe.OrientationOnFace2(), rc);
                         SurfaceAdaptorBase? hSon1new = hs1;// to avoid ambiguity
@@ -532,7 +532,7 @@ public partial class FilletBuilderBase
             Edge edgereg = new();
             Face facereg = new();
             Face bidface = fref;
-            bidface.Orientation(Forward);
+            bidface.Orient(Forward);
             for (Explorer ex1 = new(bidface, ShapeType.Edge); ex1.More(); ex1.Next())
             {
                 Edge cured = ShapeCasts.Edge(ex1.Current());
@@ -578,7 +578,7 @@ public partial class FilletBuilderBase
                     Point2D p1 = hc.Value(w1);
                     Point2D p2 = hc.Value(w2);
 
-                    if (p1.Distance(pww) > p2.Distance(pww))
+                    if (p1.DistanceTo(pww) > p2.DistanceTo(pww))
                     {
                         w = w1;
                         pons = p1;
@@ -639,7 +639,7 @@ public partial class FilletBuilderBase
                 }
 
                 Face newface = fv;
-                newface.Orientation(Forward);
+                newface.Orient(Forward);
                 for (Explorer ex = new(newface, ShapeType.Edge); ex.More(); ex.Next())
                 {
                     if (ex.Current().IsSame(newedge))
@@ -747,7 +747,7 @@ public partial class FilletBuilderBase
                 // otherwise one passes by the arc...
                 if (!fv.IsSame(f))
                 {
-                    fv.Orientation(Forward);
+                    fv.Orient(Forward);
                     Edge newedge = new();
                     for (Explorer ex = new(fv, ShapeType.Edge); ex.More(); ex.Next())
                     {
@@ -781,7 +781,7 @@ public partial class FilletBuilderBase
                 {
                     Edge newedge = arcEdge;
                     newedge.Reverse();
-                    fv.Orientation(Forward);
+                    fv.Orient(Forward);
                     pCurve = GetCurveOnSurface(newedge, fv);
                 }
                 if (pCurve is null)
@@ -819,7 +819,7 @@ public partial class FilletBuilderBase
                     hc = new EdgeCurve2DAdaptor();
                     Edge newedge = new();
                     Face newface = fv;
-                    newface.Orientation(Forward);
+                    newface.Orient(Forward);
                     for (Explorer ex = new(newface, ShapeType.Edge); ex.More(); ex.Next())
                     {
                         if (ex.Current().IsSame(arcEdge))
@@ -1308,8 +1308,8 @@ public partial class FilletBuilderBase
 
             if (obstacleon1 && obstacleon2)
             {
-                Orientation or1 = hSref1.Face().Orientation();
-                Orientation or2 = hSref2.Face().Orientation();
+                Orientation or1 = hSref1.Face().Orientation;
+                Orientation or2 = hSref2.Face().Orientation;
                 int choix = global::Kerf.Engine.Fillets.ChFi3d.NextSide(ref or1, ref or2, stripe.OrientationOnFace1(), stripe.OrientationOnFace2(),
                                                                           stripe.Choix());
 
@@ -1343,8 +1343,8 @@ public partial class FilletBuilderBase
             }
             else if (obstacleon1)
             {
-                Orientation or1 = hSref1.Face().Orientation();
-                Orientation or2 = hs2.Face().Orientation();
+                Orientation or1 = hSref1.Face().Orientation;
+                Orientation or2 = hs2.Face().Orientation;
                 int choix = global::Kerf.Engine.Fillets.ChFi3d.NextSide(ref or1, ref or2, stripe.OrientationOnFace1(), stripe.OrientationOnFace2(),
                                                                           -stripe.Choix());
                 if (choix % 2 == 1)
@@ -1356,8 +1356,8 @@ public partial class FilletBuilderBase
                     choix--;
                 }
                 soldepCS[3] = w1;
-                soldepCS[1] = pp2.X();
-                soldepCS[2] = pp2.Y();
+                soldepCS[1] = pp2.X;
+                soldepCS[2] = pp2.Y;
                 if (simul)
                 {
                     SimulSurf(sd, hGuide, spine, choix, hs1, it1, hc1, hSref1, hCref1, ref decroch1, hs2, it2, or2, locfleche, _tolesp,
@@ -1376,13 +1376,13 @@ public partial class FilletBuilderBase
             }
             else if (obstacleon2)
             {
-                Orientation or1 = hs1.Face().Orientation();
-                Orientation or2 = hSref2.Face().Orientation();
+                Orientation or1 = hs1.Face().Orientation;
+                Orientation or2 = hSref2.Face().Orientation;
                 int choix = global::Kerf.Engine.Fillets.ChFi3d.NextSide(ref or1, ref or2, stripe.OrientationOnFace1(), stripe.OrientationOnFace2(),
                                                                           stripe.Choix());
                 soldepCS[3] = w2;
-                soldepCS[1] = pp1.X();
-                soldepCS[2] = pp1.Y();
+                soldepCS[1] = pp1.X;
+                soldepCS[2] = pp1.Y;
                 if (simul)
                 {
                     SimulSurf(sd, hGuide, spine, choix, hs1, it1, or1, hs2, it2, hc2, hSref2, hCref2, ref decroch2, locfleche, _tolesp,
@@ -1620,8 +1620,8 @@ public partial class FilletBuilderBase
             {
                 intf = ((iedge == 1) && !spine.IsPeriodic);
                 intl = ((iedge == spine.EdgeCount) && !spine.IsPeriodic);
-                or1 = hs1.Face().Orientation();
-                or2 = hs2.Face().Orientation();
+                or1 = hs1.Face().Orientation;
+                or2 = hs2.Face().Orientation;
                 global::Kerf.Engine.Fillets.ChFi3d.NextSide(ref or1, ref or2, refOr1, refOr2, refChoix);
                 SurfaceAdaptorBase? hSon1 = hs1;// to avoid ambiguity
                 SurfaceAdaptorBase? hSon2 = hs2;// to avoid ambiguity
@@ -1917,10 +1917,10 @@ public partial class FilletBuilderBase
                 Point3D pd2 = cpd2.Point();
                 Point3D pf1 = cpf1.Point();
                 Point3D pf2 = cpf2.Point();
-                double ddeb = pd1.Distance(pd2);
-                double dfin = pf1.Distance(pf2);
-                double don1 = pd1.Distance(pf1);
-                double don2 = pd2.Distance(pf2);
+                double ddeb = pd1.DistanceTo(pd2);
+                double dfin = pf1.DistanceTo(pf2);
+                double don1 = pd1.DistanceTo(pf1);
+                double don2 = pd2.DistanceTo(pf2);
                 bool possibleon1 = (don1 < 2 * (ddeb + dfin));
                 bool possibleon2 = (don2 < 2 * (ddeb + dfin));
                 if ((tw1 && !possibleon1) || (tw2 && !possibleon2))
@@ -2130,12 +2130,12 @@ public partial class FilletBuilderBase
                 if (pointuon1)
                 {
                     newsurf.VReverse(); // we return to direction 1 from  2;
-                    _done = CompleteData(cursd, newsurf, s1, pc1, s2, pc2, f2.Orientation(), false, false, false, false, false);
+                    _done = CompleteData(cursd, newsurf, s1, pc1, s2, pc2, f2.Orientation, false, false, false, false, false);
                     cursd.ChangeIndexOfS1(0);
                 }
                 else
                 {
-                    _done = CompleteData(cursd, newsurf, s1, pc1, s2, pc2, f1.Orientation(), true, false, false, false, false);
+                    _done = CompleteData(cursd, newsurf, s1, pc1, s2, pc2, f1.Orientation, true, false, false, false, false);
                     if (pointuon2)
                     {
                         cursd.ChangeIndexOfS2(0);
@@ -2436,7 +2436,7 @@ internal static class Builder_2
             bCurv2.D1(parE2, out p2, out t2);
             Direction3D tgt1 = new(t1);
             Direction3D tgt2 = new(t2);
-            Vector3D v12 = new(p2.X() - p1.X(), p2.Y() - p1.Y(), p2.Z() - p1.Z());
+            Vector3D v12 = new(p2.X - p1.X, p2.Y - p1.Y, p2.Z - p1.Z);
             Direction3D d12 = new(v12);
             Direction3D nor = tgt1.Crossed(d12);
             PlaneSurface? plan = new PlaneSurface(p1, nor);
@@ -2452,21 +2452,21 @@ internal static class Builder_2
                                             AS.LastVParameter(), 1.0e-3, 1.0e-3, ExtFlag.ExtFlag_MIN);
                 double u1 = 0.0, v1 = 0.0;
                 extPS.Point(1).Parameter(out u1, out v1);
-                pdeb[1] = uv1.X();
-                pdeb[2] = uv1.Y();
+                pdeb[1] = uv1.X;
+                pdeb[2] = uv1.Y;
                 pdeb[3] = u1;
                 pdeb[4] = v1;
                 extPS.Perform(p2);
                 extPS.Point(1).Parameter(out u1, out v1);
-                pfin[1] = uv2.X();
-                pfin[2] = uv2.Y();
+                pfin[1] = uv2.X;
+                pfin[2] = uv2.Y;
                 pfin[3] = u1;
                 pfin[4] = v1;
                 if (ChFi3d_ComputeCurves(hConge, hPlan, pdeb, pfin, ref c3d, ref pcurve, ref c2dint2, tol3d, tol2d,
                                                                   out tolreached))
                 {
-                    pardeb = c3d.FirstParameter();
-                    parfin = c3d.LastParameter();
+                    pardeb = c3d.FirstParameter;
+                    parfin = c3d.LastParameter;
                 }
                 else
                 {
@@ -2524,7 +2524,7 @@ internal static class Builder_2
                 if (ChFi3d_InterPlaneEdge(plane, hc, ref winter, true, tolc))
                 {
                     Point3D np = hc.Value(winter);
-                    double ndist = np.SquareDistance(papp);
+                    double ndist = np.SquareDistanceTo(papp);
                     if (ndist < dist)
                     {
                         NCollection_List<Shape>.Iterator it = new();
@@ -2544,13 +2544,13 @@ internal static class Builder_2
                             {
                                 found = true;
                                 Edge newe = ecur;
-                                newe.Orientation(Forward);
+                                newe.Orient(Forward);
                                 dist = ndist;
                                 hs.Initialize(ff);
                                 if (isclosed && !isreallyclosed)
                                 {
                                     Face fff = ff;
-                                    fff.Orientation(Forward);
+                                    fff.Orient(Forward);
                                     Explorer ex2 = new();
                                     for (ex2.Init(fff, ShapeType.Edge); ex2.More(); ex2.Next())
                                     {
@@ -2578,10 +2578,10 @@ internal static class Builder_2
                                     hc.D1(winter, out cpt, out cd);
                                     Vector3D vref = new(point, cpt);
                                     Face fff = ff;
-                                    fff.Orientation(Forward);
+                                    fff.Orient(Forward);
                                     if (vref.Dot(nors.Crossed(cd)) < 0.0)
                                     {
-                                        newe.Orientation(Reversed);
+                                        newe.Orient(Reversed);
                                     }
                                     pc = GetCurveOnSurface(newe, fff);
                                     pc.Value(winter).Coord(out xDep, out yDep);
@@ -2603,7 +2603,7 @@ internal static class Builder_2
     internal static bool Projection(CurvePointExtrema pExt, in Point3D p, CurveAdaptorBase c, ref double w, double tol)
     {
         double dist2 = 0.0, daux2 = 0.0;
-        dist2 = c.Value(w).SquareDistance(p);
+        dist2 = c.Value(w).SquareDistanceTo(p);
 
         // It is checked if it is not already a solution
         if (dist2 < tol * tol)
@@ -2617,7 +2617,7 @@ internal static class Builder_2
         LocateExtPC ext = new(p, c, w, tol / 10);
         if (ext.IsDone)
         {
-            daux2 = c.Value(ext.Point().Parameter()).SquareDistance(p);
+            daux2 = c.Value(ext.Point().Parameter()).SquareDistanceTo(p);
             if (daux2 < dist2)
             {
                 w = ext.Point().Parameter();
@@ -2651,7 +2651,7 @@ internal static class Builder_2
     {
         double wtg = cd.InterferenceOnS1().Parameter(isfirst);
         EdgeCurveAdaptor bc = spine.CurrentElementarySpine(iedge);
-        if (spine.Edges(iedge).Orientation() == Forward)
+        if (spine.Edges(iedge).Orientation == Forward)
         {
             bc.D1(wtg + bc.FirstParameter(), out ped, out ded);
         }
@@ -2704,7 +2704,7 @@ internal static class Builder_2
         // Calculate the normal and the angles in the associated vector plane
         Vector3D normal = new();
         normal = vec3d[0] ^ vec3d[1];
-        if (normal.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.Confusion())
+        if (normal.SquareMagnitude < global::Kerf.Engine.Foundation.Precision.Confusion())
         { // Colinear case
             return (vec.IsParallel(vec3d[0], global::Kerf.Engine.Foundation.Precision.Confusion()));
         }
@@ -2767,10 +2767,10 @@ internal static class Builder_2
             {
                 if (!orset)
                 {
-                    orient = ed.Orientation();
+                    orient = ed.Orientation;
                     orset = true;
                 }
-                else if (ed.Orientation() == global::Kerf.Engine.Topology.TopAbs.Reverse(orient))
+                else if (ed.Orientation == global::Kerf.Engine.Topology.TopAbs.Reverse(orient))
                 {
                     fVoi = fRef;
                     //  Modified by Sergey KHROMOV - Fri Dec 21 17:15:12 2001 Begin
@@ -2881,7 +2881,7 @@ internal static class Builder_2
             {
                 PlaneSurface? pln = new PlaneSurface(theProp.Value(), theProp.Normal());
                 Face newF = new LibraryMakeFace(pln, global::Kerf.Engine.Foundation.Precision.Confusion()).Face();
-                newF.Orientation(f.Orientation());
+                newF.Orient(f.Orientation);
                 pons = pons.WithCoord(0.0, 0.0);
                 hs.Initialize(newF);
                 return; // everything is good !

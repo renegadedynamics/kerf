@@ -355,8 +355,8 @@ public partial class PatchLineConstructor
     // modified by NIZHNY-MKK  Tue Apr  3 15:03:06 2001.BEGIN
     private static double ComputeParametricTolerance(double tol3d, in Vector3D d1u, in Vector3D d1v)
     {
-        double nad1u = d1u.Magnitude();
-        double nad1v = d1v.Magnitude();
+        double nad1u = d1u.Magnitude;
+        double nad1v = d1v.Magnitude;
         double tolu = 0.0, tolv = 0.0;
         if (nad1u > 1e-12)
         {
@@ -396,7 +396,7 @@ public partial class PatchLineConstructor
                 {
                     thetol2 = thetol1;
                 }
-                double d_4 = vtxindex.Value().Distance(vtxi.Value());
+                double d_4 = vtxindex.Value().DistanceTo(vtxi.Value());
                 if (d_4 <= thetol2)
                 {
                     alig.AddVertex(vtxi);
@@ -429,7 +429,7 @@ public partial class PatchLineConstructor
                 {
                     thetol2 = thetol1;
                 }
-                d = vtxindex.Value().Distance(vtxi.Value());
+                d = vtxindex.Value().DistanceTo(vtxi.Value());
                 if (d <= thetol2)
                 {
                     aajouter = true;
@@ -473,7 +473,7 @@ public partial class PatchLineConstructor
             if (i != index)
             {
                 PatchPoint vtxi = l.Vertex(i);
-                double d_2 = pntindex.Distance(vtxi.Value());
+                double d_2 = pntindex.DistanceTo(vtxi.Value());
                 double thetol2 = vtxi.Tolerance();
                 if (thetol2 < thetol1)
                 {
@@ -508,7 +508,7 @@ public partial class PatchLineConstructor
             if (i != index)
             {
                 PatchPoint vtxi = l.Vertex(i);
-                double d_3 = vtxindex.Value().Distance(vtxi.Value());
+                double d_3 = vtxindex.Value().DistanceTo(vtxi.Value());
                 double thetol2 = vtxi.Tolerance();
                 if (thetol2 < thetol1)
                 {
@@ -821,7 +821,7 @@ public partial class PatchLineConstructor
         for (int i = ipF + 1; i <= ipL; i++)
         {
             Point3D p2 = wLine.Point(i).Value();
-            len += p1.Distance(p2);
+            len += p1.DistanceTo(p2);
             if (len > tol)
             {
                 break;
@@ -876,7 +876,7 @@ public partial class PatchLineConstructor
                         Point2D pObt, p2d = new Point2D(u, v);
                         double par = TheProjPCurOfGInter.FindParameter(c2d, p2d, 1e-7);
                         pObt = c2d.Value(par);
-                        if (pObt.Distance(p2d) < tol2d)
+                        if (pObt.DistanceTo(p2d) < tol2d)
                         {
                             return true;
                         }
@@ -950,7 +950,7 @@ public partial class PatchLineConstructor
         Point2D p = new Point2D(u, v), pprj;
         par = TheProjPCurOfGInter.FindParameter(c2d, p, 1e-7);
         pprj = c2d.Value(par);
-        dist = pprj.Distance(p);
+        dist = pprj.DistanceTo(p);
         return dist <= tol2d;
     }
 

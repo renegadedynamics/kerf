@@ -51,7 +51,7 @@ public sealed class ExtendExplorer
         for (var it = new Iterator(comp); it.More(); it.Next())
         {
             Shape sub = it.Value();
-            if (sub.ShapeType() != global::Kerf.Topology.ShapeType.Compound)
+            if (sub.Type != global::Kerf.Topology.ShapeType.Compound)
             {
                 list.Append(sub);
             }
@@ -77,7 +77,7 @@ public sealed class ExtendExplorer
         {
             return list;
         }
-        if (comp.ShapeType() != global::Kerf.Topology.ShapeType.Compound)
+        if (comp.Type != global::Kerf.Topology.ShapeType.Compound)
         {
             list.Append(comp);
             return list;
@@ -128,7 +128,7 @@ public sealed class ExtendExplorer
         {
             return global::Kerf.Topology.ShapeType.Shape;
         }
-        ShapeType res = shape.ShapeType();
+        ShapeType res = shape.Type;
         if (!compound || res != global::Kerf.Topology.ShapeType.Compound)
         {
             return res;
@@ -141,7 +141,7 @@ public sealed class ExtendExplorer
             {
                 continue;
             }
-            ShapeType typ = sh.ShapeType();
+            ShapeType typ = sh.Type;
             if (typ == global::Kerf.Topology.ShapeType.Compound)
             {
                 typ = ShapeType(sh, compound);
@@ -191,7 +191,7 @@ public sealed class ExtendExplorer
         {
             return shape;
         }
-        ShapeType typ = shape.ShapeType();
+        ShapeType typ = shape.Type;
         Shape sh = new(), sh0;
         int nb = 0;
 
@@ -209,7 +209,7 @@ public sealed class ExtendExplorer
                     continue;
                 }
                 sh = sh0;
-                typ = sh.ShapeType();
+                typ = sh.Type;
                 if (typ == global::Kerf.Topology.ShapeType.Compound && !compound)
                 {
                     for (var it2 = new Iterator(sh); it2.More(); it2.Next())
@@ -350,7 +350,7 @@ public sealed class ExtendExplorer
             {
                 continue;
             }
-            switch (sh.ShapeType())
+            switch (sh.Type)
             {
                 case global::Kerf.Topology.ShapeType.Vertex:
                     vertices.Append(sh);

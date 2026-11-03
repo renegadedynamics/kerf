@@ -46,8 +46,8 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
     /// <summary>An axis from an OCCT gp_Ax1.</summary>
     public Axis(Axis3D ax1)
     {
-        var loc = ax1.Location();
-        var dir = ax1.Direction();
+        var loc = ax1.Location;
+        var dir = ax1.Direction;
         Position = new Vector(loc);
         Direction = new Vector(dir);
     }
@@ -101,7 +101,7 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
     public Axis Located(Location location)
     {
         var ax1 = ToGpAx1();
-        var trsf = location.Wrapped.Transformation();
+        var trsf = location.Wrapped.Transformation;
         var moved = ax1.Transformed(trsf);
         return new Axis(moved);
     }
@@ -163,7 +163,7 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
     {
         var a = ToGpAx1();
         var b = other.ToGpAx1();
-        return a.Angle(b) * Constants.RadToDeg;
+        return a.AngleTo(b) * Constants.RadToDeg;
     }
 
     /// <summary>This axis with its direction reversed.</summary>

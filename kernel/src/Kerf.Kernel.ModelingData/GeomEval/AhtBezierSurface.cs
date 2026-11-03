@@ -19,7 +19,7 @@ namespace Kerf.Engine.Geometry.Evaluation;
 /// basis function. The domain is [0, 1] x [0, 1]. Reversal, transformation and iso-curves are not supported
 /// (they throw <see cref="MethodNotImplementedException"/>).
 /// </summary>
-public sealed class AhtBezierSurface : BoundedSurface
+internal sealed class AhtBezierSurface : BoundedSurface
 {
     // The number of basis functions for the given parameters.
     private static int BasisDimension(int algDegree, double alpha, double beta) =>
@@ -669,7 +669,7 @@ public sealed class AhtBezierSurface : BoundedSurface
     }
 
     /// <summary>[0, 1] x [0, 1].</summary>
-    public override void Bounds(out double u1, out double u2, out double v1, out double v2)
+    internal override void ParameterBounds(out double u1, out double u2, out double v1, out double v2)
     {
         u1 = 0.0;
         u2 = 1.0;
@@ -697,13 +697,13 @@ public sealed class AhtBezierSurface : BoundedSurface
         throw new MethodNotImplementedException("GeomEval_AHTBezierSurface::VIso");
     }
 
-    public override Continuity Continuity() => CN;
+    public override Continuity Continuity => CN;
 
-    public override bool IsCNu(int n) => true;
+    internal override bool IsCNu(int n) => true;
 
-    public override bool IsCNv(int n) => true;
+    internal override bool IsCNv(int n) => true;
 
-    public override Point3D EvalD0(double u, double v)
+    internal override Point3D EvalD0(double u, double v)
     {
         int dimU = PolesUCount;
         int dimV = PolesVCount;
@@ -748,7 +748,7 @@ public sealed class AhtBezierSurface : BoundedSurface
         return new Point3D(n[0] / w[0]);
     }
 
-    public override ResD1 EvalD1(double u, double v)
+    internal override ResD1 EvalD1(double u, double v)
     {
         int dimU = PolesUCount;
         int dimV = PolesVCount;
@@ -810,7 +810,7 @@ public sealed class AhtBezierSurface : BoundedSurface
         return result;
     }
 
-    public override ResD2 EvalD2(double u, double v)
+    internal override ResD2 EvalD2(double u, double v)
     {
         int dimU = PolesUCount;
         int dimV = PolesVCount;
@@ -890,7 +890,7 @@ public sealed class AhtBezierSurface : BoundedSurface
         return result;
     }
 
-    public override ResD3 EvalD3(double u, double v)
+    internal override ResD3 EvalD3(double u, double v)
     {
         int dimU = PolesUCount;
         int dimV = PolesVCount;
@@ -997,7 +997,7 @@ public sealed class AhtBezierSurface : BoundedSurface
     }
 
     /// <exception cref="RangeErrorException">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
-    public override Vector3D EvalDN(double u, double v, int nu, int nv)
+    internal override Vector3D EvalDN(double u, double v, int nu, int nv)
     {
         if (nu + nv < 1 || nu < 0 || nv < 0)
         {

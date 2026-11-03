@@ -17,7 +17,12 @@ namespace Kerf.Geometry;
 /// </summary>
 public abstract class ConicCurve3D : Curve3D
 {
-    protected Frame3D _pos = new Frame3D();
+    /// <summary>Only the kernel derives from it (unit 10L1).</summary>
+    private protected ConicCurve3D()
+    {
+    }
+
+    private protected Frame3D _pos = new Frame3D();
 
     /// <summary>Changes the main axis (the normal to the plane); X and Y axes are recomputed.</summary>
     /// <exception cref="ConstructionErrorException">theA1 is parallel to the X axis of the conic.</exception>
@@ -64,36 +69,36 @@ public abstract class ConicCurve3D : Curve3D
     }
 
     /// <summary>The main axis, normal to the plane of the conic.</summary>
-    public Axis3D Axis() => _pos.Axis();
+    public Axis3D Axis => _pos.Axis;
 
     /// <summary>The centre (circle, ellipse, hyperbola) or apex (parabola).</summary>
-    public Point3D Location() => _pos.Location();
+    public Point3D Location => _pos.Location;
 
     /// <summary>The local coordinate system; its X direction is the origin of the parameter.</summary>
-    public Frame3D Position() => _pos;
+    public Frame3D Position => _pos;
 
     /// <summary>The eccentricity: 0 for a circle, in [0, 1) for an ellipse, more than 1 for a hyperbola, 1 for a parabola.</summary>
     /// <exception cref="DomainErrorException">A hyperbola with a null major radius.</exception>
-    public abstract double Eccentricity();
+    public abstract double Eccentricity { get; }
 
     /// <summary>The X axis: the origin of the parametrization.</summary>
-    public Axis3D XAxis() => new Axis3D(_pos.Location(), _pos.XDirection());
+    public Axis3D XAxis => new Axis3D(_pos.Location, _pos.XDirection);
 
     /// <summary>The Y axis, perpendicular to the X axis in the plane of the conic.</summary>
-    public Axis3D YAxis() => new Axis3D(_pos.Location(), _pos.YDirection());
+    public Axis3D YAxis => new Axis3D(_pos.Location, _pos.YDirection);
 
     /// <summary>Reverses the parametrization by reversing the main direction of the local coordinate system.</summary>
     protected internal override void Reverse()
     {
         CheckMutable();
-        Direction3D vz = _pos.Direction();
+        Direction3D vz = _pos.Direction;
         vz = vz.Reversed();
         _pos = _pos.WithDirection(vz);
     }
 
     /// <summary>CN: conics are infinitely smooth.</summary>
-    public override Continuity Continuity() => CN;
+    public override Continuity Continuity => CN;
 
     /// <summary>True.</summary>
-    public override bool IsCN(int n) => true;
+    internal override bool IsCN(int n) => true;
 }

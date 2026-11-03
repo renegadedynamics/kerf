@@ -96,7 +96,7 @@ public sealed class Circ2d2TanOnIter
         Point2D point1 = global::Kerf.Engine.Geometry.ElCLib.Value(param1, l1);
         Point2D point2 = ConstraintCurveTool.Value(cu2, param2);
         Point2D point3 = global::Kerf.Engine.Geometry.ElCLib.Value(param3, onLine);
-        ufirst[4]       = (point3.Distance(point2) + point3.Distance(point1)) / 2.0;
+        ufirst[4]       = (point3.DistanceTo(point2) + point3.DistanceTo(point1)) / 2.0;
         FunctionTanCuCuOnCu func = new(l1, cu2, onLine, Max(ufirst[4], Tol));
         FunctionSetRoot          root = new(func, tol);
         root.Perform(func, ufirst, umin, umax);
@@ -108,27 +108,27 @@ public sealed class Circ2d2TanOnIter
             Vector2D tan1, tan2;
             global::Kerf.Engine.Geometry.ElCLib.D1(ufirst[1], l1, out point1, out tan1);
             ConstraintCurveTool.D1(cu2, ufirst[2], out point2, out tan2);
-            Vector2D tan3 = new(onLine.Direction().XY());
-            Point2D point3new = new(onLine.Location().XY() + ufirst[3] * tan3.XY());
-            double   dist1 = point3new.Distance(point1);
-            double   dist2 = point3new.Distance(point2);
+            Vector2D tan3 = new(onLine.Direction.XY());
+            Point2D point3new = new(onLine.Location.XY() + ufirst[3] * tan3.XY());
+            double   dist1 = point3new.DistanceTo(point1);
+            double   dist2 = point3new.DistanceTo(point2);
             if (Math.Abs(dist1 - dist2) / 2.0 <= Tol)
             {
                 _cirsol             = new Circle2D(new Axis2D(point3new, dirx), (dist1 + dist2) / 2.0);
-                double   normetan2 = tan2.Magnitude();
+                double   normetan2 = tan2.Magnitude;
                 Vector2D vec1 = new(point1, point3new);
                 Vector2D vec2 = new(point2, point3new);
-                double   normevec2 = vec2.Magnitude();
+                double   normevec2 = vec2.Magnitude;
                 double   angle2;
                 if (normevec2 >= Constants.Resolution() && normetan2 >= Constants.Resolution())
                 {
-                    angle2 = vec2.Angle(tan2);
+                    angle2 = vec2.AngleTo(tan2);
                 }
                 else
                 {
                     angle2 = 0.0;
                 }
-                double pscal = point3new.XY().Dot(new Xy(-l1.Direction().Y(), l1.Direction().X()));
+                double pscal = point3new.XY().Dot(new Xy(-l1.Direction.Y, l1.Direction.X));
                 if (qualified1.IsUnqualified || (qualified1.IsOutside && pscal <= 0.0)
                         || (qualified1.IsEnclosed && pscal >= 0.0))
                 {
@@ -197,7 +197,7 @@ public sealed class Circ2d2TanOnIter
         Point2D point1 = ConstraintCurveTool.Value(cu1, param1);
         Point2D point2 = ConstraintCurveTool.Value(cu2, param2);
         Point2D point3 = global::Kerf.Engine.Geometry.ElCLib.Value(param3, onLine);
-        ufirst[4]       = (point3.Distance(point2) + point3.Distance(point1)) / 2.0;
+        ufirst[4]       = (point3.DistanceTo(point2) + point3.DistanceTo(point1)) / 2.0;
         FunctionTanCuCuOnCu func = new(cu1, cu2, onLine, Max(ufirst[4], Tol));
         FunctionSetRoot          root = new(func, tol);
         root.Perform(func, ufirst, umin, umax);
@@ -208,10 +208,10 @@ public sealed class Circ2d2TanOnIter
             Vector2D tan1, tan2;
             ConstraintCurveTool.D1(cu1, ufirst[1], out point1, out tan1);
             ConstraintCurveTool.D1(cu2, ufirst[2], out point2, out tan2);
-            Vector2D tan3 = new(onLine.Direction().XY());
-            Point2D point3new = new(onLine.Location().XY() + ufirst[3] * tan3.XY());
-            double   dist1 = point3new.Distance(point1);
-            double   dist2 = point3new.Distance(point2);
+            Vector2D tan3 = new(onLine.Direction.XY());
+            Point2D point3new = new(onLine.Location.XY() + ufirst[3] * tan3.XY());
+            double   dist1 = point3new.DistanceTo(point1);
+            double   dist2 = point3new.DistanceTo(point2);
             if ((dist1 + dist2) / 2.0 < Tol)
             {
                 return;
@@ -219,16 +219,16 @@ public sealed class Circ2d2TanOnIter
             if (Math.Abs(dist1 - dist2) / 2.0 <= Tol)
             {
                 _cirsol             = new Circle2D(new Axis2D(point3new, dirx), (dist1 + dist2) / 2.0);
-                double   normetan1 = tan1.Magnitude();
-                double   normetan2 = tan2.Magnitude();
+                double   normetan1 = tan1.Magnitude;
+                double   normetan2 = tan2.Magnitude;
                 Vector2D vec1 = new(point1, point3new);
                 Vector2D vec2 = new(point2, point3new);
-                double   normevec1 = vec1.Magnitude();
-                double   normevec2 = vec2.Magnitude();
+                double   normevec1 = vec1.Magnitude;
+                double   normevec2 = vec2.Magnitude;
                 double   angle1, angle2;
                 if (normevec1 >= Constants.Resolution() && normetan1 >= Constants.Resolution())
                 {
-                    angle1 = vec1.Angle(tan1);
+                    angle1 = vec1.AngleTo(tan1);
                 }
                 else
                 {
@@ -236,7 +236,7 @@ public sealed class Circ2d2TanOnIter
                 }
                 if (normevec2 >= Constants.Resolution() && normetan2 >= Constants.Resolution())
                 {
-                    angle2 = vec2.Angle(tan2);
+                    angle2 = vec2.AngleTo(tan2);
                 }
                 else
                 {
@@ -302,7 +302,7 @@ public sealed class Circ2d2TanOnIter
         tol[3]          = Tol / 10.0;
         Point2D point1 = ConstraintCurveTool.Value(cu1, param1);
         Point2D point3 = global::Kerf.Engine.Geometry.ElCLib.Value(param2, onLine);
-        ufirst[3]       = (point3.Distance(point2) + point3.Distance(point1)) / 2.0;
+        ufirst[3]       = (point3.DistanceTo(point2) + point3.DistanceTo(point1)) / 2.0;
         FunctionTanCuCuOnCu func = new(cu1, point2, onLine, Max(ufirst[3], Tol));
         FunctionSetRoot          root = new(func, tol);
         root.Perform(func, ufirst, umin, umax);
@@ -314,18 +314,18 @@ public sealed class Circ2d2TanOnIter
             Vector2D tan1, tan3;
             ConstraintCurveTool.D1(cu1, ufirst[1], out point1new, out tan1);
             global::Kerf.Engine.Geometry.ElCLib.D1(ufirst[2], onLine, out point3new, out tan3);
-            double dist1 = point3new.Distance(point1new);
-            double dist2 = point3new.Distance(point2);
+            double dist1 = point3new.DistanceTo(point1new);
+            double dist2 = point3new.DistanceTo(point2);
             if (Math.Abs(dist1 - dist2) / 2.0 <= Tol)
             {
                 _cirsol             = new Circle2D(new Axis2D(point3new, dirx), (dist1 + dist2) / 2.0);
-                double   normetan1 = tan1.Magnitude();
+                double   normetan1 = tan1.Magnitude;
                 Vector2D vec1 = new(point1new, point3new);
-                double   normevec1 = vec1.Magnitude();
+                double   normevec1 = vec1.Magnitude;
                 double   angle1;
                 if (normevec1 >= Constants.Resolution() && normetan1 >= Constants.Resolution())
                 {
-                    angle1 = vec1.Angle(tan1);
+                    angle1 = vec1.AngleTo(tan1);
                 }
                 else
                 {
@@ -372,7 +372,7 @@ public sealed class Circ2d2TanOnIter
         double              Tol = Math.Abs(tolerance);
         Direction2D            dirx = new(Direction2D.D.X);
         Circle2D           c1  = qualified1.Qualified();
-        double              r1  = c1.Radius();
+        double              r1  = c1.Radius;
         CurveAdaptor2D cu2 = qualified2.Qualified();
         math_Vector         umin = new(1, 4);
         math_Vector         umax = new(1, 4);
@@ -396,7 +396,7 @@ public sealed class Circ2d2TanOnIter
         Point2D point1 = global::Kerf.Engine.Geometry.ElCLib.Value(param1, c1);
         Point2D point2 = ConstraintCurveTool.Value(cu2, param2);
         Point2D point3 = global::Kerf.Engine.Geometry.ElCLib.Value(param3, onLine);
-        ufirst[4]       = (point3.Distance(point2) + point3.Distance(point1)) / 2.0;
+        ufirst[4]       = (point3.DistanceTo(point2) + point3.DistanceTo(point1)) / 2.0;
         FunctionTanCuCuOnCu func = new(c1, cu2, onLine, Max(ufirst[4], Tol));
         FunctionSetRoot          root = new(func, tol);
         root.Perform(func, ufirst, umin, umax);
@@ -408,28 +408,28 @@ public sealed class Circ2d2TanOnIter
             Vector2D tan1, tan2, nor2;
             global::Kerf.Engine.Geometry.ElCLib.D2(ufirst[1], c1, out point1, out tan1, out nor2);
             ConstraintCurveTool.D1(cu2, ufirst[2], out point2, out tan2);
-            onLine.Direction().XY(); // (OCCT_DEBUG makes a vector of it)
+            onLine.Direction.XY(); // (OCCT_DEBUG makes a vector of it)
             point3       = global::Kerf.Engine.Geometry.ElCLib.Value(ufirst[1], onLine); // OCCT: Ufirst(1) is the parameter on C1, not the centre's on OnLine (Ufirst(3))
-            double dist1 = point3.Distance(point1);
-            double dist2 = point3.Distance(point2);
+            double dist1 = point3.DistanceTo(point1);
+            double dist2 = point3.DistanceTo(point2);
             if (Math.Abs(dist1 - dist2) / 2.0 <= Tol)
             {
                 _cirsol             = new Circle2D(new Axis2D(point3, dirx), (dist1 + dist2) / 2.0);
-                double   normetan2 = tan2.Magnitude();
+                double   normetan2 = tan2.Magnitude;
                 Vector2D vec1 = new(point1, point3);
                 Vector2D vec2 = new(point2, point3);
-                double   normevec2 = vec2.Magnitude();
+                double   normevec2 = vec2.Magnitude;
                 double   angle2;
                 if (normevec2 >= Constants.Resolution() && normetan2 >= Constants.Resolution())
                 {
-                    angle2 = vec2.Angle(tan2);
+                    angle2 = vec2.AngleTo(tan2);
                 }
                 else
                 {
                     angle2 = 0.0;
                 }
-                double dist = c1.Location().Distance(point3);
-                double rsol = _cirsol.Radius();
+                double dist = c1.Location.DistanceTo(point3);
+                double rsol = _cirsol.Radius;
                 if (qualified1.IsUnqualified || (qualified1.IsEnclosing && rsol >= r1 && dist <= rsol)
                         || (qualified1.IsOutside && dist >= rsol)
                         || (qualified1.IsEnclosed && rsol <= r1 && dist <= rsol))
@@ -476,7 +476,7 @@ public sealed class Circ2d2TanOnIter
         double              Tol = Math.Abs(tolerance);
         Direction2D            dirx = new(Direction2D.D.X);
         Circle2D           c1  = qualified1.Qualified();
-        double              r1  = c1.Radius();
+        double              r1  = c1.Radius;
         CurveAdaptor2D cu2 = qualified2.Qualified();
         math_Vector         umin = new(1, 4);
         math_Vector         umax = new(1, 4);
@@ -500,7 +500,7 @@ public sealed class Circ2d2TanOnIter
         Point2D point1 = global::Kerf.Engine.Geometry.ElCLib.Value(param1, c1);
         Point2D point2 = ConstraintCurveTool.Value(cu2, param2);
         Point2D point3 = global::Kerf.Engine.Geometry.ElCLib.Value(param3, onCirc);
-        ufirst[4]       = (point3.Distance(point2) + point3.Distance(point1)) / 2.0;
+        ufirst[4]       = (point3.DistanceTo(point2) + point3.DistanceTo(point1)) / 2.0;
         FunctionTanCuCuOnCu func = new(c1, cu2, onCirc, Max(ufirst[4], Tol));
         FunctionSetRoot          root = new(func, tol);
         root.Perform(func, ufirst, umin, umax);
@@ -513,26 +513,26 @@ public sealed class Circ2d2TanOnIter
             global::Kerf.Engine.Geometry.ElCLib.D1(ufirst[1], c1, out point1, out tan1);
             ConstraintCurveTool.D1(cu2, ufirst[2], out point2, out tan2);
             point3       = global::Kerf.Engine.Geometry.ElCLib.Value(ufirst[3], onCirc);
-            double dist1 = point3.Distance(point1);
-            double dist2 = point3.Distance(point2);
+            double dist1 = point3.DistanceTo(point1);
+            double dist2 = point3.DistanceTo(point2);
             if (Math.Abs(dist1 - dist2) / 2.0 <= Tol)
             {
                 _cirsol             = new Circle2D(new Axis2D(point3, dirx), (dist1 + dist2) / 2.0);
-                double   normetan2 = tan2.Magnitude();
+                double   normetan2 = tan2.Magnitude;
                 Vector2D vec1 = new(point1, point3);
                 Vector2D vec2 = new(point2, point3);
-                double   normevec2 = vec2.Magnitude();
+                double   normevec2 = vec2.Magnitude;
                 double   angle2;
                 if (normevec2 >= Constants.Resolution() && normetan2 >= Constants.Resolution())
                 {
-                    angle2 = vec2.Angle(tan2);
+                    angle2 = vec2.AngleTo(tan2);
                 }
                 else
                 {
                     angle2 = 0.0;
                 }
-                double dist = c1.Location().Distance(point3);
-                double rsol = _cirsol.Radius();
+                double dist = c1.Location.DistanceTo(point3);
+                double rsol = _cirsol.Radius;
                 if (qualified1.IsUnqualified || (qualified1.IsEnclosing && rsol >= r1 && dist <= rsol)
                         || (qualified1.IsOutside && dist >= rsol)
                         || (qualified1.IsEnclosed && rsol <= r1 && dist <= rsol))
@@ -601,7 +601,7 @@ public sealed class Circ2d2TanOnIter
         Point2D point1 = global::Kerf.Engine.Geometry.ElCLib.Value(param1, l1);
         Point2D point2 = ConstraintCurveTool.Value(cu2, param2);
         Point2D point3 = global::Kerf.Engine.Geometry.ElCLib.Value(param3, onCirc);
-        ufirst[4]       = (point3.Distance(point2) + point3.Distance(point1)) / 2.0;
+        ufirst[4]       = (point3.DistanceTo(point2) + point3.DistanceTo(point1)) / 2.0;
         FunctionTanCuCuOnCu func = new(l1, cu2, onCirc, Max(ufirst[4], Tol));
         FunctionSetRoot          root = new(func, tol);
         root.Perform(func, ufirst, umin, umax);
@@ -614,25 +614,25 @@ public sealed class Circ2d2TanOnIter
             global::Kerf.Engine.Geometry.ElCLib.D1(ufirst[1], l1, out point1new, out tan1);
             ConstraintCurveTool.D1(cu2, ufirst[2], out point2new, out tan2);
             point3       = global::Kerf.Engine.Geometry.ElCLib.Value(ufirst[3], onCirc);
-            double dist1 = point3.Distance(point1new);
-            double dist2 = point3.Distance(point2new);
+            double dist1 = point3.DistanceTo(point1new);
+            double dist2 = point3.DistanceTo(point2new);
             if (Math.Abs(dist1 - dist2) / 2.0 <= Tol)
             {
                 _cirsol             = new Circle2D(new Axis2D(point3, dirx), (dist1 + dist2) / 2.0);
-                double   normetan2 = tan2.Magnitude();
+                double   normetan2 = tan2.Magnitude;
                 Vector2D vec1 = new(point1new, point3);
                 Vector2D vec2 = new(point2new, point3);
-                double   normevec2 = vec2.Magnitude();
+                double   normevec2 = vec2.Magnitude;
                 double   angle2;
                 if (normevec2 >= Constants.Resolution() && normetan2 >= Constants.Resolution())
                 {
-                    angle2 = vec2.Angle(tan2);
+                    angle2 = vec2.AngleTo(tan2);
                 }
                 else
                 {
                     angle2 = 0.0;
                 }
-                double pscal = point3.XY().Dot(new Xy(-l1.Direction().Y(), l1.Direction().X()));
+                double pscal = point3.XY().Dot(new Xy(-l1.Direction.Y, l1.Direction.X));
                 if (qualified1.IsUnqualified || (qualified1.IsOutside && pscal <= 0.0)
                         || (qualified1.IsEnclosed && pscal >= 0.0))
                 {
@@ -700,9 +700,9 @@ public sealed class Circ2d2TanOnIter
         tol[4]          = Tol / 10.0;
         Point2D point1 = ConstraintCurveTool.Value(cu1, param1);
         Point2D point2 = ConstraintCurveTool.Value(cu2, param2);
-        double   r1     = onCirc.Radius();
-        Point2D point3 = new(onCirc.Location().XY() + r1 * new Xy(Math.Cos(param3), Math.Sin(param3)));
-        ufirst[4] = (point3.Distance(point2) + point3.Distance(point1)) / 2.0;
+        double   r1     = onCirc.Radius;
+        Point2D point3 = new(onCirc.Location.XY() + r1 * new Xy(Math.Cos(param3), Math.Sin(param3)));
+        ufirst[4] = (point3.DistanceTo(point2) + point3.DistanceTo(point1)) / 2.0;
         FunctionTanCuCuOnCu func = new(cu1, cu2, onCirc, Max(ufirst[4], Tol));
         FunctionSetRoot          root = new(func, tol);
         root.Perform(func, ufirst, umin, umax);
@@ -715,22 +715,22 @@ public sealed class Circ2d2TanOnIter
             ConstraintCurveTool.D1(cu1, ufirst[1], out point1, out tan1);
             ConstraintCurveTool.D1(cu2, ufirst[2], out point2, out tan2);
             point3 =
-                new Point2D(onCirc.Location().XY() + r1 * new Xy(Math.Cos(ufirst[3]), Math.Sin(ufirst[3])));
-            double dist1 = point3.Distance(point1);
-            double dist2 = point3.Distance(point2);
+                new Point2D(onCirc.Location.XY() + r1 * new Xy(Math.Cos(ufirst[3]), Math.Sin(ufirst[3])));
+            double dist1 = point3.DistanceTo(point1);
+            double dist2 = point3.DistanceTo(point2);
             if (Math.Abs(dist1 - dist2) / 2.0 <= Tol)
             {
                 _cirsol             = new Circle2D(new Axis2D(point3, dirx), (dist1 + dist2) / 2.0);
-                double   normetan1 = tan1.Magnitude();
-                double   normetan2 = tan2.Magnitude();
+                double   normetan1 = tan1.Magnitude;
+                double   normetan2 = tan2.Magnitude;
                 Vector2D vec1 = new(point1, point3);
                 Vector2D vec2 = new(point2, point3);
-                double   normevec1 = vec1.Magnitude();
-                double   normevec2 = vec2.Magnitude();
+                double   normevec1 = vec1.Magnitude;
+                double   normevec2 = vec2.Magnitude;
                 double   angle1, angle2;
                 if (normevec1 >= Constants.Resolution() && normetan1 >= Constants.Resolution())
                 {
-                    angle1 = vec1.Angle(tan1);
+                    angle1 = vec1.AngleTo(tan1);
                 }
                 else
                 {
@@ -738,7 +738,7 @@ public sealed class Circ2d2TanOnIter
                 }
                 if (normevec2 >= Constants.Resolution() && normetan2 >= Constants.Resolution())
                 {
-                    angle2 = vec2.Angle(tan2);
+                    angle2 = vec2.AngleTo(tan2);
                 }
                 else
                 {
@@ -757,7 +757,7 @@ public sealed class Circ2d2TanOnIter
                         _pnttg1sol  = point1;
                         _pararg2    = ufirst[2];
                         _pnttg2sol  = point2;
-                        _par2sol    = _pnttg2sol.Distance(_pnttg1sol); // OCCT: the distance between the tangency points, not a parameter on the solution
+                        _par2sol    = _pnttg2sol.DistanceTo(_pnttg1sol); // OCCT: the distance between the tangency points, not a parameter on the solution
                         _pntcen     = point3;
                         _parcen3    = ufirst[3];
                         _wellDone   = true;
@@ -804,7 +804,7 @@ public sealed class Circ2d2TanOnIter
         tol[3]          = Tol / 10.0;
         Point2D point1 = ConstraintCurveTool.Value(cu1, param1);
         Point2D point3 = global::Kerf.Engine.Geometry.ElCLib.Value(param2, onCirc);
-        ufirst[3]       = (point3.Distance(point2) + point3.Distance(point1)) / 2.0;
+        ufirst[3]       = (point3.DistanceTo(point2) + point3.DistanceTo(point1)) / 2.0;
         FunctionTanCuCuOnCu func = new(cu1, point2, onCirc, Max(ufirst[3], Tol));
         FunctionSetRoot          root = new(func, tol);
         root.Perform(func, ufirst, umin, umax);
@@ -816,18 +816,18 @@ public sealed class Circ2d2TanOnIter
             Vector2D tan1, tan3;
             ConstraintCurveTool.D1(cu1, ufirst[1], out point1new, out tan1);
             global::Kerf.Engine.Geometry.ElCLib.D1(ufirst[2], onCirc, out point3new, out tan3);
-            double dist1 = point3new.Distance(point1new);
-            double dist2 = point3new.Distance(point2);
+            double dist1 = point3new.DistanceTo(point1new);
+            double dist2 = point3new.DistanceTo(point2);
             if (Math.Abs(dist1 - dist2) / 2.0 <= Tol)
             {
                 _cirsol             = new Circle2D(new Axis2D(point3new, dirx), (dist1 + dist2) / 2.0);
-                double   normetan1 = tan1.Magnitude();
+                double   normetan1 = tan1.Magnitude;
                 Vector2D vec1 = new(point1new, point3new);
-                double   normevec1 = vec1.Magnitude();
+                double   normevec1 = vec1.Magnitude;
                 double   angle1;
                 if (normevec1 >= Constants.Resolution() && normetan1 >= Constants.Resolution())
                 {
-                    angle1 = vec1.Angle(tan1);
+                    angle1 = vec1.AngleTo(tan1);
                 }
                 else
                 {
@@ -897,7 +897,7 @@ public sealed class Circ2d2TanOnIter
         Point2D point1 = ConstraintCurveTool.Value(cu1, param1);
         Point2D point2 = ConstraintCurveTool.Value(cu2, param2);
         Point2D point3 = ConstraintCurveTool.Value(onCurv, param3);
-        ufirst[4]       = (point3.Distance(point2) + point3.Distance(point1)) / 2.0;
+        ufirst[4]       = (point3.DistanceTo(point2) + point3.DistanceTo(point1)) / 2.0;
         FunctionTanCuCuOnCu func = new(cu1, cu2, onCurv, Max(ufirst[4], Tol));
         FunctionSetRoot          root = new(func, tol);
         root.Perform(func, ufirst, umin, umax);
@@ -909,21 +909,21 @@ public sealed class Circ2d2TanOnIter
             ConstraintCurveTool.D1(cu1, ufirst[1], out point1, out tan1);
             ConstraintCurveTool.D1(cu2, ufirst[2], out point2, out tan2);
             ConstraintCurveTool.D1(onCurv, ufirst[3], out point3, out tan3);
-            double dist1 = point3.Distance(point1);
-            double dist2 = point3.Distance(point2);
+            double dist1 = point3.DistanceTo(point1);
+            double dist2 = point3.DistanceTo(point2);
             if (Math.Abs(dist1 - dist2) / 2.0 <= Tol)
             {
                 _cirsol             = new Circle2D(new Axis2D(point3, dirx), (dist1 + dist2) / 2.0);
-                double   normetan1 = tan1.Magnitude();
-                double   normetan2 = tan2.Magnitude();
+                double   normetan1 = tan1.Magnitude;
+                double   normetan2 = tan2.Magnitude;
                 Vector2D vec1 = new(point1, point3);
                 Vector2D vec2 = new(point2, point3);
-                double   normevec1 = vec1.Magnitude();
-                double   normevec2 = vec2.Magnitude();
+                double   normevec1 = vec1.Magnitude;
+                double   normevec2 = vec2.Magnitude;
                 double   angle1, angle2;
                 if (normevec1 >= Constants.Resolution() && normetan1 >= Constants.Resolution())
                 {
-                    angle1 = vec1.Angle(tan1);
+                    angle1 = vec1.AngleTo(tan1);
                 }
                 else
                 {
@@ -931,7 +931,7 @@ public sealed class Circ2d2TanOnIter
                 }
                 if (normevec2 >= Constants.Resolution() && normetan2 >= Constants.Resolution())
                 {
-                    angle2 = vec2.Angle(tan2);
+                    angle2 = vec2.AngleTo(tan2);
                 }
                 else
                 {
@@ -950,7 +950,7 @@ public sealed class Circ2d2TanOnIter
                         _pnttg1sol  = point1;
                         _pararg2    = ufirst[2];
                         _pnttg2sol  = point2;
-                        _par2sol    = _pnttg2sol.Distance(_pnttg1sol); // OCCT: the distance between the tangency points, not a parameter on the solution
+                        _par2sol    = _pnttg2sol.DistanceTo(_pnttg1sol); // OCCT: the distance between the tangency points, not a parameter on the solution
                         _pntcen     = point3;
                         _parcen3    = ufirst[3];
                         _wellDone   = true;
@@ -982,7 +982,7 @@ public sealed class Circ2d2TanOnIter
         }
         double              Tol = Math.Abs(tolerance);
         Circle2D           c1  = qualified1.Qualified();
-        double              r1  = c1.Radius();
+        double              r1  = c1.Radius;
         CurveAdaptor2D cu2 = qualified2.Qualified();
         math_Vector         umin = new(1, 4);
         math_Vector         umax = new(1, 4);
@@ -1006,7 +1006,7 @@ public sealed class Circ2d2TanOnIter
         Point2D point1 = global::Kerf.Engine.Geometry.ElCLib.Value(param1, c1);
         Point2D point2 = ConstraintCurveTool.Value(cu2, param2);
         Point2D point3 = ConstraintCurveTool.Value(onCurv, paramOn);
-        ufirst[4]       = (point3.Distance(point2) + point3.Distance(point1)) / 2.0;
+        ufirst[4]       = (point3.DistanceTo(point2) + point3.DistanceTo(point1)) / 2.0;
         FunctionTanCuCuOnCu func = new(c1, cu2, onCurv, Max(ufirst[4], Tol));
         FunctionSetRoot          root = new(func, tol);
         root.Perform(func, ufirst, umin, umax);
@@ -1018,27 +1018,27 @@ public sealed class Circ2d2TanOnIter
             ConstraintCurveTool.D1(cu2, ufirst[2], out point2, out tan2);
             ConstraintCurveTool.D1(onCurv, ufirst[3], out point3, out tan3);
             global::Kerf.Engine.Geometry.ElCLib.D1(ufirst[1], c1, out point1, out tan1);
-            double dist1 = point3.Distance(point1);
-            double dist2 = point3.Distance(point2);
+            double dist1 = point3.DistanceTo(point1);
+            double dist2 = point3.DistanceTo(point2);
             if (Math.Abs(dist1 - dist2) / 2.0 <= Tol)
             {
                 Direction2D dirx = new(Direction2D.D.X);
                 _cirsol             = new Circle2D(new Axis2D(point3, dirx), (dist1 + dist2) / 2.0);
-                double   normetan2 = tan2.Magnitude();
+                double   normetan2 = tan2.Magnitude;
                 Vector2D vec1 = new(new Point2D(point1.XY()), new Point2D(point3.XY()));
                 Vector2D vec2 = new(new Point2D(point2.XY()), new Point2D(point3.XY()));
-                double   normevec2 = vec2.Magnitude();
+                double   normevec2 = vec2.Magnitude;
                 double   angle2;
                 if (normevec2 >= Constants.Resolution() && normetan2 >= Constants.Resolution())
                 {
-                    angle2 = vec2.Angle(tan2);
+                    angle2 = vec2.AngleTo(tan2);
                 }
                 else
                 {
                     angle2 = 0.0;
                 }
-                double dist = c1.Location().Distance(point3);
-                double rsol = _cirsol.Radius();
+                double dist = c1.Location.DistanceTo(point3);
+                double rsol = _cirsol.Radius;
                 if (qualified1.IsUnqualified || (qualified1.IsEnclosing && rsol >= r1 && dist <= rsol)
                         || (qualified1.IsOutside && dist >= rsol)
                         || (qualified1.IsEnclosed && rsol <= r1 && dist <= rsol))
@@ -1107,7 +1107,7 @@ public sealed class Circ2d2TanOnIter
         Point2D point1 = global::Kerf.Engine.Geometry.ElCLib.Value(param1, l1);
         Point2D point2 = ConstraintCurveTool.Value(cu2, param2);
         Point2D point3 = ConstraintCurveTool.Value(onCurv, paramOn);
-        ufirst[4]       = (point3.Distance(point2) + point3.Distance(point1)) / 2.0;
+        ufirst[4]       = (point3.DistanceTo(point2) + point3.DistanceTo(point1)) / 2.0;
         FunctionTanCuCuOnCu func = new(l1, cu2, onCurv, Max(ufirst[4], Tol));
         FunctionSetRoot          root = new(func, tol);
         root.Perform(func, ufirst, umin, umax);
@@ -1119,25 +1119,25 @@ public sealed class Circ2d2TanOnIter
             global::Kerf.Engine.Geometry.ElCLib.D1(ufirst[1], l1, out point1, out tan1);
             ConstraintCurveTool.D1(cu2, ufirst[2], out point2, out tan2);
             ConstraintCurveTool.D1(onCurv, ufirst[3], out point3, out tan3);
-            double dist1 = point3.Distance(point1);
-            double dist2 = point3.Distance(point2);
+            double dist1 = point3.DistanceTo(point1);
+            double dist2 = point3.DistanceTo(point2);
             if (Math.Abs(dist1 - dist2) / 2.0 <= Tol)
             {
                 _cirsol             = new Circle2D(new Axis2D(point3, dirx), (dist1 + dist2) / 2.0);
-                double   normetan2 = tan2.Magnitude();
+                double   normetan2 = tan2.Magnitude;
                 Vector2D vec1 = new(point1, point3);
                 Vector2D vec2 = new(point2, point3);
-                double   normevec2 = vec2.Magnitude();
+                double   normevec2 = vec2.Magnitude;
                 double   angle2;
                 if (normevec2 >= Constants.Resolution() && normetan2 >= Constants.Resolution())
                 {
-                    angle2 = vec2.Angle(tan2);
+                    angle2 = vec2.AngleTo(tan2);
                 }
                 else
                 {
                     angle2 = 0.0;
                 }
-                double pscal = point3.XY().Dot(new Xy(-l1.Direction().Y(), l1.Direction().X()));
+                double pscal = point3.XY().Dot(new Xy(-l1.Direction.Y, l1.Direction.X));
                 if (qualified1.IsUnqualified || (qualified1.IsOutside && pscal <= 0.0)
                         || (qualified1.IsEnclosed && pscal >= 0.0))
                 {
@@ -1198,7 +1198,7 @@ public sealed class Circ2d2TanOnIter
         tol[3]          = Tol / 10.0;
         Point2D point1 = ConstraintCurveTool.Value(cu1, param1);
         Point2D point3 = ConstraintCurveTool.Value(onCurv, paramOn);
-        ufirst[3]       = (point3.Distance(point2) + point3.Distance(point1)) / 2.0;
+        ufirst[3]       = (point3.DistanceTo(point2) + point3.DistanceTo(point1)) / 2.0;
         FunctionTanCuCuOnCu func = new(cu1, point2, onCurv, Max(ufirst[3], Tol));
         FunctionSetRoot          root = new(func, tol);
         root.Perform(func, ufirst, umin, umax);
@@ -1210,18 +1210,18 @@ public sealed class Circ2d2TanOnIter
             Vector2D tan1, tan3;
             ConstraintCurveTool.D1(cu1, ufirst[1], out point1, out tan1);
             ConstraintCurveTool.D1(onCurv, ufirst[3], out point3, out tan3);
-            double dist1 = point3.Distance(point1);
-            double dist2 = point3.Distance(point2);
+            double dist1 = point3.DistanceTo(point1);
+            double dist2 = point3.DistanceTo(point2);
             if (Math.Abs(dist1 - dist2) / 2.0 <= Tol)
             {
                 _cirsol             = new Circle2D(new Axis2D(point3, dirx), (dist1 + dist2) / 2.0);
-                double   normetan1 = tan1.Magnitude();
+                double   normetan1 = tan1.Magnitude;
                 Vector2D vec1 = new(point1, point3);
-                double   normevec1 = vec1.Magnitude();
+                double   normevec1 = vec1.Magnitude;
                 double   angle1;
                 if (normevec1 >= Constants.Resolution() && normetan1 >= Constants.Resolution())
                 {
-                    angle1 = vec1.Angle(tan1);
+                    angle1 = vec1.AngleTo(tan1);
                 }
                 else
                 {

@@ -186,7 +186,7 @@ public class ShapeProcessor
             {
                 shapeBinder.SetResult(modifiedShapesMap.GetValue(originalShape));
             }
-            else if (!originalShape.Location().IsIdentity)
+            else if (!originalShape.Placement.IsIdentity)
             {
                 var nullLoc = new Placement();
                 Shape temporaryShape = originalShape.Located(nullLoc);
@@ -270,7 +270,7 @@ public class ShapeProcessor
                 resultBinder = new ShapeBinder(resultShape);
                 // if <orig> shape was split, put entities corresponding to new shapes
                 //  into Transfer_TransientListBinder.
-                if (originalShape.ShapeType() > resultShape.ShapeType())
+                if (originalShape.Type > resultShape.Type)
                 {
                     Shape subShape = new Shape();
                     var transientListBinder = new TransientListBinder();
@@ -375,12 +375,12 @@ public class ShapeProcessor
 
         // Check for pcurve longer than surface.
         Surface surface = Tool.Surface(face);
-        surface.Bounds(out double faceSurfaceU1, out double faceSurfaceU2, out double faceSurfaceV1, out double faceSurfaceV2);
+        surface.ParameterBounds(out double faceSurfaceU1, out double faceSurfaceU2, out double faceSurfaceV1, out double faceSurfaceV2);
         Point2D curve2DPoint1 = curve2D.Value(curve2DParam1);
         Point2D curve2DPoint2 = curve2D.Value(curve2DParam2);
         // Multi-periodic? Better to discard (beware of infinite values)
-        double edgeSpanX = Math.Abs(curve2DPoint1.X() - curve2DPoint2.X());
-        double edgeSpanY = Math.Abs(curve2DPoint1.Y() - curve2DPoint2.Y());
+        double edgeSpanX = Math.Abs(curve2DPoint1.X - curve2DPoint2.X);
+        double edgeSpanY = Math.Abs(curve2DPoint1.Y - curve2DPoint2.Y);
         // So if span of pcurve along U or V is longer than 6/8 of the surface span, discard it.
         // Why exactly 6/8? No idea, but it's the same as in the original code.
         if (edgeSpanX / 8.0 > (faceSurfaceU2 / 6.0 - faceSurfaceU1 / 6.0)
@@ -395,14 +395,14 @@ public class ShapeProcessor
         // Example: UVV in DEGREES on a surface in RADIANS, adjusted = 57 turns!
         edgeAnalyzer.Curve3d(edge, out Curve3D? curve3D, out double curve3DParam1, out double curve3DParam2, false);
 
-        Point3D curve3DPoint1 = surface.Value(curve2DPoint1.X(), curve2DPoint1.Y());
-        Point3D curve3DPoint2 = surface.Value(curve2DPoint2.X(), curve2DPoint2.Y());
+        Point3D curve3DPoint1 = surface.Value(curve2DPoint1.X, curve2DPoint1.Y);
+        Point3D curve3DPoint2 = surface.Value(curve2DPoint2.X, curve2DPoint2.Y);
         Vertex vertex1 = Exploration.FirstVertex(edge);
         Vertex vertex2 = Exploration.LastVertex(edge);
         Point3D pv1 = curve3D is null ? Tool.Pnt(vertex1) : curve3D.Value(curve3DParam1);
         Point3D pv2 = curve3D is null ? Tool.Pnt(vertex2) : curve3D.Value(curve3DParam2);
-        double dist11 = pv1.Distance(curve3DPoint1);
-        double dist22 = pv2.Distance(curve3DPoint2);
+        double dist11 = pv1.DistanceTo(curve3DPoint1);
+        double dist22 = pv2.DistanceTo(curve3DPoint2);
         if ((dist11 > precision) || (dist22 > precision))
         {
             new BuildEdgeBuilder().RemovePCurve(edge, face);
@@ -474,7 +474,7 @@ public class ShapeProcessor
             Edge reversedTmpEdge = ShapeCasts.Edge(tmpEdge.Reversed());
             edgeAnalyzer.PCurve(reversedTmpEdge, face, out seamPCurve, out double reversedTmpEdgeParam1,
                                   out double reversedTmpEdgeParam2, false);
-            if (edge.Orientation() == Reversed) //: abv 14.11.01: coneEl.sat loop
+            if (edge.Orientation == Reversed) //: abv 14.11.01: coneEl.sat loop
             {
                 builder.UpdateEdge(edge, seamPCurve, curve2D, face, tolerance);
             }

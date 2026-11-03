@@ -95,7 +95,7 @@ public class IntTools_FaceFaceOracleTests(ITestOutputHelper output) : IDisposabl
         return ShapeCasts.Face(aShape);
     }
 
-    private static Curve3D PortBasis(Curve3D theC) => theC is TrimmedCurve3D aT ? aT.BasisCurve() : theC;
+    private static Curve3D PortBasis(Curve3D theC) => theC is TrimmedCurve3D aT ? aT.BasisCurve : theC;
 
     private static N.Geom_Curve NativeBasis(N.Geom_Curve theC)
         => N.Geom_TrimmedCurve.DownCast(theC) is N.Geom_TrimmedCurve aT ? aT.BasisCurve()! : theC;

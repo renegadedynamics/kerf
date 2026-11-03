@@ -273,5 +273,5 @@ public partial struct CommonPoint : IEquatable<CommonPoint>
     public static bool operator !=(in CommonPoint left, in CommonPoint right) => !left.Equals(right);
 
     public override readonly string ToString()
-        => Constants.Format("ChFiDS_CommonPoint", _point.X(), _point.Y(), _point.Z(), _tol, _prmarc, _prmtg);
+        => Constants.Format("ChFiDS_CommonPoint", _point.X, _point.Y, _point.Z, _tol, _prmarc, _prmtg);
 }

@@ -52,8 +52,8 @@ public sealed partial class ImpImpIntersection
         else if (typint != Empty)
         { // on a une ligne
             Line3D linsol = inter.Line(1);
-            double discri = linsol.Direction().DotCross(new Direction3D(quad2.Normale(linsol.Location())),
-                                                        new Direction3D(quad1.Normale(linsol.Location())));
+            double discri = linsol.Direction.DotCross(new Direction3D(quad2.Normale(linsol.Location)),
+                                                        new Direction3D(quad1.Normale(linsol.Location)));
 
             if (discri > 0.0)
             {
@@ -122,10 +122,10 @@ public sealed partial class ImpImpIntersection
             case global::Kerf.Engine.Intersection.ResultType.Line:
                 {
                     Line3D linsol = inter.Line(1);
-                    Point3D orig = linsol.Location();
+                    Point3D orig = linsol.Location;
                     if (nbSol == 1)
                     { // ligne de tangence
-                        Vector3D testCurvature = new(orig, cy.Location());
+                        Vector3D testCurvature = new(orig, cy.Location);
                         Vector3D normp, normcyl;
                         if (!reversed)
                         {
@@ -181,7 +181,7 @@ public sealed partial class ImpImpIntersection
                         // on a 2 droites. Il faut determiner les transitions
                         // de chacune.
 
-                        if (linsol.Direction().DotCross(new Direction3D(quad2.Normale(orig)), new Direction3D(quad1.Normale(orig)))
+                        if (linsol.Direction.DotCross(new Direction3D(quad2.Normale(orig)), new Direction3D(quad1.Normale(orig)))
                             > 0.0)
                         {
                             trans1 = WalkingTypeTrans.Out;
@@ -196,9 +196,9 @@ public sealed partial class ImpImpIntersection
                         slin.Append(glig);
 
                         linsol = inter.Line(2);
-                        orig = linsol.Location();
+                        orig = linsol.Location;
 
-                        if (linsol.Direction().DotCross(new Direction3D(quad2.Normale(orig)), new Direction3D(quad1.Normale(orig)))
+                        if (linsol.Direction.DotCross(new Direction3D(quad2.Normale(orig)), new Direction3D(quad1.Normale(orig)))
                             > 0.0)
                         {
                             trans1 = WalkingTypeTrans.Out;
@@ -389,13 +389,13 @@ public sealed partial class ImpImpIntersection
         {
             pl = quad1.Plane();
             co = quad2.Cone();
-            apex = co.Apex();
+            apex = co.Apex;
         }
         else
         {
             pl = quad2.Plane();
             co = quad1.Cone();
-            apex = co.Apex();
+            apex = co.Apex;
         }
 
         inter.Perform(pl, co, tolang, tolTang);
@@ -426,9 +426,9 @@ public sealed partial class ImpImpIntersection
             case global::Kerf.Engine.Intersection.ResultType.Line:
                 {
                     Line3D linsol = inter.Line(1);
-                    if (linsol.Direction().Dot(co.Axis().Direction()) < 0.0)
+                    if (linsol.Direction.Dot(co.Axis.Direction) < 0.0)
                     {
-                        linsol = linsol.WithDirection(linsol.Direction().Reversed());
+                        linsol = linsol.WithDirection(linsol.Direction.Reversed());
                     }
                     double para = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol, apex);
                     Point3D ptbid = global::Kerf.Engine.Geometry.ElCLib.Value(para + 5.0, linsol);
@@ -442,7 +442,7 @@ public sealed partial class ImpImpIntersection
                         ptsol.SetValue(apex, tolTang, false);
                         ptsol.SetParameters(u1, v1, u2, v2);
                         ptsol.SetParameter(para);
-                        Point3D ptbid2 = new(apex.XYZ() + 5.0 * co.Axis().Direction().XYZ());
+                        Point3D ptbid2 = new(apex.XYZ() + 5.0 * co.Axis.Direction.XYZ());
                         Vector3D testCurvature = new(ptbid, ptbid2);
                         Vector3D normp, normco;
                         if (!reversed)
@@ -506,7 +506,7 @@ public sealed partial class ImpImpIntersection
                         //----------------------------------------------------------
                         //--   -Cone.Direction <------- Apex
                         //--
-                        linsol = linsol.WithDirection(linsol.Direction().Reversed());
+                        linsol = linsol.WithDirection(linsol.Direction.Reversed());
                         if (!reversed)
                         {
                             glig = new GLine(linsol, true, situp_otherside, situco_otherside);
@@ -526,7 +526,7 @@ public sealed partial class ImpImpIntersection
                         // de l axe du cone. Les transitions de chaque ligne seront
                         // inverses l une de l autre => on ne fait le calcul que sur
                         // la premiere.
-                        if (linsol.Direction().DotCross(new Direction3D(quad2.Normale(ptbid)), new Direction3D(quad1.Normale(ptbid)))
+                        if (linsol.Direction.DotCross(new Direction3D(quad2.Normale(ptbid)), new Direction3D(quad1.Normale(ptbid)))
                             > 0.0)
                         {
                             trans1 = WalkingTypeTrans.Out;
@@ -554,7 +554,7 @@ public sealed partial class ImpImpIntersection
                         //-- Other Side : Les transitions restent les memes
                         //--    linsol -> -linsol   et Quad1(2).N -> -Quad1(2).N
                         //--
-                        linsol = linsol.WithDirection(linsol.Direction().Reversed());
+                        linsol = linsol.WithDirection(linsol.Direction.Reversed());
                         glig = new GLine(linsol, false, trans1, trans2);
                         para = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol, apex);
                         ptsol.SetParameter(para);
@@ -564,13 +564,13 @@ public sealed partial class ImpImpIntersection
 
                         //------------------------------------------- Ligne 2 -------
                         linsol = inter.Line(2);
-                        if (linsol.Direction().Dot(co.Axis().Direction()) < 0.0)
+                        if (linsol.Direction.Dot(co.Axis.Direction) < 0.0)
                         {
-                            linsol = linsol.WithDirection(linsol.Direction().Reversed());
+                            linsol = linsol.WithDirection(linsol.Direction.Reversed());
                         }
                         para = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol, apex);
                         ptbid = global::Kerf.Engine.Geometry.ElCLib.Value(para + 5.0, linsol);
-                        if (linsol.Direction().DotCross(new Direction3D(quad2.Normale(ptbid)), new Direction3D(quad1.Normale(ptbid)))
+                        if (linsol.Direction.DotCross(new Direction3D(quad2.Normale(ptbid)), new Direction3D(quad1.Normale(ptbid)))
                             > 0.0)
                         {
                             trans1 = WalkingTypeTrans.Out;
@@ -592,7 +592,7 @@ public sealed partial class ImpImpIntersection
                         //-- Other Side : Les transitions restent les memes
                         //--    linsol -> -linsol   et Quad1(2).N -> -Quad1(2).N
                         //--
-                        linsol = linsol.WithDirection(linsol.Direction().Reversed());
+                        linsol = linsol.WithDirection(linsol.Direction.Reversed());
                         glig = new GLine(linsol, false, trans1, trans2);
                         para = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol, apex);
                         ptsol.SetParameter(para);
@@ -650,9 +650,9 @@ public sealed partial class ImpImpIntersection
                 {
                     Parabola3D parabsol = inter.Parabola(1);
 
-                    Vector3D tgtorig = new(parabsol.YAxis().Direction());
+                    Vector3D tgtorig = new(parabsol.YAxis.Direction);
                     double ptran =
-                        tgtorig.DotCross(quad2.Normale(parabsol.Location()), quad1.Normale(parabsol.Location()));
+                        tgtorig.DotCross(quad2.Normale(parabsol.Location), quad1.Normale(parabsol.Location));
                     if (ptran > 0.00000001)
                     {
                         trans1 = WalkingTypeTrans.Out;
@@ -680,8 +680,8 @@ public sealed partial class ImpImpIntersection
                     for (int i = 1; i <= 2; i++)
                     {
                         Hyperbola3D hyprsol = inter.Hyperbola(i);
-                        tophypr = global::Kerf.Engine.Geometry.ElCLib.Value(hyprsol.MajorRadius(), new Line3D(hyprsol.XAxis()));
-                        tgttop = new Vector3D(hyprsol.YAxis().Direction());
+                        tophypr = global::Kerf.Engine.Geometry.ElCLib.Value(hyprsol.MajorRadius, new Line3D(hyprsol.XAxis));
+                        tgttop = new Vector3D(hyprsol.YAxis.Direction);
                         double qwe = tgttop.DotCross(quad2.Normale(tophypr), quad1.Normale(tophypr));
 
                         if (qwe > 0.00000001)
@@ -750,7 +750,7 @@ public sealed partial class ImpImpIntersection
                     for (i = 1; i <= nbSol; ++i)
                     {
                         Circle3D c = inter.Circle(i);
-                        if (!pln.Axis().IsNormal(torus.Axis(), global::Kerf.Engine.Foundation.Precision.Angular()))
+                        if (!pln.Axis.IsNormal(torus.Axis, global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
                             AdjustToSeam(torus, ref c);
                         }
@@ -790,8 +790,8 @@ public sealed partial class ImpImpIntersection
     {
         Frame3D ax2;
         //
-        Point3D pLoc = aCirc.Location();
-        CoordinateSystem ax3 = aQuad.Position();
+        Point3D pLoc = aCirc.Location;
+        CoordinateSystem ax3 = aQuad.Position;
         SeamPosition(pLoc, ax3, out ax2);
         aCirc = aCirc.WithPosition(ax2);
     }
@@ -802,15 +802,15 @@ public sealed partial class ImpImpIntersection
     {
         Frame3D ax2;
         //
-        Axis3D ax1C = aCirc.Axis();
-        CoordinateSystem ax3 = aQuad.Position();
-        Axis3D ax1Q = ax3.Axis();
+        Axis3D ax1C = aCirc.Axis;
+        CoordinateSystem ax3 = aQuad.Position;
+        Axis3D ax1Q = ax3.Axis;
         //
-        Direction3D dirC = ax1C.Direction();
-        Direction3D dirQ = ax1Q.Direction();
+        Direction3D dirC = ax1C.Direction;
+        Direction3D dirQ = ax1Q.Direction;
         if (dirC.IsParallel(dirQ, aTolAng))
         {
-            Point3D pLoc = aCirc.Location();
+            Point3D pLoc = aCirc.Location;
             SeamPosition(pLoc, ax3, out ax2);
             aCirc = aCirc.WithPosition(ax2);
         }
@@ -822,8 +822,8 @@ public sealed partial class ImpImpIntersection
     {
         Frame3D ax2;
         //
-        Point3D pLoc = aCirc.Location();
-        CoordinateSystem ax3 = aQuad.Position();
+        Point3D pLoc = aCirc.Location;
+        CoordinateSystem ax3 = aQuad.Position;
         SeamPosition(pLoc, ax3, out ax2);
         aCirc = aCirc.WithPosition(ax2);
     }
@@ -834,8 +834,8 @@ public sealed partial class ImpImpIntersection
     {
         Frame3D ax2;
         //
-        Point3D pLoc = aCirc.Location();
-        CoordinateSystem ax3 = aQuad.Position();
+        Point3D pLoc = aCirc.Location;
+        CoordinateSystem ax3 = aQuad.Position;
         SeamPosition(pLoc, ax3, out ax2);
         aCirc = aCirc.WithPosition(ax2);
     }
@@ -844,8 +844,8 @@ public sealed partial class ImpImpIntersection
 
     private static void SeamPosition(in Point3D aPLoc, in CoordinateSystem aPos, out Frame3D aSeamPos)
     {
-        Direction3D dz = aPos.Direction();
-        Direction3D dx = aPos.XDirection();
+        Direction3D dz = aPos.Direction;
+        Direction3D dx = aPos.XDirection;
         Frame3D ax2 = new(aPLoc, dz, dx);
         aSeamPos = ax2;
     }

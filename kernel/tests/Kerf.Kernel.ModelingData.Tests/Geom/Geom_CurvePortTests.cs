@@ -52,28 +52,28 @@ public class Geom_CurvePortTests
         var aL = new LineCurve3D(new Point3D(), new Direction3D(1, 0, 0));
         aL.Freeze();
         Assert.Throws<global::Kerf.Engine.Foundation.ImmutableObjectException>(() => aL.SetLocation(new Point3D(1, 1, 1)));
-        Assert.Equal(new Point3D(1, 1, 1), aL.WithLocation(new Point3D(1, 1, 1)).Position().Location());
+        Assert.Equal(new Point3D(1, 1, 1), aL.WithLocation(new Point3D(1, 1, 1)).Position.Location);
     }
 
     [Fact]
     public void Returned_arrays_are_copies()
     {
         BSplineCurve3D aC = Cubic(true);
-        IReadOnlyList<Point3D> aPoles = aC.Poles();
+        IReadOnlyList<Point3D> aPoles = aC.Poles;
         Assert.Equal(5, aPoles.Count);
         Assert.Equal(aC.Pole(2), aPoles[1]);
-        IReadOnlyList<double>? aWeights = aC.Weights();
+        IReadOnlyList<double>? aWeights = aC.WeightsOrNull();
         Assert.NotNull(aWeights);
         Assert.Equal(2.0, aWeights[1]);
-        Assert.Equal(new[] { 4, 1, 4 }, aC.Multiplicities().ToArray());
-        Assert.Equal(9, aC.KnotSequence().Count);
+        Assert.Equal(new[] { 4, 1, 4 }, aC.Multiplicities.ToArray());
+        Assert.Equal(9, aC.KnotSequence.Count);
 
         BSplineCurve3D aChanged = aC.WithPole(2, new Point3D(9, 9, 9));
         Assert.Equal(new Point3D(1, 2, 0), aPoles[1]);
-        Assert.Equal(new Point3D(9, 9, 9), aChanged.Poles()[1]);
+        Assert.Equal(new Point3D(9, 9, 9), aChanged.Poles[1]);
 
-        Assert.Null(Cubic().Weights());
-        Assert.Equal(5, Cubic().WeightsArray().Count);
+        Assert.Null(Cubic().WeightsOrNull());
+        Assert.Equal(5, Cubic().Weights.Count);
     }
 
     [Fact]
@@ -92,8 +92,8 @@ public class Geom_CurvePortTests
         Assert.Equal(3, aRemoved.KnotCount);
 
         BSplineCurve3D aSeg = aC.Segmented(0.2, 0.8);
-        Assert.Equal(0.2, aSeg.FirstParameter());
-        Assert.Equal(0.8, aSeg.LastParameter());
+        Assert.Equal(0.2, aSeg.FirstParameter);
+        Assert.Equal(0.8, aSeg.LastParameter);
         Assert.True(aSeg.Value(0.5).IsEqual(aC.Value(0.5), 1e-12));
     }
 
@@ -139,7 +139,7 @@ public class Geom_CurvePortTests
         }
         var aC = new BezierCurve3D(aPoles);
         Assert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => aC.PoleInsertedAfter(1, new Point3D(0, 1, 0)));
-        Assert.Equal(25, aC.Increased(25).Degree());
+        Assert.Equal(25, aC.Increased(25).Degree);
     }
 
     [Fact]
@@ -147,15 +147,15 @@ public class Geom_CurvePortTests
     {
         var aCircle = new CircleCurve3D(new Frame3D(), 2.0);
         var aT = new TrimmedCurve3D(aCircle, 0.0, M_PI);
-        Assert.NotSame(aCircle, aT.BasisCurve());
+        Assert.NotSame(aCircle, aT.BasisCurve);
         var aT2 = new TrimmedCurve3D(aT, 0.5, 1.0);
-        Assert.IsType<CircleCurve3D>(aT2.BasisCurve());
+        Assert.IsType<CircleCurve3D>(aT2.BasisCurve);
 
         var anOffset = new OffsetCurve3D(aT, 1.0, new Direction3D(0, 0, 1));
-        Assert.IsType<TrimmedCurve3D>(anOffset.BasisCurve());
+        Assert.IsType<TrimmedCurve3D>(anOffset.BasisCurve);
         var anOffset2 = new OffsetCurve3D(anOffset, 0.5, new Direction3D(0, 0, 1));
-        Assert.Equal(1.5, anOffset2.Offset(), 15);
-        Assert.IsType<TrimmedCurve3D>(anOffset2.BasisCurve());
+        Assert.Equal(1.5, anOffset2.Offset, 15);
+        Assert.IsType<TrimmedCurve3D>(anOffset2.BasisCurve);
         Assert.True(anOffset2.Value(0.0).IsEqual(new Point3D(3.5, 0, 0), 1e-12));
     }
 
@@ -169,33 +169,33 @@ public class Geom_CurvePortTests
         // The constructor copies the basis: the caller's curve isn't shared nor frozen
         Assert.False(aCaller.IsFrozen);
 
-        Curve3D aBasis = aTrim.BasisCurve();
+        Curve3D aBasis = aTrim.BasisCurve;
         Assert.True(aBasis.IsFrozen);
         Assert.NotSame(aCaller, aBasis);
-        Assert.Same(aBasis, aTrim.BasisCurve());
+        Assert.Same(aBasis, aTrim.BasisCurve);
         Point3D aBasisPoint = aBasis.Value(0.5);
 
         // The trimmed curve is still mutable: it copies its basis first
         aTrim.Transform(Transform3D.Translation(new Vector3D(10, 0, 0)));
-        Assert.True(aTrim.Value(0.5).IsEqual(new Point3D(aBasisPoint.X() + 10, aBasisPoint.Y(), aBasisPoint.Z()), 1e-12));
+        Assert.True(aTrim.Value(0.5).IsEqual(new Point3D(aBasisPoint.X + 10, aBasisPoint.Y, aBasisPoint.Z), 1e-12));
         Assert.Equal(aBasisPoint, aBasis.Value(0.5));
-        Assert.NotSame(aBasis, aTrim.BasisCurve());
+        Assert.NotSame(aBasis, aTrim.BasisCurve);
 
-        Curve3D aBasis2 = aTrim.BasisCurve();
-        Point3D aStart = aTrim.StartPoint();
+        Curve3D aBasis2 = aTrim.BasisCurve;
+        Point3D aStart = aTrim.StartPoint;
         Point3D aBasis2Point = aBasis2.Value(0.5);
         aTrim.Reverse();
-        Assert.True(aStart.IsEqual(aTrim.EndPoint(), 1e-12));
+        Assert.True(aStart.IsEqual(aTrim.EndPoint, 1e-12));
         Assert.Equal(aBasis2Point, aBasis2.Value(0.5));
 
         // Sense = false reverses the (unshared) basis in the constructor
         var aReversed = new TrimmedCurve3D(aCaller, 0.2, 0.8, false);
-        Assert.True(aReversed.StartPoint().IsEqual(aCaller.Value(0.8), 1e-12));
+        Assert.True(aReversed.StartPoint.IsEqual(aCaller.Value(0.8), 1e-12));
 
         // A trimmed curve of a trimmed curve doesn't freeze the inner basis
         var anInner = new TrimmedCurve3D(Cubic(), 0.2, 0.8);
         var anOuter = new TrimmedCurve3D(anInner, 0.3, 0.6);
-        Assert.IsType<BSplineCurve3D>(anOuter.BasisCurve());
+        Assert.IsType<BSplineCurve3D>(anOuter.BasisCurve);
         anInner.Transform(Transform3D.Translation(new Vector3D(1, 1, 1))); // would throw if the constructor had frozen its basis
     }
 
@@ -206,37 +206,37 @@ public class Geom_CurvePortTests
         var anOffset = new OffsetCurve3D(aCaller, 0.5, new Direction3D(0, 0, 1));
         // Unlike Geom2d, OCCT's Geom_OffsetCurve copies the caller's curve: it isn't shared nor frozen
         Assert.False(aCaller.IsFrozen);
-        Assert.NotSame(aCaller, anOffset.BasisCurve());
+        Assert.NotSame(aCaller, anOffset.BasisCurve);
 
-        Curve3D aBasis = anOffset.BasisCurve();
+        Curve3D aBasis = anOffset.BasisCurve;
         Assert.True(aBasis.IsFrozen);
-        Assert.Same(aBasis, anOffset.BasisCurve());
+        Assert.Same(aBasis, anOffset.BasisCurve);
         Point3D aBasisPoint = aBasis.Value(0.5);
         Point3D anOffsetPoint = anOffset.Value(0.5);
 
         anOffset.Transform(Transform3D.Translation(new Vector3D(0, 5, 0)));
-        Assert.True(anOffset.Value(0.5).IsEqual(new Point3D(anOffsetPoint.X(), anOffsetPoint.Y() + 5, anOffsetPoint.Z()), 1e-12));
+        Assert.True(anOffset.Value(0.5).IsEqual(new Point3D(anOffsetPoint.X, anOffsetPoint.Y + 5, anOffsetPoint.Z), 1e-12));
         Assert.Equal(aBasisPoint, aBasis.Value(0.5));
-        Assert.NotSame(aBasis, anOffset.BasisCurve());
+        Assert.NotSame(aBasis, anOffset.BasisCurve);
 
-        Curve3D aBasis2 = anOffset.BasisCurve();
+        Curve3D aBasis2 = anOffset.BasisCurve;
         Assert.True(aBasis2.IsFrozen);
         Point3D aBasis2Point = aBasis2.Value(0.5);
         anOffset.Reverse();
-        Assert.Equal(-0.5, anOffset.Offset());
+        Assert.Equal(-0.5, anOffset.Offset);
         Assert.Equal(aBasis2Point, aBasis2.Value(0.5));
 
         // An offset of a trimmed curve rebuilds the trimmed curve: the caller's isn't frozen
         var aTrim = new TrimmedCurve3D(Cubic(), 0.2, 0.8);
         var anOffsetOfTrim = new OffsetCurve3D(aTrim, 0.5, new Direction3D(0, 0, 1));
         Assert.False(aTrim.IsFrozen);
-        Assert.NotSame(aTrim, anOffsetOfTrim.BasisCurve());
+        Assert.NotSame(aTrim, anOffsetOfTrim.BasisCurve);
         aTrim.Transform(Transform3D.Translation(new Vector3D(1, 1, 1)));
 
         // An offset of an offset adds the offset vectors (-0.5 Z + 0.25 Z = 0.25 along -Z)
         var anOffsetOfOffset = new OffsetCurve3D(anOffset, 0.25, new Direction3D(0, 0, 1));
-        Assert.Equal(0.25, anOffsetOfOffset.Offset(), 15);
-        Assert.True(anOffsetOfOffset.Direction().IsEqual(new Direction3D(0, 0, -1), 0.0));
+        Assert.Equal(0.25, anOffsetOfOffset.Offset, 15);
+        Assert.True(anOffsetOfOffset.Direction.IsEqual(new Direction3D(0, 0, -1), 0.0));
         anOffset.Transform(Transform3D.Translation(new Vector3D(1, 1, 1)));
     }
 
@@ -261,31 +261,31 @@ public class Geom_CurvePortTests
         Vector3D aFdD2 = (anOffset.EvalD1(aU + h).D1 - anOffset.EvalD1(aU - h).D1) / (2.0 * h);
 
         // EvalD2's D2 is right; point and D1 agree between EvalD2 and EvalD3
-        Assert.True((aFdD2 - aD2.D2).Magnitude() <= 1e-6);
+        Assert.True((aFdD2 - aD2.D2).Magnitude <= 1e-6);
         Assert.True(aD2.Point.IsEqual(aD3.Point, 1e-15));
-        Assert.True((aD2.D1 - aD3.D1).Magnitude() <= 1e-15);
+        Assert.True((aD2.D1 - aD3.D1).Magnitude <= 1e-15);
         // EvalD3's D2 is EvalD2's, and its D3 the finite difference of D2 (offset 0.5 of the ellipse (3, 1) at 0.7,
         // where OCCT gave D2 (-2.597, -3.131) and D3 (8.29, 11.12))
-        Assert.True((aD3.D2 - aD2.D2).Magnitude() <= 1e-12);
-        Assert.True((aD3.D3 - aFdD3).Magnitude() <= 1e-6);
-        Assert.True((aD2.D2 - new Vector3D(-1.794, -1.102, 0)).Magnitude() < 1e-3);
+        Assert.True((aD3.D2 - aD2.D2).Magnitude <= 1e-12);
+        Assert.True((aD3.D3 - aFdD3).Magnitude <= 1e-6);
+        Assert.True((aD2.D2 - new Vector3D(-1.794, -1.102, 0)).Magnitude < 1e-3);
         // and the adaptor's DN(3), the third derivative of the curve's
-        Assert.True((new global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor(anOffset).EvalDN(aU, 3) - aD3.D3).Magnitude() <= 1e-12);
-        Assert.True((anOffset.DN(aU, 3) - aD3.D3).Magnitude() <= 1e-12);
+        Assert.True((new global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor(anOffset).EvalDN(aU, 3) - aD3.D3).Magnitude <= 1e-12);
+        Assert.True((anOffset.DN(aU, 3) - aD3.D3).Magnitude <= 1e-12);
 
         // The same values as Geom2d_OffsetCurve (Ndir = D1 ^ Z is Geom2d's normal)
         var anOffset2d = new OffsetCurve2D(new EllipseCurve2D(new Axis2D(), 3.0, 1.0), 0.5);
         Curve2D.ResD3 aD3_2d = anOffset2d.EvalD3(aU);
-        Assert.True(Math.Abs(aD3.D2.X() - aD3_2d.D2.X()) < 1e-12 && Math.Abs(aD3.D2.Y() - aD3_2d.D2.Y()) < 1e-12);
-        Assert.True(Math.Abs(aD3.D3.X() - aD3_2d.D3.X()) < 1e-12 && Math.Abs(aD3.D3.Y() - aD3_2d.D3.Y()) < 1e-12);
+        Assert.True(Math.Abs(aD3.D2.X - aD3_2d.D2.X) < 1e-12 && Math.Abs(aD3.D2.Y - aD3_2d.D2.Y) < 1e-12);
+        Assert.True(Math.Abs(aD3.D3.X - aD3_2d.D3.X) < 1e-12 && Math.Abs(aD3.D3.Y - aD3_2d.D3.Y) < 1e-12);
 
         // On a circle they agree
         var aCircleOffset = new OffsetCurve3D(new CircleCurve3D(new Frame3D(), 3.0), 0.5, new Direction3D(0, 0, 1));
         Curve3D.ResD2 aCD2 = aCircleOffset.EvalD2(aU);
         Curve3D.ResD3 aCD3 = aCircleOffset.EvalD3(aU);
         Vector3D aCFdD3 = (aCircleOffset.EvalD2(aU + h).D2 - aCircleOffset.EvalD2(aU - h).D2) / (2.0 * h);
-        Assert.True((aCD2.D2 - aCD3.D2).Magnitude() <= 1e-12);
-        Assert.True((aCFdD3 - aCD3.D3).Magnitude() <= 1e-6);
+        Assert.True((aCD2.D2 - aCD3.D2).Magnitude <= 1e-12);
+        Assert.True((aCFdD3 - aCD3.D3).Magnitude <= 1e-6);
     }
 
     /// <summary>
@@ -327,7 +327,7 @@ public class Geom_CurvePortTests
         Assert.Equal(aBefore, aZ.EvalD0(0.3));
         aZ.Transform(aMove);
         Assert.False(aZ.HasEvalRepresentation);
-        Assert.True(aZ.EvalD0(0.3).X() > 9.0);
+        Assert.True(aZ.EvalD0(0.3).X > 9.0);
 
         var aZ2 = new BezierCurve3D(aPoles);
         aZ2.SetEvalRepresentation(Rep(aZ2));

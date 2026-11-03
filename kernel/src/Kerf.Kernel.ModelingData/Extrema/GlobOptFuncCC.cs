@@ -28,7 +28,7 @@ internal static class GlobOptFuncCC
             return false;
         }
 
-        f = c2.Value(v).Distance(c1.Value(u));
+        f = c2.Value(v).DistanceTo(c1.Value(u));
         return true;
     }
 
@@ -44,7 +44,7 @@ internal static class GlobOptFuncCC
             return false;
         }
 
-        f = c2.Value(v).Distance(c1.Value(u));
+        f = c2.Value(v).DistanceTo(c1.Value(u));
         return true;
     }
 
@@ -62,10 +62,10 @@ internal static class GlobOptFuncCC
         c1.D1(x[1], out Point3D c1D0, out Vector3D c1D1);
         c2.D1(x[2], out Point3D c2D0, out Vector3D c2D1);
 
-        g[1] = -(c2D0.X() - c1D0.X()) * c1D1.X() - (c2D0.Y() - c1D0.Y()) * c1D1.Y()
-               - (c2D0.Z() - c1D0.Z()) * c1D1.Z();
-        g[2] = (c2D0.X() - c1D0.X()) * c2D1.X() + (c2D0.Y() - c1D0.Y()) * c2D1.Y()
-               + (c2D0.Z() - c1D0.Z()) * c2D1.Z();
+        g[1] = -(c2D0.X - c1D0.X) * c1D1.X - (c2D0.Y - c1D0.Y) * c1D1.Y
+               - (c2D0.Z - c1D0.Z) * c1D1.Z;
+        g[2] = (c2D0.X - c1D0.X) * c2D1.X + (c2D0.Y - c1D0.Y) * c2D1.Y
+               + (c2D0.Z - c1D0.Z) * c2D1.Z;
         g *= 2.0;
         return true;
     }
@@ -82,9 +82,9 @@ internal static class GlobOptFuncCC
         c1.D1(x[1], out Point2D c1D0, out Vector2D c1D1);
         c2.D1(x[2], out Point2D c2D0, out Vector2D c2D1);
 
-        g[1] = -(c2D0.X() - c1D0.X()) * c1D1.X() - (c2D0.Y() - c1D0.Y()) * c1D1.Y();
+        g[1] = -(c2D0.X - c1D0.X) * c1D1.X - (c2D0.Y - c1D0.Y) * c1D1.Y;
 
-        g[2] = (c2D0.X() - c1D0.X()) * c2D1.X() + (c2D0.Y() - c1D0.Y()) * c2D1.Y();
+        g[2] = (c2D0.X - c1D0.X) * c2D1.X + (c2D0.Y - c1D0.Y) * c2D1.Y;
         g *= 2.0;
 
         return true;
@@ -102,17 +102,17 @@ internal static class GlobOptFuncCC
         c1.D2(x[1], out Point3D c1D0, out Vector3D c1D1, out Vector3D c1D2);
         c2.D2(x[2], out Point3D c2D0, out Vector3D c2D1, out Vector3D c2D2);
 
-        h[1, 1] = c1D1.X() * c1D1.X() + c1D1.Y() * c1D1.Y() + c1D1.Z() * c1D1.Z()
-                  - (c2D0.X() - c1D0.X()) * c1D2.X() - (c2D0.Y() - c1D0.Y()) * c1D2.Y()
-                  - (c2D0.Z() - c1D0.Z()) * c1D2.Z();
+        h[1, 1] = c1D1.X * c1D1.X + c1D1.Y * c1D1.Y + c1D1.Z * c1D1.Z
+                  - (c2D0.X - c1D0.X) * c1D2.X - (c2D0.Y - c1D0.Y) * c1D2.Y
+                  - (c2D0.Z - c1D0.Z) * c1D2.Z;
 
-        h[1, 2] = -c2D1.X() * c1D1.X() - c2D1.Y() * c1D1.Y() - c2D1.Z() * c1D1.Z();
+        h[1, 2] = -c2D1.X * c1D1.X - c2D1.Y * c1D1.Y - c2D1.Z * c1D1.Z;
 
         h[2, 1] = h[1, 2];
 
-        h[2, 2] = c2D1.X() * c2D1.X() + c2D1.Y() * c2D1.Y() + c2D1.Z() * c2D1.Z()
-                  + (c2D0.X() - c1D0.X()) * c2D2.X() + (c2D0.Y() - c1D0.Y()) * c2D2.Y()
-                  + (c2D0.Z() - c1D0.Z()) * c2D2.Z();
+        h[2, 2] = c2D1.X * c2D1.X + c2D1.Y * c2D1.Y + c2D1.Z * c2D1.Z
+                  + (c2D0.X - c1D0.X) * c2D2.X + (c2D0.Y - c1D0.Y) * c2D2.Y
+                  + (c2D0.Z - c1D0.Z) * c2D2.Z;
         h *= 2.0;
         return true;
     }
@@ -129,15 +129,15 @@ internal static class GlobOptFuncCC
         c1.D2(x[1], out Point2D c1D0, out Vector2D c1D1, out Vector2D c1D2);
         c2.D2(x[2], out Point2D c2D0, out Vector2D c2D1, out Vector2D c2D2);
 
-        h[1, 1] = c1D1.X() * c1D1.X() + c1D1.Y() * c1D1.Y() - (c2D0.X() - c1D0.X()) * c1D2.X()
-                  - (c2D0.Y() - c1D0.Y()) * c1D2.Y();
+        h[1, 1] = c1D1.X * c1D1.X + c1D1.Y * c1D1.Y - (c2D0.X - c1D0.X) * c1D2.X
+                  - (c2D0.Y - c1D0.Y) * c1D2.Y;
 
-        h[1, 2] = -c2D1.X() * c1D1.X() - c2D1.Y() * c1D1.Y();
+        h[1, 2] = -c2D1.X * c1D1.X - c2D1.Y * c1D1.Y;
 
         h[2, 1] = h[1, 2];
 
-        h[2, 2] = c2D1.X() * c2D1.X() + c2D1.Y() * c2D1.Y() + (c2D0.X() - c1D0.X()) * c2D2.X()
-                  + (c2D0.Y() - c1D0.Y()) * c2D2.Y();
+        h[2, 2] = c2D1.X * c2D1.X + c2D1.Y * c2D1.Y + (c2D0.X - c1D0.X) * c2D2.X
+                  + (c2D0.Y - c1D0.Y) * c2D2.Y;
         h *= 2.0;
         return true;
     }

@@ -41,16 +41,16 @@ public class DirectModification : CustomModification
         Surface ts = s;
         while (ts is TrimmedSurface rts)
         {
-            ts = rts.BasisSurface();
+            ts = rts.BasisSurface;
         }
 
         if (ts is ElementarySurface es)
         {
             // is the surface indirect ?
-            Transform3D t = l.Transformation();
+            Transform3D t = l.Transformation;
             bool neg = t.IsNegative;
-            bool det = (t.VectorialPart().Determinant() < 0.0);
-            bool dir = es.Position().Direct();
+            bool det = (t.VectorialPart.Determinant < 0.0);
+            bool dir = es.Position.IsDirect;
             if ((neg != det) == dir)
             {
                 result = 1;
@@ -58,7 +58,7 @@ public class DirectModification : CustomModification
             if (es is ConicalSurface cs)
             {
                 // does the cone have negative semiangle ?
-                if (cs.SemiAngle() < 0.0)
+                if (cs.SemiAngle < 0.0)
                 {
                     result += 2;
                 }

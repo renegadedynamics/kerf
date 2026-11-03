@@ -15,7 +15,7 @@ namespace Kerf.Engine.Geometry.Evaluation.Grid;
 /// As in OCCT, a parabola of focal length 0 (a line, which ElCLib evaluates as Location + U * XDir) gives
 /// infinite and NaN values (occt-issues.md).
 /// </remarks>
-public sealed class ParabolaGrid : GeomGridEvalGrid.ICurveEvaluator
+internal sealed class ParabolaGrid : GeomGridEvalGrid.ICurveEvaluator
 {
     private readonly ParabolaCurve3D? _geom;
 
@@ -39,21 +39,21 @@ public sealed class ParabolaGrid : GeomGridEvalGrid.ICurveEvaluator
         int nb = theParams.Length();
         NCollection_Array1<Point3D> result = new(1, nb);
 
-        Parabola3D parab = _geom.Parab();
-        Point3D center = parab.Location();
-        Direction3D xDir = parab.XAxis().Direction();
-        Direction3D yDir = parab.YAxis().Direction();
-        double focal = parab.Focal();
+        Parabola3D parab = _geom.Parabola;
+        Point3D center = parab.Location;
+        Direction3D xDir = parab.XAxis.Direction;
+        Direction3D yDir = parab.YAxis.Direction;
+        double focal = parab.Focal;
 
-        double cx = center.X();
-        double cy = center.Y();
-        double cz = center.Z();
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double xz = xDir.Z();
-        double yx = yDir.X();
-        double yy = yDir.Y();
-        double yz = yDir.Z();
+        double cx = center.X;
+        double cy = center.Y;
+        double cz = center.Z;
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double xz = xDir.Z;
+        double yx = yDir.X;
+        double yy = yDir.Y;
+        double yz = yDir.Z;
 
         // OCCT: no case for a zero focal length (ElCLib evaluates that degenerate parabola as a line)
         double coeff = 1.0 / (4.0 * focal);
@@ -83,21 +83,21 @@ public sealed class ParabolaGrid : GeomGridEvalGrid.ICurveEvaluator
         int nb = theParams.Length();
         NCollection_Array1<Curve3D.ResD1> result = new(1, nb);
 
-        Parabola3D parab = _geom.Parab();
-        Point3D center = parab.Location();
-        Direction3D xDir = parab.XAxis().Direction();
-        Direction3D yDir = parab.YAxis().Direction();
-        double focal = parab.Focal();
+        Parabola3D parab = _geom.Parabola;
+        Point3D center = parab.Location;
+        Direction3D xDir = parab.XAxis.Direction;
+        Direction3D yDir = parab.YAxis.Direction;
+        double focal = parab.Focal;
 
-        double cx = center.X();
-        double cy = center.Y();
-        double cz = center.Z();
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double xz = xDir.Z();
-        double yx = yDir.X();
-        double yy = yDir.Y();
-        double yz = yDir.Z();
+        double cx = center.X;
+        double cy = center.Y;
+        double cz = center.Z;
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double xz = xDir.Z;
+        double yx = yDir.X;
+        double yy = yDir.Y;
+        double yz = yDir.Z;
 
         // OCCT: no case for a zero focal length (ElCLib evaluates that degenerate parabola as a line)
         double coeff = 1.0 / (4.0 * focal);
@@ -135,21 +135,21 @@ public sealed class ParabolaGrid : GeomGridEvalGrid.ICurveEvaluator
         int nb = theParams.Length();
         NCollection_Array1<Curve3D.ResD2> result = new(1, nb);
 
-        Parabola3D parab = _geom.Parab();
-        Point3D center = parab.Location();
-        Direction3D xDir = parab.XAxis().Direction();
-        Direction3D yDir = parab.YAxis().Direction();
-        double focal = parab.Focal();
+        Parabola3D parab = _geom.Parabola;
+        Point3D center = parab.Location;
+        Direction3D xDir = parab.XAxis.Direction;
+        Direction3D yDir = parab.YAxis.Direction;
+        double focal = parab.Focal;
 
-        double cx = center.X();
-        double cy = center.Y();
-        double cz = center.Z();
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double xz = xDir.Z();
-        double yx = yDir.X();
-        double yy = yDir.Y();
-        double yz = yDir.Z();
+        double cx = center.X;
+        double cy = center.Y;
+        double cz = center.Z;
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double xz = xDir.Z;
+        double yx = yDir.X;
+        double yy = yDir.Y;
+        double yz = yDir.Z;
 
         // OCCT: no case for a zero focal length (ElCLib evaluates that degenerate parabola as a line)
         double coeff = 1.0 / (4.0 * focal);
@@ -193,21 +193,21 @@ public sealed class ParabolaGrid : GeomGridEvalGrid.ICurveEvaluator
         int nb = theParams.Length();
         NCollection_Array1<Curve3D.ResD3> result = new(1, nb);
 
-        Parabola3D parab = _geom.Parab();
-        Point3D center = parab.Location();
-        Direction3D xDir = parab.XAxis().Direction();
-        Direction3D yDir = parab.YAxis().Direction();
-        double focal = parab.Focal();
+        Parabola3D parab = _geom.Parabola;
+        Point3D center = parab.Location;
+        Direction3D xDir = parab.XAxis.Direction;
+        Direction3D yDir = parab.YAxis.Direction;
+        double focal = parab.Focal;
 
-        double cx = center.X();
-        double cy = center.Y();
-        double cz = center.Z();
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double xz = xDir.Z();
-        double yx = yDir.X();
-        double yy = yDir.Y();
-        double yz = yDir.Z();
+        double cx = center.X;
+        double cy = center.Y;
+        double cz = center.Z;
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double xz = xDir.Z;
+        double yx = yDir.X;
+        double yy = yDir.Y;
+        double yz = yDir.Z;
 
         // OCCT: no case for a zero focal length (ElCLib evaluates that degenerate parabola as a line)
         double coeff = 1.0 / (4.0 * focal);
@@ -249,17 +249,17 @@ public sealed class ParabolaGrid : GeomGridEvalGrid.ICurveEvaluator
         int nb = theParams.Length();
         NCollection_Array1<Vector3D> result = new(1, nb);
 
-        Parabola3D parab = _geom.Parab();
-        Direction3D xDir = parab.XAxis().Direction();
-        Direction3D yDir = parab.YAxis().Direction();
-        double focal = parab.Focal();
+        Parabola3D parab = _geom.Parabola;
+        Direction3D xDir = parab.XAxis.Direction;
+        Direction3D yDir = parab.YAxis.Direction;
+        double focal = parab.Focal;
 
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double xz = xDir.Z();
-        double yx = yDir.X();
-        double yy = yDir.Y();
-        double yz = yDir.Z();
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double xz = xDir.Z;
+        double yx = yDir.X;
+        double yy = yDir.Y;
+        double yz = yDir.Z;
 
         // OCCT: no case for a zero focal length (ElCLib evaluates that degenerate parabola as a line)
         double coeff2 = 1.0 / (2.0 * focal);

@@ -90,10 +90,10 @@ public sealed class Generator
             {
                 return -1;
             }
-            curv1 = (Curve3D)curv1.Transformed(loc.Transformation());
+            curv1 = (Curve3D)curv1.Transformed(loc.Transformation);
             ff = first1;
             ll = last1;
-            if (edge1.Orientation() == Reversed)
+            if (edge1.Orientation == Reversed)
             {
                 curv1.Reverse();
                 first1 = curv1.ReversedParameter(ll);
@@ -104,16 +104,16 @@ public sealed class Generator
             {
                 // first circular section
                 iType = 1;
-                pos1 = adC1.Circle().Location();
-                dist1 = adC1.Circle().Radius();
-                axe1 = adC1.Circle().Axis();
+                pos1 = adC1.Circle().Location;
+                dist1 = adC1.Circle().Radius;
+                axe1 = adC1.Circle().Axis;
             }
             else if (adC1.GetType() == Line)
             {
                 // first straight line section
                 iType = 4;
-                pos1 = adC1.Line().Location();
-                dist1 = adC1.Value(first1).Distance(adC1.Value(last1));
+                pos1 = adC1.Line().Location;
+                dist1 = adC1.Value(first1).DistanceTo(adC1.Value(last1));
                 Vector3D vec = new(adC1.Value(first1), adC1.Value(last1));
                 Direction3D dir = new(vec);
                 axe1 = new Axis3D(adC1.Value(first1), dir);
@@ -171,10 +171,10 @@ public sealed class Generator
                 {
                     return -1;
                 }
-                curv = (Curve3D)curv.Transformed(loc.Transformation());
+                curv = (Curve3D)curv.Transformed(loc.Transformation);
                 ff = first2;
                 ll = last2;
-                if (edge2.Orientation() == Reversed)
+                if (edge2.Orientation == Reversed)
                 {
                     curv.Reverse();
                     first2 = curv.ReversedParameter(ll);
@@ -191,10 +191,10 @@ public sealed class Generator
                     }
                     else
                     {
-                        if (adC.Circle().Axis().IsCoaxial(axe1, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion()))
+                        if (adC.Circle().Axis.IsCoaxial(axe1, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion()))
                         {
                             // same axis
-                            if (Math.Abs(adC.Circle().Radius() - dist1) < global::Kerf.Engine.Foundation.Precision.Confusion())
+                            if (Math.Abs(adC.Circle().Radius - dist1) < global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
                                 // possibility of cylinder or a piece of cylinder
                                 double h1 = Math.Abs(last1 - first1), h2 = Math.Abs(last2 - first2);
@@ -234,7 +234,7 @@ public sealed class Generator
                                     iType = 0;
                                 }
                             }
-                            if (adC.Circle().Location().IsEqual(pos1, global::Kerf.Engine.Foundation.Precision.Confusion()))
+                            if (adC.Circle().Location.IsEqual(pos1, global::Kerf.Engine.Foundation.Precision.Confusion()))
                             {
                                 // the centers are mixed
                                 iType = 0;
@@ -243,7 +243,7 @@ public sealed class Generator
                         else
                         {
                             // different axis
-                            if (adC.Circle().Radius() == dist1)
+                            if (adC.Circle().Radius == dist1)
                             {
                                 // torus ?
                                 iType = 3;
@@ -265,8 +265,8 @@ public sealed class Generator
                     }
                     else
                     {
-                        pos = adC.Line().Location();
-                        dist = adC.Value(first2).Distance(adC.Value(last2));
+                        pos = adC.Line().Location;
+                        dist = adC.Value(first2).DistanceTo(adC.Value(last2));
                         Vector3D vec = new(adC.Value(first2), adC.Value(last2));
                         Direction3D aDir = new(vec);
                         axe = new Axis3D(adC.Value(first2), aDir);
@@ -309,8 +309,8 @@ public sealed class Generator
                     else if (adC.GetType() == Circle)
                     {
                         // the only particular case with degenerated edge at the beginning the cone
-                        pos = adC.Circle().Location();
-                        axe = adC.Circle().Axis();
+                        pos = adC.Circle().Location;
+                        axe = adC.Circle().Axis;
                         if (pos1.IsEqual(pos, global::Kerf.Engine.Foundation.Precision.Confusion()))
                         {
                             // the top is mixed with the center of the circle
@@ -382,10 +382,10 @@ public sealed class Generator
             {
                 return false;
             }
-            C1 = (Curve3D)C1.Transformed(loc.Transformation());
+            C1 = (Curve3D)C1.Transformed(loc.Transformation);
             aa = a1;
             bb = b1;
-            if (edge1.Orientation() == Reversed)
+            if (edge1.Orientation == Reversed)
             {
                 C1.Reverse();
                 aa = C1.ReversedParameter(b1);
@@ -413,8 +413,8 @@ public sealed class Generator
             {
                 return false;
             }
-            C2 = (Curve3D)C2.Transformed(loc.Transformation());
-            if (edge2.Orientation() == Reversed)
+            C2 = (Curve3D)C2.Transformed(loc.Transformation);
+            if (edge2.Orientation == Reversed)
             {
                 C2.Reverse();
                 if (degen1)
@@ -455,31 +455,31 @@ public sealed class Generator
             // cylindrical surface
             Circle3D c1 = c1Adaptor.Circle();
             Circle3D c2 = c2Adaptor.Circle();
-            CoordinateSystem ac1 = new(c1.Position());
-            v = new Vector3D(c1.Location(), c2.Location()).Dot(new Vector3D(ac1.Direction()));
+            CoordinateSystem ac1 = new(c1.Position);
+            v = new Vector3D(c1.Location, c2.Location).Dot(new Vector3D(ac1.Direction));
             if (v < 0.0)
             {
                 ac1 = ac1.ZReversed();
                 v = -v;
             }
-            CylindricalSurface cyl = new(ac1, c1.Radius());
+            CylindricalSurface cyl = new(ac1, c1.Radius);
             surface = new TrimmedSurface(cyl, aa, bb, Min(0.0, v), Max(0.0, v));
         }
         else if (iType == 2)
         {
             // conical surface
             Circle3D k1 = c1Adaptor.Circle();
-            CoordinateSystem ak1 = new(k1.Position());
+            CoordinateSystem ak1 = new(k1.Position);
             if (degen2)
             {
-                v = new Vector3D(k1.Location(), Tool.Pnt(v2f)).Dot(new Vector3D(ak1.Direction()));
-                rad = -k1.Radius();
+                v = new Vector3D(k1.Location, Tool.Pnt(v2f)).Dot(new Vector3D(ak1.Direction));
+                rad = -k1.Radius;
             }
             else
             {
                 Circle3D k2 = c2Adaptor.Circle();
-                v = new Vector3D(k1.Location(), k2.Location()).Dot(new Vector3D(ak1.Direction()));
-                rad = k2.Radius() - k1.Radius();
+                v = new Vector3D(k1.Location, k2.Location).Dot(new Vector3D(ak1.Direction));
+                rad = k2.Radius - k1.Radius;
             }
 
             if (v < 0.0)
@@ -488,7 +488,7 @@ public sealed class Generator
                 v = -v;
             }
             double ang = Math.Atan(rad / v);
-            ConicalSurface cone = new(ak1, ang, k1.Radius());
+            ConicalSurface cone = new(ak1, ang, k1.Radius);
             v /= Math.Cos(ang);
             surface = new TrimmedSurface(cone, aa, bb, Min(0.0, v), Max(0.0, v));
         }
@@ -496,10 +496,10 @@ public sealed class Generator
         {
             // conical surface with the top at the beginning (degen1 is true)
             Circle3D k2 = c2Adaptor.Circle();
-            CoordinateSystem ak2 = new(k2.Position());
+            CoordinateSystem ak2 = new(k2.Position);
             ak2 = ak2.WithLocation(Tool.Pnt(v1f));
-            v = new Vector3D(Tool.Pnt(v1f), k2.Location()).Dot(new Vector3D(ak2.Direction()));
-            rad = k2.Radius(); // - k2.Radius();
+            v = new Vector3D(Tool.Pnt(v1f), k2.Location).Dot(new Vector3D(ak2.Direction));
+            rad = k2.Radius; // - k2.Radius();
             if (v < 0.0)
             {
                 ak2 = ak2.ZReversed();
@@ -529,14 +529,14 @@ public sealed class Generator
                 line = l2;
             }
 
-            Point3D p1 = (degen1) ? Tool.Pnt(v1f) : l1.Location();
-            Point3D p2 = (degen2) ? Tool.Pnt(v2f) : l2.Location();
+            Point3D p1 = (degen1) ? Tool.Pnt(v1f) : l1.Location;
+            Point3D p2 = (degen2) ? Tool.Pnt(v2f) : l2.Location;
 
             Vector3D p1P2 = new(p1, p2);
-            Direction3D d1 = line.Direction();
-            CoordinateSystem ax = new(line.Location(), d1.Crossed(new Direction3D(p1P2)), d1);
+            Direction3D d1 = line.Direction;
+            CoordinateSystem ax = new(line.Location, d1.Crossed(new Direction3D(p1P2)), d1);
             PlaneSurface plan = new(ax);
-            v = p1P2.Dot(new Vector3D(ax.YDirection()));
+            v = p1P2.Dot(new Vector3D(ax.YDirection));
             surface = plan;
             // surface = new Geom_RectangularTrimmedSurface
             //( Plan, aa, bb, std::min(0.,V), std::max(0.,V) );
@@ -689,9 +689,9 @@ public sealed class Generator
                     Shape localShape = orEdge1.EmptyCopied();
                     edge1 = ShapeCasts.Edge(localShape);
                     Exploration.Vertices(orEdge1, out v1f, out v1l);
-                    v1f.Orientation(Forward);
+                    v1f.Orient(Forward);
                     b.Add(edge1, v1f);
-                    v1l.Orientation(Reversed);
+                    v1l.Orient(Reversed);
                     b.Add(edge1, v1l);
                     b.Range(edge1, 0, 1);
                     _oldNewShapes[orEdge1] = edge1;
@@ -706,9 +706,9 @@ public sealed class Generator
                     Shape localShape = orEdge2.EmptyCopied();
                     edge2 = ShapeCasts.Edge(localShape);
                     Exploration.Vertices(orEdge2, out v2f, out v2l);
-                    v2f.Orientation(Forward);
+                    v2f.Orient(Forward);
                     b.Add(edge2, v2f);
-                    v2l.Orientation(Reversed);
+                    v2l.Orient(Reversed);
                     b.Add(edge2, v2l);
                     b.Range(edge2, 0, 1);
                     _oldNewShapes[orEdge2] = edge2;
@@ -738,7 +738,7 @@ public sealed class Generator
                 // initialization of vertices
                 Surface? surf;
                 double f1 = 0, l1 = 1, f2 = 0, l2 = 1;
-                if (edge1.Orientation() == Reversed)
+                if (edge1.Orientation == Reversed)
                 {
                     Exploration.Vertices(edge1, out v1l, out v1f);
                 }
@@ -746,7 +746,7 @@ public sealed class Generator
                 {
                     Exploration.Vertices(edge1, out v1f, out v1l);
                 }
-                if (edge2.Orientation() == Reversed)
+                if (edge2.Orientation == Reversed)
                 {
                     Exploration.Vertices(edge2, out v2l, out v2f);
                 }
@@ -816,8 +816,8 @@ public sealed class Generator
 
                     // transform and trim the curves
 
-                    if (Math.Abs(f1 - c1.FirstParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion()
-                        || Math.Abs(l1 - c1.LastParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion())
+                    if (Math.Abs(f1 - c1.FirstParameter) > global::Kerf.Engine.Foundation.Precision.PConfusion()
+                        || Math.Abs(l1 - c1.LastParameter) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         c1 = new TrimmedCurve3D(c1, f1, l1);
                     }
@@ -827,15 +827,15 @@ public sealed class Generator
                     }
                     if (!sameLoc)
                     {
-                        c1.Transform(L1.Transformation());
+                        c1.Transform(L1.Transformation);
                     }
-                    if (edge1.Orientation() == Reversed)
+                    if (edge1.Orientation == Reversed)
                     {
                         c1.Reverse();
                     }
 
-                    if (Math.Abs(f2 - c2.FirstParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion()
-                        || Math.Abs(l2 - c2.LastParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion())
+                    if (Math.Abs(f2 - c2.FirstParameter) > global::Kerf.Engine.Foundation.Precision.PConfusion()
+                        || Math.Abs(l2 - c2.LastParameter) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         c2 = new TrimmedCurve3D(c2, f2, l2);
                     }
@@ -845,9 +845,9 @@ public sealed class Generator
                     }
                     if (!sameLoc)
                     {
-                        c2.Transform(L2.Transformation());
+                        c2.Transform(L2.Transformation);
                     }
-                    if (edge2.Orientation() == Reversed)
+                    if (edge2.Orientation == Reversed)
                     {
                         c2.Reverse();
                     }
@@ -873,7 +873,7 @@ public sealed class Generator
 
                 // make the missing edges
                 double first, last;
-                surf!.Bounds(out f1, out l1, out f2, out l2);
+                surf!.ParameterBounds(out f1, out l1, out f2, out l2);
                 if (iType == 0)
                 {
                     first = f2;
@@ -915,9 +915,9 @@ public sealed class Generator
                         }
                         b.MakeEdge(ref edge3, cc, global::Kerf.Engine.Foundation.Precision.Confusion());
                     }
-                    v1f.Orientation(Forward);
+                    v1f.Orient(Forward);
                     b.Add(edge3, v1f);
-                    v2f.Orientation(Reversed);
+                    v2f.Orient(Reversed);
                     b.Add(edge3, v2f);
                     b.Range(edge3, first, last);
                     edge3.Reverse();
@@ -962,9 +962,9 @@ public sealed class Generator
                         }
                         b.MakeEdge(ref edge4, cc, global::Kerf.Engine.Foundation.Precision.Confusion());
                     }
-                    v1l.Orientation(Forward);
+                    v1l.Orient(Forward);
                     b.Add(edge4, v1l);
-                    v2l.Orientation(Reversed);
+                    v2l.Orient(Reversed);
                     b.Add(edge4, v2l);
                     b.Range(edge4, first, last);
                     map[Vl_toMap] = edge4;
@@ -1005,7 +1005,7 @@ public sealed class Generator
 
                 if (iType != 4) // not plane
                 {
-                    if (edge1.Orientation() == Reversed)
+                    if (edge1.Orientation == Reversed)
                     {
                         b.UpdateEdge(edge1, new LineCurve2D(new Point2D(0, f2), new Direction2D(Direction2D.D.NX)), face, t);
                         b.Range(edge1, face, -l1, -f1);
@@ -1016,7 +1016,7 @@ public sealed class Generator
                         b.Range(edge1, face, f1, l1);
                     }
 
-                    if (edge2.Orientation() == Reversed)
+                    if (edge2.Orientation == Reversed)
                     {
                         b.UpdateEdge(edge2, new LineCurve2D(new Point2D(0, l2), new Direction2D(Direction2D.D.NX)), face, t);
                         b.Range(edge2, face, -l1, -f1);
@@ -1172,10 +1172,10 @@ public sealed class Generator
             newWire.Free(curWire.Free());
             newWire.Modified(curWire.Modified());
             newWire.Checked(curWire.Checked());
-            newWire.Orientable(curWire.Orientable());
-            newWire.Closed(curWire.Closed());
-            newWire.Infinite(curWire.Infinite());
-            newWire.Convex(curWire.Convex());
+            newWire.Orientable(curWire.IsOrientable);
+            newWire.Closed(curWire.IsClosed);
+            newWire.Infinite(curWire.IsInfinite);
+            newWire.Convex(curWire.IsConvex);
 
             _oldNewShapes[curWire] = newWire;
         }

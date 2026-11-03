@@ -480,7 +480,7 @@ internal static partial class SWDrawShapeUpgradeCommands
 
         Surface S = Tool.Surface(face)!;
         BrepTools.UVBounds(face, out double Uf, out double Ul, out double Vf, out double Vl);
-        S.Bounds(out double Umin, out double Umax, out double Vmin, out double Vmax);
+        S.ParameterBounds(out double Umin, out double Umax, out double Vmin, out double Vmax);
         if (Uf < Umin && !S.IsUPeriodic)
         {
             Uf = Umin;
@@ -817,7 +817,7 @@ internal static partial class SWDrawShapeUpgradeCommands
             di.Append("Unknown shape\n");
             return 1;
         }
-        if (inputShape.ShapeType() >= ShapeType.Wire)
+        if (inputShape.Type >= ShapeType.Wire)
         {
             di.Append("Invalid type of first shape: should be FACE,SHELL,SOLID or COMPOUND\n");
             return 1;
@@ -839,7 +839,7 @@ internal static partial class SWDrawShapeUpgradeCommands
                 isShape = !aShape.IsNull;
                 if (isShape)
                 {
-                    if (aShape.ShapeType() == ShapeType.Face || aShape.ShapeType() == ShapeType.Wire)
+                    if (aShape.Type == ShapeType.Face || aShape.Type == ShapeType.Wire)
                     {
                         aSeqShapes.Append(aShape);
                     }

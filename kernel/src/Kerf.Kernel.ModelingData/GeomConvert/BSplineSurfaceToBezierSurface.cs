@@ -15,7 +15,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// Bezier points of B-spline curves and surfaces", CAD 13(6), 1981). A row of the grid is the series of patches
 /// between two U knots, a column the series between two V knots.
 /// </summary>
-public sealed class BSplineSurfaceToBezierSurface
+internal sealed class BSplineSurfaceToBezierSurface
 {
     private readonly BSplineSurface _surface;
 
@@ -23,14 +23,14 @@ public sealed class BSplineSurfaceToBezierSurface
     public BSplineSurfaceToBezierSurface(BSplineSurface basisSurface)
     {
         _surface = (BSplineSurface)basisSurface.Copy();
-        _surface.Bounds(out double u1, out double u2, out double v1, out double v2);
+        _surface.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
         _surface.Segment(u1, u2, v1, v2);
         _surface.IncreaseUMultiplicity(_surface.FirstUKnotIndex(),
                                         _surface.LastUKnotIndex(),
-                                        _surface.UDegree());
+                                        _surface.UDegree);
         _surface.IncreaseVMultiplicity(_surface.FirstVKnotIndex(),
                                         _surface.LastVKnotIndex(),
-                                        _surface.VDegree());
+                                        _surface.VDegree);
     }
 
     /// <summary>
@@ -94,10 +94,10 @@ public sealed class BSplineSurfaceToBezierSurface
         _surface.Segment(uf, ul, vf, vl);
         _surface.IncreaseUMultiplicity(_surface.FirstUKnotIndex(),
                                         _surface.LastUKnotIndex(),
-                                        _surface.UDegree());
+                                        _surface.UDegree);
         _surface.IncreaseVMultiplicity(_surface.FirstVKnotIndex(),
                                         _surface.LastVKnotIndex(),
-                                        _surface.VDegree());
+                                        _surface.VDegree);
     }
 
     /// <summary>A new Bezier surface: the patch (UIndex, VIndex) of the grid, oriented as the B-spline surface.</summary>
@@ -110,8 +110,8 @@ public sealed class BSplineSurfaceToBezierSurface
             throw new OutOfRangeException("GeomConvert_BSplineSurfaceToBezierSurface");
         }
 
-        int uDeg = _surface.UDegree();
-        int vDeg = _surface.VDegree();
+        int uDeg = _surface.UDegree;
+        int vDeg = _surface.VDegree;
 
         var poles = new NCollection_Array2<Point3D>(1, uDeg + 1, 1, vDeg + 1);
 

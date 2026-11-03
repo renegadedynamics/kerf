@@ -326,9 +326,9 @@ public class Plate_PlateTests
         aPlate.SolveTI(3);
         Assert.True(aPlate.IsDone);
         Xyz aOnPlane = aPlate.Evaluate(new Xy(0.5, 0.5));
-        Assert.Equal(0.0, aPln.Distance(new Point3D(aOnPlane)), 1.0e-9);
+        Assert.Equal(0.0, aPln.DistanceTo(new Point3D(aOnPlane)), 1.0e-9);
         Xyz aOnLine = aPlate.Evaluate(new Xy(0.9, 0.8));
-        Assert.Equal(0.0, aLin.Distance(new Point3D(aOnLine)), 1.0e-9);
+        Assert.Equal(0.0, aLin.DistanceTo(new Point3D(aOnLine)), 1.0e-9);
         AssertNear(new Xyz(0.0, 0.0, 1.0), aPlate.Evaluate(new Xy(1.0, 0.0)), 1.0e-9);
     }
 

@@ -350,13 +350,13 @@ internal static class BOPTestBOPCommands
             di.Append(" Null shapes are not allowed \n");
             return 1;
         }
-        ShapeType aType = S1.ShapeType();
+        ShapeType aType = S1.Type;
         if (aType != ShapeType.Face)
         {
             di.Append(" Type mismatch F1\n");
             return 1;
         }
-        aType = S2.ShapeType();
+        aType = S2.Type;
         if (aType != ShapeType.Face)
         {
             di.Append(" Type mismatch F2\n");

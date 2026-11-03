@@ -67,11 +67,11 @@ public class FaceSurfaceAdaptor : TransformedSurface
         if (restriction)
         {
             BrepTools.UVBounds(f, out double umin, out double umax, out double vmin, out double vmax);
-            Load(surface, umin, umax, vmin, vmax, l.Transformation());
+            Load(surface, umin, umax, vmin, vmax, l.Transformation);
         }
         else
         {
-            Load(surface, l.Transformation());
+            Load(surface, l.Transformation);
         }
     }
 

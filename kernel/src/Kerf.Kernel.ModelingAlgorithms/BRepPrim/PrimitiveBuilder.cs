@@ -134,9 +134,9 @@ internal sealed class PrimitiveBuilder
     public void AddEdgeVertex(in Edge e, in Vertex v, double p1, double p2)
     {
         Vertex vv = v;
-        vv.Orientation(Forward);
+        vv.Orient(Forward);
         _builder.Add(e, vv);
-        vv.Orientation(Reversed);
+        vv.Orient(Reversed);
         _builder.Add(e, vv);
         _builder.Range(e, p1, p2);
     }

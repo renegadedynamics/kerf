@@ -30,7 +30,7 @@ public class Geom_OffsetSurface_Test
         OffsetSurface aCopiedSurface = new(myOriginalSurface);
 
         // Verify basic properties are identical
-        Assert.Equal(myOriginalSurface.Offset(), aCopiedSurface.Offset());
+        Assert.Equal(myOriginalSurface.Offset, aCopiedSurface.Offset);
         Assert.Equal(myOriginalSurface.IsUPeriodic, aCopiedSurface.IsUPeriodic);
         Assert.Equal(myOriginalSurface.IsVPeriodic, aCopiedSurface.IsVPeriodic);
         Assert.Equal(myOriginalSurface.IsUClosed, aCopiedSurface.IsUClosed);
@@ -43,15 +43,15 @@ public class Geom_OffsetSurface_Test
         OffsetSurface aCopiedSurface = new(myOriginalSurface);
 
         // Verify basis surfaces are equivalent but independent
-        Surface anOrigBasis = myOriginalSurface.BasisSurface();
-        Surface aCopyBasis = aCopiedSurface.BasisSurface();
+        Surface anOrigBasis = myOriginalSurface.BasisSurface;
+        Surface aCopyBasis = aCopiedSurface.BasisSurface;
 
         // They should be different objects
         Assert.NotSame(anOrigBasis, aCopyBasis);
 
         // But functionally equivalent
-        anOrigBasis.Bounds(out double anUFirst, out double anULast, out double aVFirst, out double aVLast);
-        aCopyBasis.Bounds(out double anUFirstCopy, out double anULastCopy, out double aVFirstCopy, out double aVLastCopy);
+        anOrigBasis.ParameterBounds(out double anUFirst, out double anULast, out double aVFirst, out double aVLast);
+        aCopyBasis.ParameterBounds(out double anUFirstCopy, out double anULastCopy, out double aVFirstCopy, out double aVLastCopy);
 
         Assert.Equal(anUFirst, anUFirstCopy);
         Assert.Equal(anULast, anULastCopy);
@@ -69,7 +69,7 @@ public class Geom_OffsetSurface_Test
         Assert.NotNull(aCopiedSurface);
 
         // Verify the copy is functionally identical
-        Assert.Equal(myOriginalSurface.Offset(), aCopiedSurface.Offset());
+        Assert.Equal(myOriginalSurface.Offset, aCopiedSurface.Offset);
 
         // Test evaluation at several points
         for (double u = -5.0; u <= 5.0; u += 2.5)
@@ -89,14 +89,14 @@ public class Geom_OffsetSurface_Test
         OffsetSurface aCopiedSurface = new(myOriginalSurface);
 
         // Store original offset value
-        double anOrigOffset = aCopiedSurface.Offset();
+        double anOrigOffset = aCopiedSurface.Offset;
 
         // Modify the original surface
         myOriginalSurface.SetOffsetValue(15.0);
 
         // Verify the copied surface is not affected
-        Assert.Equal(anOrigOffset, aCopiedSurface.Offset());
-        Assert.NotEqual(myOriginalSurface.Offset(), aCopiedSurface.Offset());
+        Assert.Equal(anOrigOffset, aCopiedSurface.Offset);
+        Assert.NotEqual(myOriginalSurface.Offset, aCopiedSurface.Offset);
     }
 }
 
@@ -122,11 +122,11 @@ public class Geom_OffsetSurface_EquivalentSurface
         Assert.NotNull(anEquivPlane);
 
         // Verify the plane is translated by offset along normal.
-        Point3D anOrigLoc = aPlane.Location();
-        Point3D anEquivLoc = anEquivPlane.Location();
-        Assert.Equal(anOffset, anEquivLoc.Z() - anOrigLoc.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(anOrigLoc.X(), anEquivLoc.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(anOrigLoc.Y(), anEquivLoc.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Point3D anOrigLoc = aPlane.Location;
+        Point3D anEquivLoc = anEquivPlane.Location;
+        Assert.Equal(anOffset, anEquivLoc.Z - anOrigLoc.Z, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(anOrigLoc.X, anEquivLoc.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(anOrigLoc.Y, anEquivLoc.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -141,7 +141,7 @@ public class Geom_OffsetSurface_EquivalentSurface
         Assert.NotNull(anEquivCyl);
 
         // Radius should increase by offset.
-        Assert.Equal(13.0, anEquivCyl.Radius(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(13.0, anEquivCyl.Radius, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -154,7 +154,7 @@ public class Geom_OffsetSurface_EquivalentSurface
         CylindricalSurface? anEquivCyl = anOffsetSurf.Surface() as CylindricalSurface;
         Assert.NotNull(anEquivCyl);
 
-        Assert.Equal(7.0, anEquivCyl.Radius(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(7.0, anEquivCyl.Radius, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -169,7 +169,7 @@ public class Geom_OffsetSurface_EquivalentSurface
         Assert.NotNull(anEquivCyl);
 
         // Radius should be absolute value.
-        Assert.Equal(3.0, anEquivCyl.Radius(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(3.0, anEquivCyl.Radius, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -182,9 +182,9 @@ public class Geom_OffsetSurface_EquivalentSurface
         SphericalSurface? anEquivSphere = anOffsetSurf.Surface() as SphericalSurface;
         Assert.NotNull(anEquivSphere);
 
-        Assert.Equal(15.0, anEquivSphere.Radius(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(15.0, anEquivSphere.Radius, global::Kerf.Engine.Foundation.Precision.Confusion());
         // Center should remain the same.
-        Assert.True(anEquivSphere.Location().IsEqual(aSphere.Location(), global::Kerf.Engine.Foundation.Precision.Confusion()));
+        Assert.True(anEquivSphere.Location.IsEqual(aSphere.Location, global::Kerf.Engine.Foundation.Precision.Confusion()));
     }
 
     [Fact]
@@ -197,7 +197,7 @@ public class Geom_OffsetSurface_EquivalentSurface
         SphericalSurface? anEquivSphere = anOffsetSurf.Surface() as SphericalSurface;
         Assert.NotNull(anEquivSphere);
 
-        Assert.Equal(3.0, anEquivSphere.Radius(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(3.0, anEquivSphere.Radius, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -214,11 +214,11 @@ public class Geom_OffsetSurface_EquivalentSurface
         Assert.NotNull(anEquivCone);
 
         // Semi-angle should remain the same.
-        Assert.Equal(aSemiAngle, anEquivCone.SemiAngle(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aSemiAngle, anEquivCone.SemiAngle, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // Reference radius should change by offset * cos(alpha).
         double anExpectedRadius = aRefRadius + anOffset * Math.Cos(aSemiAngle);
-        Assert.Equal(anExpectedRadius, anEquivCone.RefRadius(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(anExpectedRadius, anEquivCone.RefRadius, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -235,9 +235,9 @@ public class Geom_OffsetSurface_EquivalentSurface
         Assert.NotNull(anEquivTorus);
 
         // Major radius should remain the same.
-        Assert.Equal(aMajorRadius, anEquivTorus.MajorRadius(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aMajorRadius, anEquivTorus.MajorRadius, global::Kerf.Engine.Foundation.Precision.Confusion());
         // Minor radius should increase by offset.
-        Assert.Equal(aMinorRadius + anOffset, anEquivTorus.MinorRadius(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aMinorRadius + anOffset, anEquivTorus.MinorRadius, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -252,8 +252,8 @@ public class Geom_OffsetSurface_EquivalentSurface
         ToroidalSurface? anEquivTorus = anOffsetSurf.Surface() as ToroidalSurface;
         Assert.NotNull(anEquivTorus);
 
-        Assert.Equal(aMajorRadius, anEquivTorus.MajorRadius(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(aMinorRadius - 2.0, anEquivTorus.MinorRadius(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aMajorRadius, anEquivTorus.MajorRadius, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aMinorRadius - 2.0, anEquivTorus.MinorRadius, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -268,8 +268,8 @@ public class Geom_OffsetSurface_EquivalentSurface
         ToroidalSurface? anEquivTorus = anOffsetSurf.Surface() as ToroidalSurface;
         Assert.NotNull(anEquivTorus);
 
-        Assert.Equal(aMajorRadius, anEquivTorus.MajorRadius(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(2.0, anEquivTorus.MinorRadius(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aMajorRadius, anEquivTorus.MajorRadius, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(2.0, anEquivTorus.MinorRadius, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -283,12 +283,12 @@ public class Geom_OffsetSurface_EquivalentSurface
         Assert.NotNull(anEquiv);
 
         // Should return the internal basis surface (which is a copy of the original).
-        Assert.Same(anOffsetSurf.BasisSurface(), anEquiv);
+        Assert.Same(anOffsetSurf.BasisSurface, anEquiv);
 
         // The equivalent should be geometrically identical to the original.
         CylindricalSurface? anEquivCyl = anEquiv as CylindricalSurface;
         Assert.NotNull(anEquivCyl);
-        Assert.Equal(10.0, anEquivCyl.Radius(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(10.0, anEquivCyl.Radius, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -306,7 +306,7 @@ public class Geom_OffsetSurface_EquivalentSurface
         Assert.NotNull(anEquivTrimmed);
 
         // Verify bounds are preserved.
-        anEquivTrimmed.Bounds(out double U1, out double U2, out double V1, out double V2);
+        anEquivTrimmed.ParameterBounds(out double U1, out double U2, out double V1, out double V2);
         Assert.Equal(0.0, U1, global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(10.0, U2, global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(0.0, V1, global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -355,7 +355,7 @@ public class Geom_OffsetSurface_EquivalentSurface
 internal static class OffsetSurfaceTestUtils
 {
     //! Helper to compare vectors with tolerance.
-    public static bool VectorsEqual(in Vector3D theV1, in Vector3D theV2, double theTol) => (theV1 - theV2).Magnitude() < theTol;
+    public static bool VectorsEqual(in Vector3D theV1, in Vector3D theV2, double theTol) => (theV1 - theV2).Magnitude < theTol;
 
     /// <summary>The offset surface's adaptor and the adaptor of its equivalent surface.</summary>
     public static (SurfaceAdaptor Offset, SurfaceAdaptor Equiv) Adaptors(OffsetSurface theSurf)

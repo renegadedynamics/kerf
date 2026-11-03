@@ -48,13 +48,13 @@ public class GeomFill_CorrectedFrenet_Test
         aCorrectedFrenet.D0(aParam1, ref aTangent1, ref aNormal1, ref aBinormal1);
         aCorrectedFrenet.D0(aParam2, ref aTangent2, ref aNormal2, ref aBinormal2);
 
-        Assert.True(aTangent1.Magnitude() > 1e-10);
-        Assert.True(aNormal1.Magnitude() > 1e-10);
-        Assert.True(aBinormal1.Magnitude() > 1e-10);
+        Assert.True(aTangent1.Magnitude > 1e-10);
+        Assert.True(aNormal1.Magnitude > 1e-10);
+        Assert.True(aBinormal1.Magnitude > 1e-10);
 
-        Assert.True(aTangent2.Magnitude() > 1e-10);
-        Assert.True(aNormal2.Magnitude() > 1e-10);
-        Assert.True(aBinormal2.Magnitude() > 1e-10);
+        Assert.True(aTangent2.Magnitude > 1e-10);
+        Assert.True(aNormal2.Magnitude > 1e-10);
+        Assert.True(aBinormal2.Magnitude > 1e-10);
     }
 
     [Fact]
@@ -111,9 +111,9 @@ public class GeomFill_CorrectedFrenet_Test
 
             aCorrectedFrenet.D0(aParam, ref aTangent, ref aNormal, ref aBinormal);
 
-            Assert.True(aTangent.Magnitude() > 1e-12);
-            Assert.True(aNormal.Magnitude() > 1e-12);
-            Assert.True(aBinormal.Magnitude() > 1e-12);
+            Assert.True(aTangent.Magnitude > 1e-12);
+            Assert.True(aNormal.Magnitude > 1e-12);
+            Assert.True(aBinormal.Magnitude > 1e-12);
         }
     }
 

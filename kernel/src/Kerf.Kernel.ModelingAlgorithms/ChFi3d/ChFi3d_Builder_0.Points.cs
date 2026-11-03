@@ -61,13 +61,13 @@ internal static partial class Builder_0
 
         tolreached = tol3d;
 
-        if (Math.Abs(uv1.X() - uv2.X()) <= tol2d)
+        if (Math.Abs(uv1.X - uv2.X) <= tol2d)
         {
             if (iFlag == 0)
             {
-                pardeb = uv1.Y();
-                parfin = uv2.Y();
-                c3d = surf.UIso(uv1.X());
+                pardeb = uv1.Y;
+                parfin = uv2.Y;
+                c3d = surf.UIso(uv1.X);
                 if (pardeb > parfin)
                 {
                     pardeb = c3d.ReversedParameter(pardeb);
@@ -76,10 +76,10 @@ internal static partial class Builder_0
                 }
                 if (c3d is TrimmedCurve3D tc)
                 {
-                    c3d = tc.BasisCurve();
+                    c3d = tc.BasisCurve;
                     if (c3d.IsPeriodic)
                     {
-                        global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(c3d.FirstParameter(), c3d.LastParameter(), tol2d, ref pardeb,
+                        global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(c3d.FirstParameter, c3d.LastParameter, tol2d, ref pardeb,
                                               ref parfin);
                     }
                 }
@@ -98,14 +98,14 @@ internal static partial class Builder_0
                 pcurv = new LineCurve2D(uv1, new Direction2D(new Vector2D(uv1, uv2)));
             }
         }
-        else if (Math.Abs(uv1.Y() - uv2.Y()) <= tol2d)
+        else if (Math.Abs(uv1.Y - uv2.Y) <= tol2d)
         {
             // iso v
             if (iFlag == 0)
             {
-                pardeb = uv1.X();
-                parfin = uv2.X();
-                c3d = surf.VIso(uv1.Y());
+                pardeb = uv1.X;
+                parfin = uv2.X;
+                c3d = surf.VIso(uv1.Y);
                 if (pardeb > parfin)
                 {
                     pardeb = c3d.ReversedParameter(pardeb);
@@ -114,10 +114,10 @@ internal static partial class Builder_0
                 }
                 if (c3d is TrimmedCurve3D tc)
                 {
-                    c3d = tc.BasisCurve();
+                    c3d = tc.BasisCurve;
                     if (c3d.IsPeriodic)
                     {
-                        global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(c3d.FirstParameter(), c3d.LastParameter(), tol2d, ref pardeb,
+                        global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(c3d.FirstParameter, c3d.LastParameter, tol2d, ref pardeb,
                                               ref parfin);
                     }
                 }
@@ -162,7 +162,7 @@ internal static partial class Builder_0
                 // non regarding the tangency with neighboring arcs!
                 Box2d bs = new();
                 double umin, umax, vmin, vmax;
-                surf.Bounds(out umin, out umax, out vmin, out vmax);
+                surf.ParameterBounds(out umin, out umax, out vmin, out vmax);
                 bs.Update(umin, vmin, umax, vmax);
                 bs.SetGap(global::Kerf.Engine.Foundation.Precision.PConfusion());
                 bool aIN = true;
@@ -273,7 +273,7 @@ internal static partial class Builder_0
             Vertex v = ((TopologyHVertex)sp.Vertex()).Vertex();
 
             cp.SetVertex(v);
-            dist = (sp.Value()).Distance(Tool.Pnt(v));
+            dist = (sp.Value()).DistanceTo(Tool.Pnt(v));
             //// modified by jgv, 18.09.02 for OCC571 ////
             // maxtol += Dist;
             maxtol = Math.Max(dist, maxtol);
@@ -297,8 +297,8 @@ internal static partial class Builder_0
                 Vertex[] v = new Vertex[2];
                 Exploration.Vertices(e, out v[0], out v[1]);
 
-                distF = (sp.Value()).Distance(Tool.Pnt(v[0]));
-                distL = (sp.Value()).Distance(Tool.Pnt(v[1]));
+                distF = (sp.Value()).DistanceTo(Tool.Pnt(v[0]));
+                distL = (sp.Value()).DistanceTo(Tool.Pnt(v[1]));
                 if (distF < distL)
                 {
                     Index_min = 0;
@@ -331,7 +331,7 @@ internal static partial class Builder_0
 
                 // Definition of the arc
                 Orientation tr;
-                Orientation or = e.Orientation();
+                Orientation or = e.Orientation;
                 if (start)
                 {
                     tr = global::Kerf.Engine.Topology.TopAbs.Reverse(global::Kerf.Engine.Topology.TopAbs.Compose(ChFi3d_TrsfTrans(transLine), or));
@@ -520,7 +520,7 @@ internal static partial class Builder_0
         int iv = dStr.AddShape(v);
         NCollection_List<DsInterference> li = dStr.ChangeShapeInterferences(ic);
         Edge e = ShapeCasts.Edge(dStr.Shape(ic));
-        e.Orientation(Forward);
+        e.Orient(Forward);
         Explorer ex = new();
 
         // process them checking that it has not been done already.
@@ -529,7 +529,7 @@ internal static partial class Builder_0
             Vertex vv = ShapeCasts.Vertex(ex.Current());
             if (vv.IsSame(v))
             {
-                Orientation or = global::Kerf.Engine.Topology.TopAbs.Reverse(vv.Orientation());
+                Orientation or = global::Kerf.Engine.Topology.TopAbs.Reverse(vv.Orientation);
                 double par = Tool.Parameter(vv, e);
                 QueryAddVertexInEdge(li, ic, iv, par, or);
             }

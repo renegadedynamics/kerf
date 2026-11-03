@@ -367,7 +367,7 @@ public partial struct PatchPoint : IEquatable<PatchPoint>
     {
         theOut.Write("----------- IntPatch_Point : " + '\n');
         _pt.Parameters(out double u1, out double v1, out double u2, out double v2);
-        theOut.Write($"P({F(_pt.Value().X())},{F(_pt.Value().Y())},{F(_pt.Value().Z())}) UV1({F(u1)},{F(v1)})  "
+        theOut.Write($"P({F(_pt.Value().X)},{F(_pt.Value().Y)},{F(_pt.Value().Z)}) UV1({F(u1)},{F(v1)})  "
                      + $"UV2({F(u2)},{F(v2)}) (Para:{F(_para)})\n");
         if (_onS1)
         {

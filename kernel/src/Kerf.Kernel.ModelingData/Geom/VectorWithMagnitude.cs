@@ -60,9 +60,9 @@ public class VectorWithMagnitude : GeometryVector3D
         _gpVec = _gpVec.WithZ(z);
     }
 
-    public override double Magnitude() => _gpVec.Magnitude();
+    public override double Magnitude() => _gpVec.Magnitude;
 
-    public override double SquareMagnitude() => _gpVec.SquareMagnitude();
+    public override double SquareMagnitude() => _gpVec.SquareMagnitude;
 
     internal void Add(GeometryVector3D other)
     {

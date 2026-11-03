@@ -21,7 +21,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// The static Compute* functions return the input curve itself when it already is of the requested type (as OCCT
 /// returns the handle), and a new curve otherwise; ConvertToAnalytical works on the basis of a trimmed curve.
 /// </remarks>
-public sealed class CurveToAnaCurve
+internal sealed class CurveToAnaCurve
 {
     private Curve3D? _curve;
     private double _gap;
@@ -75,7 +75,7 @@ public sealed class CurveToAnaCurve
         while (curve is TrimmedCurve3D)
         {
             TrimmedCurve3D trimmed = (TrimmedCurve3D)curve;
-            curve = trimmed.BasisCurve();
+            curve = trimmed.BasisCurve;
         }
 
         Curve3D? c =
@@ -112,7 +112,7 @@ public sealed class CurveToAnaCurve
         {
             for (int j = i + 1; j <= nbPoles; j++)
             {
-                double dist = aPoles[i].SquareDistance(aPoles[j]);
+                double dist = aPoles[i].SquareDistanceTo(aPoles[j]);
                 if (dist > dMax)
                 {
                     dMax = dist;
@@ -135,7 +135,7 @@ public sealed class CurveToAnaCurve
         double max = 0.0;
         for (i = 1; i <= nbPoles; i++)
         {
-            double dist = alin.SquareDistance(aPoles[i]);
+            double dist = alin.SquareDistanceTo(aPoles[i]);
             if (dist > tol2)
             {
                 return false;
@@ -192,7 +192,7 @@ public sealed class CurveToAnaCurve
 
         Point3D p1 = curve.Value(c1);
         Point3D p2 = curve.Value(c2);
-        if (p1.SquareDistance(p2) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+        if (p1.SquareDistanceTo(p2) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             return line;
         }
@@ -252,17 +252,17 @@ public sealed class CurveToAnaCurve
     {
         //  Control if points are not aligned (should be done by MakeCirc
         double maxCoord = Math.Sqrt(global::Kerf.Engine.Foundation.Precision.Infinite());
-        if (Math.Abs(p0.X()) > maxCoord || Math.Abs(p0.Y()) > maxCoord || Math.Abs(p0.Z()) > maxCoord)
+        if (Math.Abs(p0.X) > maxCoord || Math.Abs(p0.Y) > maxCoord || Math.Abs(p0.Z) > maxCoord)
         {
             return false;
         }
 
-        if (Math.Abs(p1.X()) > maxCoord || Math.Abs(p1.Y()) > maxCoord || Math.Abs(p1.Z()) > maxCoord)
+        if (Math.Abs(p1.X) > maxCoord || Math.Abs(p1.Y) > maxCoord || Math.Abs(p1.Z) > maxCoord)
         {
             return false;
         }
 
-        if (Math.Abs(p2.X()) > maxCoord || Math.Abs(p2.Y()) > maxCoord || Math.Abs(p2.Z()) > maxCoord)
+        if (Math.Abs(p2.X) > maxCoord || Math.Abs(p2.Y) > maxCoord || Math.Abs(p2.Z) > maxCoord)
         {
             return false;
         }
@@ -275,14 +275,14 @@ public sealed class CurveToAnaCurve
         }
 
         crc = mkc.Value();
-        if (crc.Radius() < Constants.Resolution())
+        if (crc.Radius < Constants.Resolution())
         {
             return false;
         }
 
         //  Align to P0
-        Point3D pc = crc.Location();
-        Frame3D axe = crc.Position();
+        Point3D pc = crc.Location;
+        Frame3D axe = crc.Position;
         var vx = new Vector3D(pc, p0);
         axe = axe.WithXDirection(new Direction3D(vx));
         crc = crc.WithPosition(axe);
@@ -332,7 +332,7 @@ public sealed class CurveToAnaCurve
         {
             double u = c1 + (du * i);
             Point3D pp = c3d.Value(u);
-            double dist = crc.Distance(pp);
+            double dist = crc.DistanceTo(pp);
             if (dist > tol)
             {
                 return circ; // not done
@@ -382,8 +382,8 @@ public sealed class CurveToAnaCurve
         Point3D p1 = hap.Value(1);
         Point3D p2 = hap.Value(2);
         Point3D p3 = hap.Value(3);
-        double dist1 = p1.Distance(p2);
-        double dist2 = p1.Distance(p3);
+        double dist1 = p1.DistanceTo(p2);
+        double dist2 = p1.DistanceTo(p3);
         if (dist1 < prec || dist2 < prec)
         {
             return false;
@@ -407,7 +407,7 @@ public sealed class CurveToAnaCurve
             }
         }
 
-        if (nv.Magnitude() < Constants.Resolution())
+        if (nv.Magnitude < Constants.Resolution())
         {
             return false;
         }
@@ -417,7 +417,7 @@ public sealed class CurveToAnaCurve
             for (i = 4; i <= size; i++)
             {
                 Point3D pn = hap.Value(i);
-                dist1 = p1.Distance(pn);
+                dist1 = p1.DistanceTo(pn);
                 if (dist1 < prec || global::Kerf.Engine.Foundation.Precision.IsInfinite(dist1))
                 {
                     return false;
@@ -599,7 +599,7 @@ public sealed class CurveToAnaCurve
         Point3D pStart = c3d.Value(c1);
         Point3D pEnd = c3d.Value(c2);
 
-        bool isClos = pStart.Distance(pEnd) < prec;
+        bool isClos = pStart.DistanceTo(pEnd) < prec;
         if (isClos)
         {
             c2n = c2 - (c2 - c1) / 5;
@@ -636,8 +636,8 @@ public sealed class CurveToAnaCurve
             return res;
         }
 
-        if (Math.Abs(ndir.X()) < Constants.Resolution() && Math.Abs(ndir.Y()) < Constants.Resolution()
-            && Math.Abs(ndir.Z()) < Constants.Resolution())
+        if (Math.Abs(ndir.X) < Constants.Resolution() && Math.Abs(ndir.Y) < Constants.Resolution()
+            && Math.Abs(ndir.Z) < Constants.Resolution())
         {
             return res;
         }
@@ -702,13 +702,13 @@ public sealed class CurveToAnaCurve
                 trans *= -1;
                 center = center.WithZ(zn);
                 Point3D newCenter = center.Transformed(tr2);
-                var ptmp = new Point3D(center.X() + mainAxis.X() * 10,
-                                      center.Y() + mainAxis.Y() * 10,
-                                      center.Z() + mainAxis.Z() * 10);
+                var ptmp = new Point3D(center.X + mainAxis.X * 10,
+                                      center.Y + mainAxis.Y * 10,
+                                      center.Z + mainAxis.Z * 10);
                 Point3D newPtmp = ptmp.Transformed(tr2);
-                var newMainAxis = new Direction3D(newPtmp.X() - newCenter.X(),
-                                             newPtmp.Y() - newCenter.Y(),
-                                             newPtmp.Z() - newCenter.Z());
+                var newMainAxis = new Direction3D(newPtmp.X - newCenter.X,
+                                             newPtmp.Y - newCenter.Y,
+                                             newPtmp.Z - newCenter.Z);
                 var ax2 = new Frame3D(newCenter, ndir, newMainAxis);
 
                 var ellipse = new Ellipse3D(ax2, rmax, rmin);
@@ -722,7 +722,7 @@ public sealed class CurveToAnaCurve
                 {
                     pp = c3d.Value(c1 + i * dc);
                     double par = global::Kerf.Engine.Geometry.ElCLib.Parameter(ellipse, pp);
-                    double dist = gell.Value(par).Distance(pp);
+                    double dist = gell.Value(par).DistanceTo(pp);
                     if (dist > tol)
                     {
                         return res; // not done
@@ -796,7 +796,7 @@ public sealed class CurveToAnaCurve
         if (c3d is TrimmedCurve3D)
         {
             TrimmedCurve3D tc = (TrimmedCurve3D)c3d;
-            c3d = tc.BasisCurve();
+            c3d = tc.BasisCurve;
         }
 
         if (convType == Target)
@@ -864,7 +864,7 @@ public sealed class CurveToAnaCurve
         //  theConvType == GeomConvert_MinGap
         // recognition in case of small curve
         int imin = -1;
-        if ((p1.Distance(p2) < 2 * tolerance) && (p1.Distance(p3) < 2 * tolerance))
+        if ((p1.DistanceTo(p2) < 2 * tolerance) && (p1.DistanceTo(p3) < 2 * tolerance))
         {
             newc3d[1] = ComputeCircle(c3d, tolerance, c1, c2, ref fp[1], ref lp[1], ref d[1]);
             newc3d[0] = ComputeLine(c3d, tolerance, c1, c2, ref fp[0], ref lp[0], ref d[0]);

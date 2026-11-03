@@ -20,7 +20,7 @@ public sealed class MakeMirror
     public MakeMirror(in Axis3D axis) => _theMirror = _theMirror.WithMirror(axis);
 
     /// <summary>An axial symmetry about a line.</summary>
-    public MakeMirror(in Line3D line) => _theMirror = _theMirror.WithMirror(new Axis3D(line.Location(), line.Direction()));
+    public MakeMirror(in Line3D line) => _theMirror = _theMirror.WithMirror(new Axis3D(line.Location, line.Direction));
 
     /// <summary>An axial symmetry about the axis through a point with a direction.</summary>
     public MakeMirror(in Point3D point, in Direction3D direc) => _theMirror = _theMirror.WithMirror(new Axis3D(point, direc));
@@ -29,7 +29,7 @@ public sealed class MakeMirror
     public MakeMirror(in Frame3D plane) => _theMirror = _theMirror.WithMirror(plane);
 
     /// <summary>A planar symmetry about a plane.</summary>
-    public MakeMirror(in Plane3D plane) => _theMirror = _theMirror.WithMirror(plane.Position().Ax2());
+    public MakeMirror(in Plane3D plane) => _theMirror = _theMirror.WithMirror(plane.Position.Frame);
 
     /// <summary>The constructed transformation.</summary>
     public Transform3D Value() => _theMirror;

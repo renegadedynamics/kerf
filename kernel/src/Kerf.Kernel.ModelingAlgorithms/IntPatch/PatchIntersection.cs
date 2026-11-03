@@ -267,23 +267,23 @@ public partial class PatchIntersection
             if (typs1 == global::Kerf.Geometry.SurfaceKind.Cone || typs2 == global::Kerf.Geometry.SurfaceKind.Cone)
             {
                 Cone con1 = (ctType == global::Kerf.Geometry.SurfaceKind.Cone) ? ctSurf.Cone() : geomSurf.Cone();
-                double a1 = Math.Abs(con1.SemiAngle());
+                double a1 = Math.Abs(con1.SemiAngle);
                 bToCheck = (a1 < 0.02) || (a1 > 1.55);
                 //
                 if (typs1 == typs2)
                 {
                     Cone con2 = geomSurf.Cone();
-                    double a2 = Math.Abs(con2.SemiAngle());
+                    double a2 = Math.Abs(con2.SemiAngle);
                     bToCheck = bToCheck || (a2 < 0.02) || (a2 > 1.55);
                     //
                     if (a1 > 1.55 && a2 > 1.55)
                     { // quasi-planes: if same domain, treat as canonic
-                        Axis3D A1 = con1.Axis(), A2 = con2.Axis();
+                        Axis3D A1 = con1.Axis, A2 = con2.Axis;
                         if (A1.IsParallel(A2, global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
-                            Point3D apex1 = con1.Apex(), apex2 = con2.Apex();
-                            Plane3D plan1 = new(apex1, A1.Direction());
-                            if (plan1.Distance(apex2) <= global::Kerf.Engine.Foundation.Precision.Confusion())
+                            Point3D apex1 = con1.Apex, apex2 = con2.Apex;
+                            Plane3D plan1 = new(apex1, A1.Direction);
+                            if (plan1.DistanceTo(apex2) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
                                 bToCheck = false;
                             }
@@ -294,25 +294,25 @@ public partial class PatchIntersection
                 treatAsBiParametric = bToCheck;
                 if (ctType == global::Kerf.Geometry.SurfaceKind.Cone)
                 {
-                    ctAx = con1.Axis();
+                    ctAx = con1.Axis;
                 }
             }
             //
             if (typs1 == global::Kerf.Geometry.SurfaceKind.Torus || typs2 == global::Kerf.Geometry.SurfaceKind.Torus)
             {
                 Torus tor1 = (ctType == global::Kerf.Geometry.SurfaceKind.Torus) ? ctSurf.Torus() : geomSurf.Torus();
-                bToCheck = tor1.MajorRadius() > tor1.MinorRadius();
+                bToCheck = tor1.MajorRadius > tor1.MinorRadius;
                 if (typs1 == typs2)
                 {
                     Torus tor2 = geomSurf.Torus();
                     // OCCT: this overload ignores aTor1's test for two tori (the list-of-points Perform combines
                     // both, and also accepts equal radii); ported as written.
-                    bToCheck = tor2.MajorRadius() > tor2.MinorRadius();
+                    bToCheck = tor2.MajorRadius > tor2.MinorRadius;
                 }
                 //
                 if (ctType == global::Kerf.Geometry.SurfaceKind.Torus)
                 {
-                    ctAx = tor1.Axis();
+                    ctAx = tor1.Axis;
                 }
             }
             //
@@ -446,23 +446,23 @@ public partial class PatchIntersection
             if (typs1 == global::Kerf.Geometry.SurfaceKind.Cone || typs2 == global::Kerf.Geometry.SurfaceKind.Cone)
             {
                 Cone con1 = (ctType == global::Kerf.Geometry.SurfaceKind.Cone) ? ctSurf.Cone() : geomSurf.Cone();
-                double a1 = Math.Abs(con1.SemiAngle());
+                double a1 = Math.Abs(con1.SemiAngle);
                 bToCheck = (a1 < 0.02) || (a1 > 1.55);
                 //
                 if (typs1 == typs2)
                 {
                     Cone con2 = geomSurf.Cone();
-                    double a2 = Math.Abs(con2.SemiAngle());
+                    double a2 = Math.Abs(con2.SemiAngle);
                     bToCheck = bToCheck || (a2 < 0.02) || (a2 > 1.55);
                     //
                     if (a1 > 1.55 && a2 > 1.55)
                     { // quasi-planes: if same domain, treat as canonic
-                        Axis3D A1 = con1.Axis(), A2 = con2.Axis();
+                        Axis3D A1 = con1.Axis, A2 = con2.Axis;
                         if (A1.IsParallel(A2, global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
-                            Point3D apex1 = con1.Apex(), apex2 = con2.Apex();
-                            Plane3D plan1 = new(apex1, A1.Direction());
-                            if (plan1.Distance(apex2) <= global::Kerf.Engine.Foundation.Precision.Confusion())
+                            Point3D apex1 = con1.Apex, apex2 = con2.Apex;
+                            Plane3D plan1 = new(apex1, A1.Direction);
+                            if (plan1.DistanceTo(apex2) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
                                 bToCheck = false;
                             }
@@ -473,25 +473,25 @@ public partial class PatchIntersection
                 treatAsBiParametric = bToCheck;
                 if (ctType == global::Kerf.Geometry.SurfaceKind.Cone)
                 {
-                    ctAx = con1.Axis();
+                    ctAx = con1.Axis;
                 }
             }
             //
             if (typs1 == global::Kerf.Geometry.SurfaceKind.Torus || typs2 == global::Kerf.Geometry.SurfaceKind.Torus)
             {
                 Torus tor1 = (ctType == global::Kerf.Geometry.SurfaceKind.Torus) ? ctSurf.Torus() : geomSurf.Torus();
-                bToCheck = tor1.MajorRadius() > tor1.MinorRadius();
+                bToCheck = tor1.MajorRadius > tor1.MinorRadius;
                 if (typs1 == typs2)
                 {
                     Torus tor2 = geomSurf.Torus();
-                    bToCheck = (bToCheck && (tor2.MajorRadius() > tor2.MinorRadius()))
-                               || (Math.Abs(tor1.MajorRadius() - tor2.MajorRadius()) < tolTang
-                                   && Math.Abs(tor1.MinorRadius() - tor2.MinorRadius()) < tolTang);
+                    bToCheck = (bToCheck && (tor2.MajorRadius > tor2.MinorRadius))
+                               || (Math.Abs(tor1.MajorRadius - tor2.MajorRadius) < tolTang
+                                   && Math.Abs(tor1.MinorRadius - tor2.MinorRadius) < tolTang);
                 }
                 //
                 if (ctType == global::Kerf.Geometry.SurfaceKind.Torus)
                 {
-                    ctAx = tor1.Axis();
+                    ctAx = tor1.Axis;
                 }
             }
             //
@@ -560,13 +560,13 @@ public partial class PatchIntersection
             {
                 case Plane:
                 {
-                    aGeomAx = aGeomSurf.Plane().Axis();
+                    aGeomAx = aGeomSurf.Plane().Axis;
                     if (aCTType == global::Kerf.Geometry.SurfaceKind.Cone)
                     {
                         bGeomGeom = 1;
-                        if (Math.Abs(aCTSurf.Cone().SemiAngle()) < 0.02)
+                        if (Math.Abs(aCTSurf.Cone().SemiAngle) < 0.02)
                         {
-                            double ps = Math.Abs(aCTAx.Direction().Dot(aGeomAx.Direction()));
+                            double ps = Math.Abs(aCTAx.Direction.Dot(aGeomAx.Direction));
                             if (ps < 0.015)
                             {
                                 bGeomGeom = 0;
@@ -577,7 +577,7 @@ public partial class PatchIntersection
                     {
                         if (aCTAx.IsParallel(aGeomAx, global::Kerf.Engine.Foundation.Precision.Angular())
                             || (aCTAx.IsNormal(aGeomAx, global::Kerf.Engine.Foundation.Precision.Angular())
-                                && (aGeomSurf.Plane().Distance(aCTAx.Location()) < global::Kerf.Engine.Foundation.Precision.Confusion())))
+                                && (aGeomSurf.Plane().DistanceTo(aCTAx.Location) < global::Kerf.Engine.Foundation.Precision.Confusion())))
                         {
                             bGeomGeom = 1;
                         }
@@ -587,7 +587,7 @@ public partial class PatchIntersection
                 }
                 case global::Kerf.Geometry.SurfaceKind.Sphere:
                 {
-                    if (l1.Distance(aGeomSurf.Sphere().Location()) < global::Kerf.Engine.Foundation.Precision.Confusion())
+                    if (l1.DistanceTo(aGeomSurf.Sphere().Location) < global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         bGeomGeom = 1;
                     }
@@ -595,13 +595,13 @@ public partial class PatchIntersection
                     break;
                 }
                 case global::Kerf.Geometry.SurfaceKind.Cylinder:
-                    aGeomAx = aGeomSurf.Cylinder().Axis();
+                    aGeomAx = aGeomSurf.Cylinder().Axis;
                     break;
                 case global::Kerf.Geometry.SurfaceKind.Cone:
-                    aGeomAx = aGeomSurf.Cone().Axis();
+                    aGeomAx = aGeomSurf.Cone().Axis;
                     break;
                 case global::Kerf.Geometry.SurfaceKind.Torus:
-                    aGeomAx = aGeomSurf.Torus().Axis();
+                    aGeomAx = aGeomSurf.Torus().Axis;
                     break;
                 default:
                     bToCheck = false;
@@ -611,7 +611,7 @@ public partial class PatchIntersection
             if (bToCheck)
             {
                 if (aCTAx.IsParallel(aGeomAx, global::Kerf.Engine.Foundation.Precision.Angular())
-                    && (l1.Distance(aGeomAx.Location()) <= global::Kerf.Engine.Foundation.Precision.Confusion()))
+                    && (l1.DistanceTo(aGeomAx.Location) <= global::Kerf.Engine.Foundation.Precision.Confusion()))
                 {
                     bGeomGeom = 1;
                 }
@@ -875,7 +875,7 @@ public partial class PatchIntersection
 
             if (s1.GetType() == global::Kerf.Geometry.SurfaceKind.Cone)
             {
-                listOfCriticalPoints.Append(s1.Cone().Apex());
+                listOfCriticalPoints.Append(s1.Cone().Apex);
             }
             else if (s1.GetType() == global::Kerf.Geometry.SurfaceKind.Sphere)
             {
@@ -885,7 +885,7 @@ public partial class PatchIntersection
 
             if (s2.GetType() == global::Kerf.Geometry.SurfaceKind.Cone)
             {
-                listOfCriticalPoints.Append(s2.Cone().Apex());
+                listOfCriticalPoints.Append(s2.Cone().Apex);
             }
             else if (s2.GetType() == global::Kerf.Geometry.SurfaceKind.Sphere)
             {
@@ -1186,7 +1186,7 @@ public partial class PatchIntersection
             }
             double t, dt = (psup - pinf) / (nbBndPnts - 1);
             bnd.D1((pinf + psup) / 2.0, out Point2D p1, out Vector2D dir);
-            isU = Math.Abs(dir.X()) > Math.Abs(dir.Y());
+            isU = Math.Abs(dir.X) > Math.Abs(dir.Y);
             Point3D pp1 = new();
             double d1NormMax = 0.0;
             Xyz pmid = new(0.0, 0.0, 0.0);
@@ -1194,14 +1194,14 @@ public partial class PatchIntersection
             for (t = pinf; t <= psup; t += dt)
             {
                 p1 = bnd.Value(t);
-                s1.D1(p1.X(), p1.Y(), out pp1, out Vector3D du, out Vector3D dv);
+                s1.D1(p1.X, p1.Y, out pp1, out Vector3D du, out Vector3D dv);
                 if (isU)
                 {
-                    d1NormMax = Max(d1NormMax, du.Magnitude());
+                    d1NormMax = Max(d1NormMax, du.Magnitude);
                 }
                 else
                 {
-                    d1NormMax = Max(d1NormMax, dv.Magnitude());
+                    d1NormMax = Max(d1NormMax, dv.Magnitude);
                 }
 
                 pmid += pp1.XYZ();
@@ -1321,7 +1321,7 @@ public partial class PatchIntersection
                                        List<SurfaceAdaptorBase> vecHS1,
                                        List<SurfaceAdaptorBase> vecHS2)
     {
-        if ((s1.GetType() == global::Kerf.Geometry.SurfaceKind.Cone) && (Math.Abs(M_PI / 2.0 - Math.Abs(s1.Cone().SemiAngle())) < tol))
+        if ((s1.GetType() == global::Kerf.Geometry.SurfaceKind.Cone) && (Math.Abs(M_PI / 2.0 - Math.Abs(s1.Cone().SemiAngle)) < tol))
         {
             SplitCone(s1, d1, tol, vecHS1);
         }
@@ -1330,7 +1330,7 @@ public partial class PatchIntersection
             vecHS1.Add(s1);
         }
 
-        if ((s2.GetType() == global::Kerf.Geometry.SurfaceKind.Cone) && (Math.Abs(M_PI / 2.0 - Math.Abs(s2.Cone().SemiAngle())) < tol))
+        if ((s2.GetType() == global::Kerf.Geometry.SurfaceKind.Cone) && (Math.Abs(M_PI / 2.0 - Math.Abs(s2.Cone().SemiAngle)) < tol))
         {
             SplitCone(s2, d2, tol, vecHS2);
         }

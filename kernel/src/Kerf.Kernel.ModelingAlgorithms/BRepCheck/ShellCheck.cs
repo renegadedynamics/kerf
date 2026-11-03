@@ -73,7 +73,7 @@ public class ShellCheck : ResultCheck
     }
 
     private static bool IsOriented(in Shape s)
-        => s.Orientation() == Forward || s.Orientation() == Reversed;
+        => s.Orientation == Forward || s.Orientation == Reversed;
 
     /// <summary>The status list of the shell itself, read under the lock in parallel mode.</summary>
     private NCollection_List<StatusCheck> LockedStatusList()
@@ -205,13 +205,13 @@ public class ShellCheck : ResultCheck
             return;
         }
 
-        ShapeType styp = s.ShapeType();
+        ShapeType styp = s.Type;
         switch (styp)
         {
             case ShapeType.Solid:
             {
                 StatusCheck fst = Closed();
-                if ((fst == StatusCheck.NotClosed && s.Closed()) || (fst != StatusCheck.NoError))
+                if ((fst == StatusCheck.NotClosed && s.IsClosed) || (fst != StatusCheck.NoError))
                 {
                     BRepCheckCheck.Add(lst, fst);
                 }
@@ -461,10 +461,10 @@ public class ShellCheck : ResultCheck
 
         for (exp.Init(_shape, ShapeType.Face); exp.More(); exp.Next())
         {
-            if (!mapOfShapeOrientation.TryAdd(exp.Current(), (int)exp.Current().Orientation()))
+            if (!mapOfShapeOrientation.TryAdd(exp.Current(), (int)exp.Current().Orientation))
             {
                 // OCCT's Bind replaces the value of a bound key
-                mapOfShapeOrientation[exp.Current()] = (int)exp.Current().Orientation();
+                mapOfShapeOrientation[exp.Current()] = (int)exp.Current().Orientation;
                 _ostat = StatusCheck.RedundantFace;
                 if (update)
                 {
@@ -518,7 +518,7 @@ public class ShellCheck : ResultCheck
                 {
                     int iorf = mapOfShapeOrientation.GetValue(fref);
                     orf = (Orientation)iorf;
-                    fref.Orientation(orf);
+                    fref.Orient(orf);
 
                     // edge is examined
                     if (!lite.Value().IsSame(fref)) // edge non "closed"
@@ -531,7 +531,7 @@ public class ShellCheck : ResultCheck
                             }
                         }
 
-                        Orientation orient = ede.Current().Orientation();
+                        Orientation orient = ede.Current().Orientation;
                         Face fcur = ShapeCasts.Face(lite.Value());
 
                         if (!mapOfShapeOrientation.ContainsKey(fcur))
@@ -548,7 +548,7 @@ public class ShellCheck : ResultCheck
 
                         int oriFCur = mapOfShapeOrientation.GetValue(fcur);
                         orf = (Orientation)oriFCur;
-                        fcur.Orientation(orf);
+                        fcur.Orient(orf);
 
                         for (ede.Init(fcur, ShapeType.Edge); ede.More(); ede.Next())
                         {
@@ -558,7 +558,7 @@ public class ShellCheck : ResultCheck
                             }
                         }
 
-                        if (ede.Current().Orientation() == orient)
+                        if (ede.Current().Orientation == orient)
                         {
                             // The loop is continued on the edges as many times
                             // as the same edge is present in the wire
@@ -573,7 +573,7 @@ public class ShellCheck : ResultCheck
                                 }
                             }
 
-                            if (!bfound || (ede.Current().Orientation() == orient))
+                            if (!bfound || (ede.Current().Orientation == orient))
                             {
                                 _ostat = StatusCheck.BadOrientationOfSubshape;
                                 if (update)
@@ -610,7 +610,7 @@ public class ShellCheck : ResultCheck
 
                     int iorf = mapOfShapeOrientation.GetValue(fcur);
                     orf = (Orientation)iorf;
-                    fcur.Orientation(orf);
+                    fcur.Orient(orf);
 
                     for (ede.Init(fcur, ShapeType.Edge); ede.More(); ede.Next())
                     {
@@ -632,7 +632,7 @@ public class ShellCheck : ResultCheck
                         }
                     }
 
-                    Orientation orient = ede.Current().Orientation();
+                    Orientation orient = ede.Current().Orientation;
                     if (orient == Forward)
                     {
                         numF++;
@@ -691,7 +691,7 @@ public class ShellCheck : ResultCheck
 
                         int iorf = mapOfShapeOrientation.GetValue(fref);
                         orf = (Orientation)iorf;
-                        fref.Orientation(orf);
+                        fref.Orient(orf);
 
                         var edFcur = new Explorer();
                         alre.Add(fref);
@@ -699,7 +699,7 @@ public class ShellCheck : ResultCheck
                         for (ede.Init(fref, ShapeType.Edge); ede.More(); ede.Next())
                         {
                             Edge edg = ShapeCasts.Edge(ede.Current());
-                            Orientation orient = edg.Orientation();
+                            Orientation orient = edg.Orientation;
                             NCollection_List<Shape> lface = _mapEF.GetValue(edg);
                             var lite = new NCollection_List<Shape>.Iterator(lface);
 
@@ -732,7 +732,7 @@ public class ShellCheck : ResultCheck
 
                             int oriFCur = mapOfShapeOrientation.GetValue(fcur);
                             orf = (Orientation)oriFCur;
-                            fcur.Orientation(orf);
+                            fcur.Orient(orf);
 
                             for (edFcur.Init(fcur, ShapeType.Edge); edFcur.More(); edFcur.Next())
                             {
@@ -742,7 +742,7 @@ public class ShellCheck : ResultCheck
                                 }
                             }
 
-                            if (edFcur.Current().Orientation() == orient)
+                            if (edFcur.Current().Orientation == orient)
                             {
                                 if (alre.Contains(fcur))
                                 {
@@ -860,7 +860,7 @@ public class ShellCheck : ResultCheck
                 theMultiEd.Add(ed);
             }
 
-            if (ed.Orientation() != Reversed && ed.Orientation() != Forward)
+            if (ed.Orientation != Reversed && ed.Orientation != Forward)
             {
                 theUnOriEd.Add(ed);
             }

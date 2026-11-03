@@ -40,12 +40,12 @@ public class ExtElSS
         _isPar = false;
         _nbExt = 0;
 
-        if ((s1.Axis().Direction()).IsParallel(s2.Axis().Direction(), global::Kerf.Engine.Foundation.Precision.Angular()))
+        if ((s1.Axis.Direction).IsParallel(s2.Axis.Direction, global::Kerf.Engine.Foundation.Precision.Angular()))
         {
             _isPar = true;
             _nbExt = 1;
             _sqDist = new NCollection_HArray1<double>(1, 1);
-            _sqDist.SetValue(1, s1.SquareDistance(s2));
+            _sqDist.SetValue(1, s1.SquareDistanceTo(s2));
         }
     }
 

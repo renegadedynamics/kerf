@@ -47,17 +47,17 @@ public sealed class ContAna
     {
         _done = false;
         _typL = global::Kerf.Geometry.CurveKind.Circle;
-        _pt1 = s.Location();
+        _pt1 = s.Location;
         _dir1 = d;
-        if (Math.Abs(d.Dot(s.XAxis().Direction())) < 0.9999999999999)
+        if (Math.Abs(d.Dot(s.XAxis.Direction)) < 0.9999999999999)
         {
-            _dir2 = d.Crossed(s.XAxis().Direction());
+            _dir2 = d.Crossed(s.XAxis.Direction);
         }
         else
         {
-            _dir2 = d.Crossed(s.YAxis().Direction());
+            _dir2 = d.Crossed(s.YAxis.Direction);
         }
-        _prm = s.Radius();
+        _prm = s.Radius;
         _nbSol = 1;
         _done = true;
     }
@@ -69,17 +69,17 @@ public sealed class ContAna
         _typL = global::Kerf.Geometry.CurveKind.Circle;
 
         _dir1 = d;
-        if (Math.Abs(d.Dot(s.XAxis().Direction())) < 0.9999999999999)
+        if (Math.Abs(d.Dot(s.XAxis.Direction)) < 0.9999999999999)
         {
-            _dir2 = d.Crossed(s.XAxis().Direction());
+            _dir2 = d.Crossed(s.XAxis.Direction);
         }
         else
         {
-            _dir2 = d.Crossed(s.YAxis().Direction());
+            _dir2 = d.Crossed(s.YAxis.Direction);
         }
-        double alpha = (s.Direct() ? angle : -angle);
-        _pt1 = _pt1.WithXYZ(s.Location().XYZ() - s.Radius() * Math.Sin(alpha) * d.XYZ());
-        _prm = s.Radius() * Math.Cos(alpha);
+        double alpha = (s.IsDirect ? angle : -angle);
+        _pt1 = _pt1.WithXYZ(s.Location.XYZ() - s.Radius * Math.Sin(alpha) * d.XYZ());
+        _prm = s.Radius * Math.Cos(alpha);
         _nbSol = 1;
         _done = true;
     }
@@ -89,8 +89,8 @@ public sealed class ContAna
     {
         _done = false;
 
-        double radius = s.Radius();
-        double dist = eye.Distance(s.Location());
+        double radius = s.Radius;
+        double dist = eye.DistanceTo(s.Location);
         if (dist <= radius)
         {
             _nbSol = 0;
@@ -104,16 +104,16 @@ public sealed class ContAna
             }
             else
             {
-                Xyz locxyz = s.Location().XYZ();
+                Xyz locxyz = s.Location.XYZ();
                 _dir1 = _dir1.WithXYZ(eye.XYZ() - locxyz);
                 _pt1 = _pt1.WithXYZ(locxyz + (radius * radius / dist) * _dir1.XYZ());
-                if (Math.Abs(_dir1.Dot(s.XAxis().Direction())) < 0.9999999999999)
+                if (Math.Abs(_dir1.Dot(s.XAxis.Direction)) < 0.9999999999999)
                 {
-                    _dir2 = _dir1.Crossed(s.XAxis().Direction());
+                    _dir2 = _dir1.Crossed(s.XAxis.Direction);
                 }
                 else
                 {
-                    _dir2 = _dir1.Crossed(s.YAxis().Direction());
+                    _dir2 = _dir1.Crossed(s.YAxis.Direction);
                 }
                 _nbSol = 1;
                 _typL = global::Kerf.Geometry.CurveKind.Circle;
@@ -127,7 +127,7 @@ public sealed class ContAna
     {
         _done = false;
 
-        Xyz normale = c.Position().Direction().XYZ();
+        Xyz normale = c.Position.Direction.XYZ();
         normale.Cross(d.XYZ());
         if (normale.Modulus() <= 1e-15)
         {
@@ -137,10 +137,10 @@ public sealed class ContAna
         {
             normale.Normalize();
             _typL = global::Kerf.Geometry.CurveKind.Line;
-            _dir1 = c.Position().Direction();
+            _dir1 = c.Position.Direction;
             _dir2 = _dir1;
-            _pt1 = _pt1.WithXYZ(c.Location().XYZ() + c.Radius() * normale);
-            _pt2 = _pt2.WithXYZ(c.Location().XYZ() - c.Radius() * normale);
+            _pt1 = _pt1.WithXYZ(c.Location.XYZ() + c.Radius * normale);
+            _pt2 = _pt2.WithXYZ(c.Location.XYZ() - c.Radius * normale);
             _nbSol = 2;
         }
 
@@ -152,8 +152,8 @@ public sealed class ContAna
     {
         _done = false;
 
-        double coefcos = d.Dot(c.Position().XDirection());
-        double coefsin = d.Dot(c.Position().YDirection());
+        double coefcos = d.Dot(c.Position.XDirection);
+        double coefsin = d.Dot(c.Position.YDirection);
         double coefcst = Math.Cos(M_PI * 0.5 + angle);
 
         double norm1 = coefcos * coefcos + coefsin * coefsin;
@@ -163,9 +163,9 @@ public sealed class ContAna
         {
             _typL = global::Kerf.Geometry.CurveKind.Line;
             _nbSol = 2;
-            _dir1 = _dir2 = c.Position().Direction();
+            _dir1 = _dir2 = c.Position.Direction;
 
-            if (!c.Direct())
+            if (!c.IsDirect)
             { // The normal is inverted.
                 coefcos = -coefcos;
                 coefsin = -coefsin;
@@ -188,17 +188,17 @@ public sealed class ContAna
             sint0 = (coefcos * _prm + coefsin * coefcst) / norm1;
             sint1 = (-coefcos * _prm + coefsin * coefcst) / norm1;
 
-            Xyz xdir = c.Position().XDirection().XYZ();
-            Xyz ydir = c.Position().YDirection().XYZ();
+            Xyz xdir = c.Position.XDirection.XYZ();
+            Xyz ydir = c.Position.YDirection.XYZ();
             Xyz dirxyz = new();
 
             dirxyz.SetLinearForm(cost0, xdir, sint0, ydir);
-            dirxyz.Multiply(c.Radius());
-            _pt1 = _pt1.WithXYZ(c.Location().XYZ().Added(dirxyz));
+            dirxyz.Multiply(c.Radius);
+            _pt1 = _pt1.WithXYZ(c.Location.XYZ().Added(dirxyz));
 
             dirxyz.SetLinearForm(cost1, xdir, sint1, ydir);
-            dirxyz.Multiply(c.Radius());
-            _pt2 = _pt2.WithXYZ(c.Location().XYZ().Added(dirxyz));
+            dirxyz.Multiply(c.Radius);
+            _pt2 = _pt2.WithXYZ(c.Location.XYZ().Added(dirxyz));
         }
         else
         {
@@ -213,9 +213,9 @@ public sealed class ContAna
     {
         _done = false;
 
-        double radius = c.Radius();
-        Line3D theaxis = new(c.Axis());
-        double dist = theaxis.Distance(eye);
+        double radius = c.Radius;
+        Line3D theaxis = new(c.Axis);
+        double dist = theaxis.DistanceTo(eye);
         if (dist <= radius)
         {
             _nbSol = 0;
@@ -224,12 +224,12 @@ public sealed class ContAna
         {
             _typL = global::Kerf.Geometry.CurveKind.Line;
             _prm = radius * Math.Sqrt(1.0 - radius * radius / (dist * dist));
-            _dir1 = c.Axis().Direction();
+            _dir1 = c.Axis.Direction;
             _dir2 = _dir1;
-            Xyz axeye = theaxis.Normal(eye).Direction().XYZ(); // orientate the axis to the outside
-            Xyz normale = (theaxis.Direction().Crossed(new Direction3D(axeye))).XYZ();
+            Xyz axeye = theaxis.Normal(eye).Direction.XYZ(); // orientate the axis to the outside
+            Xyz normale = (theaxis.Direction.Crossed(new Direction3D(axeye))).XYZ();
             //      normale.Normalize();
-            _pt1 = _pt1.WithXYZ(c.Location().XYZ() + (radius * radius / dist) * axeye);
+            _pt1 = _pt1.WithXYZ(c.Location.XYZ() + (radius * radius / dist) * axeye);
             _pt2 = _pt2.WithXYZ(_pt1.XYZ() - _prm * normale);
             _pt1 = _pt1.WithXYZ(_pt1.XYZ() + _prm * normale);
             _nbSol = 2;
@@ -242,11 +242,11 @@ public sealed class ContAna
     {
         _done = false;
 
-        double tgtalpha = Math.Tan(c.SemiAngle());
+        double tgtalpha = Math.Tan(c.SemiAngle);
 
-        double coefcos = d.Dot(c.Position().XDirection());
-        double coefsin = d.Dot(c.Position().YDirection());
-        double coefcst = d.Dot(c.Axis().Direction()) * tgtalpha;
+        double coefcos = d.Dot(c.Position.XDirection);
+        double coefsin = d.Dot(c.Position.YDirection);
+        double coefcst = d.Dot(c.Axis.Direction) * tgtalpha;
 
         double norm1 = coefcos * coefcos + coefsin * coefsin;
         double norm2 = Math.Sqrt(norm1);
@@ -255,7 +255,7 @@ public sealed class ContAna
         {
             _typL = global::Kerf.Geometry.CurveKind.Line;
             _nbSol = 2;
-            _pt1 = c.Apex();
+            _pt1 = c.Apex;
             _pt2 = _pt1;
             // Necessary to solve Coefcos*cos(t) + Coefsin*sin(t) = Coefcst
             // and director vectors of solutions are
@@ -270,9 +270,9 @@ public sealed class ContAna
             sint0 = (coefcos * _prm + coefsin * coefcst) / norm1;
             sint1 = (-coefcos * _prm + coefsin * coefcst) / norm1;
 
-            Xyz xdir = c.Position().XDirection().XYZ();
-            Xyz ydir = c.Position().YDirection().XYZ();
-            Xyz zdir = c.Axis().Direction().XYZ();
+            Xyz xdir = c.Position.XDirection.XYZ();
+            Xyz ydir = c.Position.YDirection.XYZ();
+            Xyz zdir = c.Axis.Direction.XYZ();
             Xyz dirxyz = new();
             dirxyz.SetLinearForm(cost0, xdir, sint0, ydir, 1.0 / tgtalpha, zdir);
             _dir1 = _dir1.WithXYZ(dirxyz);
@@ -294,26 +294,26 @@ public sealed class ContAna
         _done = false;
         _nbSol = 0;
 
-        double ang = c.SemiAngle();
+        double ang = c.SemiAngle;
         double cosa = Math.Cos(ang);
         double sina = Math.Sin(ang);
 
-        double coefcos = d.Dot(c.Position().XDirection());
-        double coefsin = d.Dot(c.Position().YDirection());
+        double coefcos = d.Dot(c.Position.XDirection);
+        double coefsin = d.Dot(c.Position.YDirection);
 
         double coefcst1 = Math.Cos(M_PI * 0.5 + angle);
 
         double norm1 = coefcos * coefcos + coefsin * coefsin;
         double norm2 = Math.Sqrt(norm1);
 
-        double coefnz = d.Dot(c.Axis().Direction()) * sina;
+        double coefnz = d.Dot(c.Axis.Direction) * sina;
         double coefcst = (coefcst1 + coefnz) / cosa;
 
         if (Math.Abs(coefcst) < norm2)
         {
             _typL = global::Kerf.Geometry.CurveKind.Line;
             _nbSol += 2;
-            _pt1 = c.Apex();
+            _pt1 = c.Apex;
             _pt2 = _pt1;
 
             _prm = Math.Sqrt(norm1 - coefcst * coefcst);
@@ -325,10 +325,10 @@ public sealed class ContAna
             sint0 = (coefcos * _prm + coefsin * coefcst) / norm1;
             sint1 = (-coefcos * _prm + coefsin * coefcst) / norm1;
 
-            Xyz xdir = c.Position().XDirection().XYZ();
-            Xyz ydir = c.Position().YDirection().XYZ();
-            Xyz zdir = c.Axis().Direction().XYZ();
-            if (!c.Direct())
+            Xyz xdir = c.Position.XDirection.XYZ();
+            Xyz ydir = c.Position.YDirection.XYZ();
+            Xyz zdir = c.Axis.Direction.XYZ();
+            if (!c.IsDirect)
             {
                 zdir.Reverse();
             }
@@ -347,7 +347,7 @@ public sealed class ContAna
         {
             _typL = global::Kerf.Geometry.CurveKind.Line;
             _nbSol += 2;
-            _pt3 = c.Apex();
+            _pt3 = c.Apex;
             _pt4 = _pt3;
 
             _prm = Math.Sqrt(norm1 - coefcst * coefcst);
@@ -359,10 +359,10 @@ public sealed class ContAna
             sint0 = (coefcos * _prm + coefsin * coefcst) / norm1;
             sint1 = (-coefcos * _prm + coefsin * coefcst) / norm1;
 
-            Xyz xdir = c.Position().XDirection().XYZ();
-            Xyz ydir = c.Position().YDirection().XYZ();
-            Xyz zdir = c.Axis().Direction().XYZ();
-            if (!c.Direct())
+            Xyz xdir = c.Position.XDirection.XYZ();
+            Xyz ydir = c.Position.YDirection.XYZ();
+            Xyz zdir = c.Axis.Direction.XYZ();
+            if (!c.IsDirect)
             {
                 zdir.Reverse();
             }
@@ -390,14 +390,14 @@ public sealed class ContAna
     {
         _done = false;
 
-        double tgtalpha = Math.Tan(c.SemiAngle());
+        double tgtalpha = Math.Tan(c.SemiAngle);
 
         Xyz apexeye = eye.XYZ();
-        apexeye.Subtract(c.Apex().XYZ());
+        apexeye.Subtract(c.Apex.XYZ());
 
-        double coefcos = apexeye.Dot(c.Position().XDirection().XYZ());
-        double coefsin = apexeye.Dot(c.Position().YDirection().XYZ());
-        double coefcst = apexeye.Dot(c.Axis().Direction().XYZ()) * tgtalpha;
+        double coefcos = apexeye.Dot(c.Position.XDirection.XYZ());
+        double coefsin = apexeye.Dot(c.Position.YDirection.XYZ());
+        double coefcst = apexeye.Dot(c.Axis.Direction.XYZ()) * tgtalpha;
 
         double norm1 = coefcos * coefcos + coefsin * coefsin;
         double norm2 = Math.Sqrt(coefcos * coefcos + coefsin * coefsin);
@@ -406,7 +406,7 @@ public sealed class ContAna
         {
             _typL = global::Kerf.Geometry.CurveKind.Line;
             _nbSol = 2;
-            _pt1 = c.Apex();
+            _pt1 = c.Apex;
             _pt2 = _pt1;
 
             _prm = Math.Sqrt(norm1 - coefcst * coefcst);
@@ -418,9 +418,9 @@ public sealed class ContAna
             sint0 = (coefcos * _prm + coefsin * coefcst) / norm1;
             sint1 = (-coefcos * _prm + coefsin * coefcst) / norm1;
 
-            Xyz xdir = c.Position().XDirection().XYZ();
-            Xyz ydir = c.Position().YDirection().XYZ();
-            Xyz zdir = c.Axis().Direction().XYZ();
+            Xyz xdir = c.Position.XDirection.XYZ();
+            Xyz ydir = c.Position.YDirection.XYZ();
+            Xyz zdir = c.Axis.Direction.XYZ();
             Xyz dirxyz = new();
             dirxyz.SetLinearForm(cost0, xdir, sint0, ydir, 1.0 / tgtalpha, zdir);
             _dir1 = _dir1.WithXYZ(dirxyz);

@@ -84,7 +84,7 @@ public class BinaryShapeSet : ShapeSetBase
         // OCCT.NET: a shape nested too deeply for the stack throws InsufficientExecutionStackException
         System.Runtime.CompilerServices.RuntimeHelpers.EnsureSufficientExecutionStack();
 
-        _locations.Add(shape.Location());
+        _locations.Add(shape.Placement);
         Shape s2 = shape;
         s2.Location(new Placement());
         int index = _shapes.IndexOf(s2) + 1;
@@ -140,7 +140,7 @@ public class BinaryShapeSet : ShapeSetBase
     public virtual void AddShape(in Shape s)
     {
         // Add the geometry
-        if (s.ShapeType() == ShapeType.Vertex)
+        if (s.Type == ShapeType.Vertex)
         {
             BrepTVertex tv = (BrepTVertex)s.TShape()!;
             foreach (PointRepresentation pr in tv.Points())
@@ -162,7 +162,7 @@ public class BinaryShapeSet : ShapeSetBase
                 ChangeLocations().Add(pr.Location());
             }
         }
-        else if (s.ShapeType() == ShapeType.Edge)
+        else if (s.Type == ShapeType.Edge)
         {
             // Add the curve geometry
             BrepTEdge te = (BrepTEdge)s.TShape()!;
@@ -243,7 +243,7 @@ public class BinaryShapeSet : ShapeSetBase
                 }
             }
         }
-        else if (s.ShapeType() == ShapeType.Face)
+        else if (s.Type == ShapeType.Face)
         {
             // Add the surface geometry
             bool needNormals = IsWithNormals;
@@ -352,7 +352,7 @@ public class BinaryShapeSet : ShapeSetBase
             Shape s = _shapes[i - 1];
 
             // Type
-            os.WriteByte((byte)s.ShapeType());
+            os.WriteByte((byte)s.Type);
 
             // Geometry
             WriteShape(s, os);
@@ -361,10 +361,10 @@ public class BinaryShapeSet : ShapeSetBase
             global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutBool(os, s.Free());
             global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutBool(os, s.Modified());
             global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutBool(os, s.Checked());
-            global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutBool(os, s.Orientable());
-            global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutBool(os, s.Closed());
-            global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutBool(os, s.Infinite());
-            global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutBool(os, s.Convex());
+            global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutBool(os, s.IsOrientable);
+            global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutBool(os, s.IsClosed);
+            global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutBool(os, s.IsInfinite);
+            global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutBool(os, s.IsConvex);
 
             // sub-shapes
             for (var its = new Iterator(s, false, false); its.More(); its.Next())
@@ -523,9 +523,9 @@ public class BinaryShapeSet : ShapeSetBase
         else
         {
             // {TopAbs_FORWARD, TopAbs_REVERSED, TopAbs_INTERNAL, TopAbs_EXTERNAL}
-            os.WriteByte((byte)s.Orientation());
+            os.WriteByte((byte)s.Orientation);
             global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutInteger(os, _shapes.Count - (_shapes.IndexOf(s.Located(new Placement())) + 1) + 1);
-            global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutInteger(os, Locations().Index(s.Location()));
+            global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutInteger(os, Locations().Index(s.Placement));
         }
     }
 
@@ -600,7 +600,7 @@ public class BinaryShapeSet : ShapeSetBase
                                 _shapes.Count,
                                 "shape");
             s = Shape((int)shapeIndex);
-            s.Orientation(orient);
+            s.Orient(orient);
 
             global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(IS, out int l);
             // OCCT.NET: untrusted input
@@ -652,7 +652,7 @@ public class BinaryShapeSet : ShapeSetBase
         // Write the geometry
         try
         {
-            if (s.ShapeType() == ShapeType.Vertex)
+            if (s.Type == ShapeType.Vertex)
             {
                 // Write the point geometry
                 Vertex v = ShapeCasts.Vertex(s);
@@ -691,7 +691,7 @@ public class BinaryShapeSet : ShapeSetBase
 
                 os.WriteByte(0);
             }
-            else if (s.ShapeType() == ShapeType.Edge)
+            else if (s.Type == ShapeType.Edge)
             {
                 // Write the curve geometry
                 BrepTEdge te = (BrepTEdge)s.TShape()!;
@@ -765,10 +765,10 @@ public class BinaryShapeSet : ShapeSetBase
                                 cos.UVPoints(out pf, out pl);
                             }
 
-                            global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutReal(os, pf.X());
-                            global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutReal(os, pf.Y());
-                            global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutReal(os, pl.X());
-                            global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutReal(os, pl.Y());
+                            global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutReal(os, pf.X);
+                            global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutReal(os, pf.Y);
+                            global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutReal(os, pl.X);
+                            global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutReal(os, pl.Y);
                         }
                     }
                     else if (cr.IsRegularity())
@@ -823,7 +823,7 @@ public class BinaryShapeSet : ShapeSetBase
 
                 os.WriteByte(0); // end of the list of representations
             }
-            else if (s.ShapeType() == ShapeType.Face)
+            else if (s.Type == ShapeType.Face)
             {
                 BrepTFace tf = (BrepTFace)s.TShape()!;
                 Face f = ShapeCasts.Face(s);
@@ -1480,9 +1480,9 @@ public class BinaryShapeSet : ShapeSetBase
                 for (int nodeIter = 1; nodeIter <= nbNodes; ++nodeIter)
                 {
                     Point3D pnt = nodes.Value(nodeIter);
-                    global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutReal(os, pnt.X());
-                    global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutReal(os, pnt.Y());
-                    global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutReal(os, pnt.Z());
+                    global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutReal(os, pnt.X);
+                    global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutReal(os, pnt.Y);
+                    global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutReal(os, pnt.Z);
                 }
 
                 if (poly.HasParameters)
@@ -1586,9 +1586,9 @@ public class BinaryShapeSet : ShapeSetBase
                 for (int nodeIter = 1; nodeIter <= nbNodes; ++nodeIter)
                 {
                     Point3D pnt = triangulation.Node(nodeIter);
-                    global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutReal(os, pnt.X());
-                    global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutReal(os, pnt.Y());
-                    global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutReal(os, pnt.Z());
+                    global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutReal(os, pnt.X);
+                    global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutReal(os, pnt.Y);
+                    global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutReal(os, pnt.Z);
                 }
 
                 if (triangulation.HasUVNodes)
@@ -1596,8 +1596,8 @@ public class BinaryShapeSet : ShapeSetBase
                     for (int nodeIter = 1; nodeIter <= nbNodes; ++nodeIter)
                     {
                         Point2D uv = triangulation.UVNode(nodeIter);
-                        global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutReal(os, uv.X());
-                        global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutReal(os, uv.Y());
+                        global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutReal(os, uv.X);
+                        global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutReal(os, uv.Y);
                     }
                 }
 

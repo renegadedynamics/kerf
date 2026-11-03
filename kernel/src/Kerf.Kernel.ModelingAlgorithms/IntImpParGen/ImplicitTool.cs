@@ -65,7 +65,7 @@ internal static class ImplicitTool
 
         if (theDomain.HasFirstPoint)
         {
-            if (pnt1.Distance(theDomain.FirstPoint()) <= theDomain.FirstTolerance())
+            if (pnt1.DistanceTo(theDomain.FirstPoint()) <= theDomain.FirstTolerance())
             {
                 pos1 = Position2D.Head;
             }
@@ -73,7 +73,7 @@ internal static class ImplicitTool
 
         if (theDomain.HasLastPoint)
         {
-            if (pnt1.Distance(theDomain.LastPoint()) <= theDomain.LastTolerance())
+            if (pnt1.DistanceTo(theDomain.LastPoint()) <= theDomain.LastTolerance())
             {
                 if (pos1 == Position2D.Head)
                 {
@@ -111,21 +111,21 @@ internal static class ImplicitTool
         bool courbure2 = true;
         bool decide = true;
 
-        if (tan1.Magnitude() <= Constants.Resolution())
+        if (tan1.Magnitude <= Constants.Resolution())
         {
             tan1 = norm1;
             courbure1 = false;
-            if (tan1.Magnitude() <= Constants.Resolution())
+            if (tan1.Magnitude <= Constants.Resolution())
             { // transition undecided
                 decide = false;
             }
         }
 
-        if (tan2.Magnitude() <= Constants.Resolution())
+        if (tan2.Magnitude <= Constants.Resolution())
         {
             tan2 = norm2;
             courbure2 = false;
-            if (tan2.Magnitude() <= Constants.Resolution())
+            if (tan2.Magnitude <= Constants.Resolution())
             { // transition undecided
                 decide = false;
             }
@@ -139,7 +139,7 @@ internal static class ImplicitTool
         else
         {
             double sgn = tan1.Crossed(tan2);
-            double norm = tan1.Magnitude() * tan2.Magnitude();
+            double norm = tan1.Magnitude * tan2.Magnitude;
 
             if (Math.Abs(sgn) <= TOLERANCE_ANGULAIRE * norm)
             { // Transition TOUCH #########
@@ -151,7 +151,7 @@ internal static class ImplicitTool
                 }
                 else
                 {
-                    Vector2D Norm = new Vector2D().WithCoord(-tan1.Y(), tan1.X());
+                    Vector2D Norm = new Vector2D().WithCoord(-tan1.Y, tan1.X);
 
                     double val1, val2;
                     if (!courbure1)

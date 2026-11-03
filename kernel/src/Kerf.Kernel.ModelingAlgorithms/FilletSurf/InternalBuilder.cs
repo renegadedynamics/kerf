@@ -57,7 +57,7 @@ internal sealed class InternalBuilder : FilBuilder
         bool done = false;
         double f = ed.FirstParameter();
         double l = ed.LastParameter();
-        Point3D or = p.Location();
+        Point3D or = p.Location;
         PlaneSurface pln = new(p);
         SurfaceAdaptor plan = new(pln);
 
@@ -75,7 +75,7 @@ internal sealed class InternalBuilder : FilBuilder
             {
                 ip = intersection.Point(iip);
                 Point3D pint = ip.Pnt();
-                double d = pint.Distance(or);
+                double d = pint.DistanceTo(or);
                 if (d < dist)
                 {
                     done = true;
@@ -90,10 +90,10 @@ internal sealed class InternalBuilder : FilBuilder
         // check if the extremities are not solution
         global::Kerf.Engine.Geometry.ElSLib.Parameters(p, pdeb, out u, out v);
         Point3D projdeb = global::Kerf.Engine.Geometry.ElSLib.Value(u, v, p);
-        double dprojdeb = pdeb.Distance(projdeb);
+        double dprojdeb = pdeb.DistanceTo(projdeb);
         if (dprojdeb < tol3d)
         {
-            double d = pdeb.Distance(or);
+            double d = pdeb.DistanceTo(or);
             if (d < dist)
             {
                 done = true;
@@ -103,10 +103,10 @@ internal sealed class InternalBuilder : FilBuilder
         }
         global::Kerf.Engine.Geometry.ElSLib.Parameters(p, pfin, out u, out v);
         Point3D projfin = global::Kerf.Engine.Geometry.ElSLib.Value(u, v, p);
-        double dprojfin = pfin.Distance(projfin);
+        double dprojfin = pfin.DistanceTo(projfin);
         if (dprojfin < tol3d)
         {
-            double d = pfin.Distance(or);
+            double d = pfin.DistanceTo(or);
             if (d < dist)
             {
                 done = true;
@@ -204,7 +204,7 @@ internal sealed class InternalBuilder : FilBuilder
             }
         }
         Edge ed = ShapeCasts.Edge(E.First());
-        ed.Orientation(Forward);
+        ed.Orient(Forward);
         base.Add(r, ed);
         Stripe st = _listStripe.First();
         ref Spine sp = ref st.ChangeSpine();
@@ -328,7 +328,7 @@ internal sealed class InternalBuilder : FilBuilder
             throw new ConstructionErrorException("PerformSurf : this is not the spine of a fillet");
         }
         Line lin = null;
-        Orientation or = s1.Face().Orientation();
+        Orientation or = s1.Face().Orientation;
         if (!fsp.IsConstant())
         {
             throw new ConstructionErrorException("PerformSurf : no variable radiuses");

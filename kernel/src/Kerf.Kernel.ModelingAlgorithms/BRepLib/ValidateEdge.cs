@@ -144,7 +144,7 @@ public class ValidateEdge
                     ((controlPointsNumber - i) * referenceFirstParam + i * referenceLastParam) / controlPointsNumber;
                 Point3D referencePoint = _referenceCurve.Value(controlPointParam);
                 Point3D otherPoint = _otherCurve.Value(controlPointParam);
-                double squareDistance = referencePoint.SquareDistance(otherPoint);
+                double squareDistance = referencePoint.SquareDistanceTo(otherPoint);
                 if (squareDistance > maxSquareDistance)
                 {
                     maxSquareDistance = squareDistance;
@@ -162,7 +162,7 @@ public class ValidateEdge
         {
             Point3D referencePoint = _referenceCurve.Value(referenceFirstParam);
             Point3D otherPoint = _otherCurve.Value(otherFirstParam);
-            double squareDistance = referencePoint.SquareDistance(otherPoint);
+            double squareDistance = referencePoint.SquareDistanceTo(otherPoint);
             if (squareDistance > maxSquareDistance)
             {
                 maxSquareDistance = squareDistance;
@@ -176,7 +176,7 @@ public class ValidateEdge
 
             referencePoint = _referenceCurve.Value(referenceLastParam);
             otherPoint = _otherCurve.Value(otherLastParam);
-            squareDistance = referencePoint.SquareDistance(otherPoint);
+            squareDistance = referencePoint.SquareDistanceTo(otherPoint);
             if (squareDistance > maxSquareDistance)
             {
                 maxSquareDistance = squareDistance;

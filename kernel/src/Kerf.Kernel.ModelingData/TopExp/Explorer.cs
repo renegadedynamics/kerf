@@ -24,7 +24,7 @@ namespace Kerf.Engine.Topology;
 /// where OCCT's is used by value; its stack of iterators is reused across <see cref="Init"/>. OCCT's range-for support
 /// is left out.
 /// </remarks>
-public sealed class Explorer
+internal sealed class Explorer
 {
     // The DFS stack: iterators are kept when popped and reused when pushed again
     private readonly List<Iterator> _stack = [];
@@ -80,7 +80,7 @@ public sealed class Explorer
         }
         else
         {
-            ShapeType ty = s.ShapeType();
+            ShapeType ty = s.Type;
 
             if (ty > _toFind)
             {
@@ -106,7 +106,7 @@ public sealed class Explorer
     {
         if (_stackTop < 0)
         {
-            ShapeType ty = _shape.ShapeType();
+            ShapeType ty = _shape.Type;
             if (IsSameType(ty, _toFind))
             {
                 _hasMore = false;
@@ -133,7 +133,7 @@ public sealed class Explorer
             if (topIter.More())
             {
                 Shape shapTop = topIter.Value();
-                ShapeType ty = shapTop.ShapeType();
+                ShapeType ty = shapTop.Type;
                 if (IsSameType(ty, _toFind))
                 {
                     _hasMore = true;

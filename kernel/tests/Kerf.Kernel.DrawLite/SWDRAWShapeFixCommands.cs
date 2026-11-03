@@ -718,7 +718,7 @@ internal static class SWDRAWShapeFixCommands
         Shape Sh1 = theDI.GetShape(a[1]);
         double ucoord = theDI.Atof(a[2]);
         double vcoord = theDI.Atof(a[3]);
-        if (Sh1.IsNull || Sh1.ShapeType() != ShapeType.Face)
+        if (Sh1.IsNull || Sh1.Type != ShapeType.Face)
         {
             di.Append("Invalid arguments\n");
             return 1;
@@ -810,7 +810,7 @@ internal static class SWDRAWShapeFixCommands
                 {
                     Exploration.Vertices(ShapeCasts.Edge(aExp1.Current()), out Vertex aV1, out Vertex _);
                     Point3D aP = Tool.Pnt(aV1);
-                    di.Append(aP.X()).Append(" ").Append(aP.Y()).Append(" ").Append(aP.Z()).Append("\n");
+                    di.Append(aP.X).Append(" ").Append(aP.Y).Append(" ").Append(aP.Z).Append("\n");
                 }
             }
 

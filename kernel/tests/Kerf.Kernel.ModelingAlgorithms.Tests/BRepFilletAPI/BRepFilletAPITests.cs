@@ -253,7 +253,7 @@ public class BRepFilletAPITests
         EdgeCurveAdaptor anEdge = new(E);
         foreach (Curve3D C in new[] { aB.CurveOnFace1(1), aB.CurveOnFace2(1) })
         {
-            Point3D P = C.Value(0.5 * (C.FirstParameter() + C.LastParameter()));
+            Point3D P = C.Value(0.5 * (C.FirstParameter + C.LastParameter));
             CurvePointExtrema anExt = new(P, anEdge);
             Assert.True(anExt.IsDone && anExt.ExtCount > 0);
             Assert.Equal(2.0, Math.Sqrt(anExt.SquareDistance(1)), 1.0e-4);
@@ -268,7 +268,7 @@ public class BRepFilletAPITests
         Assert.Equal(StatusDone.IsOk, aS.IsDone);
         Assert.True(aS.NbSection(1) > 1);
         TrimmedCurve3D aArc = aS.Section(1, 1);
-        Assert.Equal(2.0, ((CircleCurve3D)aArc.BasisCurve()!).Radius(), 1.0e-9);
+        Assert.Equal(2.0, ((CircleCurve3D)aArc.BasisCurve!).Radius, 1.0e-9);
     }
 
     [Fact]

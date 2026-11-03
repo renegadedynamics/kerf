@@ -62,7 +62,7 @@ public static class BRepFeat
             if (!global::Kerf.Engine.Topology.Brep.Tool.Degenerated(edg))
             {
                 c = global::Kerf.Engine.Topology.Brep.Tool.Curve(edg, out Placement loc, out double f, out double l)!;
-                c = (Curve3D)c.Transformed(loc.Transformation());
+                c = (Curve3D)c.Transformed(loc.Transformation);
                 for (i = 1; i < Nechantbaryc; i++)
                 {
                     prm = ((Nechantbaryc - i) * f + i * l) / Nechantbaryc;
@@ -96,7 +96,7 @@ public static class BRepFeat
         int i, nbp = 0;
         CurveAdaptor theCurve = new(cc);
         CurvePointExtrema extpc = new();
-        extpc.Initialize(theCurve, cc.FirstParameter(), cc.LastParameter());
+        extpc.Initialize(theCurve, cc.FirstParameter, cc.LastParameter);
         double parbar = 0;
 
         for (; exp.More(); exp.Next())
@@ -109,7 +109,7 @@ public static class BRepFeat
             if (!global::Kerf.Engine.Topology.Brep.Tool.Degenerated(edg))
             {
                 c = global::Kerf.Engine.Topology.Brep.Tool.Curve(edg, out Placement loc, out double f, out double l)!;
-                c = (Curve3D)c.Transformed(loc.Transformation());
+                c = (Curve3D)c.Transformed(loc.Transformation);
                 for (i = 1; i < Nechantbaryc; i++)
                 {
                     prm = ((Nechantbaryc - i) * f + i * l) / Nechantbaryc;
@@ -212,7 +212,7 @@ public static class BRepFeat
         int i;
         CurveAdaptor theCurve = new(cc);
         CurvePointExtrema extpc = new();
-        extpc.Initialize(theCurve, cc.FirstParameter(), cc.LastParameter());
+        extpc.Initialize(theCurve, cc.FirstParameter, cc.LastParameter);
         prbmin = RealLast();
         prbmax = RealFirst();
         for (; exp.More(); exp.Next())
@@ -225,7 +225,7 @@ public static class BRepFeat
             if (!global::Kerf.Engine.Topology.Brep.Tool.Degenerated(edg))
             {
                 c = global::Kerf.Engine.Topology.Brep.Tool.Curve(edg, out Placement loc, out double f, out double l)!;
-                c = (Curve3D)c.Transformed(loc.Transformation());
+                c = (Curve3D)c.Transformed(loc.Transformation);
                 for (i = 1; i < Nechantbaryc; i++)
                 {
                     prm = ((Nechantbaryc - i) * f + i * l) / Nechantbaryc;
@@ -316,10 +316,10 @@ public static class BRepFeat
         Point2D pf = c2d.Value(f);
         Point2D pl = c2d.Value(l);
         Point2D pm = c2d.Value(0.34 * f + 0.66 * l);
-        double minC = Min(pf.X(), pl.X());
-        minC = Min(minC, pm.X());
-        double maxC = Max(pf.X(), pl.X());
-        maxC = Max(maxC, pm.X());
+        double minC = Min(pf.X, pl.X);
+        minC = Min(minC, pm.X);
+        double maxC = Max(pf.X, pl.X);
+        maxC = Max(maxC, pm.X);
         double du = 0.0;
         if (minC < umin - eps)
         {
@@ -362,10 +362,10 @@ public static class BRepFeat
         Point2D pf = c2d.Value(f);
         Point2D pl = c2d.Value(l);
         Point2D pm = c2d.Value(0.34 * f + 0.66 * l);
-        double minC = Min(pf.Y(), pl.Y());
-        minC = Min(minC, pm.Y());
-        double maxC = Max(pf.Y(), pl.Y());
-        maxC = Max(maxC, pm.Y());
+        double minC = Min(pf.Y, pl.Y);
+        minC = Min(minC, pm.Y);
+        double maxC = Max(pf.Y, pl.Y);
+        maxC = Max(maxC, pm.Y);
         double dv = 0.0;
         if (minC < vmin - eps)
         {
@@ -419,13 +419,13 @@ public static class BRepFeat
         if (s.IsUPeriodic)
         {
             flagu = 1;
-            uperiod = s.UPeriod();
+            uperiod = s.UPeriod;
         }
 
         if (s.IsVPeriodic)
         {
             flagv = 1;
-            vperiod = s.VPeriod();
+            vperiod = s.VPeriod;
         }
         Shape localShape = f2.Oriented(Forward);
         FClass2d fc = new(ShapeCasts.Face(localShape), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -471,12 +471,12 @@ public static class BRepFeat
         Surface s = global::Kerf.Engine.Topology.Brep.Tool.Surface(fUntil)!;
         if (s is TrimmedSurface trimmed)
         {
-            s = trimmed.BasisSurface();
+            s = trimmed.BasisSurface;
         }
         TrimmedSurface str;
         if (s.GetType() == typeof(PlaneSurface))
         {
-            Plane3D pln = ((PlaneSurface)s).Pln();
+            Plane3D pln = ((PlaneSurface)s).Plane;
             double u, v, umin = RealLast(), umax = -umin, vmin = RealLast(), vmax = -vmin;
             for (int i = 0; i < 2; i++)
             {
@@ -513,7 +513,7 @@ public static class BRepFeat
         }
         else if (s.GetType() == typeof(CylindricalSurface))
         {
-            Cylinder cyl = ((CylindricalSurface)s).Cylinder();
+            Cylinder cyl = ((CylindricalSurface)s).Cylinder;
             double u, v, vmin = RealLast(), vmax = -vmin;
             for (int i = 0; i < 2; i++)
             {
@@ -540,7 +540,7 @@ public static class BRepFeat
         }
         else if (s.GetType() == typeof(ConicalSurface))
         {
-            Cone con = ((ConicalSurface)s).Cone();
+            Cone con = ((ConicalSurface)s).Cone;
             double u, v, vmin = RealLast(), vmax = -vmin;
             for (int i = 0; i < 2; i++)
             {
@@ -584,7 +584,7 @@ public static class BRepFeat
         Explorer exp = new(sRef, ShapeType.Face);
         for (; exp.More(); exp.Next())
         {
-            if (exp.Current().ShapeType() == ShapeType.Face)
+            if (exp.Current().Type == ShapeType.Face)
             {
                 lfaces.Append(exp.Current());
             }
@@ -593,12 +593,12 @@ public static class BRepFeat
         BuildShape bs = new(lfaces);
         Shape res = bs.InternalShape();
         Shell sh = new();
-        if (res.ShapeType() == ShapeType.Shell)
+        if (res.Type == ShapeType.Shell)
         {
             // faire un solide
             sh = ShapeCasts.Shell(res);
         }
-        else if (res.ShapeType() == ShapeType.Solid)
+        else if (res.Type == ShapeType.Solid)
         {
             exp.Init(res, ShapeType.Shell);
             sh = ShapeCasts.Shell(exp.Current());
@@ -615,7 +615,7 @@ public static class BRepFeat
             return so;
         }
 
-        sh.Orientation(Forward);
+        sh.Orient(Forward);
 
         Orientation orient = Forward;
 
@@ -623,14 +623,14 @@ public static class BRepFeat
         {
             if (exp.Current().IsSame(fac))
             {
-                orient = exp.Current().Orientation();
+                orient = exp.Current().Orientation;
                 break;
             }
         }
 
         bool reverse = false;
-        if ((orient == fac.Orientation() && orf == Reversed)
-            || (orient != fac.Orientation() && orf == Forward))
+        if ((orient == fac.Orientation && orf == Reversed)
+            || (orient != fac.Orientation && orf == Forward))
         {
             reverse = true;
         }

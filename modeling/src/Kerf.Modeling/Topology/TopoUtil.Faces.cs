@@ -99,7 +99,7 @@ internal static partial class TopoUtil
             throw new ArgumentException("the edge is not an edge of the face");
         var curve = new EdgeCurveAdaptor(found);
         curve.D1((curve.FirstParameter() + curve.LastParameter()) / 2, out var point, out var tangent);
-        if (found.Orientation() == Orientation.Reversed)
+        if (found.Orientation == Orientation.Reversed)
             tangent = tangent.Reversed();
         return FaceNormalAt(face, point).Cross(new Vector(tangent).Normalized());
     }
@@ -115,7 +115,7 @@ internal static partial class TopoUtil
         var vec = direction.ToGpVec();
         var prism = new ApiMakePrism(obj, vec);
         var extrusion = Downcast(prism.Shape());
-        if (extrusion.ShapeType() == global::Kerf.Topology.ShapeType.CompSolid)
+        if (extrusion.Type == global::Kerf.Topology.ShapeType.CompSolid)
         {
             var solids = new List<global::Kerf.Topology.Shape>();
             var explorer = new Explorer(extrusion, global::Kerf.Topology.ShapeType.Solid);
@@ -209,7 +209,7 @@ internal static partial class TopoUtil
         var fix = new ShapeFixer(built);
         fix.Perform();
         var fixedShape = fix.Shape();
-        if (fixedShape.ShapeType() != global::Kerf.Topology.ShapeType.Face)
+        if (fixedShape.Type != global::Kerf.Topology.ShapeType.Face)
             throw new InvalidOperationException("Cannot build face(s): the wires do not bound one face");
         var result = ShapeCasts.Face(fixedShape);
         var check = new Analyzer(result);

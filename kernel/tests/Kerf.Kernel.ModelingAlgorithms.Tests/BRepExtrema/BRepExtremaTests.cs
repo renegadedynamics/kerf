@@ -39,9 +39,9 @@ public class BRepExtremaTests
 
     private static void AssertPnt(in Point3D theExpected, in Point3D theActual, double theTol = Tol)
     {
-        Assert.Equal(theExpected.X(), theActual.X(), theTol);
-        Assert.Equal(theExpected.Y(), theActual.Y(), theTol);
-        Assert.Equal(theExpected.Z(), theActual.Z(), theTol);
+        Assert.Equal(theExpected.X, theActual.X, theTol);
+        Assert.Equal(theExpected.Y, theActual.Y, theTol);
+        Assert.Equal(theExpected.Z, theActual.Z, theTol);
     }
 
     // ------------------------------------------------------------------ vertices and edges
@@ -130,7 +130,7 @@ public class BRepExtremaTests
         Assert.True(aD.SolutionCount >= 2);
         for (int i = 1; i <= aD.SolutionCount; i++)
         {
-            Assert.Equal(1.0, aD.PointOnShape1(i).Distance(aD.PointOnShape2(i)), Tol);
+            Assert.Equal(1.0, aD.PointOnShape1(i).DistanceTo(aD.PointOnShape2(i)), Tol);
         }
     }
 
@@ -177,7 +177,7 @@ public class BRepExtremaTests
         Assert.True(aD.SolutionCount >= 1);
         for (int i = 1; i <= aD.SolutionCount; i++)
         {
-            Assert.Equal(2.0, aD.PointOnShape1(i).Distance(aD.PointOnShape2(i)), Tol);
+            Assert.Equal(2.0, aD.PointOnShape1(i).DistanceTo(aD.PointOnShape2(i)), Tol);
         }
     }
 
@@ -227,7 +227,7 @@ public class BRepExtremaTests
         {
             Assert.Equal(aSingle.PointOnShape1(i), aMulti.PointOnShape1(i));
             Assert.Equal(aSingle.PointOnShape2(i), aMulti.PointOnShape2(i));
-            Assert.Equal(2.0, aSingle.PointOnShape1(i).Distance(aSingle.PointOnShape2(i)), Tol);
+            Assert.Equal(2.0, aSingle.PointOnShape1(i).DistanceTo(aSingle.PointOnShape2(i)), Tol);
         }
 
         aSnap1.AssertUnchanged(aBox1);
@@ -447,7 +447,7 @@ public class BRepExtremaTests
         aProx.Perform();
         Assert.True(aProx.IsDone);
         Assert.Equal(1.0, aProx.Proximity(), Tol);
-        Assert.Equal(1.0, aProx.ProximityPoint1().Distance(aProx.ProximityPoint2()), Tol);
+        Assert.Equal(1.0, aProx.ProximityPoint1().DistanceTo(aProx.ProximityPoint2()), Tol);
     }
 
     private static Face TopFace(in Shape theBox)
@@ -500,8 +500,8 @@ public class BRepExtremaTests
         Face aF = Square(0, 0, 0, 10);
         var aD = new DistanceShapeShape(aF.Reversed(), V(2, 3, -7));
         Assert.Equal(7.0, aD.Value(), Tol);
-        Assert.Equal(Reversed, aD.SupportOnShape1(1).Orientation());
-        Assert.Equal(ShapeType.Face, aD.SupportOnShape1(1).ShapeType());
+        Assert.Equal(Reversed, aD.SupportOnShape1(1).Orientation);
+        Assert.Equal(ShapeType.Face, aD.SupportOnShape1(1).Type);
     }
 
     // A segment edge with a 3D polygon of the given number of evenly spaced nodes.
@@ -554,7 +554,7 @@ public class BRepExtremaTests
         aProx.Perform();
         Assert.True(aProx.IsDone);
         Assert.Equal(1.0, aProx.Proximity(), Tol);
-        Assert.Equal(1.0, aProx.ProximityPoint1().Distance(aProx.ProximityPoint2()), Tol);
+        Assert.Equal(1.0, aProx.ProximityPoint1().DistanceTo(aProx.ProximityPoint2()), Tol);
         Assert.NotEqual(ProximityDistTool.ProxPnt_Status.ProxPnt_Status_UNKNOWN, aProx.ProxPntStatus1());
 
         // more samples than nodes on both
@@ -588,7 +588,7 @@ public class BRepExtremaTests
         Assert.Equal(aTool.Distance(), aTol);
         Assert.Equal(0.5, aTol, Tol);
         aTool.ProximityPoints(out Point3D p1, out Point3D p2);
-        Assert.Equal(0.5, p1.Distance(p2), Tol);
+        Assert.Equal(0.5, p1.DistanceTo(p2), Tol);
     }
 
     [Fact]

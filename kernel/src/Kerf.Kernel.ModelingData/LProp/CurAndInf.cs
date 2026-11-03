@@ -13,7 +13,7 @@ namespace Kerf.Engine.Geometry.Properties;
 /// The parameters of a 2D or 3D curve where its curvature is extreme and where it inflects, in increasing order.
 /// </summary>
 /// <remarks>A working object, filled by <see cref="CurAndInf2d"/>: its methods are public, as in OCCT.</remarks>
-public class CurAndInf
+internal class CurAndInf
 {
     private readonly NCollection_Sequence<double> _params = new();
     private readonly NCollection_Sequence<CIType> _types = new();

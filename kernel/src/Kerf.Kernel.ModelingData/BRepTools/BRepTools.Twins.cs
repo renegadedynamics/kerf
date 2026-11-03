@@ -43,7 +43,7 @@ public static partial class BrepTools
         {
             Shape s = map[i];
             Shape newS = modifier.InternalModifiedShape(s);
-            if (copyMesh && s.ShapeType() == ShapeType.Face && !ReferenceEquals(s.TShape(), newS.TShape()))
+            if (copyMesh && s.Type == ShapeType.Face && !ReferenceEquals(s.TShape(), newS.TShape()))
             {
                 BrepTFace tf = (BrepTFace)s.TShape()!;
                 if (tf.TriangulationCount > 1)

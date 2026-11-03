@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Geometry.Bvh;
 
 /// <summary>OCCT's unnamed enumeration of BVH constants. Files that use them write <c>using static Occt.BVH_Constants;</c>.</summary>
-public static class Constants
+internal static class Constants
 {
     /// <summary>
     /// The optimal tree depth. Should be in sync with maximum stack size while traversing the tree: don't pass
@@ -34,7 +34,7 @@ public static class Constants
     public const int BVH_Constants_NbBinsBest = 48;
 }
 
-public static partial class BvhTools
+internal static partial class BvhTools
 {
     /// <summary>Minimum node size to split.</summary>
     public const double THE_NODE_MIN_SIZE = 1e-5;

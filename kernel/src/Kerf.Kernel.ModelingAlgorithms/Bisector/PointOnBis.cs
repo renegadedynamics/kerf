@@ -150,5 +150,5 @@ public partial struct PointOnBis : IEquatable<PointOnBis>
 
     /// <inheritdoc/>
     public override readonly string ToString() =>
-        Constants.Format("Bisector_PointOnBis", _param1, _param2, _paramBis, _distance, _infinite ? 1.0 : 0.0, _point.X(), _point.Y());
+        Constants.Format("Bisector_PointOnBis", _param1, _param2, _paramBis, _distance, _infinite ? 1.0 : 0.0, _point.X, _point.Y);
 }

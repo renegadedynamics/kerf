@@ -40,7 +40,7 @@ public static partial class BrepLibrary
         }
         Point3D p = curve.Value(startU);
         double sqTol = tol * tol;
-        if (p.SquareDistance(vertPnt) > sqTol)
+        if (p.SquareDistanceTo(vertPnt) > sqTol)
         {
             // the vertex does not cover the corresponding to this vertex end of the curve
             return false;
@@ -65,7 +65,7 @@ public static partial class BrepLibrary
         if (type == OffsetCurve)
         {
             OffsetCurve3D offsetCurve = curve.OffsetCurve();
-            Curve3D baseCurve = offsetCurve.BasisCurve();
+            Curve3D baseCurve = offsetCurve.BasisCurve;
             type = new CurveAdaptor(baseCurve).GetType();
         }
         if (type == BezierCurve || type == BSplineCurve)
@@ -89,7 +89,7 @@ public static partial class BrepLibrary
                 // step is too big and we go out of bounds,
                 // check if the opposite bound is outside
                 p = curve.Value(endU);
-                isOut = (p.SquareDistance(vertPnt) > sqTol);
+                isOut = (p.SquareDistanceTo(vertPnt) > sqTol);
                 if (!isOut)
                 {
                     // all range is inside sphere
@@ -105,8 +105,8 @@ public static partial class BrepLibrary
                 {
                     // cycle to go out of local singularity
                     curve.D1(uOut, out p, out Vector3D d1);
-                    isOut = (p.SquareDistance(vertPnt) > sqTol);
-                    if (!isOut && d1.SquareMagnitude() < d1Mag)
+                    isOut = (p.SquareDistanceTo(vertPnt) > sqTol);
+                    if (!isOut && d1.SquareMagnitude < d1Mag)
                     {
                         stepLocal *= 2.0;
                         uOut += stepLocal;
@@ -118,7 +118,7 @@ public static partial class BrepLibrary
                         // went out of range, so check if the end point has out state
                         uOut = endU;
                         p = curve.Value(uOut);
-                        isOut = (p.SquareDistance(vertPnt) > sqTol);
+                        isOut = (p.SquareDistanceTo(vertPnt) > sqTol);
                         if (!isOut)
                         {
                             // all range is inside sphere
@@ -134,7 +134,7 @@ public static partial class BrepLibrary
             }
             if (!isOut)
             {
-                isOut = (p.SquareDistance(vertPnt) > sqTol);
+                isOut = (p.SquareDistanceTo(vertPnt) > sqTol);
             }
         }
 
@@ -145,7 +145,7 @@ public static partial class BrepLibrary
         {
             double midU = (uIn + uOut) * 0.5;
             p = curve.Value(midU);
-            isOut = (p.SquareDistance(vertPnt) > sqTol);
+            isOut = (p.SquareDistanceTo(vertPnt) > sqTol);
             if (isOut)
             {
                 uOut = midU;

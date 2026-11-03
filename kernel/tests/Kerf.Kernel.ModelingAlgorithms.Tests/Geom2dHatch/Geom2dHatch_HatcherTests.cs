@@ -25,7 +25,7 @@ public class Geom2dHatch_HatcherTests
     {
         Point2D aP1 = new(x1, y1), aP2 = new(x2, y2);
         LineCurve2D aLine = new(aP1, new Direction2D(new Vector2D(aP1, aP2)));
-        return new CurveAdaptor2D(new TrimmedCurve2D(aLine, 0.0, aP1.Distance(aP2)));
+        return new CurveAdaptor2D(new TrimmedCurve2D(aLine, 0.0, aP1.DistanceTo(aP2)));
     }
 
     // A counterclockwise polygon (inside on the left), its edges added in order.
@@ -219,7 +219,7 @@ public class Geom2dHatch_HatcherTests
         aHatcher.RemHatching(1);
         Assert.Equal(1, aHatcher.AddHatching(HalfLine(0, 0.75, 1, 0)));
         Assert.True(aHatcher.ElementCurve(1).Curve() is LineCurve2D); // the adaptor unwraps the trimmed curve
-        Assert.Equal(0.25, aHatcher.HatchingCurve(2).Value(0.0).Y());
+        Assert.Equal(0.25, aHatcher.HatchingCurve(2).Value(0.0).Y);
     }
 
     [Fact]
@@ -322,7 +322,7 @@ public class Geom2dHatch_HatcherTests
         Classifier2D anOn = new(anElements, new Point2D(1.0, 0.4), 1.0e-7);
         Assert.Equal(On, anOn.State());
         Assert.Equal(0.4, anOn.EdgeParameter(), 1e-9);
-        Assert.Equal(1.0, anOn.Edge().Value(0.0).X());
+        Assert.Equal(1.0, anOn.Edge().Value(0.0).X);
         Assert.False(anOn.Rejected());
         Assert.False(anOn.NoWires());
 
@@ -346,7 +346,7 @@ public class Geom2dHatch_HatcherTests
         CurveAdaptor2D aCurve = Segment(0, 0, 1, 0);
         Element2D anElement = new(aCurve, Reversed);
         aCurve.Load(new LineCurve2D(new Point2D(5, 5), new Direction2D(0, 1)));
-        Assert.Equal(0.0, anElement.Curve().Value(0.0).X());
+        Assert.Equal(0.0, anElement.Curve().Value(0.0).X);
         Assert.Equal(Reversed, anElement.Orientation());
         Element2D aForward = anElement.WithOrientation(Forward);
         Assert.Equal(Forward, aForward.Orientation());

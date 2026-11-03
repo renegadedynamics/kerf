@@ -54,9 +54,9 @@ public sealed class MakeTessellatedItem : ExportRoot
         for (int nodeIndex = 1; nodeIndex <= mesh.NodeCount; ++nodeIndex)
         {
             Direction3D norm = mesh.Normal(nodeIndex);
-            normals.SetValue(nodeIndex, 1, norm.X());
-            normals.SetValue(nodeIndex, 2, norm.Y());
-            normals.SetValue(nodeIndex, 3, norm.Z());
+            normals.SetValue(nodeIndex, 1, norm.X);
+            normals.SetValue(nodeIndex, 2, norm.Y);
+            normals.SetValue(nodeIndex, 3, norm.Z);
         }
 
         for (int nodeIndex = 1; nodeIndex <= mesh.NodeCount; ++nodeIndex)

@@ -152,7 +152,7 @@ public sealed class UniformDeflection
     private static Point3D Value(Curve2DAdaptorBase c, double parameter)
     {
         Point2D a2dPoint = c.Value(parameter);
-        return new Point3D(a2dPoint.X(), a2dPoint.Y(), 0.0);
+        return new Point3D(a2dPoint.X, a2dPoint.Y, 0.0);
     }
 
     // ---- Templates over the curve type (3D instantiation) ----
@@ -201,7 +201,7 @@ public sealed class UniformDeflection
                                         double u2)
     {
         Point3D point;
-        double angle = Max(1.0 - (deflection / c.Circle().Radius()), 0.0);
+        double angle = Max(1.0 - (deflection / c.Circle().Radius), 0.0);
         angle = 2.0e0 * Math.Acos(angle);
         int nbPoints = (int)((u2 - u1) / angle);
         nbPoints += 2;
@@ -395,7 +395,7 @@ public sealed class UniformDeflection
                                         double u2)
     {
         Point3D point;
-        double angle = Max(1.0 - (deflection / c.Circle().Radius()), 0.0);
+        double angle = Max(1.0 - (deflection / c.Circle().Radius), 0.0);
         angle = 2.0e0 * Math.Acos(angle);
         int nbPoints = (int)((u2 - u1) / angle);
         nbPoints += 2;

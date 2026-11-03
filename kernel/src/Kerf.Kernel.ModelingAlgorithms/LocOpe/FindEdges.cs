@@ -72,13 +72,13 @@ public sealed class FindEdges
             cf = Tool.Curve(edgf, out Placement loc, out ff, out lf)!;
             if (!loc.IsIdentity)
             {
-                Geometry3D gGf = cf.Transformed(loc.Transformation());
+                Geometry3D gGf = cf.Transformed(loc.Transformation);
                 cf = (Curve3D)gGf;
             }
             tf = cf.GetType();
             if (tf == typeof(TrimmedCurve3D))
             {
-                cf = ((TrimmedCurve3D)cf).BasisCurve();
+                cf = ((TrimmedCurve3D)cf).BasisCurve;
                 tf = cf.GetType();
             }
             if (tf != typeof(LineCurve3D) && tf != typeof(CircleCurve3D) && tf != typeof(EllipseCurve3D)
@@ -92,13 +92,13 @@ public sealed class FindEdges
                 ct = Tool.Curve(edgt, out loc, out ft, out lt)!;
                 if (!loc.IsIdentity)
                 {
-                    Geometry3D gGt = ct.Transformed(loc.Transformation());
+                    Geometry3D gGt = ct.Transformed(loc.Transformation);
                     ct = (Curve3D)gGt;
                 }
                 tt = ct.GetType();
                 if (tt == typeof(TrimmedCurve3D))
                 {
-                    ct = ((TrimmedCurve3D)ct).BasisCurve();
+                    ct = ((TrimmedCurve3D)ct).BasisCurve;
                     tt = ct.GetType();
                 }
                 if (tt != tf)
@@ -109,8 +109,8 @@ public sealed class FindEdges
                 double tol = global::Kerf.Engine.Foundation.Precision.Confusion();
                 if (tt == typeof(LineCurve3D))
                 {
-                    Line3D lif = ((LineCurve3D)cf).Lin();
-                    Line3D lit = ((LineCurve3D)ct).Lin();
+                    Line3D lif = ((LineCurve3D)cf).Line;
+                    Line3D lit = ((LineCurve3D)ct).Line;
                     Point3D p1 = global::Kerf.Engine.Geometry.ElCLib.Value(ff, lif);
                     Point3D p2 = global::Kerf.Engine.Geometry.ElCLib.Value(lf, lif);
                     double prm1 = global::Kerf.Engine.Geometry.ElCLib.Parameter(lit, p1);
@@ -119,10 +119,10 @@ public sealed class FindEdges
                     {
                         tol *= tol;
                         Point3D pt = global::Kerf.Engine.Geometry.ElCLib.Value(prm1, lit);
-                        if (pt.SquareDistance(p1) <= tol)
+                        if (pt.SquareDistanceTo(p1) <= tol)
                         {
                             pt = global::Kerf.Engine.Geometry.ElCLib.Value(prm2, lit);
-                            if (pt.SquareDistance(p2) <= tol)
+                            if (pt.SquareDistanceTo(p2) <= tol)
                             {
                                 _lFrom.Append(edgf);
                                 _lTo.Append(edgt);
@@ -133,10 +133,10 @@ public sealed class FindEdges
                 }
                 else if (tt == typeof(CircleCurve3D))
                 {
-                    Circle3D cif = ((CircleCurve3D)cf).Circ();
-                    Circle3D cit = ((CircleCurve3D)ct).Circ();
-                    if (Math.Abs(cif.Radius() - cit.Radius()) <= tol
-                        && cif.Location().SquareDistance(cit.Location()) <= tol * tol)
+                    Circle3D cif = ((CircleCurve3D)cf).Circle;
+                    Circle3D cit = ((CircleCurve3D)ct).Circle;
+                    if (Math.Abs(cif.Radius - cit.Radius) <= tol
+                        && cif.Location.SquareDistanceTo(cit.Location) <= tol * tol)
                     {
                         // Point debut, calage dans periode, et detection meme sens
 
@@ -186,12 +186,12 @@ public sealed class FindEdges
                 }
                 else if (tt == typeof(EllipseCurve3D))
                 {
-                    Ellipse3D cif = ((EllipseCurve3D)cf).Elips();
-                    Ellipse3D cit = ((EllipseCurve3D)ct).Elips();
+                    Ellipse3D cif = ((EllipseCurve3D)cf).Ellipse;
+                    Ellipse3D cit = ((EllipseCurve3D)ct).Ellipse;
 
-                    if (Math.Abs(cif.MajorRadius() - cit.MajorRadius()) <= tol
-                        && Math.Abs(cif.MinorRadius() - cit.MinorRadius()) <= tol
-                        && cif.Location().SquareDistance(cit.Location()) <= tol * tol)
+                    if (Math.Abs(cif.MajorRadius - cit.MajorRadius) <= tol
+                        && Math.Abs(cif.MinorRadius - cit.MinorRadius) <= tol
+                        && cif.Location.SquareDistanceTo(cit.Location) <= tol * tol)
                     {
                         // Point debut, calage dans periode, et detection meme sens
 
@@ -263,7 +263,7 @@ public sealed class FindEdges
                             double tol3d = Tool.Tolerance(edgt);
                             for (int p = 1; p <= nbpoles; p++)
                             {
-                                if ((pf[p]).Distance(Pt[p]) > tol3d)
+                                if ((pf[p]).DistanceTo(Pt[p]) > tol3d)
                                 {
                                     isSame = false;
                                     break;
@@ -353,7 +353,7 @@ public sealed class FindEdges
 
                         for (int p = 1; p <= nbpoles; p++)
                         {
-                            if ((pf[p]).Distance(Pt[p]) > tol)
+                            if ((pf[p]).DistanceTo(Pt[p]) > tol)
                             {
                                 isSame = false;
                                 break;

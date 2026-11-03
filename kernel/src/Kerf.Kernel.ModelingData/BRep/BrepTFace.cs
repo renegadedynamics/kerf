@@ -31,7 +31,7 @@ namespace Kerf.Engine.Topology.Brep;
 /// purpose of a frozen triangulation as it is (docs/decisions.md, 3106).
 /// </para>
 /// </remarks>
-public class BrepTFace : TFace
+internal class BrepTFace : TFace
 {
     private readonly NCollection_List<Triangulation> _triangulations = new();
     private Triangulation? _activeTriangulation;

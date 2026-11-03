@@ -22,8 +22,8 @@ public class Geom_TransformationTests
                 Assert.Equal(theExpected.Value(r, c), theActual.Value(r, c));
             }
         }
-        Assert.Equal(theExpected.Form(), theActual.Form());
-        Assert.Equal(theExpected.ScaleFactor(), theActual.ScaleFactor());
+        Assert.Equal(theExpected.Form, theActual.Form());
+        Assert.Equal(theExpected.ScaleFactor, theActual.ScaleFactor());
         Assert.Equal(theExpected.IsNegative, theActual.IsNegative);
     }
 

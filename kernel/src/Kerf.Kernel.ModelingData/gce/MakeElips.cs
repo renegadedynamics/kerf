@@ -44,7 +44,7 @@ public sealed class MakeElips : Root
     /// </summary>
     public MakeElips(in Point3D s1, in Point3D s2, in Point3D center)
     {
-        double d1 = s1.Distance(center);
+        double d1 = s1.DistanceTo(center);
         if (d1 < Constants.Resolution())
         {
             _theError = NullAxis;
@@ -52,7 +52,7 @@ public sealed class MakeElips : Root
         else
         {
             Direction3D xAxis = new(s1.XYZ() - center.XYZ());
-            double d2 = new Line3D(center, xAxis).Distance(s2);
+            double d2 = new Line3D(center, xAxis).DistanceTo(s2);
             if (d1 < d2 || d2 < Constants.Resolution())
             {
                 _theError = InvertAxis;

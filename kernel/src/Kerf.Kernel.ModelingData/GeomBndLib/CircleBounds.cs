@@ -16,7 +16,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Computes bounding box for a 3D circle (Geom_Circle), with analytical per-coordinate extrema. The static methods
 /// accepting gp_Circ can be used directly without constructing a Geom_Circle.
 /// </summary>
-public sealed class CircleBounds : CurveBounds.ICurveEvaluator
+internal sealed class CircleBounds : CurveBounds.ICurveEvaluator
 {
     private readonly CircleCurve3D _geom;
 
@@ -30,10 +30,10 @@ public sealed class CircleBounds : CurveBounds.ICurveEvaluator
     Curve3D? CurveBounds.ICurveEvaluator.CurveGeometry() => _geom;
 
     /// <summary>Compute bounding box for full circle.</summary>
-    public Box Box(double tol) => Box(_geom.Circ(), tol);
+    public Box Box(double tol) => Box(_geom.Circle, tol);
 
     /// <summary>Compute bounding box for arc [theU1, theU2].</summary>
-    public Box Box(double u1, double u2, double tol) => Box(_geom.Circ(), u1, u2, tol);
+    public Box Box(double u1, double u2, double tol) => Box(_geom.Circle, u1, u2, tol);
 
     /// <summary>For analytical curves, BoxOptimal is same as Box.</summary>
     public Box BoxOptimal(double u1, double u2, double tol) => Box(u1, u2, tol);
@@ -42,10 +42,10 @@ public sealed class CircleBounds : CurveBounds.ICurveEvaluator
     public static Box Box(in Circle3D circ, double tol)
     {
         Box box = new();
-        double r = circ.Radius();
-        Xyz o = circ.Location().XYZ();
-        Xyz xd = circ.XAxis().Direction().XYZ();
-        Xyz yd = circ.YAxis().Direction().XYZ();
+        double r = circ.Radius;
+        Xyz o = circ.Location.XYZ();
+        Xyz xd = circ.XAxis.Direction.XYZ();
+        Xyz yd = circ.YAxis.Direction.XYZ();
 
         // For a full circle, compute per-coordinate analytical extrema.
         Span<double> min = stackalloc double[3];
@@ -67,10 +67,10 @@ public sealed class CircleBounds : CurveBounds.ICurveEvaluator
     public static Box Box(in Circle3D circ, double u1, double u2, double tol)
     {
         Box box = new();
-        double r = circ.Radius();
-        Xyz o = circ.Location().XYZ();
-        Xyz xd = circ.XAxis().Direction().XYZ();
-        Xyz yd = circ.YAxis().Direction().XYZ();
+        double r = circ.Radius;
+        Xyz o = circ.Location.XYZ();
+        Xyz xd = circ.XAxis.Direction.XYZ();
+        Xyz yd = circ.YAxis.Direction.XYZ();
 
         double period = 2.0 * M_PI - global::Kerf.Engine.Foundation.Precision.PConfusion();
         if (u2 - u1 >= period)
@@ -83,7 +83,7 @@ public sealed class CircleBounds : CurveBounds.ICurveEvaluator
         global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(0.0, 2.0 * M_PI, aTol, ref aU1, ref aU2);
 
         // Add arc endpoints.
-        Frame3D pos = circ.Position();
+        Frame3D pos = circ.Position;
         box.Add(global::Kerf.Engine.Geometry.ElCLib.CircleValue(aU1, pos, r));
         box.Add(global::Kerf.Engine.Geometry.ElCLib.CircleValue(aU2, pos, r));
 

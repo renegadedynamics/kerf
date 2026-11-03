@@ -178,10 +178,10 @@ public class Transformation2 : Transient
     public bool IsNegative => _gpTrsf2d.IsNegative;
 
     /// <summary>The nature of the transformation.</summary>
-    public TransformForm Form() => _gpTrsf2d.Form();
+    public TransformForm Form() => _gpTrsf2d.Form;
 
     /// <summary>The scale factor.</summary>
-    public double ScaleFactor() => _gpTrsf2d.ScaleFactor();
+    public double ScaleFactor() => _gpTrsf2d.ScaleFactor;
 
     /// <summary>The transformation as a <see cref="Transform2D"/>.</summary>
     public Transform2D Trsf2d() => _gpTrsf2d;

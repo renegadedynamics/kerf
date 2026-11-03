@@ -20,10 +20,10 @@ public class BRepFill_PipeShellTests
     private static Wire MakeSquareProfile(in Point3D theCenter, double theHalfSide)
     {
         MakePolygon aPolygon = new();
-        aPolygon.Add(new Point3D(theCenter.X() - theHalfSide, theCenter.Y() - theHalfSide, theCenter.Z()));
-        aPolygon.Add(new Point3D(theCenter.X() + theHalfSide, theCenter.Y() - theHalfSide, theCenter.Z()));
-        aPolygon.Add(new Point3D(theCenter.X() + theHalfSide, theCenter.Y() + theHalfSide, theCenter.Z()));
-        aPolygon.Add(new Point3D(theCenter.X() - theHalfSide, theCenter.Y() + theHalfSide, theCenter.Z()));
+        aPolygon.Add(new Point3D(theCenter.X - theHalfSide, theCenter.Y - theHalfSide, theCenter.Z));
+        aPolygon.Add(new Point3D(theCenter.X + theHalfSide, theCenter.Y - theHalfSide, theCenter.Z));
+        aPolygon.Add(new Point3D(theCenter.X + theHalfSide, theCenter.Y + theHalfSide, theCenter.Z));
+        aPolygon.Add(new Point3D(theCenter.X - theHalfSide, theCenter.Y + theHalfSide, theCenter.Z));
         aPolygon.Close();
         return aPolygon.Wire();
     }
@@ -51,7 +51,7 @@ public class BRepFill_PipeShellTests
 
         Shape aResult = aPipe.Shape();
         Assert.False(aResult.IsNull);
-        Assert.True(aResult.Closed());
+        Assert.True(aResult.IsClosed);
 
         Analyzer anAnalyzer = new(aResult);
         Assert.True(anAnalyzer.IsValid());
@@ -77,7 +77,7 @@ public class BRepFill_PipeShellTests
 
         Shape aResult = aPipe.Shape();
         Assert.False(aResult.IsNull);
-        Assert.True(aResult.Closed());
+        Assert.True(aResult.IsClosed);
     }
 
     [Theory]
@@ -107,7 +107,7 @@ public class BRepFill_PipeShellTests
 
         Shape aResult = aPipe.Shape();
         Assert.True(aResult.TShape()!.IsFrozen);
-        Assert.Equal(ShapeType.Solid, aResult.ShapeType());
+        Assert.Equal(ShapeType.Solid, aResult.Type);
 
         // every edge of the profile generates faces of the result, every edge of the spine too
         IndexedSet<Shape> aFaces = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
@@ -127,7 +127,7 @@ public class BRepFill_PipeShellTests
                     for (NCollection_List<Shape>.Iterator anIt = new(aList); anIt.More(); anIt.Next())
                     {
                         Assert.True(anIt.Value().TShape()!.IsFrozen);
-                        if (anIt.Value().ShapeType() == ShapeType.Face)
+                        if (anIt.Value().Type == ShapeType.Face)
                         {
                             Assert.True(aFaces.Contains(anIt.Value()));
                         }
@@ -154,12 +154,12 @@ public class BRepFill_PipeShellTests
             aB.Add(anOpen, anIt.Value());
         }
         anOpen.TShape()!.FreezeGraph();
-        Assert.False(anOpen.Closed());
+        Assert.False(anOpen.IsClosed);
 
         PipeShell aPipe = new(anOpen);
-        Assert.False(anOpen.Closed());
+        Assert.False(anOpen.IsClosed);
         Wire aPipeSpine = aPipe.Spine();
-        Assert.True(aPipeSpine.Closed());
+        Assert.True(aPipeSpine.IsClosed);
         Assert.False(aPipeSpine.IsSame(anOpen));
         global::Kerf.Engine.Topology.Explorer anExp1 = new(anOpen, ShapeType.Edge), anExp2 = new(aPipeSpine, ShapeType.Edge);
         for (; anExp1.More(); anExp1.Next(), anExp2.Next())

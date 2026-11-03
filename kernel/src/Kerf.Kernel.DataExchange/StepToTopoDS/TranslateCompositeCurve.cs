@@ -201,11 +201,11 @@ public sealed class TranslateCompositeCurve : ImportRoot
                     Curve3D c3d = global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeCurve(crv, localFactors);
                     if (c3d is not null)
                     {
-                        var mkEdge = new MakeEdge(c3d, c3d.FirstParameter(), c3d.LastParameter());
+                        var mkEdge = new MakeEdge(c3d, c3d.FirstParameter, c3d.LastParameter);
                         if (mkEdge.IsDone)
                         {
-                            if (Kerf.Engine.Foundation.Precision.IsNegativeInfinite(c3d.FirstParameter())
-                                || Kerf.Engine.Foundation.Precision.IsPositiveInfinite(c3d.LastParameter()))
+                            if (Kerf.Engine.Foundation.Precision.IsNegativeInfinite(c3d.FirstParameter)
+                                || Kerf.Engine.Foundation.Precision.IsPositiveInfinite(c3d.LastParameter))
                             {
                                 _infiniteSegment = true;
                                 tp.AddWarning(CC, "Segment with infinite parameters");
@@ -232,11 +232,11 @@ public sealed class TranslateCompositeCurve : ImportRoot
                     {
                         if (edge1.IsNull)
                         {
-                            var mkEdge = new MakeEdge(c2d, surf, c2d.FirstParameter(), c2d.LastParameter());
+                            var mkEdge = new MakeEdge(c2d, surf, c2d.FirstParameter, c2d.LastParameter);
                             if (mkEdge.IsDone)
                             {
-                                if (Kerf.Engine.Foundation.Precision.IsNegativeInfinite(c2d.FirstParameter())
-                                    || Kerf.Engine.Foundation.Precision.IsPositiveInfinite(c2d.LastParameter()))
+                                if (Kerf.Engine.Foundation.Precision.IsNegativeInfinite(c2d.FirstParameter)
+                                    || Kerf.Engine.Foundation.Precision.IsPositiveInfinite(c2d.LastParameter))
                                 {
                                     _infiniteSegment = true;
                                     tp.AddWarning(CC, "Segment with infinite parameters");
@@ -250,7 +250,7 @@ public sealed class TranslateCompositeCurve : ImportRoot
                             var b = new BrepBuilder();
                             Placement l = new Placement();
                             b.UpdateEdge(edge1, c2d, surf, l, 0.0);
-                            b.Range(edge1, surf, l, c2d.FirstParameter(), c2d.LastParameter());
+                            b.Range(edge1, surf, l, c2d.FirstParameter, c2d.LastParameter);
                             b.SameRange(edge1, false);
                             b.SameParameter(edge1, false);
                         }

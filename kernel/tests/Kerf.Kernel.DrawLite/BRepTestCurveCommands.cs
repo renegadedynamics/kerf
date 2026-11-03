@@ -93,7 +93,7 @@ internal static class BRepTestCurveCommands
                 return 0;
             }
 
-            if (S.ShapeType() != ShapeType.Edge)
+            if (S.Type != ShapeType.Edge)
             {
                 return 0;
             }
@@ -160,7 +160,7 @@ internal static class BRepTestCurveCommands
                 return 1;
             }
 
-            if (S.ShapeType() != ShapeType.Vertex)
+            if (S.Type != ShapeType.Vertex)
             {
                 return 1;
             }
@@ -192,11 +192,11 @@ internal static class BRepTestCurveCommands
                     continue;
                 }
 
-                if (S.ShapeType() == ShapeType.Edge)
+                if (S.Type == ShapeType.Edge)
                 {
                     MW.Add(ShapeCasts.Edge(S));
                 }
-                else if (S.ShapeType() == ShapeType.Wire)
+                else if (S.Type == ShapeType.Wire)
                 {
                     MW.Add(ShapeCasts.Wire(S));
                 }
@@ -377,7 +377,7 @@ internal static class BRepTestCurveCommands
         }
 
         C = new TrimmedCurve3D(C, f, l);
-        DrawTrSurf.Set(theDI, a[1], C.Transformed(L.Transformation()));
+        DrawTrSurf.Set(theDI, a[1], C.Transformed(L.Transformation));
         return 0;
     }
 
@@ -639,19 +639,19 @@ internal static class BRepTestCurveCommands
                     {
                         var vn = new Vector3D(theDI.Atof(a[i - 5]), theDI.Atof(a[i - 4]), theDI.Atof(a[i - 3]));
                         var vx = new Vector3D(theDI.Atof(a[i - 2]), theDI.Atof(a[i - 1]), theDI.Atof(a[i]));
-                        if (vn.Magnitude() <= global::Kerf.Engine.Foundation.Precision.Confusion())
+                        if (vn.Magnitude <= global::Kerf.Engine.Foundation.Precision.Confusion())
                         {
                             di.Append("profile : null direction");
                             return 1;
                         }
 
-                        if (vx.Magnitude() <= global::Kerf.Engine.Foundation.Precision.Confusion())
+                        if (vx.Magnitude <= global::Kerf.Engine.Foundation.Precision.Confusion())
                         {
                             di.Append("profile : null direction");
                             return 1;
                         }
 
-                        var ax = new Frame3D(P.Location(), new Direction3D(vn), new Direction3D(vx));
+                        var ax = new Frame3D(P.Location, new Direction3D(vn), new Direction3D(vx));
                         P = P.WithPosition(new CoordinateSystem(ax));
                     }
 
@@ -677,7 +677,7 @@ internal static class BRepTestCurveCommands
                         Surface = Tool.Surface(Face, out TheLocation);
                         if (Surface is PlaneSurface Plane)
                         {
-                            P = Plane.Pln();
+                            P = Plane.Plane;
                         }
                         else
                         {
@@ -923,10 +923,10 @@ internal static class BRepTestCurveCommands
                                ? new MakeEdge(Projections.To3d(c, P), 0, angle).InternalEdge()
                                : new MakeEdge(c, Surface!, 0, angle).InternalEdge());
                     c.D1(angle, out Point2D p, out Vector2D v);
-                    x = p.X();
-                    y = p.Y();
-                    dx = v.X() / radius;
-                    dy = v.Y() / radius;
+                    x = p.X;
+                    y = p.Y;
+                    dx = v.X / radius;
+                    dy = v.Y / radius;
                     break;
                 }
 

@@ -65,9 +65,9 @@ public sealed class Lin2d2Tan
         if (type1 == Circle && type2 == Circle)
         {
             CircleCurve2D        ccc1 = (cc1 as CircleCurve2D)!;
-            Circle2D            c1   = ccc1.Circ2d();
+            Circle2D            c1   = ccc1.Circle;
             CircleCurve2D        ccc2 = (cc2 as CircleCurve2D)!;
-            Circle2D            c2   = ccc2.Circ2d();
+            Circle2D            c2   = ccc2.Circle;
             QualifiedCirc qc1  = new(c1, qualified1.Qualifier());
             QualifiedCirc qc2  = new(c2, qualified2.Qualifier());
             AnalyticLin2d2Tan     lin  = new(qc1, qc2, tolang);
@@ -141,7 +141,7 @@ public sealed class Lin2d2Tan
         if (type1 == Circle)
         {
             CircleCurve2D        ccc1 = (cc1 as CircleCurve2D)!;
-            Circle2D            c1   = ccc1.Circ2d();
+            Circle2D            c1   = ccc1.Circle;
             QualifiedCirc qc1  = new(c1, qualified1.Qualifier());
             AnalyticLin2d2Tan     lin  = new(qc1, thePoint, tolang);
             _wellDone                  = lin.IsDone;
@@ -210,9 +210,9 @@ public sealed class Lin2d2Tan
         if (type1 == Circle && type2 == Circle)
         {
             CircleCurve2D        ccc1 = (cc1 as CircleCurve2D)!;
-            Circle2D            c1   = ccc1.Circ2d();
+            Circle2D            c1   = ccc1.Circle;
             CircleCurve2D        ccc2 = (cc2 as CircleCurve2D)!;
-            Circle2D            c2   = ccc2.Circ2d();
+            Circle2D            c2   = ccc2.Circle;
             QualifiedCirc qc1  = new(c1, qualified1.Qualifier());
             QualifiedCirc qc2  = new(c2, qualified2.Qualifier());
             AnalyticLin2d2Tan     lin  = new(qc1, qc2, tolang);
@@ -265,7 +265,7 @@ public sealed class Lin2d2Tan
         if (type1 == Circle)
         {
             CircleCurve2D        ccc1 = (cc1 as CircleCurve2D)!;
-            Circle2D            c1   = ccc1.Circ2d();
+            Circle2D            c1   = ccc1.Circle;
             QualifiedCirc qc1  = new(c1, qualified1.Qualifier());
             AnalyticLin2d2Tan     lin  = new(qc1, thePoint, tolang);
             _wellDone                  = lin.IsDone;
@@ -399,7 +399,7 @@ public sealed class Lin2d2Tan
             }
         }
 
-        Direction2D linDir = aLin.Direction();
+        Direction2D linDir = aLin.Direction;
 
         ConstraintCurveTool.D1(c1, par1arg, out _, out Vector2D vTan);
 

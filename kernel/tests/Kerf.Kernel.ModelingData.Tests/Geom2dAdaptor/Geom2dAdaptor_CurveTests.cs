@@ -174,8 +174,8 @@ public class Geom2dAdaptor_Curve_Test
         global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor2D anAdaptor = new global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor2D();
         anAdaptor.Load(myCircle);
 
-        Assert.Equal(myCircle.FirstParameter(), anAdaptor.FirstParameter(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(myCircle.LastParameter(), anAdaptor.LastParameter(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(myCircle.FirstParameter, anAdaptor.FirstParameter(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(myCircle.LastParameter, anAdaptor.LastParameter(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.True(anAdaptor.IsPeriodic);
     }
 
@@ -237,8 +237,8 @@ public class Geom2dAdaptor_Curve_Test
     public void Evaluation_MatchesCurve(string theName)
     {
         Curve2D aCurve = MakeCurve(theName);
-        double aFirst = global::Kerf.Engine.Foundation.Precision.IsInfinite(aCurve.FirstParameter()) ? -2.0 : aCurve.FirstParameter();
-        double aLast = global::Kerf.Engine.Foundation.Precision.IsInfinite(aCurve.LastParameter()) ? 2.0 : aCurve.LastParameter();
+        double aFirst = global::Kerf.Engine.Foundation.Precision.IsInfinite(aCurve.FirstParameter) ? -2.0 : aCurve.FirstParameter;
+        double aLast = global::Kerf.Engine.Foundation.Precision.IsInfinite(aCurve.LastParameter) ? 2.0 : aCurve.LastParameter;
         global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor2D anAdaptor = new global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor2D(aCurve, aFirst, aLast);
         for (int i = 0; i <= 20; i++)
         {
@@ -246,18 +246,18 @@ public class Geom2dAdaptor_Curve_Test
             aCurve.D3(U, out Point2D P, out Vector2D V1, out Vector2D V2, out Vector2D V3);
             anAdaptor.D3(U, out Point2D AP, out Vector2D AV1, out Vector2D AV2, out Vector2D AV3);
             Assert.True(P.IsEqual(AP, 1e-9), $"{theName} D0 at {U}");
-            Assert.True(V1.IsEqual(AV1, 1e-9, 1e-9) || (V1 - AV1).Magnitude() < 1e-8, $"{theName} D1 at {U}");
-            Assert.True((V2 - AV2).Magnitude() < 1e-7, $"{theName} D2 at {U}");
-            Assert.True((V3 - AV3).Magnitude() < 1e-6, $"{theName} D3 at {U}: {V3} {AV3}");
+            Assert.True(V1.IsEqual(AV1, 1e-9, 1e-9) || (V1 - AV1).Magnitude < 1e-8, $"{theName} D1 at {U}");
+            Assert.True((V2 - AV2).Magnitude < 1e-7, $"{theName} D2 at {U}");
+            Assert.True((V3 - AV3).Magnitude < 1e-6, $"{theName} D3 at {U}: {V3} {AV3}");
             Assert.True(anAdaptor.Value(U).IsEqual(P, 1e-9));
             anAdaptor.D1(U, out AP, out AV1);
-            Assert.True((V1 - AV1).Magnitude() < 1e-8);
+            Assert.True((V1 - AV1).Magnitude < 1e-8);
             // Compared with the curve's D2: OCCT's offset D3 computes a different second derivative (occt-issues.md).
             aCurve.D2(U, out P, out V1, out V2);
             anAdaptor.D2(U, out AP, out AV1, out AV2);
-            Assert.True((V2 - AV2).Magnitude() < 1e-7, $"{theName} D2 at {U}: {V2} {AV2}");
-            Assert.True((aCurve.DN(U, 1) - anAdaptor.DN(U, 1)).Magnitude() < 1e-8);
-            Assert.True((aCurve.DN(U, 2) - anAdaptor.DN(U, 2)).Magnitude() < 1e-7);
+            Assert.True((V2 - AV2).Magnitude < 1e-7, $"{theName} D2 at {U}: {V2} {AV2}");
+            Assert.True((aCurve.DN(U, 1) - anAdaptor.DN(U, 1)).Magnitude < 1e-8);
+            Assert.True((aCurve.DN(U, 2) - anAdaptor.DN(U, 2)).Magnitude < 1e-7);
         }
     }
 
@@ -266,8 +266,8 @@ public class Geom2dAdaptor_Curve_Test
     public void ShallowCopy_EvaluatesAsOriginal(string theName)
     {
         Curve2D aCurve = MakeCurve(theName);
-        double aFirst = global::Kerf.Engine.Foundation.Precision.IsInfinite(aCurve.FirstParameter()) ? -2.0 : aCurve.FirstParameter();
-        double aLast = global::Kerf.Engine.Foundation.Precision.IsInfinite(aCurve.LastParameter()) ? 2.0 : aCurve.LastParameter();
+        double aFirst = global::Kerf.Engine.Foundation.Precision.IsInfinite(aCurve.FirstParameter) ? -2.0 : aCurve.FirstParameter;
+        double aLast = global::Kerf.Engine.Foundation.Precision.IsInfinite(aCurve.LastParameter) ? 2.0 : aCurve.LastParameter;
         global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor2D anAdaptor = new global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor2D(aCurve, aFirst, aLast);
         global::Kerf.Engine.Geometry.Adaptors.Curve2DAdaptorBase aCopy = anAdaptor.ShallowCopy();
         Assert.IsType<global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor2D>(aCopy);
@@ -294,7 +294,7 @@ public class Geom2dAdaptor_Curve_Test
         Assert.Equal(OtherCurve, new global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor2D().GetType());
 
         global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor2D aCirc = new global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor2D(myCircle);
-        Assert.Equal(3.0, aCirc.Circle().Radius());
+        Assert.Equal(3.0, aCirc.Circle().Radius);
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aCirc.Line());
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aCirc.Degree());
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => aCirc.KnotCount);
@@ -357,9 +357,9 @@ public class Geom2dAdaptor_Curve_Test
         // Elementary curves are rebuilt, then trimmed to the adaptor's range.
         Curve2D aC = global::Kerf.Engine.Geometry.Adaptors.Geom2dAdaptor.MakeCurve(new global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor2D(myCircle, 0.5, 2.0));
         TrimmedCurve2D aT = Assert.IsType<TrimmedCurve2D>(aC);
-        Assert.IsType<CircleCurve2D>(aT.BasisCurve());
-        Assert.Equal(0.5, aT.FirstParameter());
-        Assert.Equal(2.0, aT.LastParameter());
+        Assert.IsType<CircleCurve2D>(aT.BasisCurve);
+        Assert.Equal(0.5, aT.FirstParameter);
+        Assert.Equal(2.0, aT.LastParameter);
 
         // A B-spline over its whole range is returned as is.
         BSplineCurve2D aBS = MakeBSpline();
@@ -367,8 +367,8 @@ public class Geom2dAdaptor_Curve_Test
 
         // A range beyond the curve's is cut to the curve's.
         Curve2D aCut = global::Kerf.Engine.Geometry.Adaptors.Geom2dAdaptor.MakeCurve(new global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor2D(aBS, -1.0, 1.0));
-        Assert.Equal(0.0, aCut.FirstParameter());
-        Assert.Equal(1.0, aCut.LastParameter());
+        Assert.Equal(0.0, aCut.FirstParameter);
+        Assert.Equal(1.0, aCut.LastParameter);
 
         // Offset curves need a Geom2dAdaptor_Curve.
         Curve2D anOff = MakeCurve("offset");

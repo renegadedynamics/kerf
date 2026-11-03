@@ -116,7 +116,7 @@ internal static class DeterminismHarness
             {
                 continue;
             }
-            aText.Append(CultureInfo.InvariantCulture, $"{i} {Kerf.Engine.Foundation.OcctTypeNames.Of(aShape.ShapeType())} M[");
+            aText.Append(CultureInfo.InvariantCulture, $"{i} {Kerf.Engine.Foundation.OcctTypeNames.Of(aShape.Type)} M[");
             aText.AppendJoin(' ', theHistory.Modified(aShape).Select(s => (aResultMap.IndexOf(s) + 1)));
             aText.Append("] G[");
             aText.AppendJoin(' ', theHistory.Generated(aShape).Select(s => (aResultMap.IndexOf(s) + 1)));

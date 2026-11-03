@@ -580,25 +580,25 @@ public static class KnotTools
             j = (i - pars.Lower()) * dim;
             if (approxXYZ)
             {
-                coords[j] = pntsXYZ.Value(i).X();
+                coords[j] = pntsXYZ.Value(i).X;
                 ++j;
-                coords[j] = pntsXYZ.Value(i).Y();
+                coords[j] = pntsXYZ.Value(i).Y;
                 ++j;
-                coords[j] = pntsXYZ.Value(i).Z();
+                coords[j] = pntsXYZ.Value(i).Z;
                 ++j;
             }
             if (approxU1V1)
             {
-                coords[j] = pntsU1V1.Value(i).X();
+                coords[j] = pntsU1V1.Value(i).X;
                 ++j;
-                coords[j] = pntsU1V1.Value(i).Y();
+                coords[j] = pntsU1V1.Value(i).Y;
                 ++j;
             }
             if (approxU2V2)
             {
-                coords[j] = pntsU2V2.Value(i).X();
+                coords[j] = pntsU2V2.Value(i).X;
                 ++j;
-                coords[j] = pntsU2V2.Value(i).Y();
+                coords[j] = pntsU2V2.Value(i).Y;
                 ++j;
             }
         }
@@ -719,25 +719,25 @@ public static class KnotTools
             j = (i - fpar) * dim;
             if (approxXYZ)
             {
-                coords[j] = pntXYZ.Value(i).X();
+                coords[j] = pntXYZ.Value(i).X;
                 ++j;
-                coords[j] = pntXYZ.Value(i).Y();
+                coords[j] = pntXYZ.Value(i).Y;
                 ++j;
-                coords[j] = pntXYZ.Value(i).Z();
+                coords[j] = pntXYZ.Value(i).Z;
                 ++j;
             }
             if (approxU1V1)
             {
-                coords[j] = pntU1V1.Value(i).X();
+                coords[j] = pntU1V1.Value(i).X;
                 ++j;
-                coords[j] = pntU1V1.Value(i).Y();
+                coords[j] = pntU1V1.Value(i).Y;
                 ++j;
             }
             if (approxU2V2)
             {
-                coords[j] = pntU2V2.Value(i).X();
+                coords[j] = pntU2V2.Value(i).X;
                 ++j;
-                coords[j] = pntU2V2.Value(i).Y();
+                coords[j] = pntU2V2.Value(i).Y;
                 ++j;
             }
         }

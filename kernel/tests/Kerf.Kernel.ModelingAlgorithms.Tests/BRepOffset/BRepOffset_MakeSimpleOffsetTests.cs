@@ -59,10 +59,10 @@ public class BRepOffset_MakeSimpleOffsetTests
         // each face is on its plane moved out by 1 (the sharp edges get large tolerances, as in OCCT)
         foreach (Shape anF in SubShapes(aBox, ShapeType.Face))
         {
-            Plane3D anIn = ((PlaneSurface)Tool.Surface(ShapeCasts.Face(anF))!).Pln();
-            Plane3D anOut = ((PlaneSurface)Tool.Surface(ShapeCasts.Face(anAlgo.Generated(anF)))!).Pln();
-            Assert.True(anIn.Axis().IsParallel(anOut.Axis(), 1e-12));
-            Assert.Equal(1.0, anIn.Distance(anOut.Location()), 9);
+            Plane3D anIn = ((PlaneSurface)Tool.Surface(ShapeCasts.Face(anF))!).Plane;
+            Plane3D anOut = ((PlaneSurface)Tool.Surface(ShapeCasts.Face(anAlgo.Generated(anF)))!).Plane;
+            Assert.True(anIn.Axis.IsParallel(anOut.Axis, 1e-12));
+            Assert.Equal(1.0, anIn.DistanceTo(anOut.Location), 9);
         }
         Shape aFace = SubShapes(aBox, ShapeType.Face)[0];
         Shape aGen = anAlgo.Generated(aFace);
@@ -86,7 +86,7 @@ public class BRepOffset_MakeSimpleOffsetTests
         aSnap.AssertUnchanged(aBox);
         Assert.True(anAlgo.IsDone, anAlgo.GetErrorMessage());
         Shape aResult = anAlgo.GetResultShape();
-        Assert.Equal(ShapeType.Solid, aResult.ShapeType());
+        Assert.Equal(ShapeType.Solid, aResult.Type);
         Assert.True(AllFrozen(aResult));
         Assert.True(new Analyzer(aResult).IsValid());
         Assert.Equal(6, SubShapes(aResult, ShapeType.Face).Count);

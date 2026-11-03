@@ -110,9 +110,9 @@ public class BSplSLib_CacheTest
                             out Point3D aDirectPnt);
 
                 // Compare
-                Assert.Equal(aDirectPnt.X(), aCachePnt.X(), THE_TOLERANCE);
-                Assert.Equal(aDirectPnt.Y(), aCachePnt.Y(), THE_TOLERANCE);
-                Assert.Equal(aDirectPnt.Z(), aCachePnt.Z(), THE_TOLERANCE);
+                Assert.Equal(aDirectPnt.X, aCachePnt.X, THE_TOLERANCE);
+                Assert.Equal(aDirectPnt.Y, aCachePnt.Y, THE_TOLERANCE);
+                Assert.Equal(aDirectPnt.Z, aCachePnt.Z, THE_TOLERANCE);
             }
         }
     }
@@ -203,19 +203,19 @@ public class BSplSLib_CacheTest
                             out Vector3D aDirectTanV);
 
                 // Compare point
-                Assert.Equal(aDirectPnt.X(), aCachePnt.X(), THE_TOLERANCE);
-                Assert.Equal(aDirectPnt.Y(), aCachePnt.Y(), THE_TOLERANCE);
-                Assert.Equal(aDirectPnt.Z(), aCachePnt.Z(), THE_TOLERANCE);
+                Assert.Equal(aDirectPnt.X, aCachePnt.X, THE_TOLERANCE);
+                Assert.Equal(aDirectPnt.Y, aCachePnt.Y, THE_TOLERANCE);
+                Assert.Equal(aDirectPnt.Z, aCachePnt.Z, THE_TOLERANCE);
 
                 // Compare tangent U
-                Assert.Equal(aDirectTanU.X(), aCacheTanU.X(), THE_TOLERANCE);
-                Assert.Equal(aDirectTanU.Y(), aCacheTanU.Y(), THE_TOLERANCE);
-                Assert.Equal(aDirectTanU.Z(), aCacheTanU.Z(), THE_TOLERANCE);
+                Assert.Equal(aDirectTanU.X, aCacheTanU.X, THE_TOLERANCE);
+                Assert.Equal(aDirectTanU.Y, aCacheTanU.Y, THE_TOLERANCE);
+                Assert.Equal(aDirectTanU.Z, aCacheTanU.Z, THE_TOLERANCE);
 
                 // Compare tangent V
-                Assert.Equal(aDirectTanV.X(), aCacheTanV.X(), THE_TOLERANCE);
-                Assert.Equal(aDirectTanV.Y(), aCacheTanV.Y(), THE_TOLERANCE);
-                Assert.Equal(aDirectTanV.Z(), aCacheTanV.Z(), THE_TOLERANCE);
+                Assert.Equal(aDirectTanV.X, aCacheTanV.X, THE_TOLERANCE);
+                Assert.Equal(aDirectTanV.Y, aCacheTanV.Y, THE_TOLERANCE);
+                Assert.Equal(aDirectTanV.Z, aCacheTanV.Z, THE_TOLERANCE);
             }
         }
     }
@@ -309,32 +309,32 @@ public class BSplSLib_CacheTest
                             out Vector3D aDirectCurvUV);
 
                 // Compare point
-                Assert.Equal(aDirectPnt.X(), aCachePnt.X(), THE_TOLERANCE);
-                Assert.Equal(aDirectPnt.Y(), aCachePnt.Y(), THE_TOLERANCE);
-                Assert.Equal(aDirectPnt.Z(), aCachePnt.Z(), THE_TOLERANCE);
+                Assert.Equal(aDirectPnt.X, aCachePnt.X, THE_TOLERANCE);
+                Assert.Equal(aDirectPnt.Y, aCachePnt.Y, THE_TOLERANCE);
+                Assert.Equal(aDirectPnt.Z, aCachePnt.Z, THE_TOLERANCE);
 
                 // Compare tangent U
-                Assert.Equal(aDirectTanU.X(), aCacheTanU.X(), THE_TOLERANCE);
-                Assert.Equal(aDirectTanU.Y(), aCacheTanU.Y(), THE_TOLERANCE);
-                Assert.Equal(aDirectTanU.Z(), aCacheTanU.Z(), THE_TOLERANCE);
+                Assert.Equal(aDirectTanU.X, aCacheTanU.X, THE_TOLERANCE);
+                Assert.Equal(aDirectTanU.Y, aCacheTanU.Y, THE_TOLERANCE);
+                Assert.Equal(aDirectTanU.Z, aCacheTanU.Z, THE_TOLERANCE);
 
                 // Compare tangent V
-                Assert.Equal(aDirectTanV.X(), aCacheTanV.X(), THE_TOLERANCE);
-                Assert.Equal(aDirectTanV.Y(), aCacheTanV.Y(), THE_TOLERANCE);
-                Assert.Equal(aDirectTanV.Z(), aCacheTanV.Z(), THE_TOLERANCE);
+                Assert.Equal(aDirectTanV.X, aCacheTanV.X, THE_TOLERANCE);
+                Assert.Equal(aDirectTanV.Y, aCacheTanV.Y, THE_TOLERANCE);
+                Assert.Equal(aDirectTanV.Z, aCacheTanV.Z, THE_TOLERANCE);
 
                 // Compare second derivatives
-                Assert.Equal(aDirectCurvU.X(), aCacheCurvU.X(), THE_TOLERANCE);
-                Assert.Equal(aDirectCurvU.Y(), aCacheCurvU.Y(), THE_TOLERANCE);
-                Assert.Equal(aDirectCurvU.Z(), aCacheCurvU.Z(), THE_TOLERANCE);
+                Assert.Equal(aDirectCurvU.X, aCacheCurvU.X, THE_TOLERANCE);
+                Assert.Equal(aDirectCurvU.Y, aCacheCurvU.Y, THE_TOLERANCE);
+                Assert.Equal(aDirectCurvU.Z, aCacheCurvU.Z, THE_TOLERANCE);
 
-                Assert.Equal(aDirectCurvV.X(), aCacheCurvV.X(), THE_TOLERANCE);
-                Assert.Equal(aDirectCurvV.Y(), aCacheCurvV.Y(), THE_TOLERANCE);
-                Assert.Equal(aDirectCurvV.Z(), aCacheCurvV.Z(), THE_TOLERANCE);
+                Assert.Equal(aDirectCurvV.X, aCacheCurvV.X, THE_TOLERANCE);
+                Assert.Equal(aDirectCurvV.Y, aCacheCurvV.Y, THE_TOLERANCE);
+                Assert.Equal(aDirectCurvV.Z, aCacheCurvV.Z, THE_TOLERANCE);
 
-                Assert.Equal(aDirectCurvUV.X(), aCacheCurvUV.X(), THE_TOLERANCE);
-                Assert.Equal(aDirectCurvUV.Y(), aCacheCurvUV.Y(), THE_TOLERANCE);
-                Assert.Equal(aDirectCurvUV.Z(), aCacheCurvUV.Z(), THE_TOLERANCE);
+                Assert.Equal(aDirectCurvUV.X, aCacheCurvUV.X, THE_TOLERANCE);
+                Assert.Equal(aDirectCurvUV.Y, aCacheCurvUV.Y, THE_TOLERANCE);
+                Assert.Equal(aDirectCurvUV.Z, aCacheCurvUV.Z, THE_TOLERANCE);
             }
         }
     }
@@ -435,9 +435,9 @@ public class BSplSLib_CacheTest
                             out Point3D aDirectPnt);
 
                 // Compare
-                Assert.Equal(aDirectPnt.X(), aCachePnt.X(), THE_TOLERANCE);
-                Assert.Equal(aDirectPnt.Y(), aCachePnt.Y(), THE_TOLERANCE);
-                Assert.Equal(aDirectPnt.Z(), aCachePnt.Z(), THE_TOLERANCE);
+                Assert.Equal(aDirectPnt.X, aCachePnt.X, THE_TOLERANCE);
+                Assert.Equal(aDirectPnt.Y, aCachePnt.Y, THE_TOLERANCE);
+                Assert.Equal(aDirectPnt.Z, aCachePnt.Z, THE_TOLERANCE);
             }
         }
     }
@@ -540,19 +540,19 @@ public class BSplSLib_CacheTest
                             out Vector3D aDirectTanV);
 
                 // Compare point
-                Assert.Equal(aDirectPnt.X(), aCachePnt.X(), THE_TOLERANCE);
-                Assert.Equal(aDirectPnt.Y(), aCachePnt.Y(), THE_TOLERANCE);
-                Assert.Equal(aDirectPnt.Z(), aCachePnt.Z(), THE_TOLERANCE);
+                Assert.Equal(aDirectPnt.X, aCachePnt.X, THE_TOLERANCE);
+                Assert.Equal(aDirectPnt.Y, aCachePnt.Y, THE_TOLERANCE);
+                Assert.Equal(aDirectPnt.Z, aCachePnt.Z, THE_TOLERANCE);
 
                 // Compare tangent U
-                Assert.Equal(aDirectTanU.X(), aCacheTanU.X(), THE_TOLERANCE);
-                Assert.Equal(aDirectTanU.Y(), aCacheTanU.Y(), THE_TOLERANCE);
-                Assert.Equal(aDirectTanU.Z(), aCacheTanU.Z(), THE_TOLERANCE);
+                Assert.Equal(aDirectTanU.X, aCacheTanU.X, THE_TOLERANCE);
+                Assert.Equal(aDirectTanU.Y, aCacheTanU.Y, THE_TOLERANCE);
+                Assert.Equal(aDirectTanU.Z, aCacheTanU.Z, THE_TOLERANCE);
 
                 // Compare tangent V
-                Assert.Equal(aDirectTanV.X(), aCacheTanV.X(), THE_TOLERANCE);
-                Assert.Equal(aDirectTanV.Y(), aCacheTanV.Y(), THE_TOLERANCE);
-                Assert.Equal(aDirectTanV.Z(), aCacheTanV.Z(), THE_TOLERANCE);
+                Assert.Equal(aDirectTanV.X, aCacheTanV.X, THE_TOLERANCE);
+                Assert.Equal(aDirectTanV.Y, aCacheTanV.Y, THE_TOLERANCE);
+                Assert.Equal(aDirectTanV.Z, aCacheTanV.Z, THE_TOLERANCE);
             }
         }
     }
@@ -658,32 +658,32 @@ public class BSplSLib_CacheTest
                             out Vector3D aDirectCurvUV);
 
                 // Compare point
-                Assert.Equal(aDirectPnt.X(), aCachePnt.X(), THE_TOLERANCE);
-                Assert.Equal(aDirectPnt.Y(), aCachePnt.Y(), THE_TOLERANCE);
-                Assert.Equal(aDirectPnt.Z(), aCachePnt.Z(), THE_TOLERANCE);
+                Assert.Equal(aDirectPnt.X, aCachePnt.X, THE_TOLERANCE);
+                Assert.Equal(aDirectPnt.Y, aCachePnt.Y, THE_TOLERANCE);
+                Assert.Equal(aDirectPnt.Z, aCachePnt.Z, THE_TOLERANCE);
 
                 // Compare tangent U
-                Assert.Equal(aDirectTanU.X(), aCacheTanU.X(), THE_TOLERANCE);
-                Assert.Equal(aDirectTanU.Y(), aCacheTanU.Y(), THE_TOLERANCE);
-                Assert.Equal(aDirectTanU.Z(), aCacheTanU.Z(), THE_TOLERANCE);
+                Assert.Equal(aDirectTanU.X, aCacheTanU.X, THE_TOLERANCE);
+                Assert.Equal(aDirectTanU.Y, aCacheTanU.Y, THE_TOLERANCE);
+                Assert.Equal(aDirectTanU.Z, aCacheTanU.Z, THE_TOLERANCE);
 
                 // Compare tangent V
-                Assert.Equal(aDirectTanV.X(), aCacheTanV.X(), THE_TOLERANCE);
-                Assert.Equal(aDirectTanV.Y(), aCacheTanV.Y(), THE_TOLERANCE);
-                Assert.Equal(aDirectTanV.Z(), aCacheTanV.Z(), THE_TOLERANCE);
+                Assert.Equal(aDirectTanV.X, aCacheTanV.X, THE_TOLERANCE);
+                Assert.Equal(aDirectTanV.Y, aCacheTanV.Y, THE_TOLERANCE);
+                Assert.Equal(aDirectTanV.Z, aCacheTanV.Z, THE_TOLERANCE);
 
                 // Compare second derivatives
-                Assert.Equal(aDirectCurvU.X(), aCacheCurvU.X(), THE_TOLERANCE);
-                Assert.Equal(aDirectCurvU.Y(), aCacheCurvU.Y(), THE_TOLERANCE);
-                Assert.Equal(aDirectCurvU.Z(), aCacheCurvU.Z(), THE_TOLERANCE);
+                Assert.Equal(aDirectCurvU.X, aCacheCurvU.X, THE_TOLERANCE);
+                Assert.Equal(aDirectCurvU.Y, aCacheCurvU.Y, THE_TOLERANCE);
+                Assert.Equal(aDirectCurvU.Z, aCacheCurvU.Z, THE_TOLERANCE);
 
-                Assert.Equal(aDirectCurvV.X(), aCacheCurvV.X(), THE_TOLERANCE);
-                Assert.Equal(aDirectCurvV.Y(), aCacheCurvV.Y(), THE_TOLERANCE);
-                Assert.Equal(aDirectCurvV.Z(), aCacheCurvV.Z(), THE_TOLERANCE);
+                Assert.Equal(aDirectCurvV.X, aCacheCurvV.X, THE_TOLERANCE);
+                Assert.Equal(aDirectCurvV.Y, aCacheCurvV.Y, THE_TOLERANCE);
+                Assert.Equal(aDirectCurvV.Z, aCacheCurvV.Z, THE_TOLERANCE);
 
-                Assert.Equal(aDirectCurvUV.X(), aCacheCurvUV.X(), THE_TOLERANCE);
-                Assert.Equal(aDirectCurvUV.Y(), aCacheCurvUV.Y(), THE_TOLERANCE);
-                Assert.Equal(aDirectCurvUV.Z(), aCacheCurvUV.Z(), THE_TOLERANCE);
+                Assert.Equal(aDirectCurvUV.X, aCacheCurvUV.X, THE_TOLERANCE);
+                Assert.Equal(aDirectCurvUV.Y, aCacheCurvUV.Y, THE_TOLERANCE);
+                Assert.Equal(aDirectCurvUV.Z, aCacheCurvUV.Z, THE_TOLERANCE);
             }
         }
     }
@@ -768,9 +768,9 @@ public class BSplSLib_CacheTest
                             out Vector3D aDirectTanV);
 
                 // Compare
-                Assert.Equal(aDirectPnt.X(), aCachePnt.X(), THE_TOLERANCE);
-                Assert.Equal(aDirectTanU.X(), aCacheTanU.X(), THE_TOLERANCE);
-                Assert.Equal(aDirectTanV.X(), aCacheTanV.X(), THE_TOLERANCE);
+                Assert.Equal(aDirectPnt.X, aCachePnt.X, THE_TOLERANCE);
+                Assert.Equal(aDirectTanU.X, aCacheTanU.X, THE_TOLERANCE);
+                Assert.Equal(aDirectTanV.X, aCacheTanV.X, THE_TOLERANCE);
             }
         }
     }
@@ -855,9 +855,9 @@ public class BSplSLib_CacheTest
                             out Vector3D aDirectTanV);
 
                 // Compare
-                Assert.Equal(aDirectPnt.X(), aCachePnt.X(), THE_TOLERANCE);
-                Assert.Equal(aDirectTanU.X(), aCacheTanU.X(), THE_TOLERANCE);
-                Assert.Equal(aDirectTanV.X(), aCacheTanV.X(), THE_TOLERANCE);
+                Assert.Equal(aDirectPnt.X, aCachePnt.X, THE_TOLERANCE);
+                Assert.Equal(aDirectTanU.X, aCacheTanU.X, THE_TOLERANCE);
+                Assert.Equal(aDirectTanV.X, aCacheTanV.X, THE_TOLERANCE);
             }
         }
     }

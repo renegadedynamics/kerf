@@ -200,7 +200,7 @@ public sealed class ShapeContentsAnalysis
             if (surf is TrimmedSurface trsu)
             {
                 _nbTrimSurf++;
-                surf = trsu.BasisSurface();
+                surf = trsu.BasisSurface;
             }
             // #10 rln 27/02/98 BUC50003 entity 56
             // C0 if at least in one direction (U or V)
@@ -223,7 +223,7 @@ public sealed class ShapeContentsAnalysis
             }
             if (surf is ElementarySurface els)
             {
-                if (!els.Position().Direct())
+                if (!els.Position.IsDirect)
                 {
                     _nbIndirectSurf++;
                     if (_indirectMode)

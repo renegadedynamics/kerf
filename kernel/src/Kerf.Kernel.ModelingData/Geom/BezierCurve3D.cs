@@ -22,7 +22,7 @@ namespace Kerf.Geometry;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Arrays: <see cref="Poles()"/>, <see cref="Weights()"/>, <see cref="WeightsArray"/>, <see cref="Knots"/>,
+/// Arrays: <see cref="Poles"/>, <see cref="WeightsOrNull()"/>, <see cref="Weights"/>, <see cref="Knots"/>,
 /// <see cref="Multiplicities"/> and <see cref="KnotSequence"/> return immutable copies (OCCT returns references to
 /// the curve's arrays); their index 0 is OCCT's index 1. Code inside OCCT.NET that passes the arrays on to
 /// BSplCLib and the like uses the internal <c>Internal*</c> accessors, which return the stored arrays (shared:
@@ -33,7 +33,7 @@ namespace Kerf.Geometry;
 /// which stores a copy of the descriptor.
 /// </para>
 /// </remarks>
-public class BezierCurve3D : BoundedCurve3D
+public sealed partial class BezierCurve3D : BoundedCurve3D
 {
     private NCollection_Array1<Point3D> _poles = new NCollection_Array1<Point3D>();
     private NCollection_Array1<double> _weights = new NCollection_Array1<double>();
@@ -44,7 +44,7 @@ public class BezierCurve3D : BoundedCurve3D
     private bool _maxDerivInvOk = false;
 
     /// <summary>True if an evaluation representation is attached.</summary>
-    public bool HasEvalRepresentation => _evalRep is not null;
+    internal bool HasEvalRepresentation => _evalRep is not null;
 
     /// <summary>The evaluation representation descriptor (may be null). Stored, not copied: don't modify.</summary>
     internal RepCurveDesc.Base? EvalRepresentation() => _evalRep;
@@ -93,10 +93,10 @@ public class BezierCurve3D : BoundedCurve3D
 
     /// <summary>A non-rational Bezier curve with the given poles.</summary>
     /// <exception cref="ConstructionErrorException">Fewer than 2 or more than MaxDegree() + 1 poles.</exception>
-    public BezierCurve3D(NCollection_Array1<Point3D> poles)
+    internal BezierCurve3D(NCollection_Array1<Point3D> poles)
     {
         int nbpoles = poles.Length();
-        if (nbpoles < 2 || nbpoles > (BezierCurve3D.MaxDegree() + 1))
+        if (nbpoles < 2 || nbpoles > (BezierCurve3D.MaxDegree + 1))
         {
             throw new ConstructionErrorException();
         }
@@ -108,11 +108,11 @@ public class BezierCurve3D : BoundedCurve3D
     /// <exception cref="ConstructionErrorException">
     /// Fewer than 2 or more than MaxDegree() + 1 poles, as many weights as poles, or a weight at most gp::Resolution().
     /// </exception>
-    public BezierCurve3D(NCollection_Array1<Point3D> poles, NCollection_Array1<double> weights)
+    internal BezierCurve3D(NCollection_Array1<Point3D> poles, NCollection_Array1<double> weights)
     {
         // copy the poles
         int nbpoles = poles.Length();
-        if (nbpoles < 2 || nbpoles > (BezierCurve3D.MaxDegree() + 1))
+        if (nbpoles < 2 || nbpoles > (BezierCurve3D.MaxDegree + 1))
         {
             throw new ConstructionErrorException();
         }
@@ -148,12 +148,12 @@ public class BezierCurve3D : BoundedCurve3D
     internal void Increase(int deg)
     {
         CheckMutable();
-        if (deg == Degree())
+        if (deg == Degree)
         {
             return;
         }
 
-        if (deg < Degree() || deg > BezierCurve3D.MaxDegree())
+        if (deg < Degree || deg > BezierCurve3D.MaxDegree)
         {
             throw new ConstructionErrorException("Geom_BezierCurve::Increase");
         }
@@ -197,7 +197,7 @@ public class BezierCurve3D : BoundedCurve3D
     }
 
     /// <summary>The maximum degree of a Bezier curve: 25.</summary>
-    public static int MaxDegree() => global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxDegree();
+    public static int MaxDegree => global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxDegree();
 
     /// <summary>Inserts P after the pole Index (weight 1 if the curve is rational).</summary>
     internal void InsertPoleAfter(int index, in Point3D p)
@@ -215,7 +215,7 @@ public class BezierCurve3D : BoundedCurve3D
         int nbpoles = PoleCount;
 
         // OCCT: refuses a 25-pole curve, though the constructors accept MaxDegree() + 1 = 26 poles
-        if (nbpoles >= BezierCurve3D.MaxDegree() || weight <= Constants.Resolution())
+        if (nbpoles >= BezierCurve3D.MaxDegree || weight <= Constants.Resolution())
         {
             throw new ConstructionErrorException("Geom_BezierCurve::InsertPoleAfter");
         }
@@ -393,7 +393,7 @@ public class BezierCurve3D : BoundedCurve3D
     internal void Segment(double u1, double u2)
     {
         CheckMutable();
-        _closed = (Math.Abs(Value(u1).Distance(Value(u2))) <= global::Kerf.Engine.Foundation.Precision.Confusion());
+        _closed = (Math.Abs(Value(u1).DistanceTo(Value(u2))) <= global::Kerf.Engine.Foundation.Precision.Confusion());
 
         int deg = _poles.Length() - 1;
         NCollection_Array1<Point3D> coeffs = new NCollection_Array1<Point3D>(1, _poles.Length());
@@ -443,7 +443,7 @@ public class BezierCurve3D : BoundedCurve3D
 
         if (index == 1 || index == _poles.Length())
         {
-            _closed = (_poles[1].Distance(_poles[PoleCount]) <= global::Kerf.Engine.Foundation.Precision.Confusion());
+            _closed = (_poles[1].DistanceTo(_poles[PoleCount]) <= global::Kerf.Engine.Foundation.Precision.Confusion());
         }
         _maxDerivInvOk = false;
     }
@@ -505,7 +505,7 @@ public class BezierCurve3D : BoundedCurve3D
     public sealed override bool IsClosed => _closed;
 
     /// <summary>True: a Bezier curve is CN.</summary>
-    public sealed override bool IsCN(int n) => true;
+    internal sealed override bool IsCN(int n) => true;
 
     /// <summary>False.</summary>
     public sealed override bool IsPeriodic => false;
@@ -514,13 +514,13 @@ public class BezierCurve3D : BoundedCurve3D
     public bool IsRational => _rational;
 
     /// <summary>CN.</summary>
-    public sealed override Continuity Continuity() => CN;
+    public sealed override Continuity Continuity => CN;
 
     /// <summary>The degree: the number of poles minus 1.</summary>
-    public int Degree() => _poles.Length() - 1;
+    public int Degree => _poles.Length() - 1;
 
     /// <summary>The point at U (U may be outside [0, 1]).</summary>
-    public sealed override Point3D EvalD0(double u)
+    internal sealed override Point3D EvalD0(double u)
     {
         if (RepUtils.TryEvalCurveD0(_evalRep, u, out Point3D evalRepResult))
         {
@@ -531,7 +531,7 @@ public class BezierCurve3D : BoundedCurve3D
         return p;
     }
 
-    public sealed override ResD1 EvalD1(double u)
+    internal sealed override ResD1 EvalD1(double u)
     {
         if (RepUtils.TryEvalCurveD1(_evalRep, u, out ResD1 evalRepResult))
         {
@@ -542,7 +542,7 @@ public class BezierCurve3D : BoundedCurve3D
         return result;
     }
 
-    public sealed override ResD2 EvalD2(double u)
+    internal sealed override ResD2 EvalD2(double u)
     {
         if (RepUtils.TryEvalCurveD2(_evalRep, u, out ResD2 evalRepResult))
         {
@@ -553,7 +553,7 @@ public class BezierCurve3D : BoundedCurve3D
         return result;
     }
 
-    public sealed override ResD3 EvalD3(double u)
+    internal sealed override ResD3 EvalD3(double u)
     {
         if (RepUtils.TryEvalCurveD3(_evalRep, u, out ResD3 evalRepResult))
         {
@@ -565,7 +565,7 @@ public class BezierCurve3D : BoundedCurve3D
     }
 
     /// <exception cref="UndefinedDerivative3DException">N &lt; 1.</exception>
-    public sealed override Vector3D EvalDN(double u, int n)
+    internal sealed override Vector3D EvalDN(double u, int n)
     {
         if (n < 1)
         {
@@ -582,22 +582,22 @@ public class BezierCurve3D : BoundedCurve3D
     }
 
     /// <summary>The first pole.</summary>
-    public sealed override Point3D StartPoint() => _poles[1];
+    public sealed override Point3D StartPoint => _poles[1];
 
     /// <summary>The last pole.</summary>
-    public sealed override Point3D EndPoint() => _poles[_poles.Upper()];
+    public sealed override Point3D EndPoint => _poles[_poles.Upper()];
 
     /// <summary>0.</summary>
-    public sealed override double FirstParameter() => 0.0;
+    public sealed override double FirstParameter => 0.0;
 
     /// <summary>1.</summary>
-    public sealed override double LastParameter() => 1.0;
+    public sealed override double LastParameter => 1.0;
 
     public int PoleCount => _poles.Length();
 
     /// <summary>The pole Index.</summary>
     /// <exception cref="OutOfRangeException">Index is not in [1, NbPoles].</exception>
-    public Point3D Pole(int index)
+    internal Point3D Pole(int index)
     {
         if (index < 1 || index > _poles.Length())
         {
@@ -608,7 +608,7 @@ public class BezierCurve3D : BoundedCurve3D
 
     /// <summary>Copies the poles into P (OCCT's deprecated overload).</summary>
     /// <exception cref="DimensionErrorException">P has not NbPoles elements.</exception>
-    public void Poles(NCollection_Array1<Point3D> p)
+    internal void CopyPolesTo(NCollection_Array1<Point3D> p)
     {
         if (p.Length() != _poles.Length())
         {
@@ -618,11 +618,11 @@ public class BezierCurve3D : BoundedCurve3D
     }
 
     /// <summary>The poles (a copy; index 0 is pole 1).</summary>
-    public IReadOnlyList<Point3D> Poles() => _poles.ToPackedList();
+    public IReadOnlyList<Point3D> Poles => _poles.ToPackedList();
 
     /// <summary>The weight of the pole Index (1 for a non-rational curve).</summary>
     /// <exception cref="OutOfRangeException">Index is not in [1, NbPoles].</exception>
-    public double Weight(int index)
+    internal double Weight(int index)
     {
         if (index < 1 || index > _poles.Length())
         {
@@ -640,7 +640,7 @@ public class BezierCurve3D : BoundedCurve3D
 
     /// <summary>Copies the weights into W (OCCT's deprecated overload; 1s for a non-rational curve).</summary>
     /// <exception cref="DimensionErrorException">W has not NbPoles elements.</exception>
-    public void Weights(NCollection_Array1<double> w)
+    internal void CopyWeightsTo(NCollection_Array1<double> w)
     {
         int nbpoles = PoleCount;
         if (w.Length() != nbpoles)
@@ -661,10 +661,10 @@ public class BezierCurve3D : BoundedCurve3D
     }
 
     /// <summary>The weights (a copy), or null for a non-rational curve (OCCT returns a null pointer).</summary>
-    public IReadOnlyList<double>? Weights() => _rational ? _weights.ToPackedList() : null;
+    internal IReadOnlyList<double>? WeightsOrNull() => _rational ? _weights.ToPackedList() : null;
 
     /// <summary>The weights, always NbPoles of them (1s for a non-rational curve); a copy.</summary>
-    public IReadOnlyList<double> WeightsArray() => _weights.ToPackedList();
+    public IReadOnlyList<double> Weights => _weights.ToPackedList();
 
     /// <summary>Applies T to the poles.</summary>
     protected internal sealed override void Transform(in Transform3D t)
@@ -685,7 +685,7 @@ public class BezierCurve3D : BoundedCurve3D
     /// |f(t1) - f(t0)| &lt; Tolerance3D.
     /// </summary>
     /// <remarks>Non-const in OCCT, because it caches a value; not a mutator, so it works on a frozen curve.</remarks>
-    public void Resolution(double tolerance3D, out double uTolerance)
+    internal void Resolution(double tolerance3D, out double uTolerance)
     {
         // OCCT.NET: a cache filled on a possibly shared curve; the flag is published after the value.
         if (!Volatile.Read(ref _maxDerivInvOk))
@@ -709,11 +709,11 @@ public class BezierCurve3D : BoundedCurve3D
     public sealed override Geometry3D Copy() => new BezierCurve3D(this);
 
     /// <summary>Sets poles and weights (null: non-rational); updates the rational and closed flags.</summary>
-    protected void Init(NCollection_Array1<Point3D> poles, NCollection_Array1<double>? weights)
+    private void Init(NCollection_Array1<Point3D> poles, NCollection_Array1<double>? weights)
     {
         int nbpoles = poles.Length();
         // closed ?
-        _closed = poles[poles.Lower()].Distance(poles[poles.Upper()]) <= global::Kerf.Engine.Foundation.Precision.Confusion();
+        _closed = poles[poles.Lower()].DistanceTo(poles[poles.Upper()]) <= global::Kerf.Engine.Foundation.Precision.Confusion();
 
         // set fields
         _poles.Resize(1, nbpoles, false);
@@ -797,13 +797,13 @@ public class BezierCurve3D : BoundedCurve3D
     internal NCollection_Array1<double> InternalWeightsArray() => _weights;
 
     /// <summary>The Bezier knots {0, 1} (a copy).</summary>
-    public IReadOnlyList<double> Knots() => THE_KNOTS.ToPackedList();
+    public IReadOnlyList<double> Knots => THE_KNOTS.ToPackedList();
 
     /// <summary>The Bezier multiplicities {Degree + 1, Degree + 1} (a copy).</summary>
-    public IReadOnlyList<int> Multiplicities() => InternalMultiplicities().ToPackedList();
+    public IReadOnlyList<int> Multiplicities => InternalMultiplicities().ToPackedList();
 
     /// <summary>The Bezier flat knots (a copy).</summary>
-    public IReadOnlyList<double> KnotSequence() => InternalKnotSequence().ToPackedList();
+    public IReadOnlyList<double> KnotSequence => InternalKnotSequence().ToPackedList();
 
     // Non-mutating twins (OCCT.NET)
 
@@ -816,7 +816,7 @@ public class BezierCurve3D : BoundedCurve3D
     }
 
     /// <summary>A copy with P inserted after the pole Index.</summary>
-    public BezierCurve3D PoleInsertedAfter(int index, in Point3D p)
+    internal BezierCurve3D PoleInsertedAfter(int index, in Point3D p)
     {
         BezierCurve3D copy = (BezierCurve3D)Copy();
         copy.InsertPoleAfter(index, p);
@@ -824,7 +824,7 @@ public class BezierCurve3D : BoundedCurve3D
     }
 
     /// <summary>A copy with P and its weight inserted after the pole Index.</summary>
-    public BezierCurve3D PoleInsertedAfter(int index, in Point3D p, double weight)
+    internal BezierCurve3D PoleInsertedAfter(int index, in Point3D p, double weight)
     {
         BezierCurve3D copy = (BezierCurve3D)Copy();
         copy.InsertPoleAfter(index, p, weight);
@@ -832,7 +832,7 @@ public class BezierCurve3D : BoundedCurve3D
     }
 
     /// <summary>A copy with P inserted before the pole Index.</summary>
-    public BezierCurve3D PoleInsertedBefore(int index, in Point3D p)
+    internal BezierCurve3D PoleInsertedBefore(int index, in Point3D p)
     {
         BezierCurve3D copy = (BezierCurve3D)Copy();
         copy.InsertPoleBefore(index, p);
@@ -840,7 +840,7 @@ public class BezierCurve3D : BoundedCurve3D
     }
 
     /// <summary>A copy with P and its weight inserted before the pole Index.</summary>
-    public BezierCurve3D PoleInsertedBefore(int index, in Point3D p, double weight)
+    internal BezierCurve3D PoleInsertedBefore(int index, in Point3D p, double weight)
     {
         BezierCurve3D copy = (BezierCurve3D)Copy();
         copy.InsertPoleBefore(index, p, weight);
@@ -848,7 +848,7 @@ public class BezierCurve3D : BoundedCurve3D
     }
 
     /// <summary>A copy without the pole Index.</summary>
-    public BezierCurve3D PoleRemoved(int index)
+    internal BezierCurve3D PoleRemoved(int index)
     {
         BezierCurve3D copy = (BezierCurve3D)Copy();
         copy.RemovePole(index);
@@ -863,21 +863,21 @@ public class BezierCurve3D : BoundedCurve3D
         return copy;
     }
 
-    public BezierCurve3D WithPole(int index, in Point3D p)
+    internal BezierCurve3D WithPole(int index, in Point3D p)
     {
         BezierCurve3D copy = (BezierCurve3D)Copy();
         copy.SetPole(index, p);
         return copy;
     }
 
-    public BezierCurve3D WithPole(int index, in Point3D p, double weight)
+    internal BezierCurve3D WithPole(int index, in Point3D p, double weight)
     {
         BezierCurve3D copy = (BezierCurve3D)Copy();
         copy.SetPole(index, p, weight);
         return copy;
     }
 
-    public BezierCurve3D WithWeight(int index, double weight)
+    internal BezierCurve3D WithWeight(int index, double weight)
     {
         BezierCurve3D copy = (BezierCurve3D)Copy();
         copy.SetWeight(index, weight);
@@ -885,7 +885,7 @@ public class BezierCurve3D : BoundedCurve3D
     }
 
     /// <summary>A copy evaluated through a copy of theDesc (null: without a representation).</summary>
-    public BezierCurve3D WithEvalRepresentation(RepCurveDesc.Base? desc)
+    internal BezierCurve3D WithEvalRepresentation(RepCurveDesc.Base? desc)
     {
         RepUtils.ValidateCurveDesc(desc, this);
         BezierCurve3D copy = (BezierCurve3D)Copy();
@@ -894,7 +894,7 @@ public class BezierCurve3D : BoundedCurve3D
     }
 
     /// <summary>A copy without an evaluation representation (the twin of ClearEvalRepresentation).</summary>
-    public BezierCurve3D WithoutEvalRepresentation()
+    internal BezierCurve3D WithoutEvalRepresentation()
     {
         BezierCurve3D copy = (BezierCurve3D)Copy();
         copy.ClearEvalRepresentation();

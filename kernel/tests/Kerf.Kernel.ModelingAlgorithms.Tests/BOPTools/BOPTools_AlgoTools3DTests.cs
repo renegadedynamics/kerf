@@ -66,7 +66,7 @@ internal static class BOPToolsTestShapes
     public static Containment Classify(in Face theFace, in Point2D theP)
     {
         Face aFF = theFace;
-        aFF.Orientation(Forward);
+        aFF.Orient(Forward);
         FaceClassifier aClassifier = new();
         aClassifier.Perform(aFF, theP, global::Kerf.Engine.Foundation.Precision.PConfusion());
         return aClassifier.State();
@@ -74,15 +74,15 @@ internal static class BOPToolsTestShapes
 
     public static void SameBits(in Point3D theA, in Point3D theB)
     {
-        Assert.Equal(BitConverter.DoubleToInt64Bits(theA.X()), BitConverter.DoubleToInt64Bits(theB.X()));
-        Assert.Equal(BitConverter.DoubleToInt64Bits(theA.Y()), BitConverter.DoubleToInt64Bits(theB.Y()));
-        Assert.Equal(BitConverter.DoubleToInt64Bits(theA.Z()), BitConverter.DoubleToInt64Bits(theB.Z()));
+        Assert.Equal(BitConverter.DoubleToInt64Bits(theA.X), BitConverter.DoubleToInt64Bits(theB.X));
+        Assert.Equal(BitConverter.DoubleToInt64Bits(theA.Y), BitConverter.DoubleToInt64Bits(theB.Y));
+        Assert.Equal(BitConverter.DoubleToInt64Bits(theA.Z), BitConverter.DoubleToInt64Bits(theB.Z));
     }
 
     public static void SameBits(in Point2D theA, in Point2D theB)
     {
-        Assert.Equal(BitConverter.DoubleToInt64Bits(theA.X()), BitConverter.DoubleToInt64Bits(theB.X()));
-        Assert.Equal(BitConverter.DoubleToInt64Bits(theA.Y()), BitConverter.DoubleToInt64Bits(theB.Y()));
+        Assert.Equal(BitConverter.DoubleToInt64Bits(theA.X), BitConverter.DoubleToInt64Bits(theB.X));
+        Assert.Equal(BitConverter.DoubleToInt64Bits(theA.Y), BitConverter.DoubleToInt64Bits(theB.Y));
     }
 }
 
@@ -93,7 +93,7 @@ public class BOPTools_AlgoTools3DTests
     {
         Assert.True(theErr == 0, $"{theWhat}: error {theErr}");
         Assert.Equal(In, BOPToolsTestShapes.Classify(theFace, theP2D));
-        Point3D aPS = Tool.Surface(theFace)!.Value(theP2D.X(), theP2D.Y());
+        Point3D aPS = Tool.Surface(theFace)!.Value(theP2D.X, theP2D.Y);
         BOPToolsTestShapes.SameBits(aPS, theP);
     }
 
@@ -135,7 +135,7 @@ public class BOPTools_AlgoTools3DTests
                     CheckPointInFace(aF, iErr, aP, aP2D, aName);
                     // the point is 1e-4 from the edge's pcurve point (the domain is longer than that)
                     Tool.CurveOnSurface(aE, aF, out _, out _)!.D0(aT, out Point2D aPE);
-                    Assert.Equal(1.0e-4, aPE.Distance(aP2D), 1.0e-12);
+                    Assert.Equal(1.0e-4, aPE.DistanceTo(aP2D), 1.0e-12);
                 }
             }
         }
@@ -180,7 +180,7 @@ public class BOPTools_AlgoTools3DTests
                 }
                 ++aNbDone;
                 Assert.NotEqual(Out, BOPToolsTestShapes.Classify(aF, aP2D));
-                Point3D aPS = Tool.Surface(aF)!.Value(aP2D.X(), aP2D.Y());
+                Point3D aPS = Tool.Surface(aF)!.Value(aP2D.X, aP2D.Y);
                 BOPToolsTestShapes.SameBits(aPS, aP);
                 _ = aName;
             }
@@ -269,11 +269,11 @@ public class BOPTools_AlgoTools3DTests
                     int iErr = AlgoTools3D.PointNearEdge(aE, aF, ref aP2D, ref aP, aCtx);
                     Assert.True(iErr == 0, $"{aName}: {iErr}");
                     Assert.NotEqual(Out, BOPToolsTestShapes.Classify(aF, aP2D));
-                    BOPToolsTestShapes.SameBits(Tool.Surface(aF)!.Value(aP2D.X(), aP2D.Y()), aP);
+                    BOPToolsTestShapes.SameBits(Tool.Surface(aF)!.Value(aP2D.X, aP2D.Y), aP);
                     // close to the edge
                     Tool.Range(aE, out double aT1, out double aT2);
                     Point3D aPE = Tool.Curve(aE, out _, out _)!.Value(AlgoTools2D.IntermediatePoint(aT1, aT2));
-                    Assert.True(aPE.Distance(aP) < 0.05, $"{aName}: {aPE.Distance(aP)}");
+                    Assert.True(aPE.DistanceTo(aP) < 0.05, $"{aName}: {aPE.DistanceTo(aP)}");
                 }
             }
         }
@@ -292,7 +292,7 @@ public class BOPTools_AlgoTools3DTests
                 Point2D aP2D = new();
                 Assert.Equal(0, AlgoTools3D.PointNearEdge(aE, aF, 1.0, 0.01, ref aP2D, ref aP));
                 Tool.CurveOnSurface(aE, aF, out _, out _)!.D0(1.0, out Point2D aPE);
-                Assert.Equal(0.01, aPE.Distance(aP2D), 1.0e-12);
+                Assert.Equal(0.01, aPE.DistanceTo(aP2D), 1.0e-12);
                 Assert.Equal(In, BOPToolsTestShapes.Classify(aF, aP2D));
             }
         }
@@ -319,7 +319,7 @@ public class BOPTools_AlgoTools3DTests
                     Surface aS = Tool.Surface(theF)!;
                     aS.D1(theU, theV, out _, out Vector3D aDU, out Vector3D aDV);
                     Direction3D aN = new(aDU.Crossed(aDV));
-                    return theF.Orientation() == Reversed ? aN.Reversed() : aN;
+                    return theF.Orientation == Reversed ? aN.Reversed() : aN;
                 }
             default:
                 throw new InvalidOperationException(theName);
@@ -342,8 +342,8 @@ public class BOPTools_AlgoTools3DTests
                     AlgoTools3D.GetNormalToFaceOnEdge(aE, aF, out Direction3D aN);
                     Curve2D aPC = Tool.CurveOnSurface(aE, aF, out double aT1, out double aT2)!;
                     aPC.D0(AlgoTools2D.IntermediatePoint(aT1, aT2), out Point2D aUV);
-                    Point3D aP = Tool.Surface(aF)!.Value(aUV.X(), aUV.Y());
-                    Direction3D anExpected = OutwardNormal(aName, aP, aF, aUV.X(), aUV.Y());
+                    Point3D aP = Tool.Surface(aF)!.Value(aUV.X, aUV.Y);
+                    Direction3D anExpected = OutwardNormal(aName, aP, aF, aUV.X, aUV.Y);
                     Assert.True(aN.IsEqual(anExpected, 1.0e-9), $"{aName}: {aN} vs {anExpected}");
                     if (aName == "box")
                     {
@@ -354,7 +354,7 @@ public class BOPTools_AlgoTools3DTests
                     // the parameter overload doesn't reverse for the face's orientation
                     AlgoTools3D.GetNormalToFaceOnEdge(aE, aF, AlgoTools2D.IntermediatePoint(aT1, aT2), out Direction3D aN2,
                                                                new IntersectionContext());
-                    Direction3D aN2Oriented = aF.Orientation() == Reversed ? aN2.Reversed() : aN2;
+                    Direction3D aN2Oriented = aF.Orientation == Reversed ? aN2.Reversed() : aN2;
                     Assert.Equal(aN, aN2Oriented);
                 }
             }
@@ -383,7 +383,7 @@ public class BOPTools_AlgoTools3DTests
                 Assert.True(AlgoTools3D.GetApproxNormalToFaceOnEdge(aE, aF, aT, ref aP, ref aN, 1.0e-3));
                 Assert.True(aN.IsEqual(anExact, 1.0e-12));
                 Point3D aPE = Tool.Curve(aE, out _, out _)!.Value(aT);
-                Assert.Equal(1.0e-3, aPE.Distance(aP), 1.0e-12);
+                Assert.Equal(1.0e-3, aPE.DistanceTo(aP), 1.0e-12);
             }
         }
     }
@@ -424,11 +424,11 @@ public class BOPTools_AlgoTools3DTests
                     if (Tool.IsClosed(aE, aF))
                     {
                         // a seam found twice keeps the given orientation
-                        Assert.Equal(Forward, aR.Orientation());
+                        Assert.Equal(Forward, aR.Orientation);
                     }
                     else
                     {
-                        Assert.Equal(aE.Orientation(), aR.Orientation());
+                        Assert.Equal(aE.Orientation, aR.Orientation);
                     }
                 }
             }
@@ -437,7 +437,7 @@ public class BOPTools_AlgoTools3DTests
         Face aBoxFace = BOPToolsTestShapes.Faces(BOPToolsTestShapes.Box())[0];
         Edge aForeign = ShapeCasts.Edge(BOPToolsTestShapes.Edges(BOPToolsTestShapes.Cone())[0].Oriented(Reversed));
         AlgoTools3D.OrientEdgeOnFace(aForeign, aBoxFace, out Edge aRF);
-        Assert.Equal(Reversed, aRF.Orientation());
+        Assert.Equal(Reversed, aRF.Orientation);
     }
 
     [Fact]
@@ -511,8 +511,8 @@ public class BOPTools_AlgoTools3DTests
             Curve2D aP2 = Tool.CurveOnSurface(ShapeCasts.Edge(aSplit.Oriented(Reversed)), aF, out _, out _)!;
             Curve2D aS1 = Tool.CurveOnSurface(ShapeCasts.Edge(aSeam.Oriented(Forward)), aF, out _, out _)!;
             Curve2D aS2 = Tool.CurveOnSurface(ShapeCasts.Edge(aSeam.Oriented(Reversed)), aF, out _, out _)!;
-            Assert.Equal(aS1.Value(2.0).X(), aP1.Value(2.0).X(), 1.0e-12);
-            Assert.Equal(aS2.Value(2.0).X(), aP2.Value(2.0).X(), 1.0e-12);
+            Assert.Equal(aS1.Value(2.0).X, aP1.Value(2.0).X, 1.0e-12);
+            Assert.Equal(aS2.Value(2.0).X, aP2.Value(2.0).X, 1.0e-12);
         }
 
         // the two-edge form
@@ -521,7 +521,7 @@ public class BOPTools_AlgoTools3DTests
         Assert.True(Tool.IsClosed(aSplit2, aF));
         Curve2D aQ1 = Tool.CurveOnSurface(ShapeCasts.Edge(aSplit2.Oriented(Forward)), aF, out _, out _)!;
         Curve2D aT1 = Tool.CurveOnSurface(ShapeCasts.Edge(aSeam.Oriented(Forward)), aF, out _, out _)!;
-        Assert.Equal(aT1.Value(2.0).X(), aQ1.Value(2.0).X(), 1.0e-12);
+        Assert.Equal(aT1.Value(2.0).X, aQ1.Value(2.0).X, 1.0e-12);
         // already a seam: true without change; origin not a seam: false
         Assert.True(AlgoTools3D.DoSplitSEAMOnFace(aSeam, aSplit2, aF));
         Edge aNotSeam = BOPToolsTestShapes.Edges(aF).First(e => !Tool.IsClosed(e, aF) && !Tool.Degenerated(e));

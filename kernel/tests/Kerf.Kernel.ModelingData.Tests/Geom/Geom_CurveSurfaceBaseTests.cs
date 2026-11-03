@@ -31,7 +31,7 @@ public class Geom_CurveSurfaceBaseTests
 
         Assert.Equal(5.0, L.TransformedParameter(5.0, Transform3D.Scale(new Point3D(), 3)));
         Assert.Equal(1.0, L.ParametricTransformation(Transform3D.Scale(new Point3D(), 3)));
-        Assert.Throws<NoSuchObjectException>(() => L.Period());
+        Assert.Throws<NoSuchObjectException>(() => L.Period);
     }
 
     [Fact]
@@ -67,9 +67,9 @@ public class Geom_CurveSurfaceBaseTests
         double U = 1, V = 2;
         S.TransformParameters(ref U, ref V, Transform3D.Scale(new Point3D(), 2));
         Assert.Equal((1.0, 2.0), (U, V));
-        Assert.Equal(new GeneralTransform2D().Form(), S.ParametricTransformation(new Transform3D()).Form());
-        Assert.Throws<NoSuchObjectException>(() => S.UPeriod());
-        Assert.Throws<NoSuchObjectException>(() => S.VPeriod());
+        Assert.Equal(new GeneralTransform2D().Form, S.ParametricTransformation(new Transform3D()).Form);
+        Assert.Throws<NoSuchObjectException>(() => S.UPeriod);
+        Assert.Throws<NoSuchObjectException>(() => S.VPeriod);
     }
 
     [Fact]

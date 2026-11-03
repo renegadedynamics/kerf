@@ -296,7 +296,7 @@ public abstract class RibSlot : MakeShape
     /// <summary>The faces created from the shape <paramref name="s"/> (OCCT's virtual; unfrozen).</summary>
     internal override NCollection_List<Shape> InternalGenerated(in Shape s)
     {
-        if (s.ShapeType() != ShapeType.Face)
+        if (s.Type != ShapeType.Face)
         {
             _generated.Clear();
             if (_lfMap.Count == 0 || !_lfMap.ContainsKey(s))
@@ -458,12 +458,12 @@ public abstract class RibSlot : MakeShape
         double par = (f + l) / 2.0;
         cc.D1(par, out Point3D pp, out Vector3D tgt);
 
-        if (e.Orientation() == Reversed)
+        if (e.Orientation == Reversed)
         {
             tgt = tgt.Reversed();
         }
 
-        Vector3D d = -tgt.Crossed(new Vector3D(pln.Pln().Position().Direction())) / 10.0;
+        Vector3D d = -tgt.Crossed(new Vector3D(pln.Plane.Position.Direction)) / 10.0;
         pp = pp.Translated(d);
 
         return pp;
@@ -502,7 +502,7 @@ public abstract class RibSlot : MakeShape
         AS.D1(u, v, out Point3D pt, out Vector3D d1U, out Vector3D d1V);
         Direction3D n = new();
         global::Kerf.Engine.Geometry.CSLib.Normal(d1U, d1V, global::Kerf.Engine.Foundation.Precision.Confusion(), out DerivativeStatus st, ref n);
-        if (f.Orientation() == Forward)
+        if (f.Orientation == Forward)
         {
             n = n.Reversed();
         }
@@ -615,7 +615,7 @@ public abstract class RibSlot : MakeShape
         NCollection_Sequence<Curve3D?> scur = new();
         int counter = 0;
 
-        Axis3D axe = new(pp, pln.Position().Direction());
+        Axis3D axe = new(pp, pln.Position.Direction);
         for (int i = 1; i <= 8; i++)
         {
             Curve3D l = (Curve3D)l1.Rotated(axe, i * M_PI / 9.0);
@@ -952,11 +952,11 @@ public abstract class RibSlot : MakeShape
 
             if (!onFirstFace)
             {
-                onFirstFace = p1.Distance(firstpoint) <= global::Kerf.Engine.Foundation.Precision.Confusion();
+                onFirstFace = p1.DistanceTo(firstpoint) <= global::Kerf.Engine.Foundation.Precision.Confusion();
             }
             if (!onLastFace)
             {
-                onLastFace = p2.Distance(lastpoint) <= global::Kerf.Engine.Foundation.Precision.Confusion();
+                onLastFace = p2.DistanceTo(lastpoint) <= global::Kerf.Engine.Foundation.Precision.Confusion();
             }
 
             data = !(firstFace.IsNull || lastFace.IsNull);
@@ -1000,7 +1000,7 @@ public abstract class RibSlot : MakeShape
                         if (!firstVertex.IsNull)
                         {
                             Point3D point = Tool.Pnt(firstVertex);
-                            if (point.Distance(thePoint) <= Tool.Tolerance(curFace))
+                            if (point.DistanceTo(thePoint) <= Tool.Tolerance(curFace))
                             {
                                 continue;
                             }
@@ -1011,7 +1011,7 @@ public abstract class RibSlot : MakeShape
                         b.MakeVertex(ref theVertex, thePoint, global::Kerf.Engine.Foundation.Precision.Confusion());
                         if (!firstOK)
                         {
-                            if (thePoint.Distance(P2) <= global::Kerf.Engine.Foundation.Precision.Confusion())
+                            if (thePoint.DistanceTo(P2) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
                                 continue;
                             }
@@ -1169,11 +1169,11 @@ public abstract class RibSlot : MakeShape
                 Point3D pp2 = Tool.Pnt(Exploration.LastVertex(lastEdge, true));
                 Point3D p1 = Tool.Pnt(firstVertex);
                 Point3D p2 = Tool.Pnt(lastVertex);
-                if (p1.Distance(pp1) <= Tool.Tolerance(firstFace))
+                if (p1.DistanceTo(pp1) <= Tool.Tolerance(firstFace))
                 {
                     onFirstFace = true;
                 }
-                if (p2.Distance(pp2) <= Tool.Tolerance(lastFace))
+                if (p2.DistanceTo(pp2) <= Tool.Tolerance(lastFace))
                 {
                     onLastFace = true;
                 }
@@ -1239,13 +1239,13 @@ public abstract class RibSlot : MakeShape
                 Vertex ev2 = Exploration.LastVertex(e, true);
                 Point3D ep1 = Tool.Pnt(ev1);
                 Point3D ep2 = Tool.Pnt(ev2);
-                if (point.Distance(ep1) <= Tool.Tolerance(ev1))
+                if (point.DistanceTo(ep1) <= Tool.Tolerance(ev1))
                 {
                     ptOnVertex = true;
                     onVertex = ev1;
                     break;
                 }
-                else if (point.Distance(ep2) <= Tool.Tolerance(ev1))
+                else if (point.DistanceTo(ep2) <= Tool.Tolerance(ev1))
                 {
                     ptOnVertex = true;
                     onVertex = ev2;
@@ -1288,8 +1288,8 @@ public abstract class RibSlot : MakeShape
         ln2 = new LineCurve3D(_firstPnt, fn);
         ln1 = new LineCurve3D(_lastPnt, ln);
 
-        Curve2D ln2d1 = Projections.To2d(ln1, myPln.Pln())!;
-        Curve2D ln2d2 = Projections.To2d(ln2, myPln.Pln())!;
+        Curve2D ln2d1 = Projections.To2d(ln1, myPln.Plane)!;
+        Curve2D ln2d2 = Projections.To2d(ln2, myPln.Plane)!;
 
         CurveCurveIntersection2D inter = new(ln2d1, ln2d2, global::Kerf.Engine.Foundation.Precision.Confusion());
 
@@ -1297,12 +1297,12 @@ public abstract class RibSlot : MakeShape
         if (revolRib)
         {
             Direction3D d1, d2;
-            d1 = ln1.Position().Direction();
-            d2 = ln2.Position().Direction();
+            d1 = ln1.Position.Direction;
+            d2 = ln2.Position.Direction;
             if (d1.IsOpposite(d2, myTol))
             {
-                double par1 = global::Kerf.Engine.Geometry.ElCLib.Parameter(ln1.Lin(), _firstPnt);
-                double par2 = global::Kerf.Engine.Geometry.ElCLib.Parameter(ln2.Lin(), _lastPnt);
+                double par1 = global::Kerf.Engine.Geometry.ElCLib.Parameter(ln1.Line, _firstPnt);
+                double par2 = global::Kerf.Engine.Geometry.ElCLib.Parameter(ln2.Line, _lastPnt);
                 if (par1 >= myTol || par2 >= myTol)
                 {
                     concavite = 2; // parallel and concave
@@ -1324,7 +1324,7 @@ public abstract class RibSlot : MakeShape
             if (inter.NbPoints() > 0)
             {
                 Point2D P = inter.Point(1);
-                myPln.D0(P.X(), P.Y(), out pt);
+                myPln.D0(P.X, P.Y, out pt);
                 double par = IntPar(ln1, pt);
                 if (par > 0)
                 {
@@ -1358,12 +1358,12 @@ public abstract class RibSlot : MakeShape
             {
                 Edge e = ShapeCasts.Edge(explo.Current());
                 Curve3D c = Tool.Curve(e, out double first, out double last)!;
-                Curve2D c2d = Projections.To2d(c, myPln.Pln())!;
+                Curve2D c2d = Projections.To2d(c, myPln.Plane)!;
                 CurveCurveIntersection2D intcln1 = new(ln2d1, c2d, global::Kerf.Engine.Foundation.Precision.Confusion());
                 if (intcln1.NbPoints() > 0)
                 {
                     Point2D p2d = intcln1.Point(1);
-                    myPln.D0(p2d.X(), p2d.Y(), out Point3D p);
+                    myPln.D0(p2d.X, p2d.Y, out Point3D p);
                     double parl = IntPar(ln1, p);
                     double parc = IntPar(c, p);
                     if (parc >= first && parc <= last && parl >= 0)
@@ -1377,7 +1377,7 @@ public abstract class RibSlot : MakeShape
                 if (intcln2.NbPoints() > 0)
                 {
                     Point2D p2d = intcln2.Point(1);
-                    myPln.D0(p2d.X(), p2d.Y(), out Point3D p);
+                    myPln.D0(p2d.X, p2d.Y, out Point3D p);
                     double parl = IntPar(ln2, p);
                     double parc = IntPar(c, p);
                     if (parc >= first && parc <= last && parl >= 0)
@@ -1419,7 +1419,7 @@ public abstract class RibSlot : MakeShape
                     {
                         Point3D pp;
                         pp = Tool.Pnt(Exploration.LastVertex(e, true));
-                        if (pp.Distance(bndPnt1) >= Tool.Tolerance(e))
+                        if (pp.DistanceTo(bndPnt1) >= Tool.Tolerance(e))
                         {
                             lastPnt = pp;
                         }
@@ -1545,7 +1545,7 @@ public abstract class RibSlot : MakeShape
             ww.Add(ef.InternalEdge());
         }
 
-        LibraryMakeFace f = new(myPln.Pln(), ww.InternalWire(), true);
+        LibraryMakeFace f = new(myPln.Plane, ww.InternalWire(), true);
         Face fac = ShapeCasts.Face(f.InternalShape());
 
         if (!global::Kerf.Engine.Booleans.Algo.BRepAlgo.IsValid(fac))
@@ -1565,7 +1565,7 @@ public abstract class RibSlot : MakeShape
             // CheckPnt : point slightly inside the material side
             // Bndface  : face/cut of the bounding box in the plane of the profile
             FClass2d cl = new(fac, Tool.Tolerance(fac));
-            global::Kerf.Engine.Geometry.ElSLib.Parameters(myPln.Pln(), checkPnt, out double u, out double v);
+            global::Kerf.Engine.Geometry.ElSLib.Parameters(myPln.Plane, checkPnt, out double u, out double v);
             Point2D checkpnt2d = new(u, v);
             if (cl.Perform(checkpnt2d, true) == Out)
             {
@@ -1624,8 +1624,8 @@ public abstract class RibSlot : MakeShape
 
         Point3D pt = new();
 
-        Curve2D ln2d1 = Projections.To2d(firstln, myPln.Pln())!;
-        Curve2D ln2d2 = Projections.To2d(lastln, myPln.Pln())!;
+        Curve2D ln2d1 = Projections.To2d(firstln, myPln.Plane)!;
+        Curve2D ln2d2 = Projections.To2d(lastln, myPln.Plane)!;
 
         CurveCurveIntersection2D inter = new(ln2d1, ln2d2, global::Kerf.Engine.Foundation.Precision.Confusion());
 
@@ -1633,12 +1633,12 @@ public abstract class RibSlot : MakeShape
         if (revolRib)
         {
             Direction3D d1, d2;
-            d1 = firstln.Position().Direction();
-            d2 = lastln.Position().Direction();
+            d1 = firstln.Position.Direction;
+            d2 = lastln.Position.Direction;
             if (d1.IsOpposite(d2, myTol))
             {
-                double par1 = global::Kerf.Engine.Geometry.ElCLib.Parameter(firstln.Lin(), _firstPnt);
-                double par2 = global::Kerf.Engine.Geometry.ElCLib.Parameter(lastln.Lin(), _lastPnt);
+                double par1 = global::Kerf.Engine.Geometry.ElCLib.Parameter(firstln.Line, _firstPnt);
+                double par2 = global::Kerf.Engine.Geometry.ElCLib.Parameter(lastln.Line, _lastPnt);
                 if (par1 >= myTol || par2 >= myTol)
                 {
                     concavite = 2; // parallel and concave
@@ -1658,7 +1658,7 @@ public abstract class RibSlot : MakeShape
             if (inter.NbPoints() > 0)
             {
                 Point2D P = inter.Point(1);
-                myPln.D0(P.X(), P.Y(), out pt);
+                myPln.D0(P.X, P.Y, out pt);
                 double par = IntPar(firstln, pt);
                 if (par > 0)
                 {
@@ -1683,7 +1683,7 @@ public abstract class RibSlot : MakeShape
                 {
                     falseOnlyOne = falseFirstEdge;
                 }
-                ln2d2 = Projections.To2d(lastln, myPln.Pln())!;
+                ln2d2 = Projections.To2d(lastln, myPln.Plane)!;
             }
             if (onLastFace)
             {
@@ -1710,7 +1710,7 @@ public abstract class RibSlot : MakeShape
                 cc.D1(l, out lastpoint, out lastvect);
                 lastpoint = Tool.Pnt(vv2);
                 firstln = new LineCurve3D(lastpoint, new Direction3D(lastvect));
-                ln2d1 = Projections.To2d(firstln, myPln.Pln())!;
+                ln2d1 = Projections.To2d(firstln, myPln.Plane)!;
             }
 
             Edge bndEdge1 = new(), bndEdge2 = new();
@@ -1724,12 +1724,12 @@ public abstract class RibSlot : MakeShape
             {
                 Edge e = ShapeCasts.Edge(explo.Current());
                 Curve3D c = Tool.Curve(e, out double first, out double last)!;
-                Curve2D c2d = Projections.To2d(c, myPln.Pln())!;
+                Curve2D c2d = Projections.To2d(c, myPln.Plane)!;
                 CurveCurveIntersection2D intcln1 = new(ln2d1, c2d, global::Kerf.Engine.Foundation.Precision.Confusion());
                 if (intcln1.NbPoints() > 0)
                 {
                     Point2D p2d = intcln1.Point(1);
-                    myPln.D0(p2d.X(), p2d.Y(), out Point3D p);
+                    myPln.D0(p2d.X, p2d.Y, out Point3D p);
                     double parl = IntPar(firstln, p);
                     double parc = IntPar(c, p);
                     if (parc >= first && parc <= last && parl >= 0)
@@ -1743,7 +1743,7 @@ public abstract class RibSlot : MakeShape
                 if (intcln2.NbPoints() > 0)
                 {
                     Point2D p2d = intcln2.Point(1);
-                    myPln.D0(p2d.X(), p2d.Y(), out Point3D p);
+                    myPln.D0(p2d.X, p2d.Y, out Point3D p);
                     double parl = IntPar(lastln, p);
                     double parc = IntPar(c, p);
                     if (parc >= first && parc <= last && parl >= 0)
@@ -1837,7 +1837,7 @@ public abstract class RibSlot : MakeShape
                     {
                         Point3D pp;
                         pp = Tool.Pnt(Exploration.LastVertex(e, true));
-                        if (pp.Distance(bndPnt1) > Tool.Tolerance(e))
+                        if (pp.DistanceTo(bndPnt1) > Tool.Tolerance(e))
                         {
                             lastPnt = pp;
                         }
@@ -2009,7 +2009,7 @@ public abstract class RibSlot : MakeShape
                     Vertex v1 = Exploration.LastVertex(theLastEdge, true);
                     Vertex v2;
                     Point3D pp = Tool.Pnt(Exploration.LastVertex(falseOnlyOne, true));
-                    if (!theFV.IsNull && theFirstpoint.Distance(pp) <= myTol)
+                    if (!theFV.IsNull && theFirstpoint.DistanceTo(pp) <= myTol)
                     {
                         v2 = theFV;
                     }
@@ -2025,7 +2025,7 @@ public abstract class RibSlot : MakeShape
                     Vertex v1 = Exploration.FirstVertex(falseOnlyOne, true);
                     Vertex v2;
                     Point3D pp = Tool.Pnt(Exploration.LastVertex(falseOnlyOne, true));
-                    if (!theFV.IsNull && theFirstpoint.Distance(pp) <= myTol)
+                    if (!theFV.IsNull && theFirstpoint.DistanceTo(pp) <= myTol)
                     {
                         v2 = theFV;
                     }
@@ -2054,7 +2054,7 @@ public abstract class RibSlot : MakeShape
                     Vertex v2;
                     // Attention case Wire Reversed -> LastVertex without true
                     Point3D pp = Tool.Pnt(Exploration.LastVertex(firstEdge));
-                    if (!theFV.IsNull && theFirstpoint.Distance(pp) <= myTol)
+                    if (!theFV.IsNull && theFirstpoint.DistanceTo(pp) <= myTol)
                     {
                         v2 = theFV;
                     }
@@ -2070,7 +2070,7 @@ public abstract class RibSlot : MakeShape
                     Vertex v1 = Exploration.FirstVertex(firstEdge, true);
                     Vertex v2;
                     Point3D pp = Tool.Pnt(Exploration.LastVertex(firstEdge, true));
-                    if (!theFV.IsNull && theFirstpoint.Distance(pp) <= myTol)
+                    if (!theFV.IsNull && theFirstpoint.DistanceTo(pp) <= myTol)
                     {
                         v2 = theFV;
                     }
@@ -2210,7 +2210,7 @@ public abstract class RibSlot : MakeShape
                         Vertex v1 = Exploration.LastVertex(theLastEdge, true);
                         Vertex v2;
                         Point3D pp = Tool.Pnt(Exploration.LastVertex(edg, true));
-                        if (!theFV.IsNull && theFirstpoint.Distance(pp) <= myTol)
+                        if (!theFV.IsNull && theFirstpoint.DistanceTo(pp) <= myTol)
                         {
                             v2 = theFV;
                         }
@@ -2226,7 +2226,7 @@ public abstract class RibSlot : MakeShape
                         Vertex v1 = Exploration.FirstVertex(edg, true);
                         Vertex v2;
                         Point3D pp = Tool.Pnt(Exploration.LastVertex(edg, true));
-                        if (!theFV.IsNull && theFirstpoint.Distance(pp) <= myTol)
+                        if (!theFV.IsNull && theFirstpoint.DistanceTo(pp) <= myTol)
                         {
                             v2 = theFV;
                         }
@@ -2259,7 +2259,7 @@ public abstract class RibSlot : MakeShape
                         Vertex v1 = Exploration.LastVertex(theLastEdge, true);
                         Vertex v2;
                         Point3D pp = Tool.Pnt(Exploration.LastVertex(falseOnlyOne, true));
-                        if (!theFV.IsNull && theFirstpoint.Distance(pp) <= myTol)
+                        if (!theFV.IsNull && theFirstpoint.DistanceTo(pp) <= myTol)
                         {
                             v2 = theFV;
                         }
@@ -2275,7 +2275,7 @@ public abstract class RibSlot : MakeShape
                         Vertex v1 = Exploration.FirstVertex(falseOnlyOne, true);
                         Vertex v2;
                         Point3D pp = Tool.Pnt(Exploration.LastVertex(falseOnlyOne, true));
-                        if (!theFV.IsNull && theFirstpoint.Distance(pp) <= myTol)
+                        if (!theFV.IsNull && theFirstpoint.DistanceTo(pp) <= myTol)
                         {
                             v2 = theFV;
                         }
@@ -2309,7 +2309,7 @@ public abstract class RibSlot : MakeShape
                     Vertex v1 = Exploration.LastVertex(theLastEdge, true);
                     Vertex v2;
                     Point3D pp = Tool.Pnt(Exploration.LastVertex(falseLastEdge, true));
-                    if (!theFV.IsNull && theFirstpoint.Distance(pp) <= myTol)
+                    if (!theFV.IsNull && theFirstpoint.DistanceTo(pp) <= myTol)
                     {
                         v2 = theFV;
                     }
@@ -2325,7 +2325,7 @@ public abstract class RibSlot : MakeShape
                     Vertex v1 = Exploration.FirstVertex(falseLastEdge, true);
                     Vertex v2;
                     Point3D pp = Tool.Pnt(Exploration.LastVertex(falseLastEdge, true));
-                    if (!theFV.IsNull && theFirstpoint.Distance(pp) <= myTol)
+                    if (!theFV.IsNull && theFirstpoint.DistanceTo(pp) <= myTol)
                     {
                         v2 = theFV;
                     }
@@ -2359,7 +2359,7 @@ public abstract class RibSlot : MakeShape
                 Vertex v1 = Exploration.LastVertex(theLastEdge, true);
                 LibraryMakeVertex vv = new(pt);
                 Vertex v2 = ShapeCasts.Vertex(vv.InternalShape());
-                if (!theFV.IsNull && pt.Distance(theFirstpoint) <= myTol)
+                if (!theFV.IsNull && pt.DistanceTo(theFirstpoint) <= myTol)
                 {
                     v2 = theFV;
                 }
@@ -2382,7 +2382,7 @@ public abstract class RibSlot : MakeShape
         }
 
         w.Closed(Tool.IsClosed(w));
-        LibraryMakeFace fa = new(myPln.Pln(), w, true);
+        LibraryMakeFace fa = new(myPln.Plane, w, true);
         Face fac = ShapeCasts.Face(fa.InternalShape());
 
         if (!global::Kerf.Engine.Booleans.Algo.BRepAlgo.IsValid(fac))
@@ -2394,7 +2394,7 @@ public abstract class RibSlot : MakeShape
         if (concavite == 3)
         {
             FClass2d cl = new(fac, Tool.Tolerance(fac));
-            global::Kerf.Engine.Geometry.ElSLib.Parameters(myPln.Pln(), checkPnt, out double u, out double v);
+            global::Kerf.Engine.Geometry.ElSLib.Parameters(myPln.Plane, checkPnt, out double u, out double v);
             Point2D checkpnt2d = new(u, v);
             if (cl.Perform(checkpnt2d, true) == Out)
             {
@@ -2431,7 +2431,7 @@ public abstract class RibSlot : MakeShape
         foreach (KeyValuePair<Shape, NCollection_List<Shape>> itdm in _map)
         {
             Shape orig = itdm.Key;
-            if (skipFace && orig.ShapeType() == ShapeType.Face)
+            if (skipFace && orig.Type == ShapeType.Face)
             {
                 continue;
             }
@@ -2441,7 +2441,7 @@ public abstract class RibSlot : MakeShape
             for (it.Initialize(itdm.Value); it.More(); it.Next())
             {
                 Shape sh = it.Value();
-                if (sh.ShapeType() != ShapeType.Face)
+                if (sh.Type != ShapeType.Face)
                 {
                     continue;
                 }

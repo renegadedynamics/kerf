@@ -80,8 +80,8 @@ public static partial class WLineTool
                 // Point has to be added
 
                 Point3D p = wLine.Point(i).Value();
-                double sqDistPrev = pPrev.SquareDistance(pOld);
-                double sqDist = pPrev.SquareDistance(p);
+                double sqDistPrev = pPrev.SquareDistanceTo(pOld);
+                double sqDist = pPrev.SquareDistanceTo(p);
 
                 double ratio = (sqDistPrev < Constants.Resolution()) ? 0.0 : 9.0 * sqDist / sqDistPrev;
 
@@ -314,7 +314,7 @@ public static partial class WLineTool
         Vector2D vec2d = new Vector2D(aBasePnt, aNextPnt);
 
         // d*d = (basevec^(nextpnt-basepnt))**2 / basevec**2
-        double sqMag = aBaseVec.SquareMagnitude();
+        double sqMag = aBaseVec.SquareMagnitude;
         if (sqMag < global::Kerf.Engine.Foundation.Precision.SquareComputational())
         {
             return false;
@@ -331,7 +331,7 @@ public static partial class WLineTool
         Vector3D vec = new Vector3D(aBasePnt, aNextPnt);
 
         // d*d = (basevec^(nextpnt-basepnt))**2 / basevec**2
-        double sqMag = aBaseVec.SquareMagnitude();
+        double sqMag = aBaseVec.SquareMagnitude;
         if (sqMag < global::Kerf.Engine.Foundation.Precision.SquareComputational())
         {
             return false;
@@ -391,7 +391,7 @@ public static partial class WLineTool
         Vector2D base2dVec2 = new Vector2D(uonS2[1] - uonS2[0], vonS2[1] - vonS2[0]);
         Point3D base3dPnt = wLine.Point(1).Value();
         Vector3D base3dVec = new Vector3D(wLine.Point(1).Value(), wLine.Point(2).Value());
-        double prevStep = base3dVec.SquareMagnitude();
+        double prevStep = base3dVec.SquareMagnitude;
 
         // Choose base tolerance and scale it to pipe algorithm.
         double baseTolerance = global::Kerf.Engine.Foundation.Precision.Approximation();
@@ -444,7 +444,7 @@ public static partial class WLineTool
                 if (Min(stepOnS1, stepOnS2) >= limitCoeff * Max(stepOnS1, stepOnS2))
                 {
                     // Set hash flag to "Delete" state.
-                    double currStep = base3dPnt.SquareDistance(pnt3d);
+                    double currStep = base3dPnt.SquareDistanceTo(pnt3d);
                     double sqrRatio = 0.0;
                     if (!isPlanePlane)
                     {
@@ -489,7 +489,7 @@ public static partial class WLineTool
                 base3dPnt = wLine.Point(i - 1).Value();
                 base3dVec = new Vector3D(wLine.Point(i - 1).Value(), wLine.Point(i).Value());
 
-                prevStep = base3dVec.SquareMagnitude();
+                prevStep = base3dVec.SquareMagnitude;
 
                 nbPnt++;
             }
@@ -807,13 +807,13 @@ public static partial class WLineTool
 
         Vector3D v12f = new Vector3D(p1, p2), v12l = new Vector3D(p2, p3);
 
-        if (v12f.Angle(v12l) > myMaxConcatAngle)
+        if (v12f.AngleTo(v12l) > myMaxConcatAngle)
         {
             return false;
         }
 
         Vector3D v13 = new Vector3D(p1, p3);
-        double sq13 = v13.SquareMagnitude();
+        double sq13 = v13.SquareMagnitude;
 
         return (v12f.CrossSquareMagnitude(v13) < 1.0e-4 * sq13 * sq13);
     }
@@ -832,7 +832,7 @@ public static partial class WLineTool
         }
 
         // For two cylindrical surfaces only
-        double minRad = 1.0e-3 * Min(s1.Cylinder().Radius(), s2.Cylinder().Radius());
+        double minRad = 1.0e-3 * Min(s1.Cylinder().Radius, s2.Cylinder().Radius);
 
         ReadOnlySpan<double> arrPeriods = stackalloc double[4]
         {
@@ -898,8 +898,8 @@ public static partial class WLineTool
                 PntOn2S pntFWL2 = wLine2.Point(1);
                 PntOn2S pntLWL2 = wLine2.Point(nbPntsWL2);
 
-                double sqDistF = pntFWL1.Value().SquareDistance(pntFWL2.Value());
-                double sqDistL = pntFWL1.Value().SquareDistance(pntLWL2.Value());
+                double sqDistF = pntFWL1.Value().SquareDistanceTo(pntFWL2.Value());
+                double sqDistL = pntFWL1.Value().SquareDistanceTo(pntLWL2.Value());
 
                 double sqMinFDist = Min(sqDistF, sqDistL);
                 if (sqMinFDist < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
@@ -913,8 +913,8 @@ public static partial class WLineTool
                     }
                 }
 
-                sqDistF = pntLWL1.Value().SquareDistance(pntFWL2.Value());
-                sqDistL = pntLWL1.Value().SquareDistance(pntLWL2.Value());
+                sqDistF = pntLWL1.Value().SquareDistanceTo(pntFWL2.Value());
+                sqDistL = pntLWL1.Value().SquareDistanceTo(pntLWL2.Value());
 
                 double sqMinLDist = Min(sqDistF, sqDistL);
                 if (sqMinLDist < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
@@ -966,8 +966,8 @@ public static partial class WLineTool
 
                 if (isFirstConnected)
                 {
-                    double sqDistF = pntFWL1.Value().SquareDistance(pntFWL2.Value());
-                    double sqDistL = pntFWL1.Value().SquareDistance(pntLWL2.Value());
+                    double sqDistF = pntFWL1.Value().SquareDistanceTo(pntFWL2.Value());
+                    double sqDistL = pntFWL1.Value().SquareDistanceTo(pntLWL2.Value());
                     bool isFM = (sqDistF < sqDistL);
 
                     PntOn2S pt1 = wLine1.Point(2);
@@ -1002,8 +1002,8 @@ public static partial class WLineTool
                 }
                 else // if (isLastConnected)
                 {
-                    double sqDistF = pntLWL1.Value().SquareDistance(pntFWL2.Value());
-                    double sqDistL = pntLWL1.Value().SquareDistance(pntLWL2.Value());
+                    double sqDistF = pntLWL1.Value().SquareDistanceTo(pntFWL2.Value());
+                    double sqDistL = pntLWL1.Value().SquareDistanceTo(pntLWL2.Value());
 
                     bool isFM = (sqDistF < sqDistL);
                     PntOn2S pt1 = wLine1.Point(nbPntsWL1 - 1);

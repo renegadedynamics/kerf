@@ -82,7 +82,7 @@ public static class AlgoTools2D
 
         Curve3D c = Tool.Curve(anEdge, out _, out _)!;
         c.D1(aT, out _, out aTau);
-        double mod = aTau.Magnitude();
+        double mod = aTau.Magnitude;
         if (mod > Constants.Resolution())
         {
             aTau /= mod;
@@ -92,7 +92,7 @@ public static class AlgoTools2D
             return false;
         }
         // aTau.Normalize();
-        if (anEdge.Orientation() == Reversed)
+        if (anEdge.Orientation == Reversed)
         {
             aTau = aTau.Reversed();
         }
@@ -107,8 +107,8 @@ public static class AlgoTools2D
 
         CurveOnSurface(aE, aF, out Curve2D? c2D, out _, out _, out _, context);
         c2D!.D0(aParameter, out p2D);
-        u = p2D.X();
-        v = p2D.Y();
+        u = p2D.X;
+        v = p2D.Y;
     }
 
     /// <summary>The edge's pcurve on the face, made by projection if the edge has none (not stored in the edge).</summary>
@@ -185,8 +185,8 @@ public static class AlgoTools2D
     public static void AdjustPCurveOnFace(in Face f, Curve3D c3D, Curve2D c2D, out Curve2D? c2DA,
                                           IntersectionContext? context = null)
     {
-        double t1 = c3D.FirstParameter();
-        double t2 = c3D.LastParameter();
+        double t1 = c3D.FirstParameter;
+        double t2 = c3D.LastParameter;
         //
         AdjustPCurveOnFace(f, t1, t2, c2D, out c2DA, context);
     }
@@ -234,8 +234,8 @@ public static class AlgoTools2D
 
         aC2D.D0(t, out Point2D pC2D);
 
-        u2 = pC2D.X();
-        v2 = pC2D.Y();
+        u2 = pC2D.X;
+        v2 = pC2D.Y;
         //
         // du
         du = 0.0;
@@ -263,7 +263,7 @@ public static class AlgoTools2D
                     double r, dFi, tol;
                     //
                     Cylinder cylinder = aBAS.Cylinder();
-                    r = cylinder.Radius();
+                    r = cylinder.Radius;
                     tol = MaxToleranceEdge(f);
                     dFi = tol / r;
                     if (dFi < delta)
@@ -428,7 +428,7 @@ public static class AlgoTools2D
         }
         else
         {
-            c3D2 = (Curve3D)c3D!.Transformed(loc.Transformation());
+            c3D2 = (Curve3D)c3D!.Transformed(loc.Transformation);
         }
 
         //
@@ -445,8 +445,8 @@ public static class AlgoTools2D
     {
         double first, last;
 
-        first = aC3D.FirstParameter();
-        last = aC3D.LastParameter();
+        first = aC3D.FirstParameter;
+        last = aC3D.LastParameter;
         //
         tolReached2d = 0.0;
         //
@@ -568,8 +568,8 @@ public static class AlgoTools2D
         aC2D = c2DA!;
 
         // Make sure that the range of the 2D curve is sufficient for representation of the 3D curve.
-        double tcFirst = aC2D.FirstParameter();
-        double tcLast = aC2D.LastParameter();
+        double tcFirst = aC2D.FirstParameter;
+        double tcLast = aC2D.LastParameter;
         if ((tcFirst - aT1) > global::Kerf.Engine.Foundation.Precision.PConfusion() || (aT2 - tcLast) > global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             if (tcFirst < aT1)
@@ -628,7 +628,7 @@ public static class AlgoTools2D
 
         pc.D1(0.5 * (first + last), out _, out Vector2D t);
 
-        double sqMagn = t.SquareMagnitude();
+        double sqMagn = t.SquareMagnitude;
         if (sqMagn <= Constants.Resolution())
         {
             return;
@@ -674,11 +674,11 @@ public static class AlgoTools2D
         iRet = 0;
         //
         Face aF = f;
-        aF.Orientation(Forward);
+        aF.Orient(Forward);
         Edge aE1 = e1;
-        aE1.Orientation(Forward);
+        aE1.Orient(Forward);
         Edge aE2 = e2;
-        aE2.Orientation(Forward);
+        aE2.Orient(Forward);
         //
         c2Dold = Tool.CurveOnSurface(aE2, aF, out t21, out t22);
         if (c2Dold is null)
@@ -808,10 +808,10 @@ public static class AlgoTools2D
         //  aC2DS1 -first p-curve
         //  aC2DS2 -second p-curve
         es = aEold;
-        es.Orientation(Forward);
+        es.Orient(Forward);
         c2DS1 = Tool.CurveOnSurface(es, aF, out ts1, out ts2)!;
         //
-        es.Orientation(Reversed);
+        es.Orient(Reversed);
         c2DS2 = Tool.CurveOnSurface(es, aF, out ts1, out ts2)!;
         //
         ts = IntermediatePoint(ts1, ts2);

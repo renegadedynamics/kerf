@@ -49,7 +49,7 @@ internal static class BOPTestUtilityCommands
             theResult.Append(theArgVal[1]).Append(" is null shape\n");
             return 1;
         }
-        else if (aShEOld.ShapeType() != ShapeType.Edge)
+        else if (aShEOld.Type != ShapeType.Edge)
         {
             theResult.Append(theArgVal[1]).Append(" is not an edge\n");
             return 1;
@@ -60,7 +60,7 @@ internal static class BOPTestUtilityCommands
             theResult.Append(theArgVal[2]).Append(" is null shape\n");
             return 1;
         }
-        else if (aShENew.ShapeType() != ShapeType.Edge)
+        else if (aShENew.Type != ShapeType.Edge)
         {
             theResult.Append(theArgVal[2]).Append(" is not an edge\n");
             return 1;
@@ -71,7 +71,7 @@ internal static class BOPTestUtilityCommands
             theResult.Append(theArgVal[3]).Append(" is null shape\n");
             return 1;
         }
-        else if (aShFace.ShapeType() != ShapeType.Face)
+        else if (aShFace.Type != ShapeType.Face)
         {
             theResult.Append(theArgVal[3]).Append(" is not a face\n");
             return 1;

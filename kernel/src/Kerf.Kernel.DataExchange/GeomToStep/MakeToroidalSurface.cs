@@ -30,10 +30,10 @@ public sealed class MakeToroidalSurface : GeometryRoot
         StepAxis2Placement3d position;
         double majorRadius, minorRadius;
 
-        Axis2Placement3dMaker mkAxis2 = new Axis2Placement3dMaker(s.Position(), localFactors);
+        Axis2Placement3dMaker mkAxis2 = new Axis2Placement3dMaker(s.Position, localFactors);
         position = mkAxis2.Value();
-        majorRadius = s.MajorRadius();
-        minorRadius = s.MinorRadius();
+        majorRadius = s.MajorRadius;
+        minorRadius = s.MinorRadius;
         surf = new StepToroidalSurface();
         TCollection_HAsciiString name = new TCollection_HAsciiString("");
         double fact = localFactors.LengthFactor();

@@ -322,7 +322,7 @@ public static class SpecialPoints
         // Vector with {cos(Uq), sin(Uq)} coordinates. It is always normalized.
         Vector2D v1 = new();
 
-        if ((Math.Abs(dUofPSurf.Z()) < global::Kerf.Engine.Foundation.Precision.PConfusion()) && (Math.Abs(dVofPSurf.Z()) < global::Kerf.Engine.Foundation.Precision.PConfusion()))
+        if ((Math.Abs(dUofPSurf.Z) < global::Kerf.Engine.Foundation.Precision.PConfusion()) && (Math.Abs(dVofPSurf.Z) < global::Kerf.Engine.Foundation.Precision.PConfusion()))
         {
             // Example of this case is an intersection of a plane with a sphere when the plane tangents the sphere in
             // some pole (i.e. only one intersection point, not line). In this case, U-coordinate of the sphere is
@@ -344,26 +344,26 @@ public static class SpecialPoints
         }
         else
         {
-            if (Math.Abs(dUofPSurf.Z()) > Math.Abs(dVofPSurf.Z()))
+            if (Math.Abs(dUofPSurf.Z) > Math.Abs(dVofPSurf.Z))
             {
-                double dusDvs = dVofPSurf.Z() / dUofPSurf.Z();
-                v1 = v1.WithCoord(dUofPSurf.X() * dusDvs - dVofPSurf.X(), dUofPSurf.Y() * dusDvs - dVofPSurf.Y());
+                double dusDvs = dVofPSurf.Z / dUofPSurf.Z;
+                v1 = v1.WithCoord(dUofPSurf.X * dusDvs - dVofPSurf.X, dUofPSurf.Y * dusDvs - dVofPSurf.Y);
             }
             else
             {
-                double dvsDus = dUofPSurf.Z() / dVofPSurf.Z();
-                v1 = v1.WithCoord(dVofPSurf.X() * dvsDus - dUofPSurf.X(), dVofPSurf.Y() * dvsDus - dUofPSurf.Y());
+                double dvsDus = dUofPSurf.Z / dVofPSurf.Z;
+                v1 = v1.WithCoord(dVofPSurf.X * dvsDus - dUofPSurf.X, dVofPSurf.Y * dvsDus - dUofPSurf.Y);
             }
 
             v1 = v1.Normalized();
 
-            if (Math.Abs(v1.X()) > Math.Abs(v1.Y()))
+            if (Math.Abs(v1.X) > Math.Abs(v1.Y))
             {
-                uquad = Math.CopySign(Math.Asin(v1.Y()), vquad);
+                uquad = Math.CopySign(Math.Asin(v1.Y), vquad);
             }
             else
             {
-                uquad = Math.CopySign(Math.Acos(v1.X()), vquad);
+                uquad = Math.CopySign(Math.Acos(v1.X), vquad);
             }
         }
 
@@ -389,7 +389,7 @@ public static class SpecialPoints
 
         Xyz[] tgILine = new Xyz[2];
         int nbTangent = !isIsoChoosen
-                             ? GetTangentToIntLineForCone(cone.SemiAngle(), tgPlaneZ.Divided(Math.Sqrt(sqModTg)),
+                             ? GetTangentToIntLineForCone(cone.SemiAngle, tgPlaneZ.Divided(Math.Sqrt(sqModTg)),
                                                           tgILine)
                              : 0;
 
@@ -420,7 +420,7 @@ public static class SpecialPoints
             {
                 // Vector {cos(a), sin(a)}
                 Vector2D vecCS = new(tgILine[idx].X(), tgILine[idx].Y());
-                double sqMod = vecCS.SquareMagnitude();
+                double sqMod = vecCS.SquareMagnitude;
                 if (sqMod < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                 {
                     isIsoChoosen = true;
@@ -431,13 +431,13 @@ public static class SpecialPoints
                 vecCS = vecCS.Divided(Math.Sqrt(sqMod));
 
                 // Angle in range [0, PI/2]
-                double uq = (Math.Abs(vecCS.X()) < Math.Abs(vecCS.Y())) ? Math.Acos(Math.Abs(vecCS.X()))
-                                                                            : Math.Asin(Math.Abs(vecCS.Y()));
+                double uq = (Math.Abs(vecCS.X) < Math.Abs(vecCS.Y)) ? Math.Acos(Math.Abs(vecCS.X))
+                                                                            : Math.Asin(Math.Abs(vecCS.Y));
 
                 // Convert angles to the range [0, 2*PI]
-                if (vecCS.Y() < 0.0)
+                if (vecCS.Y < 0.0)
                 {
-                    if (vecCS.X() > 0.0)
+                    if (vecCS.X > 0.0)
                     {
                         uq = -uq;
                     }
@@ -446,7 +446,7 @@ public static class SpecialPoints
                         uq += M_PI;
                     }
                 }
-                else if (vecCS.X() < 0.0)
+                else if (vecCS.X < 0.0)
                 {
                     uq = M_PI - uq;
                 }
@@ -574,8 +574,8 @@ public static class SpecialPoints
         else if (qSurf.GetType() == SurfaceKind.Cone)
         {
             Cone co = qSurf.Cone();
-            double radius = co.RefRadius();
-            double semiAngle = co.SemiAngle();
+            double radius = co.RefRadius;
+            double semiAngle = co.SemiAngle;
             vquad = -radius / Math.Sin(semiAngle);
         }
         else
@@ -585,7 +585,7 @@ public static class SpecialPoints
 
         qSurf.D0(uquad, vquad, out Point3D pQuad);
         double tol = vertex.Tolerance();
-        if (isReqRefCheck && (pQuad.SquareDistance(vertex.Value()) >= tol * tol))
+        if (isReqRefCheck && (pQuad.SquareDistanceTo(vertex.Value()) >= tol * tol))
         {
             return false;
         }
@@ -618,8 +618,8 @@ public static class SpecialPoints
 
         // Transforms parametric surface in coordinate-system of the quadric
         Transform3D tr = new();
-        tr = tr.WithTransformation((qSurf.GetType() == SurfaceKind.Sphere) ? qSurf.Sphere().Position()
-                                                                      : qSurf.Cone().Position());
+        tr = tr.WithTransformation((qSurf.GetType() == SurfaceKind.Sphere) ? qSurf.Sphere().Position
+                                                                      : qSurf.Cone().Position);
 
         // Derivatives of transformed thePSurf
         vecDu = vecDu.Transformed(tr);
@@ -719,7 +719,7 @@ public static class SpecialPoints
             pSurf.D1(u0, v0, out _, out Vector3D vecDu, out Vector3D vecDv);
 
             // Transforms parametric surface in coordinate-system of the quadric
-            Transform3D tr = new Transform3D().WithTransformation(qSurf.Cone().Position());
+            Transform3D tr = new Transform3D().WithTransformation(qSurf.Cone().Position);
 
             // Derivatives of transformed thePSurf
             vecDu = vecDu.Transformed(tr);

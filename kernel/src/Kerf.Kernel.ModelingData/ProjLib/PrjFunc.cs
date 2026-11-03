@@ -25,7 +25,7 @@ namespace Kerf.Engine.Geometry.Projection;
 /// the function. <see cref="Values"/> remembers the last point it was evaluated at, which
 /// <see cref="Solution"/> returns.
 /// </remarks>
-public class PrjFunc : FunctionSetWithDerivatives
+internal class PrjFunc : FunctionSetWithDerivatives
 {
     private readonly CurveAdaptorBase _curve;
     private readonly SurfaceAdaptorBase _surface;
@@ -118,20 +118,20 @@ public class PrjFunc : FunctionSetWithDerivatives
         switch (_fix)
         {
             case 1:
-                d[1, 1] = (DS1_u.SquareMagnitude() + V * DS2_u) * _norm; // dE1/du
+                d[1, 1] = (DS1_u.SquareMagnitude + V * DS2_u) * _norm; // dE1/du
                 d[1, 2] = (DS1_v * DS1_u + V * DS2_uv) * _norm;          // dE1/dv
                 d[2, 1] = d[1, 2];                                        // dE2/du
-                d[2, 2] = (DS1_v.SquareMagnitude() + V * DS2_v) * _norm; // dE2/dv
+                d[2, 2] = (DS1_v.SquareMagnitude + V * DS2_v) * _norm; // dE2/dv
                 break;
             case 2:
                 d[1, 1] = (-DC1_t * DS1_u) * _norm;                      // dE1/dt
                 d[1, 2] = (DS1_v * DS1_u + V * DS2_uv) * _norm;          // dE1/dv
                 d[2, 1] = (-DC1_t * DS1_v) * _norm;                      // dE2/dt
-                d[2, 2] = (DS1_v.SquareMagnitude() + V * DS2_v) * _norm; // dE2/dv
+                d[2, 2] = (DS1_v.SquareMagnitude + V * DS2_v) * _norm; // dE2/dv
                 break;
             case 3:
                 d[1, 1] = -DC1_t * DS1_u * _norm;                        // dE1/dt
-                d[1, 2] = (DS1_u.SquareMagnitude() + V * DS2_u) * _norm; // dE1/du
+                d[1, 2] = (DS1_u.SquareMagnitude + V * DS2_u) * _norm; // dE1/du
                 d[2, 1] = -DC1_t * DS1_v * _norm;                        // dE2/dt
                 d[2, 2] = (DS1_v * DS1_u + V * DS2_uv) * _norm;          // dE2/du
                 break;

@@ -29,8 +29,8 @@ public class GeomAPI_Interpolate_Test
         BSplineCurve3D aCur = anInterpolater.Curve();
         Assert.NotNull(aCur);
 
-        aCur.D1(aCur.FirstParameter(), out _, out Vector3D aFirstTang);
-        aCur.D1(aCur.LastParameter(), out _, out Vector3D aLastTang);
+        aCur.D1(aCur.FirstParameter, out _, out Vector3D aFirstTang);
+        aCur.D1(aCur.LastParameter, out _, out Vector3D aLastTang);
 
         // Second interpolation with the same tangents explicitly provided
         ApiInterpolate anInterpolater1 = new(aPnts, false, global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -41,8 +41,8 @@ public class GeomAPI_Interpolate_Test
         aCur = anInterpolater1.Curve();
         Assert.NotNull(aCur);
 
-        aCur.D1(aCur.FirstParameter(), out _, out Vector3D aFirstTang1);
-        aCur.D1(aCur.LastParameter(), out _, out Vector3D aLastTang1);
+        aCur.D1(aCur.FirstParameter, out _, out Vector3D aFirstTang1);
+        aCur.D1(aCur.LastParameter, out _, out Vector3D aLastTang1);
 
         Assert.True(aFirstTang.IsEqual(aFirstTang1, global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.Angular()),
                     "First tangent should be preserved after recomputation");

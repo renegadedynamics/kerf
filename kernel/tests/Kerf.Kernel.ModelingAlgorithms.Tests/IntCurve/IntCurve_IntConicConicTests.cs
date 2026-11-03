@@ -52,9 +52,9 @@ public class IntCurve_IntConicConicTests
     private static void CheckPoint(IntersectionPoint2D P, Func<double, Point2D> f1, Func<double, Point2D> f2,
                                    double tol)
     {
-        Assert.True(P.Value().Distance(f1(P.ParamOnFirst())) < tol,
+        Assert.True(P.Value().DistanceTo(f1(P.ParamOnFirst())) < tol,
                     $"{P.Value()} vs C1({P.ParamOnFirst()}) = {f1(P.ParamOnFirst())}");
-        Assert.True(P.Value().Distance(f2(P.ParamOnSecond())) < tol,
+        Assert.True(P.Value().DistanceTo(f2(P.ParamOnSecond())) < tol,
                     $"{P.Value()} vs C2({P.ParamOnSecond()}) = {f2(P.ParamOnSecond())}");
     }
 
@@ -62,7 +62,7 @@ public class IntCurve_IntConicConicTests
     {
         for (int i = 1; i <= I.PointCount; i++)
         {
-            if (I.Point(i).Value().Distance(new Point2D(x, y)) < tol)
+            if (I.Point(i).Value().DistanceTo(new Point2D(x, y)) < tol)
             {
                 return true;
             }
@@ -82,8 +82,8 @@ public class IntCurve_IntConicConicTests
         Assert.Equal(1, I.PointCount);
         Assert.Equal(0, I.SegmentCount);
         IntersectionPoint2D P = I.Point(1);
-        Assert.Equal(2.0, P.Value().X(), 12);
-        Assert.Equal(0.0, P.Value().Y(), 12);
+        Assert.Equal(2.0, P.Value().X, 12);
+        Assert.Equal(0.0, P.Value().Y, 12);
         Assert.Equal(2.0, P.ParamOnFirst(), 12);
         Assert.Equal(0.0, P.ParamOnSecond(), 12);
         // L1 x L2 > 0: the first curve goes out, the second in.
@@ -197,8 +197,8 @@ public class IntCurve_IntConicConicTests
         Assert.Equal(1, I.PointCount + I.SegmentCount);
         if (I.PointCount == 1)
         {
-            Assert.Equal(0.0, I.Point(1).Value().X(), 6);
-            Assert.Equal(1.0, I.Point(1).Value().Y(), 6);
+            Assert.Equal(0.0, I.Point(1).Value().X, 6);
+            Assert.Equal(1.0, I.Point(1).Value().Y, 6);
             Assert.Equal(Math.PI / 2, I.Point(1).ParamOnSecond(), 6);
         }
     }
@@ -276,8 +276,8 @@ public class IntCurve_IntConicConicTests
         CheckOnCurves(I, u => global::Kerf.Engine.Geometry.ElCLib.Value(u, theUnitCircle), u => global::Kerf.Engine.Geometry.ElCLib.Value(u, C2));
         for (int i = 1; i <= I.SegmentCount; i++)
         {
-            Assert.True(I.Segment(i).FirstPoint().Value().Distance(new Point2D(1, 0)) < 1.0e-3);
-            Assert.True(I.Segment(i).LastPoint().Value().Distance(new Point2D(1, 0)) < 1.0e-3);
+            Assert.True(I.Segment(i).FirstPoint().Value().DistanceTo(new Point2D(1, 0)) < 1.0e-3);
+            Assert.True(I.Segment(i).LastPoint().Value().DistanceTo(new Point2D(1, 0)) < 1.0e-3);
         }
     }
 
@@ -292,13 +292,13 @@ public class IntCurve_IntConicConicTests
         CheckOnCurves(I, f1, f2);
         if (I.PointCount == 1)
         {
-            Assert.True(I.Point(1).Value().Distance(new Point2D(x, y)) < 1.0e-3);
+            Assert.True(I.Point(1).Value().DistanceTo(new Point2D(x, y)) < 1.0e-3);
         }
         else
         {
             IntersectionSegment2D S = I.Segment(1);
-            Assert.True(S.FirstPoint().Value().Distance(new Point2D(x, y)) < 1.0e-3);
-            Assert.True(S.LastPoint().Value().Distance(new Point2D(x, y)) < 1.0e-3);
+            Assert.True(S.FirstPoint().Value().DistanceTo(new Point2D(x, y)) < 1.0e-3);
+            Assert.True(S.LastPoint().Value().DistanceTo(new Point2D(x, y)) < 1.0e-3);
             // The ends of the contact arc are crossings of the tolerance tube, not tangencies.
             Assert.True(S.FirstPoint().ParamOnFirst() < S.LastPoint().ParamOnFirst());
         }
@@ -632,12 +632,12 @@ public class IntCurve_IntConicConicTests
         foreach (IConicTool T in tools)
         {
             Vector2D G = T.GradDistance(P);
-            double gx = (T.Distance(new Point2D(P.X() + h, P.Y())) - T.Distance(new Point2D(P.X() - h, P.Y())))
+            double gx = (T.Distance(new Point2D(P.X + h, P.Y)) - T.Distance(new Point2D(P.X - h, P.Y)))
                         / (2 * h);
-            double gy = (T.Distance(new Point2D(P.X(), P.Y() + h)) - T.Distance(new Point2D(P.X(), P.Y() - h)))
+            double gy = (T.Distance(new Point2D(P.X, P.Y + h)) - T.Distance(new Point2D(P.X, P.Y - h)))
                         / (2 * h);
-            Assert.Equal(gx, G.X(), 5);
-            Assert.Equal(gy, G.Y(), 5);
+            Assert.Equal(gx, G.X, 5);
+            Assert.Equal(gy, G.Y, 5);
         }
     }
 

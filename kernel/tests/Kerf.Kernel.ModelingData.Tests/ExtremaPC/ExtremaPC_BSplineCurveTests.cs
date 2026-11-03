@@ -209,7 +209,7 @@ public class ExtremaPC_BSplineCurveTest
         // Verify closest point is on the curve
         int aMinIdx = aResult.MinIndex();
         Point3D aPtOnCurve = aBSpline.Value(aResult[aMinIdx].Parameter);
-        Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnCurve), THE_TOL);
+        Assert.Equal(0.0, aResult[aMinIdx].Point.DistanceTo(aPtOnCurve), THE_TOL);
 
         // Distance should be at least 1.0 (point is below curve which is above Y=0)
         Assert.True(aResult.MinSquareDistance() >= 1.0);
@@ -291,8 +291,8 @@ public class ExtremaPC_BSplineCurveTest
         // Verify closest point is on the curve and distance is consistent
         int aMinIdx = aResult.MinIndex();
         Point3D aPtOnCurve = aBSpline.Value(aResult[aMinIdx].Parameter);
-        Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnCurve), THE_TOL);
-        Assert.Equal(aPoint.SquareDistance(aPtOnCurve), aResult[aMinIdx].SquareDistance, THE_TOL);
+        Assert.Equal(0.0, aResult[aMinIdx].Point.DistanceTo(aPtOnCurve), THE_TOL);
+        Assert.Equal(aPoint.SquareDistanceTo(aPtOnCurve), aResult[aMinIdx].SquareDistance, THE_TOL);
     }
 
     [Fact]
@@ -332,7 +332,7 @@ public class ExtremaPC_BSplineCurveTest
         // Verify closest point is on the curve
         int aMinIdx = aResult.MinIndex();
         Point3D aPtOnCurve = aBSpline.Value(aResult[aMinIdx].Parameter);
-        Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnCurve), THE_TOL);
+        Assert.Equal(0.0, aResult[aMinIdx].Point.DistanceTo(aPtOnCurve), THE_TOL);
 
         // Oscillating curve peaks at Y~=2, so distance from (2.5, 3.0) should be around 1
         Assert.True(Math.Sqrt(aResult.MinSquareDistance()) < 2.0);
@@ -356,7 +356,7 @@ public class ExtremaPC_BSplineCurveTest
         for (int i = 0; i < aResult.ExtCount; ++i)
         {
             Point3D aPtOnCurve = aBSpline.Value(aResult[i].Parameter);
-            Assert.Equal(0.0, aResult[i].Point.Distance(aPtOnCurve), THE_TOL);
+            Assert.Equal(0.0, aResult[i].Point.DistanceTo(aPtOnCurve), THE_TOL);
         }
     }
 
@@ -396,8 +396,8 @@ public class ExtremaPC_BSplineCurveTest
         // Verify closest point is on the curve and distance is consistent
         int aMinIdx = aResult.MinIndex();
         Point3D aPtOnCurve = aBSpline.Value(aResult[aMinIdx].Parameter);
-        Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnCurve), THE_TOL);
-        Assert.Equal(aPoint.SquareDistance(aPtOnCurve), aResult[aMinIdx].SquareDistance, THE_TOL);
+        Assert.Equal(0.0, aResult[aMinIdx].Point.DistanceTo(aPtOnCurve), THE_TOL);
+        Assert.Equal(aPoint.SquareDistanceTo(aPtOnCurve), aResult[aMinIdx].SquareDistance, THE_TOL);
     }
 
     //==================================================================================================
@@ -466,9 +466,9 @@ public class ExtremaPC_BSplineCurveTest
         // Verify the projected point is on the curve
         int aMinIdx = aResult.MinIndex();
         Point3D aPtOnCurve = aBSpline.Value(aResult[aMinIdx].Parameter);
-        Assert.Equal(aPtOnCurve.X(), aResult[aMinIdx].Point.X(), THE_TOL);
-        Assert.Equal(aPtOnCurve.Y(), aResult[aMinIdx].Point.Y(), THE_TOL);
-        Assert.Equal(aPtOnCurve.Z(), aResult[aMinIdx].Point.Z(), THE_TOL);
+        Assert.Equal(aPtOnCurve.X, aResult[aMinIdx].Point.X, THE_TOL);
+        Assert.Equal(aPtOnCurve.Y, aResult[aMinIdx].Point.Y, THE_TOL);
+        Assert.Equal(aPtOnCurve.Z, aResult[aMinIdx].Point.Z, THE_TOL);
     }
 
     [Fact]
@@ -486,7 +486,7 @@ public class ExtremaPC_BSplineCurveTest
 
         // Verify distance matches point distance
         int aMinIdx = aResult.MinIndex();
-        double aComputedSq = aPoint.SquareDistance(aResult[aMinIdx].Point);
+        double aComputedSq = aPoint.SquareDistanceTo(aResult[aMinIdx].Point);
         Assert.Equal(aComputedSq, aResult[aMinIdx].SquareDistance, THE_TOL);
     }
 
@@ -546,7 +546,7 @@ public class ExtremaPC_BSplineCurveTest
         // Verify the closest point is on the curve
         int aMinIdx = aResult.MinIndex();
         Point3D aPtOnCurve = aBSpline.Value(aResult[aMinIdx].Parameter);
-        Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnCurve), THE_TOL);
+        Assert.Equal(0.0, aResult[aMinIdx].Point.DistanceTo(aPtOnCurve), THE_TOL);
 
         // Verify the distance is reasonable (point is within expected range of curve)
         double aDist = Math.Sqrt(aResult.MinSquareDistance());

@@ -13,7 +13,7 @@ namespace Kerf.Engine.Geometry.Properties;
 /// <summary>
 /// The continuity at the junction of two 3D curves (or portions of curves) built by concatenation.
 /// </summary>
-public static class GeomLProp
+internal static class GeomLProp
 {
     private static int GeomAbsToInteger(Continuity gcont)
     {
@@ -71,7 +71,7 @@ public static class GeomLProp
         Vector3D d1, d2;
         Direction3D dir1, dir2;
         int cont1, cont2;
-        Continuity gcont1 = c1.Continuity(), gcont2 = c2.Continuity();
+        Continuity gcont1 = c1.Continuity, gcont2 = c2.Continuity;
         cont1 = GeomAbsToInteger(gcont1);
         cont2 = GeomAbsToInteger(gcont2);
 
@@ -80,13 +80,13 @@ public static class GeomLProp
         if (c1.IsKind(typeof(TrimmedCurve3D)))
         {
             TrimmedCurve3D trimmed = (TrimmedCurve3D)curve1;
-            curve1 = trimmed.BasisCurve();
+            curve1 = trimmed.BasisCurve;
         }
 
         if (c2.IsKind(typeof(TrimmedCurve3D)))
         {
             TrimmedCurve3D trimmed = (TrimmedCurve3D)curve2;
-            curve2 = trimmed.BasisCurve();
+            curve2 = trimmed.BasisCurve;
         }
 
         // At an inner knot, Degree() - Multiplicity() is the order of continuity (0 for C0, 1 for C1, 2 for C2),
@@ -100,7 +100,7 @@ public static class GeomLProp
 
             if (index1 > 1 && index2 < bSplineCurve.KnotCount && index1 == index2)
             {
-                cont1 = OrderToInteger(bSplineCurve.Degree() - bSplineCurve.Multiplicity(index1));
+                cont1 = OrderToInteger(bSplineCurve.Degree - bSplineCurve.Multiplicity(index1));
             }
             else
             {
@@ -116,7 +116,7 @@ public static class GeomLProp
 
             if (index1 > 1 && index2 < bSplineCurve.KnotCount && index1 == index2)
             {
-                cont2 = OrderToInteger(bSplineCurve.Degree() - bSplineCurve.Multiplicity(index1));
+                cont2 = OrderToInteger(bSplineCurve.Degree - bSplineCurve.Multiplicity(index1));
             }
             else
             {

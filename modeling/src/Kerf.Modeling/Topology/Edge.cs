@@ -60,15 +60,15 @@ public partial class Edge : Shape1D
                 case GeomType.Circle:
                 {
                     var c = geom.Circle();
-                    var pos = c.Position();
-                    var loc = pos.Location();
+                    var pos = c.Position;
+                    var loc = pos.Location;
                     return new Vector(loc);
                 }
                 case GeomType.Ellipse:
                 {
                     var c = geom.Ellipse();
-                    var pos = c.Position();
-                    var loc = pos.Location();
+                    var pos = c.Position;
+                    var loc = pos.Location;
                     return new Vector(loc);
                 }
                 default:
@@ -689,7 +689,7 @@ public partial class Edge : Shape1D
         for (int i = 1; i <= intersector.NbPoints(); i++)
         {
             var p = intersector.Point(i);
-            crosses.Add(plane.FromLocalCoords(new Vector(p.X(), p.Y())));
+            crosses.Add(plane.FromLocalCoords(new Vector(p.X, p.Y)));
         }
         // The crossings may lie beyond the ends of the edges
         var valid = new List<Vector>();
@@ -769,7 +769,7 @@ public partial class Edge : Shape1D
         var ga1 = GeomAdaptor();
         var ga2 = other.GeomAdaptor();
         static Vector V(Point3D p) => new(p);
-        static Vector D(Axis3D a) => new(a.Direction());
+        static Vector D(Axis3D a) => new(a.Direction);
         switch (GeomType)
         {
             case GeomType.Line:
@@ -778,37 +778,37 @@ public partial class Edge : Shape1D
             {
                 var c1 = ga1.Circle();
                 var c2 = ga2.Circle();
-                return Math.Abs(c1.Radius() - c2.Radius()) < tolerance && V(c1.Location()) == V(c2.Location())
-                       && D(c1.Axis()) == D(c2.Axis());
+                return Math.Abs(c1.Radius - c2.Radius) < tolerance && V(c1.Location) == V(c2.Location)
+                       && D(c1.Axis) == D(c2.Axis);
             }
             case GeomType.Ellipse:
             {
                 var e1 = ga1.Ellipse();
                 var e2 = ga2.Ellipse();
-                return Math.Abs(e1.MajorRadius() - e2.MajorRadius()) < tolerance
-                       && Math.Abs(e1.MinorRadius() - e2.MinorRadius()) < tolerance
-                       && V(e1.Location()) == V(e2.Location()) && D(e1.Axis()) == D(e2.Axis());
+                return Math.Abs(e1.MajorRadius - e2.MajorRadius) < tolerance
+                       && Math.Abs(e1.MinorRadius - e2.MinorRadius) < tolerance
+                       && V(e1.Location) == V(e2.Location) && D(e1.Axis) == D(e2.Axis);
             }
             case GeomType.Hyperbola:
             {
                 var h1 = ga1.Hyperbola();
                 var h2 = ga2.Hyperbola();
-                return Math.Abs(h1.MajorRadius() - h2.MajorRadius()) < tolerance
-                       && Math.Abs(h1.MinorRadius() - h2.MinorRadius()) < tolerance
-                       && V(h1.Location()) == V(h2.Location()) && D(h1.Axis()) == D(h2.Axis());
+                return Math.Abs(h1.MajorRadius - h2.MajorRadius) < tolerance
+                       && Math.Abs(h1.MinorRadius - h2.MinorRadius) < tolerance
+                       && V(h1.Location) == V(h2.Location) && D(h1.Axis) == D(h2.Axis);
             }
             case GeomType.Parabola:
             {
                 var p1 = ga1.Parabola();
                 var p2 = ga2.Parabola();
-                return Math.Abs(p1.Focal() - p2.Focal()) < tolerance && V(p1.Location()) == V(p2.Location())
-                       && D(p1.Axis()) == D(p2.Axis());
+                return Math.Abs(p1.Focal - p2.Focal) < tolerance && V(p1.Location) == V(p2.Location)
+                       && D(p1.Axis) == D(p2.Axis);
             }
             case GeomType.Bezier:
             {
                 var b1 = ga1.Bezier()!;
                 var b2 = ga2.Bezier()!;
-                if (b1.Degree() != b2.Degree() || b1.PoleCount != b2.PoleCount)
+                if (b1.Degree != b2.Degree || b1.PoleCount != b2.PoleCount)
                     return false;
                 for (int i = 1; i <= b1.PoleCount; i++)
                 {
@@ -823,7 +823,7 @@ public partial class Edge : Shape1D
             {
                 var s1 = ga1.BSpline()!;
                 var s2 = ga2.BSpline()!;
-                if (s1.Degree() != s2.Degree() || s1.IsPeriodic != s2.IsPeriodic
+                if (s1.Degree != s2.Degree || s1.IsPeriodic != s2.IsPeriodic
                     || s1.PoleCount != s2.PoleCount || s1.KnotCount != s2.KnotCount)
                     return false;
                 for (int i = 1; i <= s1.PoleCount; i++)
@@ -842,14 +842,14 @@ public partial class Edge : Shape1D
             {
                 var o1 = ga1.OffsetCurve()!;
                 var o2 = ga2.OffsetCurve()!;
-                if (Math.Abs(o1.Offset() - o2.Offset()) >= tolerance)
+                if (Math.Abs(o1.Offset - o2.Offset) >= tolerance)
                     return false;
-                var d1 = o1.Direction();
-                var d2 = o2.Direction();
+                var d1 = o1.Direction;
+                var d2 = o2.Direction;
                 if (new Vector(d1) != new Vector(d2))
                     return false;
-                var basis1 = o1.BasisCurve();
-                var basis2 = o2.BasisCurve();
+                var basis1 = o1.BasisCurve;
+                var basis2 = o2.BasisCurve;
                 return FromCurve(basis1!).GeomEqual(FromCurve(basis2!), tolerance);
             }
             default:

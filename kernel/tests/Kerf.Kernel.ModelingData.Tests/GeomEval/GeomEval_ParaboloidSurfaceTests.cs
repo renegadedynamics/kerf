@@ -39,9 +39,9 @@ public class GeomEval_ParaboloidSurfaceTest
         CoordinateSystem anAx3 = new();
         ParaboloidSurface aSurf = new(anAx3, 1.0);
         Point3D aP = aSurf.EvalD0(0.0, 0.0);
-        Assert.Equal(0.0, aP.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aP.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aP.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aP.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aP.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aP.Z, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     // Test EvalD0 at known point: u=0, v=2, F=1 -> P=(2,0,1)
@@ -51,9 +51,9 @@ public class GeomEval_ParaboloidSurfaceTest
         CoordinateSystem anAx3 = new();
         ParaboloidSurface aSurf = new(anAx3, 1.0);
         Point3D aP = aSurf.EvalD0(0.0, 2.0);
-        Assert.Equal(2.0, aP.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aP.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(1.0, aP.Z(), global::Kerf.Engine.Foundation.Precision.Confusion()); // v^2/(4*F) = 4/4 = 1
+        Assert.Equal(2.0, aP.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aP.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aP.Z, global::Kerf.Engine.Foundation.Precision.Confusion()); // v^2/(4*F) = 4/4 = 1
     }
 
     // Test derivative consistency: compare EvalD1 vs finite difference of EvalD0
@@ -83,7 +83,7 @@ public class GeomEval_ParaboloidSurfaceTest
     {
         CoordinateSystem anAx3 = new();
         ParaboloidSurface aSurf = new(anAx3, 1.0);
-        aSurf.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+        aSurf.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
         Assert.Equal(0.0, aU1, global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(2.0 * M_PI, aU2, global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.True(aSurf.IsUPeriodic);
@@ -224,10 +224,10 @@ public class GeomEval_ParaboloidSurfaceTest
         double aExpY = -aV * Math.Sin(aU);
         double aExpZ = 0.0;
 
-        Assert.Equal(aExpX, aD2.D2U.X(), global::Kerf.Engine.Foundation.Precision.Angular());
-        Assert.Equal(aExpY, aD2.D2U.Y(), global::Kerf.Engine.Foundation.Precision.Angular());
-        Assert.Equal(aExpZ, aD2.D2U.Z(), global::Kerf.Engine.Foundation.Precision.Angular());
-        Assert.Equal(aV, aD2.D2U.Magnitude(), global::Kerf.Engine.Foundation.Precision.Angular());
+        Assert.Equal(aExpX, aD2.D2U.X, global::Kerf.Engine.Foundation.Precision.Angular());
+        Assert.Equal(aExpY, aD2.D2U.Y, global::Kerf.Engine.Foundation.Precision.Angular());
+        Assert.Equal(aExpZ, aD2.D2U.Z, global::Kerf.Engine.Foundation.Precision.Angular());
+        Assert.Equal(aV, aD2.D2U.Magnitude, global::Kerf.Engine.Foundation.Precision.Angular());
     }
 
     // Test EvalDN consistency with D1 components

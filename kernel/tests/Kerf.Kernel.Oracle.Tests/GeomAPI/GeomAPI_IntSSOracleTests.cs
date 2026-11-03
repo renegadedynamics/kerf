@@ -292,8 +292,8 @@ public class GeomAPI_IntSSOracleTests(ITestOutputHelper output) : IDisposable
     {
         Direction3D aN = Oracle.Settled(theO.Dir());
         Direction3D aX = Oracle.Settled(new Direction3D(new Vector3D(aN).Crossed(new Vector3D(theO.Dir()))));
-        var anAx = new CoordinateSystem(new Point3D(theCentre.X() + theO.Real(-theRange, theRange), theCentre.Y() + theO.Real(-theRange, theRange),
-                                         theCentre.Z() + theO.Real(-theRange, theRange)), aN, aX);
+        var anAx = new CoordinateSystem(new Point3D(theCentre.X + theO.Real(-theRange, theRange), theCentre.Y + theO.Real(-theRange, theRange),
+                                         theCentre.Z + theO.Real(-theRange, theRange)), aN, aX);
         return Oracle.ToNative(anAx);
     }
 
@@ -310,8 +310,8 @@ public class GeomAPI_IntSSOracleTests(ITestOutputHelper output) : IDisposable
         var aPoles = new NCollection_Array1<Point3D>(1, aNbPoles);
         for (int i = 1; i <= aNbPoles; i++)
         {
-            aPoles[i] = new Point3D(theCentre.X() + theO.Real(-theRange, theRange), theCentre.Y() + theO.Real(-theRange, theRange),
-                                   theCentre.Z() + theO.Real(-theRange / 2, theRange / 2));
+            aPoles[i] = new Point3D(theCentre.X + theO.Real(-theRange, theRange), theCentre.Y + theO.Real(-theRange, theRange),
+                                   theCentre.Z + theO.Real(-theRange / 2, theRange / 2));
         }
         return Oracle.ToNativeCurve(aPoles, null, aKnots, aMults, aDeg, false);
     }
@@ -437,21 +437,21 @@ public class GeomAPI_IntSSOracleTests(ITestOutputHelper output) : IDisposable
                 switch (aCase)
                 {
                     case 1:
-                        anAx2 = new CoordinateSystem(anAx1.Location().Translated(new Vector3D(anAx1.Direction()) * anO.Real(-2, 2)),
-                                           anAx1.Direction(), anAx1.XDirection());
+                        anAx2 = new CoordinateSystem(anAx1.Location.Translated(new Vector3D(anAx1.Direction) * anO.Real(-2, 2)),
+                                           anAx1.Direction, anAx1.XDirection);
                         break;
                     case 2:
-                        anAx2 = new CoordinateSystem(anAx1.Location().Translated(new Vector3D(anAx1.XDirection()) * anO.Real(-2, 2)),
-                                           anAx1.Direction(), anAx1.XDirection());
+                        anAx2 = new CoordinateSystem(anAx1.Location.Translated(new Vector3D(anAx1.XDirection) * anO.Real(-2, 2)),
+                                           anAx1.Direction, anAx1.XDirection);
                         break;
                     case 3:
-                        anAx2 = aK1 == 4 || aK2 == 4 ? anAx1 : new CoordinateSystem(anAx1.Location(), anAx2.Direction(), anAx2.XDirection());
+                        anAx2 = aK1 == 4 || aK2 == 4 ? anAx1 : new CoordinateSystem(anAx1.Location, anAx2.Direction, anAx2.XDirection);
                         aR1 = aK1 == 2 ? 0.0 : aR1;
                         aR2 = aK2 == 2 ? 0.0 : aR2;
                         break;
                     case 4:
-                        anAx2 = new CoordinateSystem(anAx1.Location().Translated(new Vector3D(anAx1.XDirection()) * (aR1 + aR2)),
-                                           anAx1.Direction(), anAx1.XDirection());
+                        anAx2 = new CoordinateSystem(anAx1.Location.Translated(new Vector3D(anAx1.XDirection) * (aR1 + aR2)),
+                                           anAx1.Direction, anAx1.XDirection);
                         break;
                 }
                 N.Geom_Surface Make(int theKind, in CoordinateSystem theAx, double theR, double theAng)

@@ -32,8 +32,8 @@ public class BRepOffsetAPI_DraftAngleTests
         {
             if (Tool.Surface(ShapeCasts.Face(aF)) is PlaneSurface aPlane)
             {
-                Direction3D aN = aPlane.Pln().Axis().Direction();
-                if (aF.Orientation() == Orientation.Reversed)
+                Direction3D aN = aPlane.Plane.Axis.Direction;
+                if (aF.Orientation == Orientation.Reversed)
                 {
                     aN = aN.Reversed();
                 }
@@ -112,7 +112,7 @@ public class BRepOffsetAPI_DraftAngleTests
         Assert.True(new Analyzer(aResult).IsValid());
         Assert.Contains(Faces(aResult), f => Tool.Surface(ShapeCasts.Face(f)) is ConicalSurface
                                              || Tool.Surface(ShapeCasts.Face(f)) is TrimmedSurface
-                                                 { } t && t.BasisSurface() is ConicalSurface);
+                                                 { } t && t.BasisSurface is ConicalSurface);
         double r1 = 5.0, r2 = 5.0 - 10.0 * Math.Tan(5.0 * Math.PI / 180.0);
         double aCone = Math.PI * 10.0 / 3.0 * (r1 * r1 + r1 * r2 + r2 * r2);
         double r3 = 5.0 + 10.0 * Math.Tan(5.0 * Math.PI / 180.0);

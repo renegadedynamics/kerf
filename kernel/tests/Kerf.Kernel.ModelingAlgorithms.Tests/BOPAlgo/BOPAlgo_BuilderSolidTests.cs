@@ -56,7 +56,7 @@ public class BOPAlgo_BuilderSolidTests
         int aNb = 0;
         for (Iterator anIt = new(theS); anIt.More(); anIt.Next())
         {
-            aNb += anIt.Value().ShapeType() == theType ? 1 : 0;
+            aNb += anIt.Value().Type == theType ? 1 : 0;
         }
         return aNb;
     }
@@ -68,7 +68,7 @@ public class BOPAlgo_BuilderSolidTests
         BuilderSolid aBS = BuildSolids(Faces(aBox));
         Assert.Equal(1, aBS.Areas().Extent());
         Shape aSolid = aBS.Areas().First();
-        Assert.Equal(ShapeType.Solid, aSolid.ShapeType());
+        Assert.Equal(ShapeType.Solid, aSolid.Type);
         Assert.Equal(1, Count(aSolid, ShapeType.Shell));
         Assert.Equal(6.0, Volume(aSolid), 1e-9);
         Assert.True(new Analyzer(aSolid).IsValid());
@@ -128,7 +128,7 @@ public class BOPAlgo_BuilderSolidTests
         int aNbInternal = 0;
         for (Explorer anExp = new(aSolid, ShapeType.Face); anExp.More(); anExp.Next())
         {
-            if (anExp.Current().Orientation() == Internal)
+            if (anExp.Current().Orientation == Internal)
             {
                 Assert.True(anExp.Current().IsSame(aFace));
                 aNbInternal++;
@@ -182,7 +182,7 @@ public class BOPAlgo_BuilderSolidTests
         Assert.Equal(6, aSS.StartElements().Extent());
         Assert.Equal(1, aSS.Shells().Extent());
         Shape aShell = aSS.Shells().First();
-        Assert.True(aShell.Closed());
+        Assert.True(aShell.IsClosed);
         Assert.True(Tool.IsClosed(aShell));
         Assert.True(new Analyzer(aShell).IsValid());
     }
@@ -228,7 +228,7 @@ public class BOPAlgo_BuilderSolidTests
             Assert.Equal(2, aSS.Shells().Extent());
             foreach (Shape aShell in aSS.Shells())
             {
-                Assert.True(aShell.Closed());
+                Assert.True(aShell.IsClosed);
                 Assert.Equal(6, Faces(aShell).Extent());
             }
         }
@@ -304,15 +304,15 @@ public class BOPAlgo_BuilderSolidTests
         for (Iterator anIt = new(aSolid); anIt.More(); anIt.Next())
         {
             Shape aS = anIt.Value();
-            if (aS.ShapeType() == ShapeType.Vertex)
+            if (aS.Type == ShapeType.Vertex)
             {
                 Assert.True(aS.IsSame(aVIn));
-                Assert.Equal(Internal, aS.Orientation());
+                Assert.Equal(Internal, aS.Orientation);
             }
-            else if (aS.ShapeType() == ShapeType.Edge)
+            else if (aS.Type == ShapeType.Edge)
             {
                 Assert.True(aS.IsSame(anEIn));
-                Assert.Equal(Internal, aS.Orientation());
+                Assert.Equal(Internal, aS.Orientation);
             }
         }
         Assert.Equal(64.0, Volume(aSolid), 1e-9);

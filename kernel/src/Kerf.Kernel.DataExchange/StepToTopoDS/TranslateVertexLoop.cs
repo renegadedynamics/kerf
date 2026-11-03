@@ -68,8 +68,8 @@ public sealed class TranslateVertexLoop : ImportRoot
                 return;
             }
 
-            v1.Orientation(Forward);
-            v2.Orientation(Reversed);
+            v1.Orient(Forward);
+            v2.Orient(Reversed);
             b.MakeEdge(ref e);
             b.Add(e, v1);
             b.Add(e, v2);

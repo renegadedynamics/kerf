@@ -72,14 +72,14 @@ public sealed class EdgeOnSurfLaw : LocationLaw
                     return;
                 }
 
-                or = e.Orientation();
+                or = e.Orientation;
                 if (or == Reversed)
                 {
                     TrimmedCurve2D cBis = new(c!, first, last);
                     cBis.Reverse(); // To avoid spoiling the topology
                     c = cBis;
-                    first = c.FirstParameter();
-                    last = c.LastParameter();
+                    first = c.FirstParameter;
+                    last = c.LastParameter;
                 }
 
                 ac2d = new CurveAdaptor2D(c!, first, last);

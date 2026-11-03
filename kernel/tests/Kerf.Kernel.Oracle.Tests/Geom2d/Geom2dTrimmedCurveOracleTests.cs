@@ -46,8 +46,8 @@ public class Geom2dTrimmedCurveOracleTests(ITestOutputHelper output)
         using (var aNS = theNative.StartPoint())
         using (var aNE = theNative.EndPoint())
         {
-            theOracle.Same(Oracle.FromNative(aNS), thePort.StartPoint().XY(), $"{theWhat} StartPoint");
-            theOracle.Same(Oracle.FromNative(aNE), thePort.EndPoint().XY(), $"{theWhat} EndPoint");
+            theOracle.Same(Oracle.FromNative(aNS), thePort.StartPoint.XY(), $"{theWhat} StartPoint");
+            theOracle.Same(Oracle.FromNative(aNE), thePort.EndPoint.XY(), $"{theWhat} EndPoint");
         }
         for (int k = 0; k < 2; k++)
         {
@@ -61,7 +61,7 @@ public class Geom2dTrimmedCurveOracleTests(ITestOutputHelper output)
         }
         if (thePort.IsPeriodic)
         {
-            theOracle.Same(theNative.Period(), thePort.Period(), $"{theWhat} Period");
+            theOracle.Same(theNative.Period(), thePort.Period, $"{theWhat} Period");
         }
     }
 
@@ -79,11 +79,11 @@ public class Geom2dTrimmedCurveOracleTests(ITestOutputHelper output)
             if (aBasis.IsPeriodic)
             {
                 // Anywhere, also outside one period: the constructor adjusts them
-                double aPer = aBasis.Period();
+                double aPer = aBasis.Period;
                 U1 = anOracle.Real(-2 * aPer, 2 * aPer);
                 U2 = anOracle.Real(-2 * aPer, 2 * aPer);
             }
-            else if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aBasis.LastParameter()))
+            else if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aBasis.LastParameter))
             {
                 U1 = anOracle.Real(-50, 50);
                 U2 = anOracle.Real(-50, 50);
@@ -99,7 +99,7 @@ public class Geom2dTrimmedCurveOracleTests(ITestOutputHelper output)
             }
             bool aSense = anOracle.Bool();
             bool anAdjust = !aBasis.IsPeriodic || anOracle.Int(0, 3) != 0;
-            if (!anAdjust && Math.Abs(U2 - U1) > aBasis.Period())
+            if (!anAdjust && Math.Abs(U2 - U1) > aBasis.Period)
             {
                 // Without the adjustment the trimmed range must stay within one period
                 continue;
@@ -127,7 +127,7 @@ public class Geom2dTrimmedCurveOracleTests(ITestOutputHelper output)
             }
 
             // SetTrim with new parameters inside the trimmed range
-            double aF = aPort.FirstParameter(), aL = aPort.LastParameter();
+            double aF = aPort.FirstParameter, aL = aPort.LastParameter;
             double V1 = anOracle.Real(aF, aL), V2 = anOracle.Real(aF, aL);
             if (Math.Abs(V1 - V2) > 1e-3)
             {

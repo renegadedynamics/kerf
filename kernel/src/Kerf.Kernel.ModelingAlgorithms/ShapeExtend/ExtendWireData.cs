@@ -87,7 +87,7 @@ public class ExtendWireData : Transient
             Edge e = ShapeCasts.Edge(it.Value());
 
             // protect against INTERNAL/EXTERNAL edges
-            if ((e.Orientation() != Reversed && e.Orientation() != Forward))
+            if ((e.Orientation != Reversed && e.Orientation != Forward))
             {
                 _nonmanifoldEdges.Append(e);
                 continue;
@@ -97,11 +97,11 @@ public class ExtendWireData : Transient
             for (var itv = new Iterator(e); itv.More(); itv.Next())
             {
                 Vertex v = ShapeCasts.Vertex(itv.Value());
-                if (v.Orientation() == Forward)
+                if (v.Orientation == Forward)
                 {
                     v1 = v;
                 }
-                else if (v.Orientation() == Reversed)
+                else if (v.Orientation == Reversed)
                 {
                     v2 = v;
                 }
@@ -118,7 +118,7 @@ public class ExtendWireData : Transient
             }
 
             vlast = v2;
-            if (wire.Orientation() == Reversed)
+            if (wire.Orientation == Reversed)
             {
                 _edges.Prepend(e);
             }
@@ -187,7 +187,7 @@ public class ExtendWireData : Transient
         for (i = 1; i <= nb; i++)
         {
             s = Edge(i);
-            if (s.Orientation() == Reversed)
+            if (s.Orientation == Reversed)
             {
                 int num = me.Add(s) + 1;
                 se[num] = i;
@@ -199,7 +199,7 @@ public class ExtendWireData : Transient
         for (i = 1; i <= nb; i++)
         {
             s = Edge(i);
-            if (s.Orientation() == Reversed)
+            if (s.Orientation == Reversed)
             {
                 continue;
             }
@@ -268,7 +268,7 @@ public class ExtendWireData : Transient
     /// </summary>
     public void Add(in Edge edge, int atnum = 0)
     {
-        if (edge.Orientation() != Reversed && edge.Orientation() != Forward && _manifoldMode)
+        if (edge.Orientation != Reversed && edge.Orientation != Forward && _manifoldMode)
         {
             _nonmanifoldEdges.Append(edge);
             return;
@@ -304,7 +304,7 @@ public class ExtendWireData : Transient
         for (var it = new Iterator(wire); it.More(); it.Next())
         {
             Edge edge = ShapeCasts.Edge(it.Value());
-            if (edge.Orientation() != Reversed && edge.Orientation() != Forward)
+            if (edge.Orientation != Reversed && edge.Orientation != Forward)
             {
                 if (_manifoldMode)
                 {
@@ -352,7 +352,7 @@ public class ExtendWireData : Transient
         for (; i <= wire.EdgeCount; i++)
         {
             Edge e = wire.Edge(i);
-            if (e.Orientation() == Internal || e.Orientation() == External)
+            if (e.Orientation == Internal || e.Orientation == External)
             {
                 nmEdges.Append(e);
                 continue;
@@ -402,11 +402,11 @@ public class ExtendWireData : Transient
     /// <summary>Adds an edge or the edges of a wire; other shapes are ignored.</summary>
     public void Add(in Shape shape, int atnum = 0)
     {
-        if (shape.ShapeType() == global::Kerf.Topology.ShapeType.Edge)
+        if (shape.Type == global::Kerf.Topology.ShapeType.Edge)
         {
             Add(ShapeCasts.Edge(shape), atnum);
         }
-        else if (shape.ShapeType() == global::Kerf.Topology.ShapeType.Wire)
+        else if (shape.Type == global::Kerf.Topology.ShapeType.Wire)
         {
             Add(ShapeCasts.Wire(shape), atnum);
         }
@@ -452,11 +452,11 @@ public class ExtendWireData : Transient
     /// <summary>Adds an edge or the edges of a wire, as <see cref="AddOriented(in Edge, int)"/>.</summary>
     public void AddOriented(in Shape shape, int mode)
     {
-        if (shape.ShapeType() == global::Kerf.Topology.ShapeType.Edge)
+        if (shape.Type == global::Kerf.Topology.ShapeType.Edge)
         {
             AddOriented(ShapeCasts.Edge(shape), mode);
         }
-        else if (shape.ShapeType() == global::Kerf.Topology.ShapeType.Wire)
+        else if (shape.Type == global::Kerf.Topology.ShapeType.Wire)
         {
             AddOriented(ShapeCasts.Wire(shape), mode);
         }
@@ -476,7 +476,7 @@ public class ExtendWireData : Transient
     /// </summary>
     public void Set(in Edge edge, int num = 0)
     {
-        if (edge.Orientation() != Reversed && edge.Orientation() != Forward && _manifoldMode)
+        if (edge.Orientation != Reversed && edge.Orientation != Forward && _manifoldMode)
         {
             if (num <= _nonmanifoldEdges.Length())
             {
@@ -542,13 +542,13 @@ public class ExtendWireData : Transient
             return;
         }
 
-        if (e.Orientation() == Reversed)
+        if (e.Orientation == Reversed)
         {
             return; // ne le faire qu une fois !
         }
 
         Face theface = f;
-        theface.Orientation(Forward);
+        theface.Orient(Forward);
 
         //: S4136  double Tol = BRep_Tool::Tolerance(theface);
         Curve2D? c2df, c2dr;
@@ -556,7 +556,7 @@ public class ExtendWireData : Transient
 
         // d abord FWD puis REV
         c2df = Tool.CurveOnSurface(e, theface, out uff, out ulf);
-        e.Orientation(Reversed);
+        e.Orient(Reversed);
         c2dr = Tool.CurveOnSurface(e, theface, out _, out _);
         if (c2df is null || c2dr is null)
         {
@@ -564,7 +564,7 @@ public class ExtendWireData : Transient
         }
 
         // On permute
-        e.Orientation(Forward);
+        e.Orient(Forward);
         var b = new BrepBuilder();
         b.UpdateEdge(e, c2dr, c2df, theface, 0.0); //: S4136: Tol
         b.Range(e, theface, uff, ulf);
@@ -684,7 +684,7 @@ public class ExtendWireData : Transient
     {
         for (int i = 1; i <= EdgeCount; i++)
         {
-            if (Edge(i).IsSame(edge) && (Edge(i).Orientation() == edge.Orientation() || !IsSeam(i)))
+            if (Edge(i).IsSame(edge) && (Edge(i).Orientation == edge.Orientation || !IsSeam(i)))
             {
                 return i;
             }
@@ -737,7 +737,7 @@ public class ExtendWireData : Transient
         for (i = 1; i <= nb; i++)
         {
             Edge e = Edge(i);
-            if (e.Orientation() != Forward && e.Orientation() != Reversed)
+            if (e.Orientation != Forward && e.Orientation != Reversed)
             {
                 ismanifold = false;
             }

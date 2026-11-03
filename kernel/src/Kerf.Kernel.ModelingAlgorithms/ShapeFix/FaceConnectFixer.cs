@@ -482,8 +482,8 @@ public sealed class FaceConnectFixer
                         {
                             Vertex theNewVtx = ShapeCasts.Vertex(expv.Current());
                             Point3D theNewPt = Tool.Pnt(theNewVtx);
-                            curdist1 = theOldP1.Distance(theNewPt);
-                            curdist2 = theOldP2.Distance(theNewPt);
+                            curdist1 = theOldP1.DistanceTo(theNewPt);
+                            curdist2 = theOldP2.DistanceTo(theNewPt);
                             if (dist1 < 0 || curdist1 < dist1)
                             {
                                 dist1 = curdist1;
@@ -599,7 +599,7 @@ public sealed class FaceConnectFixer
                         Face empFace = ShapeCasts.Face(emptyCopiedFace);
                         for (var itw = new Iterator(newface); itw.More(); itw.Next())
                         {
-                            if (itw.Value().ShapeType() != ShapeType.Wire)
+                            if (itw.Value().Type != ShapeType.Wire)
                             {
                                 continue;
                             }
@@ -698,30 +698,30 @@ public sealed class FaceConnectFixer
                             for (theN2Iter.Initialize(theRV2Iter.Value); theN2Iter.More(); theN2Iter.Next())
                             {
                                 thePosition = Tool.Pnt(ShapeCasts.Vertex(theN2Iter.Value()));
-                                double val = thePosition.X();
-                                if (val < theLBound.X())
+                                double val = thePosition.X;
+                                if (val < theLBound.X)
                                 {
                                     theLBound = theLBound.WithX(val);
                                 }
-                                else if (val > theRBound.X())
+                                else if (val > theRBound.X)
                                 {
                                     theRBound = theRBound.WithX(val);
                                 }
-                                val = thePosition.Y();
-                                if (val < theLBound.Y())
+                                val = thePosition.Y;
+                                if (val < theLBound.Y)
                                 {
                                     theLBound = theLBound.WithY(val);
                                 }
-                                else if (val > theRBound.Y())
+                                else if (val > theRBound.Y)
                                 {
                                     theRBound = theRBound.WithY(val);
                                 }
-                                val = thePosition.Z();
-                                if (val < theLBound.Z())
+                                val = thePosition.Z;
+                                if (val < theLBound.Z)
                                 {
                                     theLBound = theLBound.WithZ(val);
                                 }
-                                else if (val > theRBound.Z())
+                                else if (val > theRBound.Z)
                                 {
                                     theRBound = theRBound.WithZ(val);
                                 }
@@ -732,13 +732,13 @@ public sealed class FaceConnectFixer
                             for (theN2Iter.Initialize(theRV2Iter.Value); theN2Iter.More(); theN2Iter.Next())
                             {
                                 theOldVert = ShapeCasts.Vertex(theN2Iter.Value());
-                                curtoler = thePosition.Distance(Tool.Pnt(theOldVert)) + Tool.Tolerance(theOldVert);
+                                curtoler = thePosition.DistanceTo(Tool.Pnt(theOldVert)) + Tool.Tolerance(theOldVert);
                                 if (curtoler > theTolerance)
                                 {
                                     theTolerance = curtoler;
                                 }
                             }
-                            curtoler = thePosition.Distance(Tool.Pnt(theNewVert)) + Tool.Tolerance(theNewVert);
+                            curtoler = thePosition.DistanceTo(Tool.Pnt(theNewVert)) + Tool.Tolerance(theNewVert);
                             if (curtoler > theTolerance)
                             {
                                 theTolerance = curtoler;

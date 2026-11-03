@@ -111,7 +111,7 @@ public class BOPToolsOracleTests(ITestOutputHelper output)
                 {
                     Point3D aV = Tool.Pnt(ShapeCasts.Vertex(aVExp.Current()));
                     double d = 1e-3 * (x1 - x0) * aRnd.NextDouble();
-                    aPnts.Add(new Point3D(aV.X() + d, aV.Y() - d, aV.Z() + d));
+                    aPnts.Add(new Point3D(aV.X + d, aV.Y - d, aV.Z + d));
                 }
                 foreach (Point3D aP in aPnts)
                 {
@@ -121,7 +121,7 @@ public class BOPToolsOracleTests(ITestOutputHelper output)
                     aNC.Perform(aNP, aTol);
                     aStates[(int)aState]++;
                     aPoints++;
-                    Same((int)aNC.State(), (int)aState, $"{Path.GetFileName(aFile)} solid {iS} at ({aP.X():R}, {aP.Y():R}, {aP.Z():R}) tol {aTol}");
+                    Same((int)aNC.State(), (int)aState, $"{Path.GetFileName(aFile)} solid {iS} at ({aP.X:R}, {aP.Y:R}, {aP.Z:R}) tol {aTol}");
                 }
             }
         }
@@ -171,8 +171,8 @@ public class BOPToolsOracleTests(ITestOutputHelper output)
                 {
                     Point3D aOn = aS.Value(u1 + (u2 - u1) * aRnd.NextDouble(), v1 + (v2 - v1) * aRnd.NextDouble());
                     double d = aRnd.Next(3) switch { 0 => 0.0, 1 => 1e-4, _ => 0.1 };
-                    Point3D aP = new(aOn.X() + d * (aRnd.NextDouble() - 0.5), aOn.Y() + d * (aRnd.NextDouble() - 0.5),
-                                    aOn.Z() + d * (aRnd.NextDouble() - 0.5));
+                    Point3D aP = new(aOn.X + d * (aRnd.NextDouble() - 0.5), aOn.Y + d * (aRnd.NextDouble() - 0.5),
+                                    aOn.Z + d * (aRnd.NextDouble() - 0.5));
                     using N.gp_Pnt aNP = Oracle.ToNative(aP);
                     aNProj.Perform(aNP);
                     aPProj.Perform(aP);
@@ -213,8 +213,8 @@ public class BOPToolsOracleTests(ITestOutputHelper output)
                 {
                     Point3D aOn = aC.Value(f + (l - f) * (1.2 * aRnd.NextDouble() - 0.1));
                     double d = aRnd.Next(3) switch { 0 => 0.0, 1 => 1e-4, _ => 0.1 };
-                    Point3D aP = new(aOn.X() + d * (aRnd.NextDouble() - 0.5), aOn.Y() + d * (aRnd.NextDouble() - 0.5),
-                                    aOn.Z() + d * (aRnd.NextDouble() - 0.5));
+                    Point3D aP = new(aOn.X + d * (aRnd.NextDouble() - 0.5), aOn.Y + d * (aRnd.NextDouble() - 0.5),
+                                    aOn.Z + d * (aRnd.NextDouble() - 0.5));
                     using N.gp_Pnt aNP = Oracle.ToNative(aP);
                     aNProj.Perform(aNP);
                     aPProj.Perform(aP);

@@ -54,7 +54,7 @@ public sealed class ShellAnalysis
             return;
         }
 
-        if (shape.ShapeType() == ShapeType.Shell)
+        if (shape.Type == ShapeType.Shell)
         {
             _shells.Add(shape); // szv#4:S4163:12Mar99 i =
         }
@@ -80,7 +80,7 @@ public sealed class ShellAnalysis
     {
         bool res = false;
 
-        if (shape.ShapeType() != ShapeType.Edge)
+        if (shape.Type != ShapeType.Edge)
         {
             for (var it = new Iterator(shape); it.More(); it.Next())
             {
@@ -98,7 +98,7 @@ public sealed class ShellAnalysis
                 return false;
             }
 
-            if (shape.Orientation() == Forward)
+            if (shape.Orientation == Forward)
             {
                 // szv#4:S4163:12Mar99 optimized
                 if (!dirs.Contains(shape))
@@ -111,7 +111,7 @@ public sealed class ShellAnalysis
                     res = true;
                 }
             }
-            if (shape.Orientation() == Reversed)
+            if (shape.Orientation == Reversed)
             {
                 // szv#4:S4163:12Mar99 optimized
                 if (!revs.Contains(shape))
@@ -124,7 +124,7 @@ public sealed class ShellAnalysis
                     res = true;
                 }
             }
-            if (shape.Orientation() == Internal)
+            if (shape.Orientation == Internal)
             {
                 if (!ints.Contains(shape))
                 {

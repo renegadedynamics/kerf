@@ -320,8 +320,8 @@ public partial class FilletBuilderBase
         for (jt.Initialize(_veMap[v]); jt.More(); jt.Next())
         {
             ec = ShapeCasts.Edge(jt.Value());
-            if (!ec.IsSame(e0) && !ec.IsSame(e1) && ec.Orientation() != Internal
-                    && ec.Orientation() != External && !Tool.Degenerated(ec))
+            if (!ec.IsSame(e0) && !ec.IsSame(e1) && ec.Orientation != Internal
+                    && ec.Orientation != External && !Tool.Degenerated(ec))
             {
                 for (it.Initialize(_efMap[ec]), nbf = 0; it.More(); it.Next(), nbf++)
                 {
@@ -587,12 +587,12 @@ public partial class FilletBuilderBase
         if (offset > 0)
         {
             Edge OffsetEdge = MakeOffsetEdge(ec, offset, sb1, sb2);
-            OffsetEdge.Orientation(ec.Orientation());
+            OffsetEdge.Orient(ec.Orientation);
             spine.SetOffsetEdges(OffsetEdge);
         }
 
         EdgeCurveAdaptor cEc = new(), cEv = new();
-        Orientation curor = ec.Orientation();
+        Orientation curor = ec.Orientation;
         Exploration.Vertices(ec, out vStart, out lvEc);
 
         bool fini = false;
@@ -658,7 +658,7 @@ public partial class FilletBuilderBase
                         wf = Tool.Parameter(fvEv, ev);
                         cEv.Initialize(ev);
                         cEv.D1(wf, out p2, out v2);
-                        double av1v2 = v1.Angle(v2);
+                        double av1v2 = v1.AngleTo(v2);
                         bool rev = (or1 != curor);
                         bool onAjoute = false;
                         if (FaceTangency(ec, ev, fvEv))
@@ -681,7 +681,7 @@ public partial class FilletBuilderBase
                             Edge prevEdge = ec;
                             ec = ev;
                             //	    Ec = TopoDS::Edge(Ev);
-                            ec.Orientation(or1);
+                            ec.Orient(or1);
                             wl = wf;
                             lvEc = lvEv;
                             spine.SetEdges(ec);
@@ -693,7 +693,7 @@ public partial class FilletBuilderBase
                             {
                                 FaceSurfaceAdaptor curSb1 = new(curF1), curSb2 = new(curF2);
                                 Edge offsetEdge = MakeOffsetEdge(ec, offset, curSb1, curSb2);
-                                offsetEdge.Orientation(or1);
+                                offsetEdge.Orient(or1);
                                 spine.SetOffsetEdges(offsetEdge);
                             }
                             FirstFace = curF1;
@@ -738,7 +738,7 @@ public partial class FilletBuilderBase
                 fini = false;
                 ec = spine.Edges(1);
                 FirstFace = ShapeCasts.Face(_edgeFirstFace.GetValue(ec));
-                curor = ec.Orientation();
+                curor = ec.Orientation;
                 fvEc = vStart;
                 while (!fini)
                 {
@@ -769,7 +769,7 @@ public partial class FilletBuilderBase
                             wf = Tool.Parameter(lvEv, ev);
                             cEv.Initialize(ev);
                             cEv.D1(wf, out p2, out v2);
-                            double av1v2 = v1.Angle(v2);
+                            double av1v2 = v1.AngleTo(v2);
                             bool rev = (or1 != curor);
                             bool onAjoute = false;
                             if (FaceTangency(ec, ev, lvEv))
@@ -787,7 +787,7 @@ public partial class FilletBuilderBase
                                 Edge prevEdge = ec;
                                 ec = ev;
                                 //	      Ec = TopoDS::Edge(Ev);
-                                ec.Orientation(or1);
+                                ec.Orient(or1);
                                 wl = wf;
                                 fvEc = fvEv;
                                 spine.PutInFirst(ec);
@@ -799,7 +799,7 @@ public partial class FilletBuilderBase
                                 {
                                     FaceSurfaceAdaptor curSb1 = new(curF1), curSb2 = new(curF2);
                                     Edge offsetEdge = MakeOffsetEdge(ec, offset, curSb1, curSb2);
-                                    offsetEdge.Orientation(or1);
+                                    offsetEdge.Orient(or1);
                                     spine.PutInFirstOffset(offsetEdge);
                                 }
                                 FirstFace = curF1;
@@ -1097,7 +1097,7 @@ internal static class Builder_1
         Surface? trGS1 = new TrimmedSurface(gs1, s1.FirstUParameter(), s1.LastUParameter(),
                                                                  s1.FirstVParameter(), s1.LastVParameter());
         double offset = -distance;
-        if (f1.Orientation() == Reversed)
+        if (f1.Orientation == Reversed)
         {
             offset = distance;
         }
@@ -1207,15 +1207,15 @@ internal static class Builder_1
         if (Params[0] > Params[1])
         {
             bool isClosed = false;
-            Point3D fpnt = intCurve.Value(intCurve.FirstParameter());
-            Point3D lpnt = intCurve.Value(intCurve.LastParameter());
-            if (fpnt.SquareDistance(lpnt) <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+            Point3D fpnt = intCurve.Value(intCurve.FirstParameter);
+            Point3D lpnt = intCurve.Value(intCurve.LastParameter);
+            if (fpnt.SquareDistanceTo(lpnt) <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
             {
                 isClosed = true;
             }
             if (isClosed)
             {
-                Params[1] = intCurve.LastParameter();
+                Params[1] = intCurve.LastParameter;
             }
             else
             {
@@ -1278,17 +1278,17 @@ internal static class Builder_1
                                           FaceSurfaceAdaptor? hs2, /* const double t3d, */ double tang)
     {
         Face f1 = hs1.Face();
-        Orientation o1 = f1.Orientation();
-        f1.Orientation(Forward);
+        Orientation o1 = f1.Orientation;
+        f1.Orient(Forward);
         Face f2 = hs2.Face();
-        Orientation o2 = f2.Orientation();
-        f2.Orientation(Forward);
+        Orientation o2 = f2.Orientation;
+        f2.Orient(Forward);
         Edge e1 = e, e2 = e;
-        e1.Orientation(Forward);
-        e2.Orientation(Forward);
+        e1.Orient(Forward);
+        e2.Orient(Forward);
         if (f1.IsSame(f2) && Tool.IsClosed(e1, f1))
         {
-            e2.Orientation(Reversed);
+            e2.Orient(Reversed);
         }
         double p1 = Tool.Parameter(V, e1, f1);
         double p2 = Tool.Parameter(V, e2, f2);
@@ -1326,7 +1326,7 @@ internal static class Builder_1
             return false; //  It is not known...
         }
 
-        return (n1.Angle(n2) < tang);
+        return (n1.AngleTo(n2) < tang);
     }
 
     internal static bool TangentOnVertex(in Vertex v, in Edge e, Map efMap, double tang)

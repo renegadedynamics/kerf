@@ -75,8 +75,8 @@ public class IntPatch_IntersectionTests
                 PntOn2S aP = aWL.Point(k);
                 aP.ParametersOnS1(out double u1, out double v1);
                 aP.ParametersOnS2(out double u2, out double v2);
-                Assert.True(theS1.Value(u1, v1).Distance(aP.Value()) < theTol, $"line {i} point {k} off S1");
-                Assert.True(theS2.Value(u2, v2).Distance(aP.Value()) < theTol, $"line {i} point {k} off S2");
+                Assert.True(theS1.Value(u1, v1).DistanceTo(aP.Value()) < theTol, $"line {i} point {k} off S1");
+                Assert.True(theS2.Value(u2, v2).DistanceTo(aP.Value()) < theTol, $"line {i} point {k} off S2");
             }
             for (int k = 1; k <= aWL.VertexCount; k++)
             {
@@ -111,8 +111,8 @@ public class IntPatch_IntersectionTests
         Assert.Equal(1, anInt.LineCount);
         Assert.Equal(PatchLineType.Lin, anInt.Line(1).ArcType());
         Line3D aL = ((GLine)anInt.Line(1)).Line();
-        Assert.True(aL.Direction().IsParallel(new Direction3D(0, 1, 0), 1.0e-12));
-        Assert.Equal(0.0, aL.Distance(new Point3D(0.5, 0, 0)), 1.0e-12);
+        Assert.True(aL.Direction.IsParallel(new Direction3D(0, 1, 0), 1.0e-12));
+        Assert.Equal(0.0, aL.DistanceTo(new Point3D(0.5, 0, 0)), 1.0e-12);
         Assert.Same(anInt.SequenceOfLine().Value(1), anInt.Line(1));
     }
 

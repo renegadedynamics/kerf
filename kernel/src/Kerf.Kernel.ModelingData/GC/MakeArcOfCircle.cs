@@ -54,12 +54,12 @@ public sealed class MakeArcOfCircle : Root
         if (_theError == Done)
         {
             Line3D corde = Corde.Value();
-            Direction3D dir = corde.Direction();
+            Direction3D dir = corde.Direction;
             Direction3D dbid = new Direction3D(v);
             Direction3D daxe = dbid ^ dir;
             Direction3D dir1 = daxe ^ dir;
             Line3D bis = new Line3D(
-                new Point3D((p1.X() + p2.X()) / 2.0, (p1.Y() + p2.Y()) / 2.0, (p1.Z() + p2.Z()) / 2.0), dir1);
+                new Point3D((p1.X + p2.X) / 2.0, (p1.Y + p2.Y) / 2.0, (p1.Z + p2.Z) / 2.0), dir1);
             Direction3D d = dbid ^ daxe;
             Line3D norm = new Line3D(p1, d);
             ExtElC distmin = new ExtElC(bis, norm, global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -91,7 +91,7 @@ public sealed class MakeArcOfCircle : Root
                         }
                         i++;
                     }
-                    double rad = (pInt.Distance(p1) + pInt.Distance(p2)) / 2.0;
+                    double rad = (pInt.DistanceTo(p1) + pInt.DistanceTo(p2)) / 2.0;
                     cir = new Circle3D(new Frame3D(pInt, daxe, d), rad);
                     double alpha1 = global::Kerf.Engine.Geometry.ElCLib.Parameter(cir, p1);
                     double alpha3 = global::Kerf.Engine.Geometry.ElCLib.Parameter(cir, p2);

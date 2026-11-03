@@ -66,7 +66,7 @@ internal sealed class SweepBuilder
     public void Add(in Shape aShape1, in Shape aShape2, Orientation orient)
     {
         Shape comp = aShape2;
-        comp.Orientation(orient);
+        comp.Orient(orient);
         _builder.Add(aShape1, comp);
     }
 

@@ -24,7 +24,7 @@ public class Geom_CurveEvalTest
         Point3D aResult = aCurve.EvalD0(aU);
 
         // Point should lie on circle of radius 5
-        double aDist = aResult.Distance(new Point3D(0.0, 0.0, 0.0));
+        double aDist = aResult.DistanceTo(new Point3D(0.0, 0.0, 0.0));
         Assert.Equal(5.0, aDist, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
@@ -38,21 +38,21 @@ public class Geom_CurveEvalTest
 
         // EvalD1
         Curve3D.ResD1 aD1 = aCurve.EvalD1(aU);
-        Assert.Equal(5.0, aD1.Point.Distance(new Point3D(0.0, 0.0, 0.0)), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(5.0, aD1.Point.DistanceTo(new Point3D(0.0, 0.0, 0.0)), global::Kerf.Engine.Foundation.Precision.Confusion());
         // D1 should be perpendicular to radius vector for a circle
         Vector3D aRadial = new(new Point3D(0.0, 0.0, 0.0), aD1.Point);
         Assert.Equal(0.0, aRadial.Dot(aD1.D1), 1.0e-10);
 
         // EvalD2
         Curve3D.ResD2 aD2 = aCurve.EvalD2(aU);
-        Assert.Equal(0.0, aD2.Point.Distance(aD1.Point), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aD2.Point.DistanceTo(aD1.Point), global::Kerf.Engine.Foundation.Precision.Confusion());
         // D2 of circle points toward center (centripetal acceleration)
-        Assert.Equal(5.0, aD2.D2.Magnitude(), 1.0e-10);
+        Assert.Equal(5.0, aD2.D2.Magnitude, 1.0e-10);
 
         // EvalD3
         Curve3D.ResD3 aD3 = aCurve.EvalD3(aU);
-        Assert.Equal(0.0, aD3.Point.Distance(aD1.Point), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.True(aD3.D3.Magnitude() > 0.0);
+        Assert.Equal(0.0, aD3.Point.DistanceTo(aD1.Point), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(aD3.D3.Magnitude > 0.0);
     }
 
     // Line tests
@@ -63,11 +63,11 @@ public class Geom_CurveEvalTest
         LineCurve3D aCurve = new(new Point3D(1.0, 2.0, 3.0), new Direction3D(1.0, 0.0, 0.0));
 
         Curve3D.ResD2 aD2 = aCurve.EvalD2(5.0);
-        Assert.Equal(0.0, aD2.D2.Magnitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aD2.D2.Magnitude, global::Kerf.Engine.Foundation.Precision.Confusion());
         // D1 should be the direction vector
-        Assert.Equal(1.0, aD2.D1.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aD2.D1.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aD2.D1.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aD2.D1.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aD2.D1.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aD2.D1.Z, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     // EvalDN consistency tests
@@ -81,7 +81,7 @@ public class Geom_CurveEvalTest
         double aU = M_PI / 6.0;
         Curve3D.ResD1 aD1 = aCurve.EvalD1(aU);
         Vector3D aDN1 = aCurve.EvalDN(aU, 1);
-        Assert.Equal(0.0, (aD1.D1 - aDN1).Magnitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, (aD1.D1 - aDN1).Magnitude, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     // OffsetCurve failure-path tests
@@ -98,7 +98,7 @@ public class Geom_CurveEvalTest
 
         Point3D aResult = anOffset.EvalD0(0.0);
         // For a circle offset by -radius, this should still return a valid point (the center)
-        Assert.Equal(0.0, aResult.Distance(new Point3D(0.0, 0.0, 0.0)), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aResult.DistanceTo(new Point3D(0.0, 0.0, 0.0)), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -121,7 +121,7 @@ public class Geom_CurveEvalTest
         ParabolaCurve3D aCurve = new(XY(), 2.0);
 
         Curve3D.ResD3 aD3 = aCurve.EvalD3(1.0);
-        Assert.Equal(0.0, aD3.D3.Magnitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aD3.D3.Magnitude, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     // TrimmedCurve delegation test
@@ -137,8 +137,8 @@ public class Geom_CurveEvalTest
         Curve3D.ResD1 aBasisD1 = aBasis.EvalD1(aU);
         Curve3D.ResD1 aTrimmedD1 = aTrimmed.EvalD1(aU);
 
-        Assert.Equal(0.0, aBasisD1.Point.Distance(aTrimmedD1.Point), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, (aBasisD1.D1 - aTrimmedD1.D1).Magnitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aBasisD1.Point.DistanceTo(aTrimmedD1.Point), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, (aBasisD1.D1 - aTrimmedD1.D1).Magnitude, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     // OffsetCurve EvalD1 singular test
@@ -154,6 +154,6 @@ public class Geom_CurveEvalTest
 
         Curve3D.ResD1 aResult = anOffset.EvalD1(0.0);
         // The point should be near the center
-        Assert.Equal(0.0, aResult.Point.Distance(new Point3D(0.0, 0.0, 0.0)), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aResult.Point.DistanceTo(new Point3D(0.0, 0.0, 0.0)), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 }

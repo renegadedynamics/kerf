@@ -85,8 +85,8 @@ public sealed class EdgeInterferenceTool
     public void EdgeGeometry(double param, out Direction3D tgt, out Direction3D nrm, out double crLE)
     {
         _ds.LocalLEGeometry2D(param, out Direction2D tgLE, out Direction2D nmLE, out crLE);
-        tgt = new Direction3D(tgLE.X(), tgLE.Y(), 0);
-        nrm = new Direction3D(nmLE.X(), nmLE.Y(), 0);
+        tgt = new Direction3D(tgLE.X, tgLE.Y, 0);
+        nrm = new Direction3D(nmLE.X, nmLE.Y, 0);
     }
 
     public double ParameterOfInterference(in Interference i) => i.Intersection().Parameter();
@@ -119,7 +119,7 @@ public sealed class EdgeInterferenceTool
     {
         i.Boundary().Value2D(out int fe, out double param);
         _ds.LocalFEGeometry2D(fe, param, out Direction2D tgFE, out Direction2D nmFE, out crFE);
-        tang = new Direction3D(tgFE.X(), tgFE.Y(), 0);
-        norm = new Direction3D(nmFE.X(), nmFE.Y(), 0);
+        tang = new Direction3D(tgFE.X, tgFE.Y, 0);
+        norm = new Direction3D(nmFE.X, nmFE.Y, 0);
     }
 }

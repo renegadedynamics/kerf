@@ -18,7 +18,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// Approximation of a free-form 2D curve by a sequence of arcs of circle and line segments, within a distance
 /// tolerance and an angular tolerance at the junctions. The approximation is made by the constructor.
 /// </summary>
-public sealed class ApproxArcsSegments2D
+internal sealed class ApproxArcsSegments2D
 {
     /// <summary>The state of the approximation.</summary>
     public enum Status
@@ -177,7 +177,7 @@ public sealed class ApproxArcsSegments2D
         {
             Point2D center = new((prodP1V * delta.Y() - prodDeM * vec.Y()) / vprodVD,
                                    (prodDeM * vec.X() - prodP1V * delta.X()) / vprodVD);
-            double rad = (center.Distance(new Point2D(p1)) + center.Distance(new Point2D(p2))) * 0.5;
+            double rad = (center.DistanceTo(new Point2D(p1)) + center.DistanceTo(new Point2D(p2))) * 0.5;
             Frame2D ax22d = new(center, new Direction2D(Direction2D.D.X), new Direction2D(Direction2D.D.Y));
             Circle2D cir = new(ax22d, rad);
             CircleCurve2D circ = new(cir);
@@ -248,13 +248,13 @@ public sealed class ApproxArcsSegments2D
             Span<double> absAngle = [0.0, 0.0];
             if (first.IsNotEqual(_ext[0]))
             {
-                double ang = dirLine.Angle(new Direction2D(first.D1()));
+                double ang = dirLine.AngleTo(new Direction2D(first.D1()));
                 absAngle[0] = (ang > 0.0 ? ang : -ang);
             }
 
             if (last.IsNotEqual(_ext[1]))
             {
-                double ang = dirLine.Angle(new Direction2D(last.D1()));
+                double ang = dirLine.AngleTo(new Direction2D(last.D1()));
                 absAngle[1] = (ang > 0.0 ? ang : -ang);
             }
 
@@ -607,13 +607,13 @@ public sealed class ApproxArcsSegments2D
         // more rigid if the curve is the entire input curve
         // (possible pb. connecting with other boundaries)
         Vector2D delta = new(pnt1 - pnt0);
-        double angle1 = delta.Angle(new Vector2D(dir0));
+        double angle1 = delta.AngleTo(new Vector2D(dir0));
         if (angle1 < 0.0)
         {
             angle1 = -angle1;
         }
 
-        double angle2 = delta.Angle(new Vector2D(dir1));
+        double angle2 = delta.AngleTo(new Vector2D(dir1));
         if (angle2 < 0.0)
         {
             angle2 = -angle2;
@@ -655,8 +655,8 @@ public sealed class ApproxArcsSegments2D
 
         // Direct calculation of intersection point, replaces a class call below
         double prod0 = pnt0 ^ dir0.XY(), prod1 = pnt1 ^ dir1.XY(), prod2 = dir1 ^ new Direction2D(dir0.XY()); // C++ converts the gp_XY to a gp_Dir2d implicitly
-        Xy intPoint = new((prod0 * dir1.X() - prod1 * dir0.X()) / prod2,
-                              (prod0 * dir1.Y() - prod1 * dir0.Y()) / prod2);
+        Xy intPoint = new((prod0 * dir1.X - prod1 * dir0.X) / prod2,
+                              (prod0 * dir1.Y - prod1 * dir0.Y) / prod2);
         Xy diff0 = intPoint - pnt0, diff1 = intPoint - pnt1;
         if (diff0 * dir0.XY() < 0.0 || diff1 * dir1.XY() < 0.0)
         {
@@ -666,7 +666,7 @@ public sealed class ApproxArcsSegments2D
         // calculation middle point for building biarc.
         double ad1 = diff0.Modulus();
         double ad2 = diff1.Modulus();
-        double ad12 = delta.Magnitude();
+        double ad12 = delta.Magnitude;
 
         double b1 = ad1 / (ad1 + ad2);
         if (Math.Abs(b1 - 0.5) < 0.0001)
@@ -760,7 +760,7 @@ public sealed class ApproxArcsSegments2D
         Curve2D curve1 = aCurve;
         if (aCurve is TrimmedCurve2D trCurve)
         {
-            curve1 = trCurve.BasisCurve();
+            curve1 = trCurve.BasisCurve;
         }
 
         Line2D lin2d = new();
@@ -769,14 +769,14 @@ public sealed class ApproxArcsSegments2D
         bool isCircle = !isLine;
         if (curve1 is LineCurve2D geomLine)
         {
-            lin2d = geomLine.Lin2d();
+            lin2d = geomLine.Line;
         }
         else
         {
             isCircle = curve1 is CircleCurve2D;
             if (curve1 is CircleCurve2D geomCircle)
             {
-                circ2d = geomCircle.Circ2d();
+                circ2d = geomCircle.Circle;
             }
             else
             {
@@ -812,7 +812,7 @@ public sealed class ApproxArcsSegments2D
                 projPoint = global::Kerf.Engine.Geometry.ElCLib.Value(parameterCurve, circ2d);
             }
 
-            isLess = (projPoint.Distance(pointAdaptor) < _tolerance + global::Kerf.Engine.Foundation.Precision.PConfusion());
+            isLess = (projPoint.DistanceTo(pointAdaptor) < _tolerance + global::Kerf.Engine.Foundation.Precision.PConfusion());
         }
 
         return isLess;
@@ -820,8 +820,8 @@ public sealed class ApproxArcsSegments2D
 
     private static bool CheckContinuity(Curve2D curve1, Curve2D curve2, double angleTol)
     {
-        curve1.D1(curve1.LastParameter(), out _, out Vector2D v11);
-        curve2.D1(curve2.FirstParameter(), out _, out Vector2D v21);
+        curve1.D1(curve1.LastParameter, out _, out Vector2D v11);
+        curve2.D1(curve2.FirstParameter, out _, out Vector2D v21);
 
         // check continuity with the specified tolerance.
         return (v11.IsParallel(v21, angleTol));
@@ -895,7 +895,7 @@ public sealed class ApproxArcsSegments2D
         curve.D2(param, out Point2D p1, out Vector2D d1, out Vector2D d2);
         double sqMod = d1.XY().SquareModulus();
         double curvature = Math.Abs(d1.XY() ^ d2.XY()) / (sqMod * Math.Sqrt(sqMod));
-        double contAngle = Math.Abs(new Vector2D(p1.XY() - firstInfl.Point()).Angle(d1));
+        double contAngle = Math.Abs(new Vector2D(p1.XY() - firstInfl.Point()).AngleTo(d1));
         contAngle = Min(contAngle, Math.Abs(M_PI - contAngle));
         return (curvature < MyCurvatureTolerance && contAngle < angleTol);
     }

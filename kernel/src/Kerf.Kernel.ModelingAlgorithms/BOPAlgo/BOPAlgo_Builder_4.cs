@@ -37,7 +37,7 @@ public partial class BooleanBuilder
         }
 
         // Only EDGES and FACES should be considered
-        ShapeType type = s.ShapeType();
+        ShapeType type = s.Type;
         if (type != ShapeType.Edge && type != ShapeType.Face)
         {
             // Wrong type
@@ -205,10 +205,10 @@ public partial class BooleanBuilder
                     if (_mapShape.Contains(sp))
                     {
                         // Add modified shape with proper orientation
-                        ShapeType type = sp.ShapeType();
+                        ShapeType type = sp.Type;
                         if (type == ShapeType.Vertex || type == ShapeType.Solid)
                         {
-                            sp.Orientation(s.Orientation());
+                            sp.Orient(s.Orientation);
                         }
                         else if (AlgoTools.IsSplitToReverse(sp, s, _context))
                         {

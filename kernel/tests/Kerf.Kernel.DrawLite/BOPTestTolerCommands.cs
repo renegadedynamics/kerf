@@ -143,7 +143,7 @@ internal static class BOPTestTolerCommands
         }
         double dT = (aT2 - aT1) / aNb;
         BrepTEdge TE = (BrepTEdge)aE.TShape()!;
-        Placement Eloc = aE.Location();
+        Placement Eloc = aE.Placement;
         double aTolMax2 = -1.0e6;
         foreach (CurveRepresentation cr in TE.Curves())
         {
@@ -174,9 +174,9 @@ internal static class BOPTestTolerCommands
                     }
                     Point3D aPC3D = aC3D.Value(aT);
                     Point2D aPC2D = aC2D.Value(aT);
-                    Point3D aP3D = aS.Value(aPC2D.X(), aPC2D.Y());
-                    aP3D = aP3D.Transformed(L.Transformation());
-                    double aD2 = aPC3D.SquareDistance(aP3D);
+                    Point3D aP3D = aS.Value(aPC2D.X, aPC2D.Y);
+                    aP3D = aP3D.Transformed(L.Transformation);
+                    double aD2 = aPC3D.SquareDistanceTo(aP3D);
                     if (aD2 > aTolMax2)
                     {
                         aTolMax2 = aD2;
@@ -206,7 +206,7 @@ internal static class BOPTestTolerCommands
         {
             Edge aE = ShapeCasts.Edge(aLEi);
             BrepTEdge TE = (BrepTEdge)aE.TShape()!;
-            Placement Eloc = aE.Location();
+            Placement Eloc = aE.Placement;
             Explorer aVExp = new(aE, ShapeType.Vertex);
             for (; aVExp.More(); aVExp.Next())
             {
@@ -215,7 +215,7 @@ internal static class BOPTestTolerCommands
                 {
                     continue;
                 }
-                Orientation anOrV = aVx.Orientation();
+                Orientation anOrV = aVx.Orientation;
                 if (anOrV != Orientation.Forward && anOrV != Orientation.Reversed)
                 {
                     continue;
@@ -223,7 +223,7 @@ internal static class BOPTestTolerCommands
                 foreach (CurveRepresentation cr in TE.Curves())
                 {
                     Placement loc = cr.Location();
-                    Placement L = (Eloc * loc).Predivided(aV.Location());
+                    Placement L = (Eloc * loc).Predivided(aV.Placement);
                     // 3D-Curve
                     if (cr.IsCurve3D)
                     {
@@ -235,8 +235,8 @@ internal static class BOPTestTolerCommands
                         // 3D-point treatment
                         double aParam = Tool.Parameter(aVx, aE);
                         Point3D aPC3D = aC3D.Value(aParam);
-                        aPC3D = aPC3D.Transformed(L.Transformation());
-                        double aD2 = aPV3D.SquareDistance(aPC3D);
+                        aPC3D = aPC3D.Transformed(L.Transformation);
+                        double aD2 = aPV3D.SquareDistanceTo(aPC3D);
                         if (aD2 > aTolMax2)
                         {
                             aTolMax2 = aD2;
@@ -255,9 +255,9 @@ internal static class BOPTestTolerCommands
                         // 2D-point treatment
                         double aParam = Tool.Parameter(aVx, aE, aS, L);
                         Point2D aPC2D = aC2D.Value(aParam);
-                        Point3D aPC3D = aS.Value(aPC2D.X(), aPC2D.Y());
-                        aPC3D = aPC3D.Transformed(L.Transformation());
-                        double aD2 = aPV3D.SquareDistance(aPC3D);
+                        Point3D aPC3D = aS.Value(aPC2D.X, aPC2D.Y);
+                        aPC3D = aPC3D.Transformed(L.Transformation);
+                        double aD2 = aPV3D.SquareDistanceTo(aPC3D);
                         if (aD2 > aTolMax2)
                         {
                             aTolMax2 = aD2;

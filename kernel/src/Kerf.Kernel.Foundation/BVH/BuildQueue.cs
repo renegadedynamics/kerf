@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Geometry.Bvh;
 
 /// <summary>Command queue for parallel building of BVH nodes.</summary>
-public sealed class BuildQueue
+internal sealed class BuildQueue
 {
     /// <summary>Queue of BVH nodes to build.</summary>
     private readonly NCollection_Sequence<int> _queue = new();

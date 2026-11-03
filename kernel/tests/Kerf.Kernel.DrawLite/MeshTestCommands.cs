@@ -386,12 +386,12 @@ internal static class MeshTestCommands
         double aUMin, aUMax, aVMin, aVMax;
         if (aSurf is not null)
         {
-            aSurf.Bounds(out aUMin, out aUMax, out aVMin, out aVMax);
+            aSurf.ParameterBounds(out aUMin, out aUMax, out aVMin, out aVMax);
         }
         else
         {
             Shape aShape = theDI.GetShape(aSrcName);
-            if (aShape.IsNull || aShape.ShapeType() != ShapeType.Face)
+            if (aShape.IsNull || aShape.Type != ShapeType.Face)
             {
                 theDI.Output.WriteLine("Error: " + aSrcName + " is not a face");
                 return 1;
@@ -488,7 +488,7 @@ internal static class MeshTestCommands
             Curve2D aC = Tool.CurveOnSurface(anEdge, aFace, out double aFirst, out double aLast)!;
             Point2D aPFirst = aC.Value(aFirst);
             Point2D aPLast = aC.Value(aLast);
-            if (Math.Abs(aPFirst.X() - aPLast.X()) < 0.1 * (aUMax - aUMin)) // U=const
+            if (Math.Abs(aPFirst.X - aPLast.X) < 0.1 * (aUMax - aUMin)) // U=const
             {
                 if (Tool.IsClosed(anEdge, aFace))
                 {
@@ -496,7 +496,7 @@ internal static class MeshTestCommands
                 }
                 else
                 {
-                    B.UpdateEdge(anEdge, aPFirst.X() < 0.5 * (aUMin + aUMax) ? aUMinPoly : aUMaxPoly, aTriangulation);
+                    B.UpdateEdge(anEdge, aPFirst.X < 0.5 * (aUMin + aUMax) ? aUMinPoly : aUMaxPoly, aTriangulation);
                 }
             }
             else // V=const
@@ -507,7 +507,7 @@ internal static class MeshTestCommands
                 }
                 else
                 {
-                    B.UpdateEdge(anEdge, aPFirst.Y() < 0.5 * (aVMin + aVMax) ? aVMinPoly : aVMaxPoly, aTriangulation);
+                    B.UpdateEdge(anEdge, aPFirst.Y < 0.5 * (aVMin + aVMax) ? aVMinPoly : aVMaxPoly, aTriangulation);
                 }
             }
         }
@@ -759,7 +759,7 @@ internal static class MeshTestCommands
 
             var anEdgeSet = new HashSet<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
             var anEdgeMap = new List<Shape>();
-            if (aShape.ShapeType() == ShapeType.Edge)
+            if (aShape.Type == ShapeType.Edge)
             {
                 anEdgeSet.Add(aShape);
                 anEdgeMap.Add(aShape);
@@ -797,7 +797,7 @@ internal static class MeshTestCommands
                     Point3D P3d = aT.Node(Indices[j]);
                     if (!aLoc.IsIdentity)
                     {
-                        P3d = P3d.Transformed(aLoc.Transformation());
+                        P3d = P3d.Transformed(aLoc.Transformation);
                     }
 
                     string newname = anEdgeMap.Count > 1 ? $"{aPrefix}{nbEdge}_{j}" : $"{aPrefix}{j}";
@@ -895,7 +895,7 @@ internal static class MeshTestCommands
 
                 aNbNodesOld += aTris.NodeCount;
                 aNbTrisOld += aTris.TriangleCount;
-                aMergeTool.AddTriangulation(aTris, aFaceLoc.Transformation(), aFace.Orientation() == Orientation.Reversed);
+                aMergeTool.AddTriangulation(aTris, aFaceLoc.Transformation, aFace.Orientation == Orientation.Reversed);
             }
 
             Triangulation? aNewTris = aMergeTool.Result();

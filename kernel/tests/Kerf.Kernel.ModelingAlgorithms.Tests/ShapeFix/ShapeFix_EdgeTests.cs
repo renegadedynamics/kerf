@@ -54,8 +54,8 @@ public class ShapeFix_EdgeTests
         Curve2D? aPC = Tool.CurveOnSurface(anE, aF, out double f, out double l);
         Assert.NotNull(aPC);
         Point2D aP = aPC!.Value((f + l) / 2);
-        Assert.Equal(H, aP.Y(), 1e-6);
-        Assert.Equal(Math.PI, aP.X(), 1e-6);
+        Assert.Equal(H, aP.Y, 1e-6);
+        Assert.Equal(Math.PI, aP.X, 1e-6);
         // a second call does nothing
         Assert.False(sfe.FixAddPCurve(anE, aF, false));
     }
@@ -79,7 +79,7 @@ public class ShapeFix_EdgeTests
         Assert.True(Tool.IsClosed(aSeam, aF));
         Curve2D aC1 = Tool.CurveOnSurface(aSeam, aF, out double f, out _)!;
         Curve2D aC2 = Tool.CurveOnSurface(ShapeCasts.Edge(aSeam.Reversed()), aF, out _, out _)!;
-        Assert.Equal(2.0 * Math.PI, Math.Abs(aC1.Value(f).X() - aC2.Value(f).X()), 1e-9);
+        Assert.Equal(2.0 * Math.PI, Math.Abs(aC1.Value(f).X - aC2.Value(f).X), 1e-9);
     }
 
     [Fact]
@@ -117,7 +117,7 @@ public class ShapeFix_EdgeTests
         Assert.True(sfe.Status(ExtendStatus.DONE1));
         Curve3D? aC = Tool.Curve(anE, out double f, out double l);
         Assert.NotNull(aC);
-        Assert.True(aC!.Value(l).Distance(new Point3D(10, 0, 0)) < 1e-7);
+        Assert.True(aC!.Value(l).DistanceTo(new Point3D(10, 0, 0)) < 1e-7);
         Assert.False(sfe.FixAddCurve3d(anE));
     }
 
@@ -229,8 +229,8 @@ public class ShapeFix_EdgeTests
         var sfe = new EdgeFixer();
         Assert.True(sfe.FixReversed2d(anE, aF));
         Curve2D aPC = Tool.CurveOnSurface(anE, aF, out double f, out double l)!;
-        Assert.True(aPC.Value(f).Distance(new Point2D(0, H)) < 1e-9);
-        Assert.True(aPC.Value(l).Distance(new Point2D(Math.PI, H)) < 1e-9);
+        Assert.True(aPC.Value(f).DistanceTo(new Point2D(0, H)) < 1e-9);
+        Assert.True(aPC.Value(l).DistanceTo(new Point2D(Math.PI, H)) < 1e-9);
         Assert.False(sfe.FixReversed2d(anE, aF));
     }
 
@@ -244,9 +244,9 @@ public class ShapeFix_EdgeTests
         Edge aRes = new EdgeFixer().Reversed2dFixed(anE, aF, out bool isDone);
         Assert.True(isDone);
         aSnap.AssertUnchanged(anE);
-        Assert.True(aOldPC.Value(0).Distance(new Point2D(Math.PI, H)) < 1e-12);
+        Assert.True(aOldPC.Value(0).DistanceTo(new Point2D(Math.PI, H)) < 1e-12);
         Curve2D aPC = Tool.CurveOnSurface(aRes, aF, out double f, out _)!;
-        Assert.True(aPC.Value(f).Distance(new Point2D(0, H)) < 1e-9);
+        Assert.True(aPC.Value(f).DistanceTo(new Point2D(0, H)) < 1e-9);
         Assert.True(aRes.TShape()!.IsFrozen);
     }
 

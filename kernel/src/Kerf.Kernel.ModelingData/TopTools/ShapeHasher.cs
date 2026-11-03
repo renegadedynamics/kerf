@@ -18,7 +18,7 @@ namespace Kerf.Engine.Topology;
 /// <see cref="Instance"/> as its comparer. Analyzer rule KERF0002 (formerly OCCTNET0002) requires an explicit comparer on every map or set
 /// keyed by a shape, because the default one compares with IsEqual (docs/phase3-design.md, section 3).
 /// </remarks>
-public sealed class ShapeHasher : IEqualityComparer<Shape>
+internal sealed class ShapeHasher : IEqualityComparer<Shape>
 {
     /// <summary>The comparer: the class has no state.</summary>
     public static ShapeHasher Instance { get; } = new();

@@ -543,8 +543,8 @@ public class AppSurf<TheSectionGenerator, TheLine, ThePoint> : Approx
             {
                 // pour les courbes rationnelles il faut maintenant diviser
                 // les poles par leurs poids respectifs
-                _tabPoles[j, k] = _tabPoles[j, k].WithXYZ(newtabP[k].XYZ() / newtabP2d.Value(k).X());
-                double weight = newtabP2d.Value(k).X();
+                _tabPoles[j, k] = _tabPoles[j, k].WithXYZ(newtabP[k].XYZ() / newtabP2d.Value(k).X);
+                double weight = newtabP2d.Value(k).X;
                 if (weight < Constants.Resolution())
                 {
                     _done = false;
@@ -933,7 +933,7 @@ public class AppSurf<TheSectionGenerator, TheLine, ThePoint> : Approx
                     // OCCT: the poles of curve Index (the piece's number), not of the first curve (occt-issues.md)
                     Point3D firstPole = mucu.Pole(index, 1);
                     Point3D lastPole = mucu.Pole(index, mucu.NbPoles());
-                    poleDistSeq.Append(firstPole.Distance(lastPole));
+                    poleDistSeq.Append(firstPole.DistanceTo(lastPole));
                     wholeDist += poleDistSeq.Last();
                 }
             }
@@ -996,8 +996,8 @@ public class AppSurf<TheSectionGenerator, TheLine, ThePoint> : Approx
             {
                 // pour les courbes rationnelles il faut maintenant diviser
                 // les poles par leurs poids respectifs
-                _tabPoles[j, k] = _tabPoles[j, k].WithXYZ(newtabP[k].XYZ() / newtabP2d.Value(k).X());
-                double weight = newtabP2d.Value(k).X();
+                _tabPoles[j, k] = _tabPoles[j, k].WithXYZ(newtabP[k].XYZ() / newtabP2d.Value(k).X);
+                double weight = newtabP2d.Value(k).X;
                 if (weight < Constants.Resolution())
                 {
                     _done = false;

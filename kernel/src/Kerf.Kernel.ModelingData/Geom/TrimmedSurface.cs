@@ -20,7 +20,7 @@ namespace Kerf.Geometry;
 /// <see cref="BasisSurface"/> returns the stored copy frozen, as OCCT returns its handle; this surface's internal
 /// mutators then copy the basis surface again before changing it (decision 159).
 /// </remarks>
-public class TrimmedSurface : BoundedSurface
+public sealed class TrimmedSurface : BoundedSurface
 {
     private Surface _basisSurf;
     private double _utrim1;
@@ -69,8 +69,8 @@ public class TrimmedSurface : BoundedSurface
         if (o is not null)
         {
             TrimmedSurface s2 =
-                new TrimmedSurface(o.BasisSurface(), u1, u2, v1, v2, uSense, vSense);
-            _basisSurf = new OffsetSurface(s2, o.Offset(), true);
+                new TrimmedSurface(o.BasisSurface, u1, u2, v1, v2, uSense, vSense);
+            _basisSurf = new OffsetSurface(s2, o.Offset, true);
         }
 
         SetTrim(u1, u2, v1, v2, uSense, vSense);
@@ -104,8 +104,8 @@ public class TrimmedSurface : BoundedSurface
         if (o is not null)
         {
             TrimmedSurface s2 =
-                new TrimmedSurface(o.BasisSurface(), param1, param2, uTrim, sense);
-            _basisSurf = new OffsetSurface(s2, o.Offset(), true);
+                new TrimmedSurface(o.BasisSurface, param1, param2, uTrim, sense);
+            _basisSurf = new OffsetSurface(s2, o.Offset, true);
         }
 
         if (t is not null)
@@ -187,7 +187,7 @@ public class TrimmedSurface : BoundedSurface
         bool vsameSense = true;
         double udeb, ufin, vdeb, vfin;
 
-        _basisSurf.Bounds(out udeb, out ufin, out vdeb, out vfin);
+        _basisSurf.ParameterBounds(out udeb, out ufin, out vdeb, out vfin);
 
         // Trimming the U-Direction
         _isutrimmed = uTrim;
@@ -325,10 +325,13 @@ public class TrimmedSurface : BoundedSurface
     }
 
     /// <summary>The basis surface (the trimmed surface's own copy, frozen; shared, not copied).</summary>
-    public Surface BasisSurface()
+    public Surface BasisSurface
     {
-        _basisSurf.Freeze();
-        return _basisSurf;
+        get
+        {
+            _basisSurf.Freeze();
+            return _basisSurf;
+        }
     }
 
     // OCCT.NET: the basis surface may have been handed out (and frozen) by BasisSurface(); copy it before changing it.
@@ -369,7 +372,7 @@ public class TrimmedSurface : BoundedSurface
     public sealed override double VReversedParameter(double v) => _basisSurf.VReversedParameter(v);
 
     /// <summary>The trim values (the bounds of the basis surface in a direction that is not trimmed).</summary>
-    public sealed override void Bounds(out double u1, out double u2, out double v1, out double v2)
+    internal sealed override void ParameterBounds(out double u1, out double u2, out double v1, out double v2)
     {
         u1 = _utrim1;
         u2 = _utrim2;
@@ -378,7 +381,7 @@ public class TrimmedSurface : BoundedSurface
     }
 
     /// <summary>The continuity of the basis surface.</summary>
-    public sealed override Continuity Continuity() => _basisSurf.Continuity();
+    public sealed override Continuity Continuity => _basisSurf.Continuity;
 
     /// <summary>
     /// The basis surface's closure if U is not trimmed; otherwise true only if the basis is U-periodic and the
@@ -395,7 +398,7 @@ public class TrimmedSurface : BoundedSurface
 
             if (_basisSurf.IsUPeriodic)
             {
-                double period = _basisSurf.UPeriod();
+                double period = _basisSurf.UPeriod;
                 double length = _utrim2 - _utrim1;
                 if (length > global::Kerf.Engine.Foundation.Precision.PConfusion()
                     && Math.Abs(Math.IEEERemainder(length, period)) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
@@ -419,7 +422,7 @@ public class TrimmedSurface : BoundedSurface
 
             if (_basisSurf.IsVPeriodic)
             {
-                double period = _basisSurf.VPeriod();
+                double period = _basisSurf.VPeriod;
                 double length = _vtrim2 - _vtrim1;
                 if (length > global::Kerf.Engine.Foundation.Precision.PConfusion()
                     && Math.Abs(Math.IEEERemainder(length, period)) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
@@ -433,7 +436,7 @@ public class TrimmedSurface : BoundedSurface
 
     /// <summary>True if the basis surface is CN in U.</summary>
     /// <exception cref="RangeErrorException">N &lt; 0.</exception>
-    public sealed override bool IsCNu(int n)
+    internal sealed override bool IsCNu(int n)
     {
         Standard_RangeError_Raise_if(n < 0, " ");
         return _basisSurf.IsCNu(n);
@@ -441,7 +444,7 @@ public class TrimmedSurface : BoundedSurface
 
     /// <summary>True if the basis surface is CN in V.</summary>
     /// <exception cref="RangeErrorException">N &lt; 0.</exception>
-    public sealed override bool IsCNv(int n)
+    internal sealed override bool IsCNv(int n)
     {
         Standard_RangeError_Raise_if(n < 0, " ");
         return _basisSurf.IsCNv(n);
@@ -463,7 +466,7 @@ public class TrimmedSurface : BoundedSurface
             {
                 return true;
             }
-            double period = _basisSurf.UPeriod();
+            double period = _basisSurf.UPeriod;
             double length = _utrim2 - _utrim1;
             return length > global::Kerf.Engine.Foundation.Precision.PConfusion()
                    && Math.Abs(Math.IEEERemainder(length, period)) <= global::Kerf.Engine.Foundation.Precision.PConfusion();
@@ -472,7 +475,7 @@ public class TrimmedSurface : BoundedSurface
 
     /// <summary>The U period of the basis surface.</summary>
     /// <exception cref="NoSuchObjectException">The basis surface is not U-periodic.</exception>
-    public sealed override double UPeriod() => _basisSurf.UPeriod();
+    public sealed override double UPeriod => _basisSurf.UPeriod;
 
     /// <summary>As <see cref="IsUPeriodic"/>, in V.</summary>
     public sealed override bool IsVPeriodic
@@ -487,7 +490,7 @@ public class TrimmedSurface : BoundedSurface
             {
                 return true;
             }
-            double period = _basisSurf.VPeriod();
+            double period = _basisSurf.VPeriod;
             double length = _vtrim2 - _vtrim1;
             return length > global::Kerf.Engine.Foundation.Precision.PConfusion()
                    && Math.Abs(Math.IEEERemainder(length, period)) <= global::Kerf.Engine.Foundation.Precision.PConfusion();
@@ -496,7 +499,7 @@ public class TrimmedSurface : BoundedSurface
 
     /// <summary>The V period of the basis surface.</summary>
     /// <exception cref="NoSuchObjectException">The basis surface is not V-periodic.</exception>
-    public sealed override double VPeriod() => _basisSurf.VPeriod();
+    public sealed override double VPeriod => _basisSurf.VPeriod;
 
     /// <summary>The U iso-curve of the basis surface, trimmed in V if V is trimmed.</summary>
     public sealed override Curve3D UIso(double u)
@@ -532,16 +535,16 @@ public class TrimmedSurface : BoundedSurface
         }
     }
 
-    public sealed override Point3D EvalD0(double u, double v) => _basisSurf.EvalD0(u, v);
+    internal sealed override Point3D EvalD0(double u, double v) => _basisSurf.EvalD0(u, v);
 
-    public sealed override ResD1 EvalD1(double u, double v) => _basisSurf.EvalD1(u, v);
+    internal sealed override ResD1 EvalD1(double u, double v) => _basisSurf.EvalD1(u, v);
 
-    public sealed override ResD2 EvalD2(double u, double v) => _basisSurf.EvalD2(u, v);
+    internal sealed override ResD2 EvalD2(double u, double v) => _basisSurf.EvalD2(u, v);
 
-    public sealed override ResD3 EvalD3(double u, double v) => _basisSurf.EvalD3(u, v);
+    internal sealed override ResD3 EvalD3(double u, double v) => _basisSurf.EvalD3(u, v);
 
     /// <exception cref="UndefinedDerivative3DException">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
-    public sealed override Vector3D EvalDN(double u, double v, int nu, int nv)
+    internal sealed override Vector3D EvalDN(double u, double v, int nu, int nv)
     {
         if (nu + nv < 1 || nu < 0 || nv < 0)
         {
@@ -561,13 +564,13 @@ public class TrimmedSurface : BoundedSurface
     }
 
     /// <summary>The basis surface's TransformParameters.</summary>
-    public sealed override void TransformParameters(ref double u, ref double v, in Transform3D t)
+    internal sealed override void TransformParameters(ref double u, ref double v, in Transform3D t)
     {
         _basisSurf.TransformParameters(ref u, ref v, t);
     }
 
     /// <summary>The basis surface's ParametricTransformation.</summary>
-    public sealed override GeneralTransform2D ParametricTransformation(in Transform3D t) => _basisSurf.ParametricTransformation(t);
+    internal sealed override GeneralTransform2D ParametricTransformation(in Transform3D t) => _basisSurf.ParametricTransformation(t);
 
     /// <summary>A new, unfrozen trimmed surface on a copy of the basis surface.</summary>
     public sealed override Geometry3D Copy()

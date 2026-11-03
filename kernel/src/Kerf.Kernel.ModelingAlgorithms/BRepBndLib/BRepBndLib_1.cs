@@ -29,7 +29,7 @@ public static partial class Bounds
         CurveKind ct = c.GetType();
         if (ct == OffsetCurve)
         {
-            return IsLinear(new CurveAdaptor(c.OffsetCurve().BasisCurve()));
+            return IsLinear(new CurveAdaptor(c.OffsetCurve().BasisCurve));
         }
 
         if ((ct == BSplineCurve) || (ct == BezierCurve))
@@ -176,12 +176,12 @@ public static partial class Bounds
             }
 
             int cNode = trng.NodeCount;
-            Transform3D trsf = loc.Transformation();
+            Transform3D trsf = loc.Transformation;
             for (int i = 1; i <= cNode; i++)
             {
                 if (pts is not null)
                 {
-                    Point3D p = trsf.Form() == Identity ? trng.Node(i) : trng.Node(i).Transformed(trsf);
+                    Point3D p = trsf.Form == Identity ? trng.Node(i) : trng.Node(i).Transformed(trsf);
                     pts[retVal] = p;
                 }
 
@@ -227,7 +227,7 @@ public static partial class Bounds
             {
                 if (pts is not null)
                 {
-                    Point3D p = loc.IsIdentity ? nodesArr[i] : nodesArr[i].Transformed(loc.Transformation());
+                    Point3D p = loc.IsIdentity ? nodesArr[i] : nodesArr[i].Transformed(loc.Transformation);
                     pts[retVal] = p;
                 }
 
@@ -249,7 +249,7 @@ public static partial class Bounds
     {
         double toler = global::Kerf.Engine.Foundation.Precision.Angular() * global::Kerf.Engine.Foundation.Precision.Angular();
 
-        double x = dir.X(), y = dir.Y(), z = dir.Z();
+        double x = dir.X, y = dir.Y, z = dir.Z;
 
         double vx = y * y + z * z, vy = x * x + z * z, vz = x * x + y * y;
 
@@ -368,7 +368,7 @@ public static partial class Bounds
             trsf = trsf.WithTransformation(locCoordSys);
         }
 
-        Shape st = (trsf.Form() == Identity) ? s : s.Moved(new Placement(trsf));
+        Shape st = (trsf.Form == Identity) ? s : s.Moved(new Placement(trsf));
 
         // Initial axis-aligned BndBox
         Box shapeBox = new();
@@ -401,13 +401,13 @@ public static partial class Bounds
         Xyz obbhSize = (pMax.XYZ() - pMin.XYZ()) / 2.0;
 
         // Apply transformation if necessary
-        if (trsf.Form() != Identity)
+        if (trsf.Form != Identity)
         {
             trsf = trsf.Inverted();
             trsf.Transforms(ref center);
 
             // Make transformation
-            Matrix3x3 mat = trsf.HVectorialPart();
+            Matrix3x3 mat = trsf.RotationPart;
 
             // Compute axes directions of the box
             xDir = new Xyz(mat.Value(1, 1), mat.Value(2, 1), mat.Value(3, 1));
@@ -426,7 +426,7 @@ public static partial class Bounds
             obb.SetXComponent(new Direction3D(xDir), obbhSize.X());
             obb.SetYComponent(new Direction3D(yDir), obbhSize.Y());
             obb.SetZComponent(new Direction3D(zDir), obbhSize.Z());
-            obb.SetAABox(trsf.Form() == Identity);
+            obb.SetAABox(trsf.Form == Identity);
         }
         else
         {

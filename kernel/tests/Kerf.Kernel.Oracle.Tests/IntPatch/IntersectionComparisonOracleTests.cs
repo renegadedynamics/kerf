@@ -18,7 +18,7 @@ public class IntersectionComparisonOracleTests(ITestOutputHelper output)
         Direction3D aN = theO.Dir();
         Direction3D aX = new(new Vector3D(aN).Crossed(new Vector3D(theO.Dir())));
         return new N.gp_Ax3(new N.gp_Pnt(theO.Real(-theRange, theRange), theO.Real(-theRange, theRange), theO.Real(-theRange, theRange)),
-                            new N.gp_Dir(aN.X(), aN.Y(), aN.Z()), new N.gp_Dir(aX.X(), aX.Y(), aX.Z()));
+                            new N.gp_Dir(aN.X, aN.Y, aN.Z), new N.gp_Dir(aX.X, aX.Y, aX.Z));
     }
 
     // A random analytic surface through or near the origin.

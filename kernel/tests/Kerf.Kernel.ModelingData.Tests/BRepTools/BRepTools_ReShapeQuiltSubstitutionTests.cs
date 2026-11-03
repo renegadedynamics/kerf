@@ -34,7 +34,7 @@ public class BRepTools_ReShapeQuiltSubstitutionTests
 
     private static bool Contains(in Shape theShape, in Shape theSub)
     {
-        for (var anExp = new Explorer(theShape, theSub.ShapeType()); anExp.More(); anExp.Next())
+        for (var anExp = new Explorer(theShape, theSub.Type); anExp.More(); anExp.Next())
         {
             if (anExp.Current().IsSame(theSub))
             {
@@ -88,7 +88,7 @@ public class BRepTools_ReShapeQuiltSubstitutionTests
 
         for (var anExp = new Explorer(aResult, ShapeType.Wire); anExp.More(); anExp.Next())
         {
-            Assert.True(anExp.Current().Closed());
+            Assert.True(anExp.Current().IsClosed);
         }
 
         // The history answers for the input's sub-shapes.
@@ -130,7 +130,7 @@ public class BRepTools_ReShapeQuiltSubstitutionTests
 
         // The rebuilt shell is no longer closed.
         Shape aShell = SubShape(aResult, ShapeType.Shell, 1);
-        Assert.False(aShell.Closed());
+        Assert.False(aShell.IsClosed);
 
         History aHistory = aReShape.History();
         Assert.True(aHistory.IsRemoved(aF));
@@ -160,10 +160,10 @@ public class BRepTools_ReShapeQuiltSubstitutionTests
         var aReShape = new ReShape();
         // Recording a REVERSED shape records both reversed.
         aReShape.Replace(aE.Reversed(), aE2);
-        Assert.Equal(Reversed, aReShape.Value(aE).Orientation());
-        Assert.Equal(Forward, aReShape.Value(aE.Reversed()).Orientation());
+        Assert.Equal(Reversed, aReShape.Value(aE).Orientation);
+        Assert.Equal(Forward, aReShape.Value(aE.Reversed()).Orientation);
         // INTERNAL keeps its orientation.
-        Assert.Equal(Internal, aReShape.Value(aE.Oriented(Internal)).Orientation());
+        Assert.Equal(Internal, aReShape.Value(aE.Oriented(Internal)).Orientation);
         Assert.Equal(1, aReShape.Status(aE, out Shape aNewSh));
         Assert.True(aNewSh.IsSame(aE2));
         Assert.True(aReShape.IsNewShape(aE2));
@@ -191,7 +191,7 @@ public class BRepTools_ReShapeQuiltSubstitutionTests
         Assert.True(aReShape.IsRecorded(aA.Located(aL)));
         Shape aValue = aReShape.Value(aA.Located(aL));
         Assert.True(aValue.IsPartner(aB));
-        Assert.True(aValue.Location().IsEqual(aL));
+        Assert.True(aValue.Placement.IsEqual(aL));
     }
 
     [Fact]
@@ -244,7 +244,7 @@ public class BRepTools_ReShapeQuiltSubstitutionTests
         // the recorded copy is changed in place
         Vertex aSecond = aReShape.CopyVertex(aV, new Point3D(4, 5, 6), 0.25);
         Assert.True(aSecond.IsSame(aCopy));
-        Assert.Equal(4.0, Tool.Pnt(aCopy).X());
+        Assert.Equal(4.0, Tool.Pnt(aCopy).X);
 
         // a recorded frozen replacement can't be changed in place: OCCT's guard for locked shapes
         var aFrozenCase = new ReShape();
@@ -266,11 +266,11 @@ public class BRepTools_ReShapeQuiltSubstitutionTests
         Shape aShells = aQuilt.Shells();
         aSnapshot.AssertUnchanged(aBox);
         Assert.True(aShells.TShape()!.IsFrozen);
-        Assert.Equal(ShapeType.Compound, aShells.ShapeType());
+        Assert.Equal(ShapeType.Compound, aShells.Type);
         Assert.Equal(1, aShells.ChildCount);
         Shape aShell = new Iterator(aShells).Value();
-        Assert.True(aShell.Closed());
-        Assert.True(aShell.Orientable());
+        Assert.True(aShell.IsClosed);
+        Assert.True(aShell.IsOrientable);
         Assert.Equal(6, Count(aShell, ShapeType.Face));
         Assert.Equal(12, Count(aShell, ShapeType.Edge));
     }
@@ -287,7 +287,7 @@ public class BRepTools_ReShapeQuiltSubstitutionTests
         Assert.Equal(2, aShells.ChildCount);
         for (var anIt = new Iterator(aShells); anIt.More(); anIt.Next())
         {
-            Assert.False(anIt.Value().Closed());
+            Assert.False(anIt.Value().IsClosed);
         }
     }
 
@@ -334,7 +334,7 @@ public class BRepTools_ReShapeQuiltSubstitutionTests
         Shape aShell = new Iterator(aShells).Value();
         Assert.Equal(2, Count(aShell, ShapeType.Face));
         Assert.Equal(7, Count(aShell, ShapeType.Edge));
-        Assert.False(aShell.Closed());
+        Assert.False(aShell.IsClosed);
     }
 
     [Fact]
@@ -383,7 +383,7 @@ public class BRepTools_ReShapeQuiltSubstitutionTests
         Assert.Single(aCopies);
         Shape aNewF = aCopies[0];
         Assert.True(aNewF.TShape()!.IsFrozen);
-        Assert.Equal(Forward, aNewF.Orientation());
+        Assert.Equal(Forward, aNewF.Orientation);
         Assert.Equal(4, Count(aNewF, ShapeType.Edge));
         Assert.False(Contains(aNewF, anE));
         Assert.False(Contains(aNewF, anOther));

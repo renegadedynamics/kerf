@@ -74,7 +74,7 @@ internal sealed class IntersectionComparison : IDisposable
 
         // The native line as the port reads it from the native text, to measure the distance between the lines.
         Curve3D aNCurve = ReadCurve(aNText, out double aFirst, out double aLast);
-        Deviation(aFirst, aLast, u => aNCurve.Value(u).Distance(thePort.Value(u)), theWhat);
+        Deviation(aFirst, aLast, u => aNCurve.Value(u).DistanceTo(thePort.Value(u)), theWhat);
     }
 
     /// <summary>
@@ -103,7 +103,7 @@ internal sealed class IntersectionComparison : IDisposable
         Tool.CurveOnSurface(ShapeCasts.Edge(aShape), out Curve2D? aNCurve, out _, out _, out double aFirst,
                                  out double aLast);
         Assert.NotNull(aNCurve);
-        Deviation(aFirst, aLast, u => aNCurve.Value(u).Distance(thePort.Value(u)), theWhat);
+        Deviation(aFirst, aLast, u => aNCurve.Value(u).DistanceTo(thePort.Value(u)), theWhat);
     }
 
     /// <summary>A native curve as the port reads it from the native BRep text of an edge on it (the same bits).</summary>

@@ -21,9 +21,9 @@ internal readonly struct DirectionHasher(double theCompTolerance, double theHash
         // Round each component to tolerance precision before hashing
         ReadOnlySpan<ulong> hashes =
         [
-            HashUtils.Hash((long)HashUtils.Round(direction.X() * factor)),
-            HashUtils.Hash((long)HashUtils.Round(direction.Y() * factor)),
-            HashUtils.Hash((long)HashUtils.Round(direction.Z() * factor))
+            HashUtils.Hash((long)HashUtils.Round(direction.X * factor)),
+            HashUtils.Hash((long)HashUtils.Round(direction.Y * factor)),
+            HashUtils.Hash((long)HashUtils.Round(direction.Z * factor))
         ];
         return HashUtils.HashBytes(hashes);
     }
@@ -31,8 +31,8 @@ internal readonly struct DirectionHasher(double theCompTolerance, double theHash
     // Compares two 3D directions with fixed tolerance.
     public bool IsEqual(in Direction3D direction1, in Direction3D direction2)
     {
-        return Math.Abs(direction1.X() - direction2.X()) <= CompTolerance
-               && Math.Abs(direction1.Y() - direction2.Y()) <= CompTolerance
-               && Math.Abs(direction1.Z() - direction2.Z()) <= CompTolerance;
+        return Math.Abs(direction1.X - direction2.X) <= CompTolerance
+               && Math.Abs(direction1.Y - direction2.Y) <= CompTolerance
+               && Math.Abs(direction1.Z - direction2.Z) <= CompTolerance;
     }
 }

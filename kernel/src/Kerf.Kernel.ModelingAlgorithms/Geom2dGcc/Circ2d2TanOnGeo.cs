@@ -72,11 +72,11 @@ public sealed class Circ2d2TanOnGeo
         }
         Circle2D          c1 = qualified1.Qualified();
         Circle2D          c2 = qualified2.Qualified();
-        double             r1 = c1.Radius();
-        double             r2 = c2.Radius();
+        double             r1 = c1.Radius;
+        double             r2 = c2.Radius;
         Direction2D           dirx = new(Direction2D.D.X);
-        Point2D           center1 = c1.Location();
-        Point2D           center2 = c2.Location();
+        Point2D           center1 = c1.Location;
+        Point2D           center2 = c2.Location;
         Circ2dBisec bis = new(c1, c2);
         if (bis.IsDone)
         {
@@ -157,12 +157,12 @@ public sealed class Circ2d2TanOnGeo
                         for (int j = 1; j <= intp.PointCount; j++)
                         {
                             Point2D center = intp.Point(j).Value();
-                            double   dist1 = center.Distance(c1.Location());
-                            double   dist2 = center.Distance(c2.Location());
+                            double   dist1 = center.DistanceTo(c1.Location);
+                            double   dist2 = center.DistanceTo(c2.Location);
                             int      nbsol = 0;
                             int      nnsol = 0;
-                            r1             = c1.Radius();
-                            r2             = c2.Radius();
+                            r1             = c1.Radius;
+                            r2             = c2.Radius;
                             if (qualified1.IsEnclosed)
                             {
                                 if (dist1 - r1 < tol)
@@ -231,8 +231,8 @@ public sealed class Circ2d2TanOnGeo
                                     _nbrSol++;
                                     _cirsol[_nbrSol] = new Circle2D(new Axis2D(center, dirx), radius[k]);
                                     //              ==========================================================
-                                    double distcc1 = center.Distance(center1);
-                                    double distcc2 = center.Distance(center2);
+                                    double distcc1 = center.DistanceTo(center1);
+                                    double distcc2 = center.DistanceTo(center2);
                                     if (!qualified1.IsUnqualified)
                                     {
                                         _qualifier1[_nbrSol] = qualified1.Qualifier();
@@ -265,26 +265,26 @@ public sealed class Circ2d2TanOnGeo
                                     {
                                         _qualifier2[_nbrSol] = Qualifier.Enclosing;
                                     }
-                                    if (dist1 <= tol && Math.Abs(radius[k] - c1.Radius()) <= tol)
+                                    if (dist1 <= tol && Math.Abs(radius[k] - c1.Radius) <= tol)
                                     {
                                         _theSame1[_nbrSol] = 1;
                                     }
                                     else
                                     {
                                         _theSame1[_nbrSol] = 0;
-                                        Direction2D dc1 = new(c1.Location().XY() - center.XY());
+                                        Direction2D dc1 = new(c1.Location.XY() - center.XY());
                                         _pnttg1sol[_nbrSol] = new Point2D(center.XY() + radius[k] * dc1.XY());
                                         _par1sol[_nbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);
                                         _pararg1[_nbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(c1, _pnttg1sol[_nbrSol]);
                                     }
-                                    if (dist2 <= tol && Math.Abs(radius[k] - c2.Radius()) <= tol)
+                                    if (dist2 <= tol && Math.Abs(radius[k] - c2.Radius) <= tol)
                                     {
                                         _theSame2[_nbrSol] = 1;
                                     }
                                     else
                                     {
                                         _theSame2[_nbrSol] = 0;
-                                        Direction2D dc2 = new(c2.Location().XY() - center.XY());
+                                        Direction2D dc2 = new(c2.Location.XY() - center.XY());
                                         _pnttg2sol[_nbrSol] = new Point2D(center.XY() + radius[k] * dc2.XY());
                                         _par2sol[_nbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg2sol[_nbrSol]);
                                         _pararg2[_nbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(c2, _pnttg2sol[_nbrSol]);
@@ -332,11 +332,11 @@ public sealed class Circ2d2TanOnGeo
         Direction2D  dirx = new(Direction2D.D.X);
         Circle2D c1 = qualified1.Qualified();
         Line2D  l2 = qualified2.Qualified();
-        double    r1 = c1.Radius();
-        Point2D  center1 = c1.Location();
-        Point2D  origin2 = l2.Location();
-        Direction2D  dir2 = l2.Direction();
-        Direction2D  normL2 = new(-dir2.Y(), dir2.X());
+        double    r1 = c1.Radius;
+        Point2D  center1 = c1.Location;
+        Point2D  origin2 = l2.Location;
+        Direction2D  dir2 = l2.Direction;
+        Direction2D  normL2 = new(-dir2.Y, dir2.X);
 
         CircLin2dBisec bis = new(c1, l2);
         if (bis.IsDone)
@@ -387,7 +387,7 @@ public sealed class Circ2d2TanOnGeo
                         for (int j = 1; j <= intp.PointCount && _nbrSol < ANbSolMAX; j++)
                         {
                             Point2D center = intp.Point(j).Value();
-                            double   dist1 = center.Distance(center1);
+                            double   dist1 = center.DistanceTo(center1);
                             //	    int nbsol = 1;
                             bool ok = false;
                             if (qualified1.IsEnclosed)
@@ -408,12 +408,12 @@ public sealed class Circ2d2TanOnGeo
                             {
                                 ok = true;
                             }
-                            radius = l2.Distance(center);
+                            radius = l2.DistanceTo(center);
                             if (qualified2.IsEnclosed && ok)
                             {
                                 ok = false;
-                                if ((((origin2.X() - center.X()) * (-dir2.Y()))
-                                          + ((origin2.Y() - center.Y()) * (dir2.X())))
+                                if ((((origin2.X - center.X) * (-dir2.Y))
+                                          + ((origin2.Y - center.Y) * (dir2.X)))
                                         <= 0)
                                 {
                                     ok = true;
@@ -422,8 +422,8 @@ public sealed class Circ2d2TanOnGeo
                             else if (qualified2.IsOutside && ok)
                             {
                                 ok = false;
-                                if ((((origin2.X() - center.X()) * (-dir2.Y()))
-                                          + ((origin2.Y() - center.Y()) * (dir2.X())))
+                                if ((((origin2.X - center.X) * (-dir2.Y))
+                                          + ((origin2.Y - center.Y) * (dir2.X)))
                                         >= 0)
                                 {
                                     ok = true;
@@ -439,7 +439,7 @@ public sealed class Circ2d2TanOnGeo
                                 _cirsol[_nbrSol] = new Circle2D(new Axis2D(center, dirx), radius);
                                 //            =======================================================
                                 Direction2D dc2 = new(origin2.XY() - center.XY());
-                                double   distcc1 = center.Distance(center1);
+                                double   distcc1 = center.DistanceTo(center1);
                                 if (!qualified1.IsUnqualified)
                                 {
                                     _qualifier1[_nbrSol] = qualified1.Qualifier();
@@ -468,7 +468,7 @@ public sealed class Circ2d2TanOnGeo
                                 {
                                     _qualifier2[_nbrSol] = Qualifier.Enclosed;
                                 }
-                                if (dist1 <= tol && Math.Abs(radius - c1.Radius()) <= tol)
+                                if (dist1 <= tol && Math.Abs(radius - c1.Radius) <= tol)
                                 {
                                     _theSame1[_nbrSol] = 1;
                                 }
@@ -481,8 +481,8 @@ public sealed class Circ2d2TanOnGeo
                                     _pararg1[_nbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(c1, _pnttg1sol[_nbrSol]);
                                 }
                                 _theSame2[_nbrSol]  = 0;
-                                double sign       = dc2.Dot(new Direction2D(-dir2.Y(), dir2.X()));
-                                dc2               = new Direction2D(sign * new Xy(-dir2.Y(), dir2.X()));
+                                double sign       = dc2.Dot(new Direction2D(-dir2.Y, dir2.X));
+                                dc2               = new Direction2D(sign * new Xy(-dir2.Y, dir2.X));
                                 _pnttg2sol[_nbrSol] = new Point2D(center.XY() + radius * dc2.XY());
                                 _par2sol[_nbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg2sol[_nbrSol]);
                                 _pararg2[_nbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(l2, _pnttg2sol[_nbrSol]);
@@ -527,12 +527,12 @@ public sealed class Circ2d2TanOnGeo
         Direction2D          dirx = new(Direction2D.D.X);
         Line2D          l1 = qualified1.Qualified();
         Line2D          l2 = qualified2.Qualified();
-        Direction2D          dir1 = l1.Direction();
-        Direction2D          dir2 = l2.Direction();
-        Direction2D          dnor1 = new(-dir1.Y(), dir1.X());
-        Direction2D          dnor2 = new(-dir2.Y(), dir2.X());
-        Point2D          origin1 = l1.Location();
-        Point2D          origin2 = l2.Location();
+        Direction2D          dir1 = l1.Direction;
+        Direction2D          dir2 = l2.Direction;
+        Direction2D          dnor1 = new(-dir1.Y, dir1.X);
+        Direction2D          dnor2 = new(-dir2.Y, dir2.X);
+        Point2D          origin1 = l1.Location;
+        Point2D          origin2 = l2.Location;
         Lin2dBisec bis = new(l1, l2);
         if (bis.IsDone)
         {
@@ -556,14 +556,14 @@ public sealed class Circ2d2TanOnGeo
                         for (int j = 1; j <= intp.PointCount && _nbrSol < ANbSolMAX; j++)
                         {
                             Point2D center = intp.Point(j).Value();
-                            double   dist1 = l1.Distance(center);
-                            double   dist2 = l2.Distance(center);
+                            double   dist1 = l1.DistanceTo(center);
+                            double   dist2 = l2.DistanceTo(center);
                             //	    int nbsol = 1;
                             bool ok = false;
                             if (qualified1.IsEnclosed)
                             {
-                                if ((((origin1.X() - center.X()) * (-dir1.Y()))
-                                          + ((origin1.Y() - center.Y()) * (dir1.X())))
+                                if ((((origin1.X - center.X) * (-dir1.Y))
+                                          + ((origin1.Y - center.Y) * (dir1.X)))
                                         <= 0)
                                 {
                                     ok = true;
@@ -571,8 +571,8 @@ public sealed class Circ2d2TanOnGeo
                             }
                             else if (qualified1.IsOutside)
                             {
-                                if ((((origin1.X() - center.X()) * (-dir1.Y()))
-                                          + ((origin1.Y() - center.Y()) * (dir1.X())))
+                                if ((((origin1.X - center.X) * (-dir1.Y))
+                                          + ((origin1.Y - center.Y) * (dir1.X)))
                                         >= 0)
                                 {
                                     ok = true;
@@ -585,8 +585,8 @@ public sealed class Circ2d2TanOnGeo
                             if (qualified2.IsEnclosed && ok)
                             {
                                 ok = false;
-                                if ((((origin2.X() - center.X()) * (-dir2.Y()))
-                                          + ((origin2.Y() - center.Y()) * (dir2.X())))
+                                if ((((origin2.X - center.X) * (-dir2.Y))
+                                          + ((origin2.Y - center.Y) * (dir2.X)))
                                         <= 0)
                                 {
                                     ok     = true;
@@ -596,8 +596,8 @@ public sealed class Circ2d2TanOnGeo
                             else if (qualified2.IsOutside && ok)
                             {
                                 ok = false;
-                                if ((((origin2.X() - center.X()) * (-dir2.Y()))
-                                          + ((origin2.Y() - center.Y()) * (dir2.X())))
+                                if ((((origin2.X - center.X) * (-dir2.Y))
+                                          + ((origin2.Y - center.Y) * (dir2.X)))
                                         >= 0)
                                 {
                                     ok     = true;
@@ -642,12 +642,12 @@ public sealed class Circ2d2TanOnGeo
                                 _theSame1[_nbrSol]  = 0;
                                 _theSame2[_nbrSol]  = 0;
                                 double sign       = dc1.Dot(dnor1);
-                                dc1               = new Direction2D(sign * new Xy(-dir1.Y(), dir1.X()));
+                                dc1               = new Direction2D(sign * new Xy(-dir1.Y, dir1.X));
                                 _pnttg1sol[_nbrSol] = new Point2D(center.XY() + radius * dc1.XY());
                                 _par1sol[_nbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);
                                 _pararg1[_nbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(l1, _pnttg1sol[_nbrSol]);
-                                sign              = dc2.Dot(new Direction2D(-dir2.Y(), dir2.X()));
-                                dc2               = new Direction2D(sign * new Xy(-dir2.Y(), dir2.X()));
+                                sign              = dc2.Dot(new Direction2D(-dir2.Y, dir2.X));
+                                dc2               = new Direction2D(sign * new Xy(-dir2.Y, dir2.X));
                                 _pnttg2sol[_nbrSol] = new Point2D(center.XY() + radius * dc2.XY());
                                 _par2sol[_nbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg2sol[_nbrSol]);
                                 _pararg2[_nbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(l2, _pnttg2sol[_nbrSol]);
@@ -691,8 +691,8 @@ public sealed class Circ2d2TanOnGeo
         double                radius;
         Direction2D              dirx = new(Direction2D.D.X);
         Circle2D             c1 = qualified1.Qualified();
-        double                r1 = c1.Radius();
-        Point2D              center1 = c1.Location();
+        double                r1 = c1.Radius;
+        Point2D              center1 = c1.Location;
         CircPnt2dBisec bis = new(c1, point2);
         if (bis.IsDone)
         {
@@ -768,8 +768,8 @@ public sealed class Circ2d2TanOnGeo
                         for (int j = 1; j <= intp.PointCount && _nbrSol < ANbSolMAX; j++)
                         {
                             Point2D center = intp.Point(j).Value();
-                            radius       = center.Distance(point2);
-                            double dist1 = center1.Distance(center);
+                            radius       = center.DistanceTo(point2);
+                            double dist1 = center1.DistanceTo(center);
                             //	    int nbsol = 1;
                             bool ok = false;
                             if (qualified1.IsEnclosed)
@@ -799,7 +799,7 @@ public sealed class Circ2d2TanOnGeo
                                 _nbrSol++;
                                 _cirsol[_nbrSol] = new Circle2D(new Axis2D(center, dirx), radius);
                                 //            =======================================================
-                                double distcc1 = center.Distance(center1);
+                                double distcc1 = center.DistanceTo(center1);
                                 if (!qualified1.IsUnqualified)
                                 {
                                     _qualifier1[_nbrSol] = qualified1.Qualifier();
@@ -872,9 +872,9 @@ public sealed class Circ2d2TanOnGeo
         }
         Direction2D             dirx = new(Direction2D.D.X);
         Line2D             l1 = qualified1.Qualified();
-        Point2D             origin1 = l1.Location();
-        Direction2D             dir1 = l1.Direction();
-        Direction2D             normal = new(-dir1.Y(), dir1.X());
+        Point2D             origin1 = l1.Location;
+        Direction2D             dir1 = l1.Direction;
+        Direction2D             normal = new(-dir1.Y, dir1.X);
         LinPnt2dBisec bis = new(l1, point2);
         if (bis.IsDone)
         {
@@ -921,13 +921,13 @@ public sealed class Circ2d2TanOnGeo
                     for (int j = 1; j <= intp.PointCount && _nbrSol < ANbSolMAX; j++)
                     {
                         Point2D center = intp.Point(j).Value();
-                        double   radius = l1.Distance(center);
+                        double   radius = l1.DistanceTo(center);
                         //	  int nbsol = 1;
                         bool ok = false;
                         if (qualified1.IsEnclosed)
                         {
-                            if ((((origin1.X() - center.X()) * (-dir1.Y()))
-                                      + ((origin1.Y() - center.Y()) * (dir1.X())))
+                            if ((((origin1.X - center.X) * (-dir1.Y))
+                                      + ((origin1.Y - center.Y) * (dir1.X)))
                                     <= 0)
                             {
                                 ok = true;
@@ -935,8 +935,8 @@ public sealed class Circ2d2TanOnGeo
                         }
                         else if (qualified1.IsOutside)
                         {
-                            if ((((origin1.X() - center.X()) * (-dir1.Y()))
-                                      + ((origin1.Y() - center.Y()) * (dir1.X())))
+                            if ((((origin1.X - center.X) * (-dir1.Y))
+                                      + ((origin1.Y - center.Y) * (dir1.X)))
                                     >= 0)
                             {
                                 ok = true;
@@ -968,8 +968,8 @@ public sealed class Circ2d2TanOnGeo
                             _theSame1[_nbrSol] = 0;
                             _theSame2[_nbrSol] = 0;
                             Direction2D dc1 = new(origin1.XY() - center.XY());
-                            double   sign     = dc1.Dot(new Direction2D(-dir1.Y(), dir1.X()));
-                            dc1               = new Direction2D(sign * new Xy(-dir1.Y(), dir1.X()));
+                            double   sign     = dc1.Dot(new Direction2D(-dir1.Y, dir1.X));
+                            dc1               = new Direction2D(sign * new Xy(-dir1.Y, dir1.X));
                             _pnttg1sol[_nbrSol] = new Point2D(center.XY() + radius * dc1.XY());
                             _par1sol[_nbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);
                             _pararg1[_nbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(l1, _pnttg1sol[_nbrSol]);
@@ -1034,7 +1034,7 @@ public sealed class Circ2d2TanOnGeo
                         for (int j = 1; j <= intp.PointCount && _nbrSol < ANbSolMAX; j++)
                         {
                             Point2D center = intp.Point(j).Value();
-                            double   radius = point2.Distance(center);
+                            double   radius = point2.DistanceTo(center);
                             _nbrSol++;
                             _cirsol[_nbrSol] = new Circle2D(new Axis2D(center, dirx), radius);
                             //           =======================================================

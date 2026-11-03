@@ -20,7 +20,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Geom2dAdaptor_Curve for a trimmed curve or an unknown type. OCCT's <c>std::variant</c> of evaluators is an
 /// interface field, null for <c>std::monostate</c>, as in <see cref="CurveBounds"/>.
 /// </remarks>
-public sealed class Curve2dBounds
+internal sealed class Curve2dBounds
 {
     /// <summary>The members of the per-type evaluators that the dispatchers call through OCCT's <c>std::visit</c>.</summary>
     internal interface ICurve2dEvaluator
@@ -120,7 +120,7 @@ public sealed class Curve2dBounds
         if (curve is TrimmedCurve2D trim)
         {
             _adaptorOwned = new CurveAdaptor2D(curve);
-            curveForDetection = trim.BasisCurve();
+            curveForDetection = trim.BasisCurve;
         }
 
         // OCCT's lambda tryEmplaceEvaluator
@@ -214,7 +214,7 @@ public sealed class Curve2dBounds
             default:
             {
                 Curve2D geom = _evaluator.CurveGeometry()!;
-                return _evaluator.BoxOptimal(geom.FirstParameter(), geom.LastParameter(), tol);
+                return _evaluator.BoxOptimal(geom.FirstParameter, geom.LastParameter, tol);
             }
         }
     }

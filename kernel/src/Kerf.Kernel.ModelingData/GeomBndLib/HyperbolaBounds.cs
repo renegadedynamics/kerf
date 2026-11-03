@@ -18,7 +18,7 @@ namespace Kerf.Engine.Geometry.Bounds.Computation;
 /// Computes bounding box for a 3D hyperbola (Geom_Hyperbola): the arc ends and the per-coordinate extrema, opened
 /// for infinite parameters. The static method accepting gp_Hypr can be used directly.
 /// </summary>
-public sealed class HyperbolaBounds : CurveBounds.ICurveEvaluator
+internal sealed class HyperbolaBounds : CurveBounds.ICurveEvaluator
 {
     private readonly HyperbolaCurve3D _geom;
 
@@ -32,10 +32,10 @@ public sealed class HyperbolaBounds : CurveBounds.ICurveEvaluator
     Curve3D? CurveBounds.ICurveEvaluator.CurveGeometry() => _geom;
 
     /// <summary>Compute bounding box for arc [theU1, theU2].</summary>
-    public Box Box(double u1, double u2, double tol) => Box(_geom.Hypr(), u1, u2, tol);
+    public Box Box(double u1, double u2, double tol) => Box(_geom.Hyperbola, u1, u2, tol);
 
     /// <summary>Compute bounding box for full curve.</summary>
-    public Box Box(double tol) => Box(_geom.FirstParameter(), _geom.LastParameter(), tol);
+    public Box Box(double tol) => Box(_geom.FirstParameter, _geom.LastParameter, tol);
 
     /// <summary>For analytical curves, BoxOptimal is same as Box.</summary>
     public Box BoxOptimal(double u1, double u2, double tol) => Box(u1, u2, tol);
@@ -53,11 +53,11 @@ public sealed class HyperbolaBounds : CurveBounds.ICurveEvaluator
             box.Add(global::Kerf.Engine.Geometry.ElCLib.Value(0.0, hypr));
         }
 
-        Frame3D pos = hypr.Position();
-        Xyz xDir = pos.XDirection().XYZ();
-        Xyz yDir = pos.YDirection().XYZ();
-        double rmaj = hypr.MajorRadius();
-        double rmin = hypr.MinorRadius();
+        Frame3D pos = hypr.Position;
+        Xyz xDir = pos.XDirection.XYZ();
+        Xyz yDir = pos.YDirection.XYZ();
+        double rmaj = hypr.MajorRadius;
+        double rmin = hypr.MinorRadius;
         double eps = Epsilon(1.0);
 
         for (int i = 1; i <= 3; ++i)

@@ -172,7 +172,7 @@ internal static class ConstrainedSolvers
     private static bool ParamInTrim(double u, double first, double last, Curve2D h2d)
     {
         if (h2d.IsPeriodic)
-            u = NormOnPeriod(u, first, h2d.Period());
+            u = NormOnPeriod(u, first, h2d.Period);
         return first - Constants.Tolerance <= u && u <= last + Constants.Tolerance;
     }
 
@@ -180,7 +180,7 @@ internal static class ConstrainedSolvers
     internal static List<global::Kerf.Topology.Edge> TwoArcEdgesFromParams(Circle2D circ, double u1, double u2)
     {
         var circle = new CircleCurve2D(circ);
-        var period = circle.Period();
+        var period = circle.Period;
         var d = ForwardDelta(u1, u2, 0.0, period);
         var u1n = NormOnPeriod(u1, 0.0, period);
         var u2n = NormOnPeriod(u2, 0.0, period);
@@ -206,8 +206,8 @@ internal static class ConstrainedSolvers
 
     internal static global::Kerf.Topology.Edge EdgeFromLine(Point2D p1, Point2D p2)
     {
-        var a = new Point3D(p1.X(), p1.Y(), 0);
-        var b = new Point3D(p2.X(), p2.Y(), 0);
+        var a = new Point3D(p1.X, p1.Y, 0);
+        var b = new Point3D(p2.X, p2.Y, 0);
         var va = new MakeVertex(a);
         var vb = new MakeVertex(b);
         var maker = new MakeEdge(va.Vertex(), vb.Vertex());
@@ -225,8 +225,8 @@ internal static class ConstrainedSolvers
         var isCirc = tangents.Select(t => t.Edge is { } e && e.GeomType == GeomType.Circle).ToList();
         if (isCirc.All(c => c))
             return parameters;
-        var center = circ.Location();
-        var centerV = new Vector(center.X(), center.Y(), 0);
+        var center = circ.Location;
+        var centerV = new Vector(center.X, center.Y, 0);
         var result = parameters.ToArray();
         for (int i = 0; i < parameters.Length && i < tangents.Count; i++)
             if (tangents[i].Edge is { } e && isCirc[i] && (centerV - e.ArcCenter).Length < e.Radius)
@@ -252,8 +252,8 @@ internal static class ConstrainedSolvers
         for (int i = 1; i <= gcc.SolutionCount; i++)
         {
             var circ = gcc.ThisSolution(i);
-            var center = circ.Location();
-            var solRadius = circ.Radius();
+            var center = circ.Location;
+            var solRadius = circ.Radius;
             // The solver's parameters are unstable on transformed curves (ellipses especially): verify, then correct
             var pTmp = new Point2D();
             double uc1 = 0, ua1 = 0, uc2 = 0, ua2 = 0;
@@ -270,20 +270,20 @@ internal static class ConstrainedSolvers
                 {
                     // A point target: the tangency point is the point itself
                     var p = new Point2D(arg.Point!.X(), arg.Point.Y());
-                    if (Math.Abs(p.Distance(center) - solRadius) < Constants.Tolerance)
-                        corrected.Add(Math.Atan2(p.Y() - center.Y(), p.X() - center.X()));
+                    if (Math.Abs(p.DistanceTo(center) - solRadius) < Constants.Tolerance)
+                        corrected.Add(Math.Atan2(p.Y - center.Y, p.X - center.X));
                     else
                         valid = false;
                     continue;
                 }
                 var ps = arg.H2d!.Value(uArg);
-                if (Math.Abs(ps.Distance(center) - solRadius) < Constants.Tolerance && ParamInTrim(uArg, arg.First, arg.Last, arg.H2d))
+                if (Math.Abs(ps.DistanceTo(center) - solRadius) < Constants.Tolerance && ParamInTrim(uArg, arg.First, arg.Last, arg.H2d))
                 {
                     corrected.Add(uCirc);
                     continue;
                 }
                 // Project the centre onto the curve to find the real tangency point
-                var c2 = new Point2D(center.X(), center.Y());
+                var c2 = new Point2D(center.X, center.Y);
                 var proj = new ProjectPointOnCurve2D(c2, arg.H2d);
                 if (proj.NbPoints() == 0)
                 {
@@ -292,12 +292,12 @@ internal static class ConstrainedSolvers
                 }
                 var uAct = proj.LowerDistanceParameter();
                 var pAct = arg.H2d.Value(uAct);
-                if (Math.Abs(pAct.Distance(center) - solRadius) > Constants.Tolerance || !ParamInTrim(uAct, arg.First, arg.Last, arg.H2d))
+                if (Math.Abs(pAct.DistanceTo(center) - solRadius) > Constants.Tolerance || !ParamInTrim(uAct, arg.First, arg.Last, arg.H2d))
                 {
                     valid = false;
                     continue;
                 }
-                corrected.Add(Math.Atan2(pAct.Y() - center.Y(), pAct.X() - center.X()));
+                corrected.Add(Math.Atan2(pAct.Y - center.Y, pAct.X - center.X));
             }
             if (!valid)
                 continue;
@@ -393,7 +393,7 @@ internal static class ConstrainedSolvers
         {
             // Through a point: the circle about the centre through it
             var p = arg.Point!.Pnt2d();
-            double dx = p.X() - c2d.X(), dy = p.Y() - c2d.Y();
+            double dx = p.X - c2d.X, dy = p.Y - c2d.Y;
             var r = Math.Sqrt(dx * dx + dy * dy);
             if (r <= Constants.Tolerance)
                 return [];   // the centre is the point: no circle
@@ -401,7 +401,7 @@ internal static class ConstrainedSolvers
             var ax = new Axis2D(c2d, dir);
             var circ = new Circle2D(ax, r);
             var h2d = new CircleCurve2D(circ);
-            solutions.Add(EdgeFromCircle(h2d, 0.0, h2d.Period()));
+            solutions.Add(EdgeFromCircle(h2d, 0.0, h2d.Period));
         }
         else
         {
@@ -418,7 +418,7 @@ internal static class ConstrainedSolvers
                 if (!ParamInTrim(ua, arg.First, arg.Last, arg.H2d!))
                     continue;
                 var h2d = new CircleCurve2D(circ);
-                solutions.Add(EdgeFromCircle(h2d, 0.0, h2d.Period()));
+                solutions.Add(EdgeFromCircle(h2d, 0.0, h2d.Period));
             }
         }
         return new ShapeList<Edge>(solutions.Select(e => new Edge(e)));
@@ -445,12 +445,12 @@ internal static class ConstrainedSolvers
             if (arg.IsEdge && !ParamInTrim(ua, arg.First, arg.Last, arg.H2d!))
                 continue;
             // The centre must lie on the trimmed locus
-            var center2d = circ.Location();
+            var center2d = circ.Location;
             var proj = new ProjectPointOnCurve2D(center2d, hOn2d);
             if (proj.NbPoints() == 0 || !ParamInTrim(proj.Parameter(1), onFirst, onLast, hOn2d))
                 continue;
             var h2d = new CircleCurve2D(circ);
-            solutions.Add(EdgeFromCircle(h2d, 0.0, h2d.Period()));
+            solutions.Add(EdgeFromCircle(h2d, 0.0, h2d.Period));
         }
         return new ShapeList<Edge>(solutions.Select(e => new Edge(e)));
     }
@@ -492,7 +492,7 @@ internal static class ConstrainedSolvers
                     pt2 = inter2.Point(1);
                 }
                 {
-                    var separation = pt1.Distance(pt2);
+                    var separation = pt1.DistanceTo(pt2);
                     if (double.IsNaN(separation) || separation < Constants.Tolerance)
                         continue;   // degenerate
                     edges.Add(EdgeFromLine(pt1, pt2));
@@ -527,7 +527,7 @@ internal static class ConstrainedSolvers
                 continue;
             var ip = inter.Point(1);
             var pIsect = ip.Value();
-            var separation = pTan.Distance(pIsect);
+            var separation = pTan.DistanceTo(pIsect);
             if (double.IsNaN(separation) || separation < Constants.Tolerance)
                 continue;
             edges.Add(EdgeFromLine(pTan, pIsect));

@@ -108,8 +108,8 @@ public class Geom2dEval_AHTBezierCurveTest
     public void Bounds()
     {
         AhtBezierCurve2D aCurve = createFullBasisCurve();
-        Assert.Equal(0.0, aCurve.FirstParameter(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(1.0, aCurve.LastParameter(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aCurve.FirstParameter, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aCurve.LastParameter, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -117,11 +117,11 @@ public class Geom2dEval_AHTBezierCurveTest
     {
         AhtBezierCurve2D aCurve = createFullBasisCurve();
 
-        Point2D aStart = aCurve.EvalD0(aCurve.FirstParameter());
-        Point2D aEnd = aCurve.EvalD0(aCurve.LastParameter());
+        Point2D aStart = aCurve.EvalD0(aCurve.FirstParameter);
+        Point2D aEnd = aCurve.EvalD0(aCurve.LastParameter);
 
-        Assert.Equal(0.0, aStart.Distance(aCurve.StartPoint()), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aEnd.Distance(aCurve.EndPoint()), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aStart.DistanceTo(aCurve.StartPoint), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aEnd.DistanceTo(aCurve.EndPoint), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -129,8 +129,8 @@ public class Geom2dEval_AHTBezierCurveTest
     {
         AhtBezierCurve2D aCurve = createPolynomialCurve();
         Point2D aPnt = aCurve.EvalD0(0.5);
-        Assert.Equal(1.0, aPnt.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.5, aPnt.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aPnt.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.5, aPnt.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -145,8 +145,8 @@ public class Geom2dEval_AHTBezierCurveTest
 
         Vector2D aFD = new((aP1.XY() - aP2.XY()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
 
-        Assert.Equal(aFD.X(), aD1.D1.X(), THE_FD_TOL_D1);
-        Assert.Equal(aFD.Y(), aD1.D1.Y(), THE_FD_TOL_D1);
+        Assert.Equal(aFD.X, aD1.D1.X, THE_FD_TOL_D1);
+        Assert.Equal(aFD.Y, aD1.D1.Y, THE_FD_TOL_D1);
     }
 
     [Fact]
@@ -161,8 +161,8 @@ public class Geom2dEval_AHTBezierCurveTest
 
         Vector2D aFD = new((aP1.XY() - aP2.XY()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
 
-        Assert.Equal(aFD.X(), aD1.D1.X(), THE_FD_TOL_D1);
-        Assert.Equal(aFD.Y(), aD1.D1.Y(), THE_FD_TOL_D1);
+        Assert.Equal(aFD.X, aD1.D1.X, THE_FD_TOL_D1);
+        Assert.Equal(aFD.Y, aD1.D1.Y, THE_FD_TOL_D1);
     }
 
     [Fact]
@@ -177,8 +177,8 @@ public class Geom2dEval_AHTBezierCurveTest
 
         Vector2D aFD = new((aP1.XY() - aP2.XY()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
 
-        Assert.Equal(aFD.X(), aD1.D1.X(), THE_FD_TOL_D1);
-        Assert.Equal(aFD.Y(), aD1.D1.Y(), THE_FD_TOL_D1);
+        Assert.Equal(aFD.X, aD1.D1.X, THE_FD_TOL_D1);
+        Assert.Equal(aFD.Y, aD1.D1.Y, THE_FD_TOL_D1);
     }
 
     [Fact]
@@ -209,7 +209,7 @@ public class Geom2dEval_AHTBezierCurveTest
     public void Continuity()
     {
         AhtBezierCurve2D aCurve = createFullBasisCurve();
-        Assert.Equal(global::Kerf.Geometry.Continuity.CN, aCurve.Continuity());
+        Assert.Equal(global::Kerf.Geometry.Continuity.CN, aCurve.Continuity);
         Assert.True(aCurve.IsCN(0));
         Assert.True(aCurve.IsCN(5));
         Assert.True(aCurve.IsCN(100));
@@ -241,7 +241,7 @@ public class Geom2dEval_AHTBezierCurveTest
         {
             Point2D aOrigPnt = aCurve.EvalD0(aU);
             Point2D aCopyPnt = aCopyCurve.EvalD0(aU);
-            Assert.Equal(0.0, aOrigPnt.Distance(aCopyPnt), global::Kerf.Engine.Foundation.Precision.Confusion());
+            Assert.Equal(0.0, aOrigPnt.DistanceTo(aCopyPnt), global::Kerf.Engine.Foundation.Precision.Confusion());
         }
 
         // Verify behavior: transformation is not supported on the copy either.
@@ -251,7 +251,7 @@ public class Geom2dEval_AHTBezierCurveTest
 
         Point2D aOrigMid = aCurve.EvalD0(0.5);
         Point2D aCopyMid = aCopyHandle.EvalD0(0.5);
-        Assert.Equal(0.0, aOrigMid.Distance(aCopyMid), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aOrigMid.DistanceTo(aCopyMid), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -343,8 +343,8 @@ public class Geom2dEval_AHTBezierCurveTest
 
         Vector2D aFD = new((aD1Plus.D1.XY() - aD1Minus.D1.XY()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
 
-        Assert.Equal(aFD.X(), aD2.D2.X(), THE_FD_TOL_D2);
-        Assert.Equal(aFD.Y(), aD2.D2.Y(), THE_FD_TOL_D2);
+        Assert.Equal(aFD.X, aD2.D2.X, THE_FD_TOL_D2);
+        Assert.Equal(aFD.Y, aD2.D2.Y, THE_FD_TOL_D2);
     }
 
     [Fact]
@@ -359,8 +359,8 @@ public class Geom2dEval_AHTBezierCurveTest
 
         Vector2D aFD = new((aD2Plus.D2.XY() - aD2Minus.D2.XY()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
 
-        Assert.Equal(aFD.X(), aD3.D3.X(), THE_FD_TOL_D3);
-        Assert.Equal(aFD.Y(), aD3.D3.Y(), THE_FD_TOL_D3);
+        Assert.Equal(aFD.X, aD3.D3.X, THE_FD_TOL_D3);
+        Assert.Equal(aFD.Y, aD3.D3.Y, THE_FD_TOL_D3);
     }
 
     [Fact]
@@ -372,8 +372,8 @@ public class Geom2dEval_AHTBezierCurveTest
         Curve2D.ResD1 aD1 = aCurve.EvalD1(aU);
         Vector2D aDN = aCurve.EvalDN(aU, 1);
 
-        Assert.Equal(aDN.X(), aD1.D1.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(aDN.Y(), aD1.D1.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aDN.X, aD1.D1.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aDN.Y, aD1.D1.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -385,12 +385,12 @@ public class Geom2dEval_AHTBezierCurveTest
         AhtBezierCurve2D aCurve = new(aPoles, 1, 0.0, 0.0);
 
         Point2D aPtHalf = aCurve.EvalD0(0.5);
-        Assert.Equal(0.5, aPtHalf.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.5, aPtHalf.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.5, aPtHalf.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.5, aPtHalf.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         Point2D aPtEnd = aCurve.EvalD0(1.0);
-        Assert.Equal(1.0, aPtEnd.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(1.0, aPtEnd.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aPtEnd.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aPtEnd.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     // OCCT.NET addition: every derivative against central differences of the one below, along the curve,

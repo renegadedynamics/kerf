@@ -47,7 +47,7 @@ public static class BRepClass3d
         for (it.Initialize(aSolid); it.More(); it.Next())
         {
             Shape sx = it.Value();
-            if (sx.ShapeType() == ShapeType.Shell)
+            if (sx.Type == ShapeType.Shell)
             {
                 shell = ShapeCasts.Shell(sx);
                 shellCounter++;
@@ -71,7 +71,7 @@ public static class BRepClass3d
         for (it.Initialize(aSolid); it.More(); it.Next())
         {
             Shape sx = it.Value();
-            if (sx.ShapeType() == ShapeType.Shell)
+            if (sx.Type == ShapeType.Shell)
             {
                 shell = ShapeCasts.Shell(sx);
                 if (!IsInternal(shell))
@@ -113,7 +113,7 @@ public static class BRepClass3d
         if (it.More())
         {
             Shape sy = it.Value();
-            or = sy.Orientation();
+            or = sy.Orientation;
             bInternal = (or == Internal);
         }
 

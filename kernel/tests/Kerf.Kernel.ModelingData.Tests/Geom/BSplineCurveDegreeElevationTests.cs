@@ -53,18 +53,18 @@ public class BSplineCurveDegreeElevationTests
             bool aRational = aR.Next(2) == 0;
             BSplineCurve3D aCurve = aRational ? new BSplineCurve3D(aPoles, aWeights, aKnots, aMults, aDeg, true)
                                               : new BSplineCurve3D(aPoles, aKnots, aMults, aDeg, true);
-            int aNewDeg = Math.Min(BSplineCurve3D.MaxDegree(), aDeg + aR.Next(1, 4));
+            int aNewDeg = Math.Min(BSplineCurve3D.MaxDegree, aDeg + aR.Next(1, 4));
             BSplineCurve3D aRaised = aCurve.DegreeIncreased(aNewDeg);
-            Assert.Equal(aNewDeg, aRaised.Degree());
+            Assert.Equal(aNewDeg, aRaised.Degree);
             Assert.True(aRaised.IsPeriodic);
-            double aF = aCurve.FirstParameter(), aL = aCurve.LastParameter();
+            double aF = aCurve.FirstParameter, aL = aCurve.LastParameter;
             for (int i = 0; i <= 40; i++)
             {
                 double u = aF + (aL - aF) * i / 40;
                 Point3D aBefore = aCurve.Value(u), anAfter = aRaised.Value(u);
-                Assert.True(aBefore.Distance(anAfter) < 1e-9 * (1 + aBefore.Distance(new Point3D(0, 0, 0))),
+                Assert.True(aBefore.DistanceTo(anAfter) < 1e-9 * (1 + aBefore.DistanceTo(new Point3D(0, 0, 0))),
                             $"case {aCase}: degree {aDeg} to {aNewDeg}, mults {string.Join(",", aMults.AsSpan().ToArray())}, "
-                            + $"u = {u}: {aBefore.X()},{aBefore.Y()},{aBefore.Z()} became {anAfter.X()},{anAfter.Y()},{anAfter.Z()}");
+                            + $"u = {u}: {aBefore.X},{aBefore.Y},{aBefore.Z} became {anAfter.X},{anAfter.Y},{anAfter.Z}");
             }
             aChecked++;
         }
@@ -91,11 +91,11 @@ public class BSplineCurveDegreeElevationTests
             }
             BSplineCurve2D aCurve = new(aPoles, aKnots, aMults, aDeg, true);
             BSplineCurve2D aRaised = aCurve.DegreeIncreased(aDeg + aR.Next(1, 4));
-            double aF = aCurve.FirstParameter(), aL = aCurve.LastParameter();
+            double aF = aCurve.FirstParameter, aL = aCurve.LastParameter;
             for (int i = 0; i <= 40; i++)
             {
                 double u = aF + (aL - aF) * i / 40;
-                Assert.True(aCurve.Value(u).Distance(aRaised.Value(u)) < 1e-9 * 30, $"case {aCase}, u = {u}");
+                Assert.True(aCurve.Value(u).DistanceTo(aRaised.Value(u)) < 1e-9 * 30, $"case {aCase}, u = {u}");
             }
         }
     }
@@ -113,7 +113,7 @@ public class BSplineCurveDegreeElevationTests
         for (int i = 0; i <= 64; i++)
         {
             double u = 5.0 * i / 64;
-            Assert.True(aCurve.Value(u).Distance(aRaised.Value(u)) < 1e-12, $"u = {u}");
+            Assert.True(aCurve.Value(u).DistanceTo(aRaised.Value(u)) < 1e-12, $"u = {u}");
         }
     }
 }

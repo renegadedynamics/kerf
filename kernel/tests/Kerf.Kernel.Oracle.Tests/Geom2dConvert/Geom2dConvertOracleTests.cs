@@ -92,7 +92,7 @@ public class Geom2dConvertOracleTests(ITestOutputHelper output)
                 double aU1, aU2;
                 if (aKind == Kind.BSpline)
                 {
-                    double aF = aBasis.FirstParameter(), aL = aBasis.LastParameter();
+                    double aF = aBasis.FirstParameter, aL = aBasis.LastParameter;
                     aU1 = anOracle.Real(aF, aL);
                     aU2 = aBasis.IsPeriodic && anOracle.Bool() ? aU1 + anOracle.Real(0.05, 1.0) * (aL - aF)
                                                                   : anOracle.Real(aU1, aL);
@@ -291,7 +291,7 @@ public class Geom2dConvertOracleTests(ITestOutputHelper output)
             BSplineSpec aSpec = Geom2dOracle.RandomBSpline(anOracle);
             using N.Geom2d_BSplineCurve aNC = Geom2dOracle.ToNative(aSpec);
             BSplineCurve2D aC = Geom2dOracle.ToPort(aSpec);
-            double aF = aC.FirstParameter(), aL = aC.LastParameter();
+            double aF = aC.FirstParameter, aL = aC.LastParameter;
             double aU1 = anOracle.Real(aF, aL), aU2 = anOracle.Real(aF, aL);
             if (anOracle.Int(0, 4) == 0)
             {

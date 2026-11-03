@@ -75,8 +75,8 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
             return aP;
         }
         double aScale = aKind == 1 ? theO.Real(1e-3, 1) : theO.Real(1, 20);
-        return new Point3D(aP.X() + aScale * theO.Real(-1, 1), aP.Y() + aScale * theO.Real(-1, 1),
-            aP.Z() + aScale * theO.Real(-1, 1));
+        return new Point3D(aP.X + aScale * theO.Real(-1, 1), aP.Y + aScale * theO.Real(-1, 1),
+            aP.Z + aScale * theO.Real(-1, 1));
     }
 
     /// <summary>
@@ -99,7 +99,7 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
             (N.Geom_Surface aNS, Surface aPS) = AdaptorOracleInputs.RandomSurface(anOracle, aKind);
             using (aNS)
             {
-                aPS.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+                aPS.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
                 bool aWhole = anOracle.Int(0, 2) == 0;
                 (double aWU1, double aWU2) = Window(anOracle, aU1, aU2, aWhole);
                 (double aWV1, double aWV2) = Window(anOracle, aV1, aV2, aWhole);
@@ -215,7 +215,7 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
         (N.Geom_Surface aNS, Surface aPS) = AdaptorOracleInputs.RandomSurface(theO, theKind);
         using (aNS)
         {
-            aPS.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+            aPS.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
             bool aWhole = theO.Int(0, 3) == 0;
             (double aWU1, double aWU2) = Window(theO, aU1, aU2, aWhole);
             (double aWV1, double aWV2) = Window(theO, aV1, aV2, aWhole);
@@ -233,7 +233,7 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
     private static void SameDistance(Oracle theO, N.BRepExtrema_DistShapeShape theN, N.gp_Pnt theNP1, N.gp_Pnt theNP2,
         double thePortSqDist, string theWhat)
     {
-        theO.Same(Oracle.FromNative(theNP1).SquareDistance(Oracle.FromNative(theNP2)), thePortSqDist,
+        theO.Same(Oracle.FromNative(theNP1).SquareDistanceTo(Oracle.FromNative(theNP2)), thePortSqDist,
             $"{theWhat} square distance");
         Assert.True(Math.Abs(Math.Sqrt(thePortSqDist) - theN.Value()) < 1e-7, $"{theWhat} distance");
     }
@@ -259,8 +259,8 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
     {
         if (theS is OffsetSurface anOS)
         {
-            anOS.Bounds(out double umin, out double umax, out double vmin, out double vmax);
-            Surface aBase = anOS.BasisSurface();
+            anOS.ParameterBounds(out double umin, out double umax, out double vmin, out double vmax);
+            Surface aBase = anOS.BasisSurface;
             if (aBase is ExtrusionSurface)
             {
                 return global::Kerf.Engine.Foundation.Precision.IsInfinite(umin) || global::Kerf.Engine.Foundation.Precision.IsInfinite(umax)
@@ -424,15 +424,15 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
                 aF = anOracle.Real(-Math.PI, Math.PI);
                 aL = aF + anOracle.Real(0.5, 2 * Math.PI);
             }
-            else if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aPC.FirstParameter()) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aPC.LastParameter()))
+            else if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aPC.FirstParameter) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aPC.LastParameter))
             {
                 aF = anOracle.Real(-4, 1);
                 aL = aF + anOracle.Real(1, 4);
             }
             else
             {
-                aF = aPC.FirstParameter();
-                aL = aPC.LastParameter();
+                aF = aPC.FirstParameter;
+                aL = aPC.LastParameter;
                 if (anOracle.Bool())
                 {
                     double a = anOracle.Real(aF, aF + 0.4 * (aL - aF));
@@ -593,7 +593,7 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
                 (N.Geom_Surface aNS2, Surface aPS2) = AdaptorOracleInputs.RandomSurface(anOracle, aKind2);
                 using (aNS2)
                 {
-                    aPS2.Bounds(out double aB1, out double aB2, out double aB3, out double aB4);
+                    aPS2.ParameterBounds(out double aB1, out double aB2, out double aB3, out double aB4);
                     (double aWU1, double aWU2) = Window(anOracle, aB1, aB2, false);
                     (double aWV1, double aWV2) = Window(anOracle, aB3, aB4, false);
                     double aS1U = anOracle.Real(aU11, aU12), aS1V = anOracle.Real(aV11, aV12);
@@ -603,19 +603,19 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
                     Vector3D aN1 = aD1U1 ^ aD1V1, aN2 = aD1U2 ^ aD1V2;
                     double aGap = anOracle.Real(0.01, 3.0);
                     Vector3D aMove;
-                    if (anOracle.Int(0, 3) != 0 && aN1.Magnitude() > 1e-6 && aN2.Magnitude() > 1e-6)
+                    if (anOracle.Int(0, 3) != 0 && aN1.Magnitude > 1e-6 && aN2.Magnitude > 1e-6)
                     {
                         // Turn surface 2 so that its normal at aOn2 is opposite to surface 1's at aOn1, and put aOn2 on
                         // that normal: the two points are then a local extremum of the distance, often inside both faces
                         aN1 = aN1.Normalized();
                         aN2 = aN2.Normalized();
                         Vector3D anAxis = aN2 ^ aN1.Reversed();
-                        if (anAxis.Magnitude() > 1e-6)
+                        if (anAxis.Magnitude > 1e-6)
                         {
-                            double anAngle = aN2.Angle(aN1.Reversed());
-                            var anAx1 = new Axis3D(aOn2, new Direction3D(anAxis.X(), anAxis.Y(), anAxis.Z()));
-                            using var aNOn2 = new N.gp_Pnt(aOn2.X(), aOn2.Y(), aOn2.Z());
-                            using var aNDir = new N.gp_Dir(anAxis.X(), anAxis.Y(), anAxis.Z());
+                            double anAngle = aN2.AngleTo(aN1.Reversed());
+                            var anAx1 = new Axis3D(aOn2, new Direction3D(anAxis.X, anAxis.Y, anAxis.Z));
+                            using var aNOn2 = new N.gp_Pnt(aOn2.X, aOn2.Y, aOn2.Z);
+                            using var aNDir = new N.gp_Dir(anAxis.X, anAxis.Y, anAxis.Z);
                             using var aNAx1 = new N.gp_Ax1(aNOn2, aNDir);
                             aNS2.Rotate(aNAx1, anAngle);
                             aPS2.Rotate(anAx1, anAngle);

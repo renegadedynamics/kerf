@@ -22,7 +22,7 @@ namespace Kerf.Engine.Geometry.Projection;
 /// (decision 243). As in OCCT, the result's poles are not the computed ones (occt-issues.md): <c>Load</c> copies
 /// each Bezier segment's poles into the wrong array, so the poles after the first degree are the origin.
 /// </remarks>
-public class ProjectOnSurface
+internal class ProjectOnSurface
 {
     private CurveAdaptorBase? _curve;
     private SurfaceAdaptorBase? _surface;

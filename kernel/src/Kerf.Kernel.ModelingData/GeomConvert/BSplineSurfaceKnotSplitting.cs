@@ -13,7 +13,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// Computes the knots of a B-spline surface at which it must be split to obtain patches of a given continuity
 /// in each parametric direction. The split values are knot indices, the first and last ones included.
 /// </summary>
-public sealed class BSplineSurfaceKnotSplitting
+internal sealed class BSplineSurfaceKnotSplitting
 {
     private NCollection_HArray1<int>? _usplitIndexes;
     private NCollection_HArray1<int>? _vsplitIndexes;
@@ -36,8 +36,8 @@ public sealed class BSplineSurfaceKnotSplitting
         int lastUIndex = basisSurface.LastUKnotIndex();
         int firstVIndex = basisSurface.FirstVKnotIndex();
         int lastVIndex = basisSurface.LastVKnotIndex();
-        int uDegree = basisSurface.UDegree();
-        int vDegree = basisSurface.VDegree();
+        int uDegree = basisSurface.UDegree;
+        int vDegree = basisSurface.VDegree;
         int i;
 
         if (uContinuityRange == 0)

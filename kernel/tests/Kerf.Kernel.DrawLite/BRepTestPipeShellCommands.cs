@@ -558,7 +558,7 @@ internal static class BRepTestPipeShellCommands
 
         Section = theDI.GetShape(a[1], ShapeType.Shape);
         if (Section.IsNull
-            || (Section.ShapeType() != ShapeType.Wire && Section.ShapeType() != ShapeType.Vertex))
+            || (Section.Type != ShapeType.Wire && Section.Type != ShapeType.Vertex))
         {
             di.Append(a[1]).Append(" is not a wire and is not a vertex!\n");
             return 1;
@@ -610,7 +610,7 @@ internal static class BRepTestPipeShellCommands
                         ParAndRad[ii] = ParAndRad[ii].WithY(theDI.Atof(a[cur + 1]));
                     }
                     thelaw = new Interpol();
-                    thelaw.Set(ParAndRad, Math.Abs(ParAndRad[1].Y() - ParAndRad[L].Y()) < global::Kerf.Engine.Foundation.Precision.Confusion());
+                    thelaw.Set(ParAndRad, Math.Abs(ParAndRad[1].Y - ParAndRad[L].Y) < global::Kerf.Engine.Foundation.Precision.Confusion());
                 }
             }
         }

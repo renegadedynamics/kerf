@@ -177,8 +177,8 @@ public class CurveAdaptor : CurveAdaptorBase
         double newFirst, newLast;
         NCollection_Array1<double> tk = bSpl.InternalKnots();
         NCollection_Array1<int> tm = bSpl.InternalMultiplicities();
-        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(bSpl.Degree(), tk, tm, u1, bSpl.IsPeriodic, 1, nb, out index1, out newFirst);
-        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(bSpl.Degree(), tk, tm, u2, bSpl.IsPeriodic, 1, nb, out index2, out newLast);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(bSpl.Degree, tk, tm, u1, bSpl.IsPeriodic, 1, nb, out index1, out newFirst);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(bSpl.Degree, tk, tm, u2, bSpl.IsPeriodic, 1, nb, out index2, out newLast);
         if (Math.Abs(newFirst - tk[index1 + 1]) < global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             if (index1 < nb)
@@ -211,7 +211,7 @@ public class CurveAdaptor : CurveAdaptorBase
                     multMax = tm[i];
                 }
             }
-            multMax = bSpl.Degree() - multMax;
+            multMax = bSpl.Degree - multMax;
         }
         if (multMax <= 0)
         {
@@ -252,7 +252,7 @@ public class CurveAdaptor : CurveAdaptorBase
         {
             throw new NullObjectException();
         }
-        LoadCore(curve, curve.FirstParameter(), curve.LastParameter());
+        LoadCore(curve, curve.FirstParameter, curve.LastParameter);
     }
 
     /// <summary>Loads theCurve between theUFirst and theULast.</summary>
@@ -291,32 +291,32 @@ public class CurveAdaptor : CurveAdaptorBase
             Type theType = c.DynamicType();
             if (theType == typeof(TrimmedCurve3D))
             {
-                Load(((TrimmedCurve3D)c).BasisCurve(), uFirst, uLast);
+                Load(((TrimmedCurve3D)c).BasisCurve, uFirst, uLast);
             }
             else if (theType == typeof(CircleCurve3D))
             {
                 _typeCurve = global::Kerf.Geometry.CurveKind.Circle;
-                _curveData = ((CircleCurve3D)c).Circ();
+                _curveData = ((CircleCurve3D)c).Circle;
             }
             else if (theType == typeof(LineCurve3D))
             {
                 _typeCurve = global::Kerf.Geometry.CurveKind.Line;
-                _curveData = ((LineCurve3D)c).Lin();
+                _curveData = ((LineCurve3D)c).Line;
             }
             else if (theType == typeof(EllipseCurve3D))
             {
                 _typeCurve = global::Kerf.Geometry.CurveKind.Ellipse;
-                _curveData = ((EllipseCurve3D)c).Elips();
+                _curveData = ((EllipseCurve3D)c).Ellipse;
             }
             else if (theType == typeof(ParabolaCurve3D))
             {
                 _typeCurve = global::Kerf.Geometry.CurveKind.Parabola;
-                _curveData = ((ParabolaCurve3D)c).Parab();
+                _curveData = ((ParabolaCurve3D)c).Parabola;
             }
             else if (theType == typeof(HyperbolaCurve3D))
             {
                 _typeCurve = global::Kerf.Geometry.CurveKind.Hyperbola;
-                _curveData = ((HyperbolaCurve3D)c).Hypr();
+                _curveData = ((HyperbolaCurve3D)c).Hyperbola;
             }
             else if (theType == typeof(BezierCurve3D))
             {
@@ -339,9 +339,9 @@ public class CurveAdaptor : CurveAdaptorBase
                 _typeCurve = global::Kerf.Geometry.CurveKind.OffsetCurve;
                 OffsetCurve3D offsetCurve = (OffsetCurve3D)c;
                 OffsetData offsetData = new OffsetData();
-                offsetData.BasisAdaptor = new CurveAdaptor(offsetCurve.BasisCurve());
-                offsetData.Offset = offsetCurve.Offset();
-                offsetData.Direction = offsetCurve.Direction();
+                offsetData.BasisAdaptor = new CurveAdaptor(offsetCurve.BasisCurve);
+                offsetData.Offset = offsetCurve.Offset;
+                offsetData.Direction = offsetCurve.Direction;
                 offsetData.EvalRep = offsetCurve.EvalRepresentation();
                 _curveData = offsetData;
             }
@@ -416,7 +416,7 @@ public class CurveAdaptor : CurveAdaptorBase
                 return 1;
             }
 
-            int degree = bSpl.Degree();
+            int degree = bSpl.Degree;
             int cont;
 
             switch (s)
@@ -472,7 +472,7 @@ public class CurveAdaptor : CurveAdaptorBase
                     baseS = CN;
                     break;
             }
-            CurveAdaptor c = new CurveAdaptor(((OffsetCurve3D)_curve!).BasisCurve(), _first, _last);
+            CurveAdaptor c = new CurveAdaptor(((OffsetCurve3D)_curve!).BasisCurve, _first, _last);
             // akm 05/04/02 (OCC278)  If our curve is trimmed we must recalculate
             //                    the number of intervals obtained from the basis to
             //              vvv   reflect parameter bounds
@@ -512,7 +512,7 @@ public class CurveAdaptor : CurveAdaptorBase
                 return;
             }
 
-            int degree = bSpl.Degree();
+            int degree = bSpl.Degree;
             int cont;
 
             switch (s)
@@ -568,7 +568,7 @@ public class CurveAdaptor : CurveAdaptorBase
                     baseS = CN;
                     break;
             }
-            CurveAdaptor c = new CurveAdaptor(((OffsetCurve3D)_curve!).BasisCurve(), _first, _last);
+            CurveAdaptor c = new CurveAdaptor(((OffsetCurve3D)_curve!).BasisCurve, _first, _last);
             // akm 05/04/02 (OCC278)  If our curve is trimmed we must recalculate
             //                    the array of intervals obtained from the basis to
             //              vvv   reflect parameter bounds
@@ -614,7 +614,7 @@ public class CurveAdaptor : CurveAdaptorBase
             {
                 Point3D pd = Value(_first);
                 Point3D pf = Value(_last);
-                return (pd.Distance(pf) <= global::Kerf.Engine.Foundation.Precision.Confusion());
+                return (pd.DistanceTo(pf) <= global::Kerf.Engine.Foundation.Precision.Confusion());
             }
             return false;
         }
@@ -623,7 +623,7 @@ public class CurveAdaptor : CurveAdaptorBase
     public override bool IsPeriodic => _curve!.IsPeriodic;
 
     /// <summary>The curve's LastParameter() - FirstParameter() (whether periodic or not, as in OCCT).</summary>
-    public override double Period() => _curve!.LastParameter() - _curve.FirstParameter();
+    public override double Period() => _curve!.LastParameter - _curve.FirstParameter;
 
     private void RebuildCache(double parameter)
     {
@@ -632,7 +632,7 @@ public class CurveAdaptor : CurveAdaptorBase
             // Create cache for Bezier
             BezierData bezData = (BezierData)_curveData!;
             BezierCurve3D bezier = (BezierCurve3D)_curve!;
-            int deg = bezier.Degree();
+            int deg = bezier.Degree;
             NCollection_Array1<double> flatKnots = NCollection_Array1<double>.From(global::Kerf.Engine.Geometry.Splines.BSplCLib.FlatBezierKnots(deg));
             if (bezData.Cache is null)
             {
@@ -651,7 +651,7 @@ public class CurveAdaptor : CurveAdaptorBase
             BSplineCurve3D bSpl = bSplData.Curve;
             if (bSplData.Cache is null)
             {
-                bSplData.Cache = new Cache(bSpl.Degree(),
+                bSplData.Cache = new Cache(bSpl.Degree,
                                                      bSpl.IsPeriodic,
                                                      bSpl.InternalKnotSequence(),
                                                      bSpl.InternalPoles(),
@@ -788,7 +788,7 @@ public class CurveAdaptor : CurveAdaptorBase
     }
 
     /// <exception cref="UndefinedDerivative3DException">The derivative of an offset curve is undefined at theU.</exception>
-    public sealed override Curve3D.ResD1 EvalD1(double u)
+    internal sealed override Curve3D.ResD1 EvalD1(double u)
     {
         double U = u;
         Curve3D.ResD1 result;
@@ -876,7 +876,7 @@ public class CurveAdaptor : CurveAdaptorBase
     }
 
     /// <exception cref="UndefinedDerivative3DException">The derivatives of an offset curve are undefined at theU.</exception>
-    public sealed override Curve3D.ResD2 EvalD2(double u)
+    internal sealed override Curve3D.ResD2 EvalD2(double u)
     {
         double U = u;
         Curve3D.ResD2 result;
@@ -966,7 +966,7 @@ public class CurveAdaptor : CurveAdaptorBase
     }
 
     /// <exception cref="UndefinedDerivative3DException">The derivatives of an offset curve are undefined at theU.</exception>
-    public sealed override Curve3D.ResD3 EvalD3(double u)
+    internal sealed override Curve3D.ResD3 EvalD3(double u)
     {
         double U = u;
         Curve3D.ResD3 result;
@@ -1139,7 +1139,7 @@ public class CurveAdaptor : CurveAdaptorBase
                 return r3D;
             case global::Kerf.Geometry.CurveKind.Circle:
             {
-                double r = ((Circle3D)_curveData!).Radius();
+                double r = ((Circle3D)_curveData!).Radius;
                 if (r > r3D / 2.0)
                 {
                     return 2 * Math.Asin(r3D / (2 * r));
@@ -1151,7 +1151,7 @@ public class CurveAdaptor : CurveAdaptorBase
             }
             case global::Kerf.Geometry.CurveKind.Ellipse:
             {
-                return r3D / ((Ellipse3D)_curveData!).MajorRadius();
+                return r3D / ((Ellipse3D)_curveData!).MajorRadius;
             }
             case BezierCurve:
             {
@@ -1220,11 +1220,11 @@ public class CurveAdaptor : CurveAdaptorBase
     {
         if (_typeCurve == BezierCurve)
         {
-            return ((BezierCurve3D)_curve!).Degree();
+            return ((BezierCurve3D)_curve!).Degree;
         }
         else if (_typeCurve == BSplineCurve)
         {
-            return ((BSplineData)_curveData!).Curve.Degree();
+            return ((BSplineData)_curveData!).Curve.Degree;
         }
         else
         {

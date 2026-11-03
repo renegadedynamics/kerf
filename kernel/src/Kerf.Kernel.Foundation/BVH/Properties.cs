@@ -19,7 +19,7 @@ public abstract class Properties : Transient
 /// <c>BVH_Transform&lt;T, N&gt;</c> exists only for N = 4 (the only dimension with a matrix type), so the port
 /// has the element type alone.
 /// </summary>
-public class BvhTransform<T> : Properties
+internal class BvhTransform<T> : Properties
     where T : unmanaged, INumber<T>, IMinMaxValue<T>
 {
     protected NCollection_Mat4<T> _transform = new();         //!< Transformation matrix

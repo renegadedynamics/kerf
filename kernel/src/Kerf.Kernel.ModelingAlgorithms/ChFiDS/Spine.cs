@@ -394,7 +394,7 @@ public class Spine : Transient
         }
 
         double l = FirstParameter(i);
-        if (_spine.Value(i).Orientation() == Reversed)
+        if (_spine.Value(i).Orientation == Reversed)
         {
             l += AbscissaPoint.Length(_curve, u, _curve.LastParameter());
         }
@@ -432,7 +432,7 @@ public class Spine : Transient
         }
 
         double l;
-        Orientation or = _spine.Value(index).Orientation();
+        Orientation or = _spine.Value(index).Orientation;
         if (or == Reversed)
         {
             l = _abscissa!.Value(_indexofcurve) - absC;
@@ -533,8 +533,8 @@ public class Spine : Transient
             double uapp = (1.0 - t) * _curve.FirstParameter() + t * _curve.LastParameter();
             AbscissaPoint gcp = new(_curve, l, _curve.FirstParameter(), uapp);
             _curve.D1(gcp.Parameter(), out p, out v1);
-            double d1 = 1.0 / v1.Magnitude();
-            if (_spine.Value(index).Orientation() == Reversed)
+            double d1 = 1.0 / v1.Magnitude;
+            if (_spine.Value(index).Orientation == Reversed)
             {
                 d1 = -d1;
             }
@@ -582,14 +582,14 @@ public class Spine : Transient
             double uapp = (1.0 - t) * _curve.FirstParameter() + t * _curve.LastParameter();
             AbscissaPoint gcp = new(_curve, l, _curve.FirstParameter(), uapp);
             _curve.D2(gcp.Parameter(), out p, out v1, out v2);
-            double n1 = v1.SquareMagnitude();
+            double n1 = v1.SquareMagnitude;
             double d2 = -(v1.Dot(v2)) * (1.0 / n1) * (1.0 / n1);
             v2 = v2.Multiplied(1.0 / n1);
             n1 = Math.Sqrt(n1);
             Vector3D va = v1.Multiplied(d2);
             v2 = v2.Added(va);
             double d1 = 1.0 / n1;
-            if (_spine.Value(index).Orientation() == Reversed)
+            if (_spine.Value(index).Orientation == Reversed)
             {
                 d1 = -d1;
             }
@@ -634,7 +634,7 @@ public class Spine : Transient
     public Line3D Line()
     {
         Line3D ll = _curve.Line();
-        if (_spine.Value(_indexofcurve).Orientation() == Reversed)
+        if (_spine.Value(_indexofcurve).Orientation == Reversed)
         {
             ll = ll.Reversed();
             ll = ll.WithLocation(_curve.Value(_curve.LastParameter()));
@@ -650,18 +650,18 @@ public class Spine : Transient
     /// <summary>The current curve as an oriented circle starting at the edge's start.</summary>
     public Circle3D Circle()
     {
-        Frame3D ac = _curve.Circle().Position();
-        Direction3D dc = new Direction3D(new Vector3D(ac.Location(), _curve.Value(_curve.FirstParameter())));
-        Direction3D zz = ac.Direction();
+        Frame3D ac = _curve.Circle().Position;
+        Direction3D dc = new Direction3D(new Vector3D(ac.Location, _curve.Value(_curve.FirstParameter())));
+        Direction3D zz = ac.Direction;
 
-        if (_spine.Value(_indexofcurve).Orientation() == Reversed)
+        if (_spine.Value(_indexofcurve).Orientation == Reversed)
         {
-            dc = new Direction3D(new Vector3D(ac.Location(), _curve.Value(_curve.LastParameter())));
+            dc = new Direction3D(new Vector3D(ac.Location, _curve.Value(_curve.LastParameter())));
             zz = zz.Reversed();
         }
 
-        Frame3D a = new Frame3D(ac.Location(), zz, dc);
-        return new Circle3D(a, _curve.Circle().Radius());
+        Frame3D a = new Frame3D(ac.Location, zz, dc);
+        return new Circle3D(a, _curve.Circle().Radius);
     }
 
     /// <summary>Whether the chain starts on a free boundary, on a break point, or is closed.</summary>
@@ -745,22 +745,22 @@ public class Spine : Transient
         {
             e = ShapeCasts.Edge(_spine.Value(i));
             Exploration.Vertices(e, out d, out f);
-            if (d.IsSame(v) && e.Orientation() == Forward)
+            if (d.IsSame(v) && e.Orientation == Forward)
             {
                 return FirstParameter(i);
             }
 
-            if (d.IsSame(v) && e.Orientation() == Reversed)
+            if (d.IsSame(v) && e.Orientation == Reversed)
             {
                 return LastParameter(i);
             }
 
-            if (f.IsSame(v) && e.Orientation() == Forward)
+            if (f.IsSame(v) && e.Orientation == Forward)
             {
                 return LastParameter(i);
             }
 
-            if (f.IsSame(v) && e.Orientation() == Reversed)
+            if (f.IsSame(v) && e.Orientation == Reversed)
             {
                 return FirstParameter(i);
             }
@@ -772,7 +772,7 @@ public class Spine : Transient
     public Vertex FirstVertex()
     {
         Edge e = ShapeCasts.Edge(_spine.First());
-        if (e.Orientation() == Forward)
+        if (e.Orientation == Forward)
         {
             return Exploration.FirstVertex(e);
         }
@@ -783,7 +783,7 @@ public class Spine : Transient
     public Vertex LastVertex()
     {
         Edge e = ShapeCasts.Edge(_spine.Last());
-        if (e.Orientation() == Forward)
+        if (e.Orientation == Forward)
         {
             return Exploration.LastVertex(e);
         }
@@ -1033,7 +1033,7 @@ public class Spine : Transient
 
         if (ind >= 1 && ind <= len)
         {
-            if (_spine.Value(ind).Orientation() == Reversed)
+            if (_spine.Value(ind).Orientation == Reversed)
             {
                 l = _abscissa.Value(ind) - l;
             }

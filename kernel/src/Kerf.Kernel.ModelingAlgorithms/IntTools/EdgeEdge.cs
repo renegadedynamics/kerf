@@ -964,14 +964,14 @@ public class EdgeEdge
         Line3D l1 = _curve1.Line();
         Line3D l2 = _curve2.Line();
 
-        Direction3D d1 = l1.Direction();
-        Direction3D d2 = l2.Direction();
+        Direction3D d1 = l1.Direction;
+        Direction3D d2 = l2.Direction;
 
-        double angle = d1.Angle(d2);
+        double angle = d1.AngleTo(d2);
         bool isCoincide = angle < global::Kerf.Engine.Foundation.Precision.Angular();
         if (isCoincide)
         {
-            if (l1.SquareDistance(l2.Location()) > tol)
+            if (l1.SquareDistanceTo(l2.Location) > tol)
             {
                 return;
             }
@@ -986,7 +986,7 @@ public class EdgeEdge
 
         if (!isCoincide)
         {
-            Point3D o2 = l2.Location();
+            Point3D o2 = l2.Location;
             if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(aT21) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(aT22))
             {
                 o2 = global::Kerf.Engine.Geometry.ElCLib.Value((aT21 + aT22) / 2.0, l2);
@@ -995,8 +995,8 @@ public class EdgeEdge
             Vector3D vec1 = new Vector3D(o2, p11).Crossed(new Vector3D(d2));
             Vector3D vec2 = new Vector3D(o2, p12).Crossed(new Vector3D(d2));
 
-            double sqDist1 = vec1.SquareMagnitude();
-            double sqDist2 = vec2.SquareMagnitude();
+            double sqDist1 = vec1.SquareMagnitude;
+            double sqDist2 = vec2.SquareMagnitude;
 
             isCoincide = (sqDist1 <= tol && sqDist2 <= tol);
 
@@ -1051,7 +1051,7 @@ public class EdgeEdge
             return;
         }
 
-        Vector3D o1O2 = new(l1.Location(), l2.Location());
+        Vector3D o1O2 = new(l1.Location, l2.Location);
         Xyz cross = d1.XYZ().Crossed(d2.XYZ());
         double distLL = o1O2.Dot(new Vector3D(cross.Normalized()));
         if (Math.Abs(distLL) > _tol)
@@ -1084,7 +1084,7 @@ public class EdgeEdge
         }
 
         Point3D p2 = global::Kerf.Engine.Geometry.ElCLib.Value(t2, l2);
-        double t1 = new Vector3D(l1.Location(), p2).Dot(new Vector3D(d1));
+        double t1 = new Vector3D(l1.Location, p2).Dot(new Vector3D(d1));
 
         if (t1 < t11 || t1 > t12)
         {
@@ -1093,7 +1093,7 @@ public class EdgeEdge
         }
 
         Point3D p1 = global::Kerf.Engine.Geometry.ElCLib.Value(t1, l1);
-        double dist = p1.SquareDistance(p2);
+        double dist = p1.SquareDistanceTo(p2);
 
         if (dist > tol)
         {
@@ -1145,10 +1145,10 @@ public class EdgeEdge
         _geom2!.D1(aT21, out p21, out v21);
         _geom2.D1(aT22, out p22, out v22);
         //
-        d11_21 = p11.SquareDistance(p21);
-        d11_22 = p11.SquareDistance(p22);
-        d12_21 = p12.SquareDistance(p21);
-        d12_22 = p12.SquareDistance(p22);
+        d11_21 = p11.SquareDistanceTo(p21);
+        d11_22 = p11.SquareDistanceTo(p22);
+        d12_21 = p12.SquareDistanceTo(p21);
+        d12_22 = p12.SquareDistanceTo(p22);
         //
         bSmall_11_21 = d11_21 < criteria;
         bSmall_11_22 = d11_22 < criteria;
@@ -1166,20 +1166,20 @@ public class EdgeEdge
             double angle1 = 0.0, angle2 = 0.0;
             //
             angleCriteria = 5.0e-3;
-            if (v11.SquareMagnitude() > global::Kerf.Engine.Foundation.Precision.SquareConfusion()
-                && v12.SquareMagnitude() > global::Kerf.Engine.Foundation.Precision.SquareConfusion()
-                && v21.SquareMagnitude() > global::Kerf.Engine.Foundation.Precision.SquareConfusion()
-                && v22.SquareMagnitude() > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+            if (v11.SquareMagnitude > global::Kerf.Engine.Foundation.Precision.SquareConfusion()
+                && v12.SquareMagnitude > global::Kerf.Engine.Foundation.Precision.SquareConfusion()
+                && v21.SquareMagnitude > global::Kerf.Engine.Foundation.Precision.SquareConfusion()
+                && v22.SquareMagnitude > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
             {
                 if (bSmall_11_21 && bSmall_12_22)
                 {
-                    angle1 = v11.Angle(v21);
-                    angle2 = v12.Angle(v22);
+                    angle1 = v11.AngleTo(v21);
+                    angle2 = v12.AngleTo(v22);
                 }
                 else
                 {
-                    angle1 = v11.Angle(v22);
-                    angle2 = v12.Angle(v21);
+                    angle1 = v11.AngleTo(v22);
+                    angle2 = v12.AngleTo(v21);
                 }
             }
             //
@@ -1527,15 +1527,15 @@ public class EdgeEdge
         switch (curveType)
         {
             case Circle:
-                resCoeff = 1.0 / (2 * ((CircleCurve3D)curve).Circ().Radius());
+                resCoeff = 1.0 / (2 * ((CircleCurve3D)curve).Circle.Radius);
                 break;
             case Ellipse:
-                resCoeff = 1.0 / ((EllipseCurve3D)curve).MajorRadius();
+                resCoeff = 1.0 / ((EllipseCurve3D)curve).MajorRadius;
                 break;
             case OffsetCurve:
                 {
                     OffsetCurve3D offsetCurve = (OffsetCurve3D)curve;
-                    Curve3D basisCurve = offsetCurve.BasisCurve();
+                    Curve3D basisCurve = offsetCurve.BasisCurve;
                     CurveAdaptor gBasisCurve = new(basisCurve);
                     CurveKind bcType = gBasisCurve.GetType();
                     if (bcType == Line)
@@ -1544,12 +1544,12 @@ public class EdgeEdge
                     }
                     else if (bcType == Circle)
                     {
-                        resCoeff = 1.0 / (2 * (offsetCurve.Offset() + gBasisCurve.Circle().Radius()));
+                        resCoeff = 1.0 / (2 * (offsetCurve.Offset + gBasisCurve.Circle().Radius));
                         break;
                     }
                     else if (bcType == Ellipse)
                     {
-                        resCoeff = 1.0 / (offsetCurve.Offset() + gBasisCurve.Ellipse().MajorRadius());
+                        resCoeff = 1.0 / (offsetCurve.Offset + gBasisCurve.Ellipse().MajorRadius);
                         break;
                     }
                     sample = true;
@@ -1580,7 +1580,7 @@ public class EdgeEdge
             {
                 t += dt;
                 bac.D0(t, out p2);
-                dist = p1.Distance(p2);
+                dist = p1.DistanceTo(p2);
                 k = dt / dist;
                 if (k < kMin)
                 {
@@ -1618,7 +1618,7 @@ public class EdgeEdge
                 break;
             case OffsetCurve:
                 {
-                    Curve3D basisCurve = ((OffsetCurve3D)curve).BasisCurve();
+                    Curve3D basisCurve = ((OffsetCurve3D)curve).BasisCurve;
                     CurveKind bcType = new CurveAdaptor(basisCurve).GetType();
                     if (bcType == Line)
                     {
@@ -1660,10 +1660,10 @@ public class EdgeEdge
         {
             t += dt;
             bac.D1(t, out _, out v2);
-            if (v1.Magnitude() > Constants.Resolution() && v2.Magnitude() > Constants.Resolution())
+            if (v1.Magnitude > Constants.Resolution() && v2.Magnitude > Constants.Resolution())
             {
                 Direction3D d1 = new(v1), d2 = new(v2);
-                defl += d1.Angle(d2);
+                defl += d1.AngleTo(d2);
             }
             v1 = v2;
         }
@@ -1682,7 +1682,7 @@ public class EdgeEdge
         curve.D0(aT1, out p1);
         curve.D0(aT2, out p2);
         //
-        double d = p1.Distance(p2);
+        double d = p1.DistanceTo(p2);
         return d < tol;
     }
 }

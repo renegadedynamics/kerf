@@ -121,7 +121,7 @@ public static class Customize
         Shape sf = s.Oriented(Forward);
 
         // Process COMPOUNDs separately in order to handle sharing in assemblies
-        if (sf.ShapeType() == ShapeType.Compound)
+        if (sf.Type == ShapeType.Compound)
         {
             bool locModified = false;
             Compound c = new();
@@ -142,8 +142,8 @@ public static class Customize
                 Shape res;
                 if (context.TryGetValue(shapeNoLoc, out res))
                 {
-                    res.Orientation(shape.Orientation());
-                    res.Location(shape.Location(), false);
+                    res.Orient(shape.Orientation);
+                    res.Location(shape.Placement, false);
                 }
                 else
                 {
@@ -166,12 +166,12 @@ public static class Customize
                 return s;
             }
 
-            sf.Orientation(s.Orientation());
-            c.Orientation(s.Orientation());
+            sf.Orient(s.Orientation);
+            c.Orient(s.Orientation);
 
             context[sf] = c;
 
-            c.Location(s.Location(), false);
+            c.Location(s.Placement, false);
 
             aReShape?.Replace(s, c);
 
@@ -190,7 +190,7 @@ public static class Customize
 
         // OCCT.NET: the internal accessor; the result is frozen at the publication point (decision 973)
         Shape result = md.InternalModifiedShape(sf);
-        result.Orientation(s.Orientation());
+        result.Orient(s.Orientation);
 
         if (!sf.IsSame(result))
         {

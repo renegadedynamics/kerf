@@ -116,11 +116,11 @@ public class RemoveInternalWires : UpgradeTool
         for (; i <= nb; i++)
         {
             Shape s = seqShapes.Value(i);
-            if (s.ShapeType() == ShapeType.Face)
+            if (s.Type == ShapeType.Face)
             {
                 RemoveSmallWire(s, new Wire());
             }
-            else if (s.ShapeType() == ShapeType.Wire)
+            else if (s.Type == ShapeType.Wire)
             {
                 if (wireFaces.Count == 0)
                 {
@@ -192,7 +192,7 @@ public class RemoveInternalWires : UpgradeTool
         var it = new Iterator(f);
         for (; it.More(); it.Next())
         {
-            if (it.Value().ShapeType() != ShapeType.Wire || it.Value().IsSame(outW))
+            if (it.Value().Type != ShapeType.Wire || it.Value().IsSame(outW))
             {
                 continue;
             }

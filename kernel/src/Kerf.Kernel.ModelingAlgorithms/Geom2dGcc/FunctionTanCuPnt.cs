@@ -45,9 +45,9 @@ public sealed class FunctionTanCuPnt : FunctionWithDerivative
     public override bool Value(double x, out double fval)
     {
         ConstraintCurveTool.D1(_theCurv, x, out Point2D point, out Vector2D vect);
-        double   normeD1      = vect.Magnitude();
+        double   normeD1      = vect.Magnitude;
         Vector2D theDirection = new(_thePoint, point);
-        double   normeDir     = theDirection.Magnitude();
+        double   normeDir     = theDirection.Magnitude;
         fval                  = theDirection.Crossed(vect) / (normeD1 * normeDir);
         return true;
     }
@@ -56,8 +56,8 @@ public sealed class FunctionTanCuPnt : FunctionWithDerivative
     {
         ConstraintCurveTool.D2(_theCurv, x, out Point2D point, out Vector2D vec1, out Vector2D vec2);
         Vector2D theDirection = new(new Point2D(_thePoint.XY()), new Point2D(point.XY()));
-        double   normeD1      = vec1.Magnitude();
-        double   normeDir     = theDirection.Magnitude();
+        double   normeD1      = vec1.Magnitude;
+        double   normeDir     = theDirection.Magnitude;
         deriv =
           theDirection.Crossed(vec2) / (normeD1 * normeDir)
           - (theDirection.Crossed(vec1) / (normeD1 * normeDir))
@@ -69,8 +69,8 @@ public sealed class FunctionTanCuPnt : FunctionWithDerivative
     {
         ConstraintCurveTool.D2(_theCurv, x, out Point2D point, out Vector2D vec1, out Vector2D vec2);
         Vector2D theDirection = new(new Point2D(_thePoint.XY()), new Point2D(point.XY()));
-        double   normeD1      = vec1.Magnitude();
-        double   normeDir     = theDirection.Magnitude();
+        double   normeD1      = vec1.Magnitude;
+        double   normeDir     = theDirection.Magnitude;
         fval                  = theDirection.Crossed(vec1) / (normeD1 * normeDir);
         deriv =
           theDirection.Crossed(vec2) / (normeD1 * normeDir)

@@ -174,8 +174,8 @@ public static class GeometricTool
         // w1 et/ou w2 peuvent etre en dehors des bornes naturelles de la courbe.
         // On donnera alors la valeur en bout a w1 et/ou w2
 
-        double cf = curve.FirstParameter();
-        double cl = curve.LastParameter();
+        double cf = curve.FirstParameter;
+        double cl = curve.LastParameter;
 
         if (curve is BoundedCurve3D && !curve.IsClosed)
         {
@@ -229,12 +229,12 @@ public static class GeometricTool
             else
             {
                 //: S4136 abv 20 Apr 99: r0701_ug.stp #6230: add check in 3d
-                if (curve.Value(w1).Distance(curve.Value(cf)) < preci)
+                if (curve.Value(w1).DistanceTo(curve.Value(cf)) < preci)
                 {
                     w1 = cf;
                 }
 
-                if (curve.Value(w2).Distance(curve.Value(cl)) < preci)
+                if (curve.Value(w2).DistanceTo(curve.Value(cl)) < preci)
                 {
                     w2 = cl;
                 }
@@ -255,7 +255,7 @@ public static class GeometricTool
         // The curve is closed within the 3D tolerance
         else if (curve is BSplineCurve3D bSpline)
         {
-            if (bSpline.StartPoint().Distance(bSpline.EndPoint()) <= preci)
+            if (bSpline.StartPoint.DistanceTo(bSpline.EndPoint) <= preci)
             {
                 //: S4136	<= BRepAPI::Precision()) {
                 // l'un des points projecte se trouve sur l'origine du parametrage

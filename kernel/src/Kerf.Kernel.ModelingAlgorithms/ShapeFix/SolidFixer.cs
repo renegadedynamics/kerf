@@ -346,7 +346,7 @@ public class SolidFixer : RootFixer
             var compSolid = new CompSolid();
             var b         = new BrepBuilder();
             b.MakeCompSolid(ref compSolid);
-            isDone = (shape.ShapeType() != ShapeType.CompSolid || isDone);
+            isDone = (shape.Type != ShapeType.CompSolid || isDone);
             int nbSol = 0;
             for (var lItSh = new NCollection_List<Shape>.Iterator(lshells); lItSh.More(); lItSh.Next())
             {
@@ -494,7 +494,7 @@ public class SolidFixer : RootFixer
             {
                 var          itersh = new Iterator(tmpShape);
                 Shell shell = new();
-                if (itersh.More() && itersh.Value().ShapeType() == ShapeType.Shell)
+                if (itersh.More() && itersh.Value().Type == ShapeType.Shell)
                 {
                     shell = ShapeCasts.Shell(itersh.Value());
                 }
@@ -529,7 +529,7 @@ public class SolidFixer : RootFixer
                 if (mapSolids.Count == 1)
                 {
                     Shape resSol = mapSolids[0];
-                    if (resShape.ShapeType() == ShapeType.Shell && _createOpenSolidMode)
+                    if (resShape.Type == ShapeType.Shell && _createOpenSolidMode)
                     {
                         var solid = new Solid();
                         var B     = new BrepBuilder();
@@ -540,7 +540,7 @@ public class SolidFixer : RootFixer
                     else
                     {
                         _solid = resSol;
-                        if (resSol.ShapeType() == ShapeType.Shell)
+                        if (resSol.Type == ShapeType.Shell)
                         {
                             SendFail(new Msg("FixAdvSolid.FixShell.MSG10")); // Solid can not be created from open shell.
                         }
@@ -557,7 +557,7 @@ public class SolidFixer : RootFixer
                     for (int i = 1; (i <= mapSolids.Count) && (psCreatingSolid.More()); i++, psCreatingSolid.Next())
                     {
                         Shape resSh = mapSolids[i - 1];
-                        if (resShape.ShapeType() == ShapeType.Shell && _createOpenSolidMode)
+                        if (resShape.Type == ShapeType.Shell && _createOpenSolidMode)
                         {
                             resSh.Closed(false);
                             var solid = new Solid();
@@ -566,7 +566,7 @@ public class SolidFixer : RootFixer
                             b.Add(solid, resSh);
                             resSh = solid;
                         }
-                        else if (resShape.ShapeType() == ShapeType.Shell)
+                        else if (resShape.Type == ShapeType.Shell)
                         {
                             SendFail(new Msg("FixAdvSolid.FixShell.MSG10")); // Solid can not be created from open shell.
                         }

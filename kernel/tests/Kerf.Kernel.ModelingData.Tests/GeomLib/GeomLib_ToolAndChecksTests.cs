@@ -96,10 +96,10 @@ public class GeomLib_ToolAndChecksTests
         double aDefl = GeometryLibraryTool.ComputeDeviation(anAC, -a, a, aPrm, 100, ref aPrmOn, ref aPt, ref aVec, ref aLin);
         Assert.Equal(1.0 - Math.Cos(a), aDefl, 1e-12);
         Assert.Equal(0.0, aPrmOn, 1e-7);
-        Assert.Equal(1.0, aPt.X(), 1e-12);
-        Assert.Equal(-(1.0 - Math.Cos(a)), aVec.X(), 1e-12);
-        Assert.Equal(Math.Cos(a), aLin.Location().X(), 1e-15);
-        Assert.Equal(1.0, Math.Abs(aLin.Direction().Y()), 1e-15);
+        Assert.Equal(1.0, aPt.X, 1e-12);
+        Assert.Equal(-(1.0 - Math.Cos(a)), aVec.X, 1e-12);
+        Assert.Equal(Math.Cos(a), aLin.Location.X, 1e-15);
+        Assert.Equal(1.0, Math.Abs(aLin.Direction.Y), 1e-15);
         Assert.Equal(aDefl, GeometryLibraryTool.ComputeDeviation(anAC, -a, a, aPrm));
 
         // Start outside the range, or a degenerate chord
@@ -217,10 +217,10 @@ public class GeomLib_ToolAndChecksTests
             Assert.True(aCurve.IsFrozen);
             Assert.Same(aCurve, anInterp.Curve());
             // An even degree gives degree - 1
-            Assert.Equal(aDegree % 2 == 0 ? aDegree - 1 : aDegree, aCurve.Degree());
+            Assert.Equal(aDegree % 2 == 0 ? aDegree - 1 : aDegree, aCurve.Degree);
             for (int i = 1; i <= aNb; i++)
             {
-                Assert.True(aCurve.Value(aParams[i]).Distance(aPoints[i]) < 1e-10);
+                Assert.True(aCurve.Value(aParams[i]).DistanceTo(aPoints[i]) < 1e-10);
             }
         }
 
@@ -265,12 +265,12 @@ public class GeomLib_ToolAndChecksTests
         for (int i = 0; i <= 4000; i++)
         {
             double t = 4.0 * i / 4000;
-            aSampled = Math.Max(aSampled, aC3.Value(t).Distance(aCoS.Value(t)));
+            aSampled = Math.Max(aSampled, aC3.Value(t).DistanceTo(aCoS.Value(t)));
         }
         Assert.True(aSeq.MaxDistance() >= aSampled - 1e-9);
         Assert.True(aSeq.MaxDistance() <= aSampled + 1e-4);
         double aPrm = aSeq.MaxParameter();
-        Assert.Equal(aSeq.MaxDistance(), aC3.Value(aPrm).Distance(aCoS.Value(aPrm)), 1e-12);
+        Assert.Equal(aSeq.MaxDistance(), aC3.Value(aPrm).DistanceTo(aCoS.Value(aPrm)), 1e-12);
 
         CheckCurveOnSurface aPar = new(aGC);
         aPar.SetParallel(true);

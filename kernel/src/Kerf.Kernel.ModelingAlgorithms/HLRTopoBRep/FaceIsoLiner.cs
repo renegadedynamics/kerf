@@ -44,7 +44,7 @@ public static class FaceIsoLiner
 
         Explorer expEdges = new();
         Face tf = f;
-        tf.Orientation(Forward);
+        tf.Orient(Forward);
         Point2D p = new();
         Point3D p1, p2;
         Vertex v1U = new(), v2U = new(), v1V = new(), v2V = new();
@@ -110,16 +110,16 @@ public static class FaceIsoLiner
             int indE;
             Edge newE = ShapeCasts.Edge(expEdges.Current());
             Curve2D pc = Tool.CurveOnSurface(newE, tf, out u1, out u2)!;
-            if (Abs(pc.FirstParameter() - u1) <= global::Kerf.Engine.Foundation.Precision.PConfusion()
-                && Abs(pc.LastParameter() - u2) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
+            if (Abs(pc.FirstParameter - u1) <= global::Kerf.Engine.Foundation.Precision.PConfusion()
+                && Abs(pc.LastParameter - u2) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
-                indE = hatcher.AddElement(pc, newE.Orientation());
+                indE = hatcher.AddElement(pc, newE.Orientation);
             }
             else
             {
                 TrimmedCurve2D tpc = new(pc, u1, u2);
                 CurveAdaptor2D gac = new(tpc);
-                indE = hatcher.AddElement(gac, newE.Orientation());
+                indE = hatcher.AddElement(gac, newE.Orientation);
             }
             sh[indE] = newE;
             if (ds.IsOutLFaceEdge(tf, newE))
@@ -140,8 +140,8 @@ public static class FaceIsoLiner
                 int indE;
                 Edge newE = ShapeCasts.Edge(itE.Value());
                 Curve2D pc = Tool.CurveOnSurface(newE, tf, out u1, out u2)!;
-                if (Abs(pc.FirstParameter() - u1) <= global::Kerf.Engine.Foundation.Precision.PConfusion()
-                    && Abs(pc.LastParameter() - u2) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
+                if (Abs(pc.FirstParameter - u1) <= global::Kerf.Engine.Foundation.Precision.PConfusion()
+                    && Abs(pc.LastParameter - u2) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     indE = hatcher.AddElement(pc, Internal);
                 }
@@ -208,9 +208,9 @@ public static class FaceIsoLiner
                         double u11 = dom.HasFirstPoint ? dom.FirstPoint().Parameter() : vMin - Infinite;
                         double u21 = dom.HasSecondPoint ? dom.SecondPoint().Parameter() : vMax + Infinite;
                         isoLine.D0(u11, out p);
-                        surface.D0(p.X(), p.Y(), out p1);
+                        surface.D0(p.X, p.Y, out p1);
                         isoLine.D0(u21, out p);
-                        surface.D0(p.X(), p.Y(), out p2);
+                        surface.D0(p.X, p.Y, out p2);
                         if (dom.HasFirstPoint)
                         { // Iso U - Premier point
                             PointOnHatching pntH = dom.FirstPoint();
@@ -290,9 +290,9 @@ public static class FaceIsoLiner
                         double u12 = dom.HasFirstPoint ? dom.FirstPoint().Parameter() : vMin - Infinite;
                         double u22 = dom.HasSecondPoint ? dom.SecondPoint().Parameter() : vMax + Infinite;
                         isoLine.D0(u12, out p);
-                        surface.D0(p.X(), p.Y(), out p1);
+                        surface.D0(p.X, p.Y, out p1);
                         isoLine.D0(u22, out p);
-                        surface.D0(p.X(), p.Y(), out p2);
+                        surface.D0(p.X, p.Y, out p2);
                         if (dom.HasFirstPoint)
                         { // Iso V - Premier point
                             PointOnHatching pntH = dom.FirstPoint();
@@ -365,7 +365,7 @@ public static class FaceIsoLiner
             else if (par < curP)
             {
                 b.MakeVertex(ref v, p, tol);
-                v.Orientation(Internal);
+                v.Orient(Internal);
                 ds.InsertBefore(v, par);
                 break;
             }
@@ -374,7 +374,7 @@ public static class FaceIsoLiner
         if (!ds.MoreVertex())
         {
             b.MakeVertex(ref v, p, tol);
-            v.Orientation(Internal);
+            v.Orient(Internal);
             ds.Append(v, par);
         }
 
@@ -387,9 +387,9 @@ public static class FaceIsoLiner
     {
         BrepBuilder b = new();
         Edge e = new();
-        e.Orientation(Internal);
-        v1.Orientation(Forward);
-        v2.Orientation(Reversed);
+        e.Orient(Internal);
+        v1.Orient(Forward);
+        v2.Orient(Reversed);
         b.MakeEdge(ref e);
         b.UpdateEdge(e, iso, f, tol);
         b.Add(e, v1);

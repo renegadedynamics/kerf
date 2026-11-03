@@ -46,10 +46,10 @@ public abstract partial class Shape
 
     private static DisplayNode BuildTree(global::Kerf.Topology.Shape shape, global::Kerf.Topology.ShapeType limit, bool showCenter, string caption)
     {
-        var label = TopoUtil.FromTopAbs(shape.ShapeType()).ToString();
+        var label = TopoUtil.FromTopAbs(shape.Type).ToString();
         var position = caption + (showCenter
             ? BoundBox.FromTopoDS(shape).Center().ToString(".6g")
-            : new Location(shape.Location()).Position.ToString(".6g"));
+            : new Location(shape.Placement).Position.ToString(".6g"));
         var children = new List<DisplayNode>();
         var it = new Iterator();
         it.Initialize(shape);
@@ -57,7 +57,7 @@ public abstract partial class Shape
         {
             var child = it.Value();
             // As build123d's _build_tree, a child carries its centre whatever the root shows
-            if (Array.IndexOf(OrderedShapes, child.ShapeType()) <= Array.IndexOf(OrderedShapes, limit))
+            if (Array.IndexOf(OrderedShapes, child.Type) <= Array.IndexOf(OrderedShapes, limit))
                 children.Add(BuildTree(child, limit, true, caption));
         }
         return new DisplayNode(label, "", (long)(shape.StdHash() & 0xffffffffffff), position, children);

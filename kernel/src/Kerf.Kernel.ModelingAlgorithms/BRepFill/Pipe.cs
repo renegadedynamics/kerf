@@ -129,7 +129,7 @@ public sealed class Pipe
             double par = fpar + i * delta;
             Point3D pnt = curve.Value(par);
             Point3D prj = conS.Value(par);
-            double sqdist = pnt.SquareDistance(prj);
+            double sqdist = pnt.SquareDistanceTo(prj);
             if (sqdist > tolTol)
             {
                 tolTol = sqdist;
@@ -248,7 +248,7 @@ public sealed class Pipe
         _trsf = place.Transformation();
 
         Placement loc2 = new(_trsf), loc1;
-        loc1 = profile.Location();
+        loc1 = profile.Placement;
         theProf = _profile;
         theProf.Location(loc2.Multiplied(loc1));
 
@@ -261,15 +261,15 @@ public sealed class Pipe
         fila = fila.WithValues(m[1, 1],
                        m[1, 2],
                        m[1, 3],
-                       v.X(),
+                       v.X,
                        m[2, 1],
                        m[2, 2],
                        m[2, 3],
-                       v.Y(),
+                       v.Y,
                        m[3, 1],
                        m[3, 2],
                        m[3, 3],
-                       v.Z());
+                       v.Z);
 
         fila = fila.Multiplied(_trsf);
         Placement locFirst = new(fila);
@@ -291,18 +291,18 @@ public sealed class Pipe
         fila = fila.WithValues(m[1, 1],
                        m[1, 2],
                        m[1, 3],
-                       v.X(),
+                       v.X,
                        m[2, 1],
                        m[2, 2],
                        m[2, 3],
-                       v.Y(),
+                       v.Y,
                        m[3, 1],
                        m[3, 2],
                        m[3, 3],
-                       v.Z());
+                       v.Z);
         fila = fila.Multiplied(_trsf);
         Placement locLast = new(fila);
-        if (!_loc.IsClosed() || locFirst != locLast)
+        if (!_loc.IsClosed() || !locFirst.IsEqual(locLast))
         {
             _last = _profile;
             if (!locLast.IsIdentity)
@@ -609,7 +609,7 @@ public sealed class Pipe
 
         // create the result empty
 
-        switch (s.ShapeType())
+        switch (s.Type)
         {
 
             case ShapeType.Vertex:
@@ -662,7 +662,7 @@ public sealed class Pipe
                 b.MakeShell(ref sh);
                 result = sh;
                 explode = true;
-                if (!_spine.Closed() && !theFirst.IsNull)
+                if (!_spine.IsClosed && !theFirst.IsNull)
                 {
                     b.Add(result, theFirst.Reversed());
                 }
@@ -721,7 +721,7 @@ public sealed class Pipe
                 {
                     last = itLast.Value();
                 }
-                if (theS.ShapeType() == global::Kerf.Topology.ShapeType.Face)
+                if (theS.Type == global::Kerf.Topology.ShapeType.Face)
                 {
                     MakeShape(it.Value(), itorig.Value(), first, last);
                 }
@@ -743,7 +743,7 @@ public sealed class Pipe
 
         else
         {
-            if (theS.ShapeType() == ShapeType.Vertex)
+            if (theS.Type == ShapeType.Vertex)
             {
                 ShapeLaw section = new(ShapeCasts.Vertex(theS));
                 Sweep mkSw = new(section, _loc!, true);
@@ -775,7 +775,7 @@ public sealed class Pipe
                 BuildHistory(mkSw, originalS);
             }
 
-            if (theS.ShapeType() == ShapeType.Wire)
+            if (theS.Type == ShapeType.Wire)
             {
                 ShapeLaw section = new(ShapeCasts.Wire(theS));
                 Sweep mkSw = new(section, _loc!, true);
@@ -864,7 +864,7 @@ public sealed class Pipe
             }
         }
 
-        if (theS.ShapeType() == global::Kerf.Topology.ShapeType.Face)
+        if (theS.Type == global::Kerf.Topology.ShapeType.Face)
         {
             int ii, jj;
             // jgv
@@ -880,7 +880,7 @@ public sealed class Pipe
             {
                 for (jj = 1; jj <= _faces.RowLength(); jj++)
                 {
-                    if (_faces.Value(ii, jj).ShapeType() == global::Kerf.Topology.ShapeType.Face)
+                    if (_faces.Value(ii, jj).Type == global::Kerf.Topology.ShapeType.Face)
                     {
                         f = ShapeCasts.Face(_faces.Value(ii, jj));
                         if (!f.IsNull)
@@ -891,7 +891,7 @@ public sealed class Pipe
                 }
             }
 
-            if (!_spine.Closed())
+            if (!_spine.IsClosed)
             {
                 // if Spine is not closed
                 // add the last face of the solid
@@ -936,7 +936,7 @@ public sealed class Pipe
     {
         int result = 0;
 
-        switch (s.ShapeType())
+        switch (s.Type)
         {
 
             case global::Kerf.Topology.ShapeType.Edge:
@@ -995,7 +995,7 @@ public sealed class Pipe
     {
         int result = 0;
 
-        switch (s.ShapeType())
+        switch (s.Type)
         {
             case ShapeType.Vertex:
             {
@@ -1010,7 +1010,7 @@ public sealed class Pipe
             case global::Kerf.Topology.ShapeType.Edge:
             {
                 Exploration.Vertices(ShapeCasts.Edge(s), out Vertex vf, out Vertex vl);
-                if (s.Orientation() == Reversed)
+                if (s.Orientation == Reversed)
                 {
                     Vertex aux;
                     aux = vf;
@@ -1090,11 +1090,11 @@ public sealed class Pipe
             {
                 if (c.GetType() == typeof(TrimmedCurve3D))
                 {
-                    c = ((TrimmedCurve3D)c).BasisCurve();
+                    c = ((TrimmedCurve3D)c).BasisCurve;
                 }
                 if (c.GetType() == typeof(OffsetCurve3D))
                 {
-                    c = ((OffsetCurve3D)c).BasisCurve();
+                    c = ((OffsetCurve3D)c).BasisCurve;
                 }
             }
             if (c.GetType() == typeof(BSplineCurve3D))
@@ -1102,12 +1102,12 @@ public sealed class Pipe
                 BSplineCurve3D bc = (BSplineCurve3D)c;
                 int nbKnots = bc.KnotCount;
                 int realNbKnots = nbKnots;
-                if (first > bc.FirstParameter())
+                if (first > bc.FirstParameter)
                 {
                     bc.LocateU(first, global::Kerf.Engine.Foundation.Precision.PConfusion(), out int i1, out _);
                     realNbKnots -= i1 - 1;
                 }
-                if (last < bc.LastParameter())
+                if (last < bc.LastParameter)
                 {
                     bc.LocateU(last, global::Kerf.Engine.Foundation.Precision.PConfusion(), out _, out int i2);
                     realNbKnots -= nbKnots - i2;
@@ -1178,7 +1178,7 @@ public sealed class Pipe
 
         int inde;
 
-        if (section.ShapeType() == ShapeType.Wire)
+        if (section.Type == ShapeType.Wire)
         {
             Wire aSection = ShapeCasts.Wire(section);
             WireExplorer wexp_sec = new(aSection);
@@ -1210,7 +1210,7 @@ public sealed class Pipe
                 uIndex[0] = inde;
                 uIndex[1] = inde + 1;
 
-                if (edge.Orientation() == Reversed)
+                if (edge.Orientation == Reversed)
                 {
                     int tmp = uIndex[0];
                     uIndex[0] = uIndex[1];

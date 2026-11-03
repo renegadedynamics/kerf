@@ -102,12 +102,12 @@ public class Polygon2dGen<TheCurve, TheCurveTool> : Polygon2d
             i++;
 
             double dx, dy, t = 0;
-            dx = p1.X() - p2.X();
+            dx = p1.X - p2.X;
             if (dx < 0)
             {
                 dx = -dx;
             }
-            dy = p1.Y() - p2.Y();
+            dy = p1.Y - p2.Y;
             if (dy < 0)
             {
                 dy = -dy;
@@ -115,7 +115,7 @@ public class Polygon2dGen<TheCurve, TheCurveTool> : Polygon2d
             if (dx + dy > 1e-12)
             {
                 Line2D l = new(p1, new Direction2D(new Vector2D(p1, p2)));
-                t = l.Distance(pm);
+                t = l.DistanceTo(pm);
                 if (t > _theDeflection)
                 {
                     _theDeflection = t;
@@ -152,14 +152,14 @@ public class Polygon2dGen<TheCurve, TheCurveTool> : Polygon2d
             double x, y;
 
             nbp = 0;
-            x = _thePnts.Value(_theIndex.Value(1)).X();
-            y = _thePnts.Value(_theIndex.Value(1)).Y();
+            x = _thePnts.Value(_theIndex.Value(1)).X;
+            y = _thePnts.Value(_theIndex.Value(1)).Y;
 
             rprec = CalculRegion(x, y, bx0, bx1, by0, by1);
             for (i = 2; i <= _nbPntIn; i++)
             {
                 Point2D p2d = _thePnts.Value(_theIndex.Value(i));
-                ri = CalculRegion(p2d.X(), p2d.Y(), bx0, bx1, by0, by1);
+                ri = CalculRegion(p2d.X, p2d.Y, bx0, bx1, by0, by1);
                 if ((ri & rprec) == 0)
                 {
                     if (nbp != 0)
@@ -212,19 +212,19 @@ public class Polygon2dGen<TheCurve, TheCurveTool> : Polygon2d
                         Point2D pi = _thePnts.Value(ii);
                         Point2D pim1 = _thePnts.Value(iim1);
                         _box.Add(pi);
-                        int regi = CalculRegion(pi.X(), pi.Y(), bx0, bx1, by0, by1);
-                        int regim1 = CalculRegion(pim1.X(), pim1.Y(), bx0, bx1, by0, by1);
+                        int regi = CalculRegion(pi.X, pi.Y, bx0, bx1, by0, by1);
+                        int regim1 = CalculRegion(pim1.X, pim1.Y, bx0, bx1, by0, by1);
                         if ((regi & regim1) == 0)
                         {
                             double u = 0.5 * (_theParams.Value(ii) + _theParams.Value(iim1));
                             Point2D pm = TheCurveTool.Value(c, u);
                             double dx, dy, t = 0;
-                            dx = pim1.X() - pi.X();
+                            dx = pim1.X - pi.X;
                             if (dx < 0)
                             {
                                 dx = -dx;
                             }
-                            dy = pim1.Y() - pi.Y();
+                            dy = pim1.Y - pi.Y;
                             if (dy < 0)
                             {
                                 dy = -dy;
@@ -232,7 +232,7 @@ public class Polygon2dGen<TheCurve, TheCurveTool> : Polygon2d
                             if (dx + dy > 1e-12)
                             {
                                 Line2D l = new(pim1, new Direction2D(new Vector2D(pim1, pi)));
-                                t = l.Distance(pm);
+                                t = l.DistanceTo(pm);
                                 if ((maxIndexUsed < (_theMaxNbPoints - 1)) && (t > (_theDeflection * 0.5)))
                                 {
                                     Point2D p1 = pim1;
@@ -250,7 +250,7 @@ public class Polygon2dGen<TheCurve, TheCurveTool> : Polygon2d
                                     double u1m = 0.5 * (u + _theParams.Value(_theIndex.Value(i - 1)));
                                     Point2D p1m = TheCurveTool.Value(c, u1m);
                                     Line2D l1m = new(p1, new Direction2D(new Vector2D(p1, pm)));
-                                    t = l1m.Distance(p1m);
+                                    t = l1m.DistanceTo(p1m);
                                     i--;
                                 }
                             }

@@ -93,9 +93,9 @@ public sealed class Classifier : Transient
             }
 
             Vector2D a = new(p1, p2), b = new(p2, p3);
-            if (a.SquareMagnitude() > sqConfusion && b.SquareMagnitude() > sqConfusion)
+            if (a.SquareMagnitude > sqConfusion && b.SquareMagnitude > sqConfusion)
             {
-                double curAngle = a.Angle(b);
+                double curAngle = a.AngleTo(b);
                 double curAngleAbs = Math.Abs(curAngle);
                 // Check if vectors are opposite
                 if (curAngleAbs > angTol && (M_PI - curAngleAbs) > angTol)

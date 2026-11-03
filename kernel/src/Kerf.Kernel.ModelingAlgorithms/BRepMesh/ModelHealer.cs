@@ -399,8 +399,8 @@ public class ModelHealer : ModelAlgo
     private static double ClosestPoint(PntRef refPnt, PntRef fristPnt, PntRef secondPnt, out PntRef closestPnt)
     {
         // Find the most closest end-points.
-        double sqDist1 = refPnt.Value().SquareDistance(fristPnt.Value());
-        double sqDist2 = refPnt.Value().SquareDistance(secondPnt.Value());
+        double sqDist1 = refPnt.Value().SquareDistanceTo(fristPnt.Value());
+        double sqDist2 = refPnt.Value().SquareDistanceTo(secondPnt.Value());
         if (sqDist1 < sqDist2)
         {
             closestPnt = fristPnt;
@@ -470,8 +470,8 @@ public class ModelHealer : ModelAlgo
                                                 double tol)
     {
         double sqTol = tol * tol;
-        return (refPoint.SquareDistance(point1) < sqTol
-                || refPoint.SquareDistance(point2) < sqTol);
+        return (refPoint.SquareDistanceTo(point1) < sqTol
+                || refPoint.SquareDistanceTo(point2) < sqTol);
     }
 
     // OCCT's `gp_Pnt2d*` into a discrete pcurve: the pcurve and the point's index. Two are equal when they designate the

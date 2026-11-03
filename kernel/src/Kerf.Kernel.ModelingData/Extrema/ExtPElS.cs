@@ -59,20 +59,20 @@ public class ExtPElS
         _nbExt = 0;
 
         // Projection of point P in plane XOY of the cylinder ...
-        CoordinateSystem pos = s.Position();
-        Point3D o = pos.Location();
-        Vector3D oz = new(pos.Direction());
+        CoordinateSystem pos = s.Position;
+        Point3D o = pos.Location;
+        Vector3D oz = new(pos.Direction);
         double v = new Vector3D(o, p).Dot(oz);
         Point3D pp = p.Translated(oz.Multiplied(-v));
 
         // Calculation of extrema
         Vector3D oPp = new(o, pp);
-        if (oPp.Magnitude() < tol)
+        if (oPp.Magnitude < tol)
         {
             return;
         }
-        Vector3D myZ = new(pos.XDirection() ^ pos.YDirection());
-        double u1 = new Vector3D(pos.XDirection()).AngleWithRef(oPp, myZ); //-M_PI<U1<M_PI
+        Vector3D myZ = new(pos.XDirection ^ pos.YDirection);
+        double u1 = new Vector3D(pos.XDirection).AngleWithRef(oPp, myZ); //-M_PI<U1<M_PI
         if (u1 > -ExtPElS_MyEps && u1 < ExtPElS_MyEps)
         {
             u1 = 0.0;
@@ -85,10 +85,10 @@ public class ExtPElS
 
         Point3D ps;
         ps = global::Kerf.Engine.Geometry.ElSLib.Value(u1, v, s);
-        _sqDist[0] = ps.SquareDistance(p);
+        _sqDist[0] = ps.SquareDistanceTo(p);
         _point[0] = new POnSurf(u1, v, ps);
         ps = global::Kerf.Engine.Geometry.ElSLib.Value(u2, v, s);
-        _sqDist[1] = ps.SquareDistance(p);
+        _sqDist[1] = ps.SquareDistanceTo(p);
         _point[1] = new POnSurf(u2, v, ps);
 
         _nbExt = 2;
@@ -134,16 +134,16 @@ public class ExtPElS
         _done = false;
         _nbExt = 0;
 
-        Point3D m = s.Apex();
-        CoordinateSystem pos = s.Position();
-        Point3D o = pos.Location();
-        double a = s.SemiAngle();
-        Vector3D oz = new(pos.Direction());
-        Vector3D myZ = new(pos.XDirection() ^ pos.YDirection());
+        Point3D m = s.Apex;
+        CoordinateSystem pos = s.Position;
+        Point3D o = pos.Location;
+        double a = s.SemiAngle;
+        Vector3D oz = new(pos.Direction);
+        Vector3D myZ = new(pos.XDirection ^ pos.YDirection);
         Vector3D mp = new(m, p);
 
-        double l2 = mp.SquareMagnitude();
-        double vm = -(s.RefRadius() / Math.Sin(a));
+        double l2 = mp.SquareMagnitude;
+        double vm = -(s.RefRadius / Math.Sin(a));
 
         // Case when P is mixed with S ...
         if (l2 < tol * tol)
@@ -155,7 +155,7 @@ public class ExtPElS
             return;
         }
         Vector3D dirZ;
-        if (m.SquareDistance(o) < tol * tol)
+        if (m.SquareDistanceTo(o) < tol * tol)
         {
             dirZ = (a < 0 ? -oz : oz);
         }
@@ -169,13 +169,13 @@ public class ExtPElS
 
         Point3D pp = p.Translated(oz.Multiplied(-zp));
         Vector3D oPp = new(o, pp);
-        if (oPp.SquareMagnitude() < tol * tol)
+        if (oPp.SquareMagnitude < tol * tol)
         {
             return;
         }
         double u1, v1, u2, v2;
         bool same = dirZ.Dot(mp) >= 0.0;
-        u1 = new Vector3D(pos.XDirection()).AngleWithRef(oPp, myZ); //-M_PI<U1<M_PI
+        u1 = new Vector3D(pos.XDirection).AngleWithRef(oPp, myZ); //-M_PI<U1<M_PI
         if (u1 > -ExtPElS_MyEps && u1 < ExtPElS_MyEps)
         {
             u1 = 0.0;
@@ -193,7 +193,7 @@ public class ExtPElS
         {
             u2 -= 2.0 * M_PI;
         }
-        double b = mp.Angle(dirZ);
+        double b = mp.AngleTo(dirZ);
         a = Math.Abs(a);
         double l = Math.Sqrt(l2);
         if (!same)
@@ -215,10 +215,10 @@ public class ExtPElS
 
         Point3D ps;
         ps = global::Kerf.Engine.Geometry.ElSLib.Value(u1, v1, s);
-        _sqDist[0] = ps.SquareDistance(p);
+        _sqDist[0] = ps.SquareDistanceTo(p);
         _point[0] = new POnSurf(u1, v1, ps);
         ps = global::Kerf.Engine.Geometry.ElSLib.Value(u2, v2, s);
-        _sqDist[1] = ps.SquareDistance(p);
+        _sqDist[1] = ps.SquareDistanceTo(p);
         _point[1] = new POnSurf(u2, v2, ps);
 
         _nbExt = 2;
@@ -254,25 +254,25 @@ public class ExtPElS
         _done = false;
         _nbExt = 0;
 
-        CoordinateSystem pos = s.Position();
-        Vector3D op = new(pos.Location(), p);
+        CoordinateSystem pos = s.Position;
+        Vector3D op = new(pos.Location, p);
 
         // Case when P is mixed with O ...
-        if (op.SquareMagnitude() < tol * tol)
+        if (op.SquareMagnitude < tol * tol)
         {
             return;
         }
 
         // Projection if P in plane XOY of the sphere ...
-        Point3D o = pos.Location();
-        Vector3D oz = new(pos.Direction());
+        Point3D o = pos.Location;
+        Vector3D oz = new(pos.Direction);
         double zp = op.Dot(oz);
         Point3D pp = p.Translated(oz.Multiplied(-zp));
 
         // Calculation of extrema ...
         Vector3D oPp = new(o, pp);
         double u1, u2, v;
-        if (oPp.SquareMagnitude() < tol * tol)
+        if (oPp.SquareMagnitude < tol * tol)
         {
             u1 = 0.0;
             u2 = 0.0;
@@ -287,8 +287,8 @@ public class ExtPElS
         }
         else
         {
-            Vector3D myZ = new(pos.XDirection() ^ pos.YDirection());
-            u1 = new Vector3D(pos.XDirection()).AngleWithRef(oPp, myZ);
+            Vector3D myZ = new(pos.XDirection ^ pos.YDirection);
+            u1 = new Vector3D(pos.XDirection).AngleWithRef(oPp, myZ);
             if (u1 > -ExtPElS_MyEps && u1 < ExtPElS_MyEps)
             {
                 u1 = 0.0;
@@ -298,7 +298,7 @@ public class ExtPElS
             {
                 u1 += 2.0 * M_PI;
             }
-            v = op.Angle(oPp);
+            v = op.AngleTo(oPp);
             if (zp < 0.0)
             {
                 v = -v;
@@ -307,10 +307,10 @@ public class ExtPElS
 
         Point3D ps;
         ps = global::Kerf.Engine.Geometry.ElSLib.Value(u1, v, s);
-        _sqDist[0] = ps.SquareDistance(p);
+        _sqDist[0] = ps.SquareDistanceTo(p);
         _point[0] = new POnSurf(u1, v, ps);
         ps = global::Kerf.Engine.Geometry.ElSLib.Value(u2, -v, s);
-        _sqDist[1] = ps.SquareDistance(p);
+        _sqDist[1] = ps.SquareDistanceTo(p);
         _point[1] = new POnSurf(u2, -v, ps);
 
         _nbExt = 2;
@@ -346,21 +346,21 @@ public class ExtPElS
         _nbExt = 0;
 
         // Projection of P in plane XOY ...
-        CoordinateSystem pos = s.Position();
-        Point3D o = pos.Location();
-        Vector3D oz = new(pos.Direction());
-        Point3D pp = p.Translated(oz.Multiplied(-(new Vector3D(o, p).Dot(new Vector3D(pos.Direction())))));
+        CoordinateSystem pos = s.Position;
+        Point3D o = pos.Location;
+        Vector3D oz = new(pos.Direction);
+        Point3D pp = p.Translated(oz.Multiplied(-(new Vector3D(o, p).Dot(new Vector3D(pos.Direction)))));
 
         // Calculation of extrema ...
         Vector3D oPp = new(o, pp);
-        double r2 = oPp.SquareMagnitude();
+        double r2 = oPp.SquareMagnitude;
         if (r2 < tol2)
         {
             return;
         }
 
-        Vector3D myZ = new(pos.XDirection() ^ pos.YDirection());
-        double u1 = new Vector3D(pos.XDirection()).AngleWithRef(oPp, myZ);
+        Vector3D myZ = new(pos.XDirection ^ pos.YDirection);
+        double u1 = new Vector3D(pos.XDirection).AngleWithRef(oPp, myZ);
         if (u1 > -ExtPElS_MyEps && u1 < ExtPElS_MyEps)
         {
             u1 = 0.0;
@@ -371,16 +371,16 @@ public class ExtPElS
             u1 += 2.0 * M_PI;
         }
         double r = Math.Sqrt(r2);
-        Vector3D oo1 = oPp.Divided(r).Multiplied(s.MajorRadius());
+        Vector3D oo1 = oPp.Divided(r).Multiplied(s.MajorRadius);
         Vector3D oo2 = oo1.Multiplied(-1.0);
         Point3D o1 = o.Translated(oo1);
         Point3D o2 = o.Translated(oo2);
 
-        if (o1.SquareDistance(p) < tol2)
+        if (o1.SquareDistanceTo(p) < tol2)
         {
             return;
         }
-        if (o2.SquareDistance(p) < tol2)
+        if (o2.SquareDistanceTo(p) < tol2)
         {
             return;
         }
@@ -408,19 +408,19 @@ public class ExtPElS
 
         Point3D ps;
         ps = global::Kerf.Engine.Geometry.ElSLib.Value(u1, v1, s);
-        _sqDist[0] = ps.SquareDistance(p);
+        _sqDist[0] = ps.SquareDistanceTo(p);
         _point[0] = new POnSurf(u1, v1, ps);
 
         ps = global::Kerf.Engine.Geometry.ElSLib.Value(u1, v1 + M_PI, s);
-        _sqDist[1] = ps.SquareDistance(p);
+        _sqDist[1] = ps.SquareDistanceTo(p);
         _point[1] = new POnSurf(u1, v1 + M_PI, ps);
 
         ps = global::Kerf.Engine.Geometry.ElSLib.Value(u2, v2, s);
-        _sqDist[2] = ps.SquareDistance(p);
+        _sqDist[2] = ps.SquareDistanceTo(p);
         _point[2] = new POnSurf(u2, v2, ps);
 
         ps = global::Kerf.Engine.Geometry.ElSLib.Value(u2, v2 + M_PI, s);
-        _sqDist[3] = ps.SquareDistance(p);
+        _sqDist[3] = ps.SquareDistanceTo(p);
         _point[3] = new POnSurf(u2, v2 + M_PI, ps);
 
         _nbExt = 4;
@@ -437,13 +437,13 @@ public class ExtPElS
         _nbExt = 0;
 
         // Projection of point P in plane XOY of the cylinder ...
-        Point3D o = s.Location();
-        Vector3D oz = new(s.Axis().Direction());
+        Point3D o = s.Location;
+        Vector3D oz = new(s.Axis.Direction);
         double u, v = new Vector3D(o, p).Dot(oz);
         Point3D pp = p.Translated(oz.Multiplied(-v));
 
         global::Kerf.Engine.Geometry.ElSLib.Parameters(s, p, out u, out v);
-        _sqDist[0] = pp.SquareDistance(p);
+        _sqDist[0] = pp.SquareDistanceTo(p);
         _point[0] = new POnSurf(u, v, pp);
         _nbExt = 1;
         _done = true;

@@ -199,14 +199,14 @@ public class BRepTools_ModifierTests
             Assert.Equal(2.0 * Tool.Tolerance(ShapeCasts.Vertex(aV)), Tool.Tolerance(aNewV));
         }
 
-        Assert.Equal(Forward, aModifier.ModifiedShape(SubShapes(aBox, ShapeType.Face)[0]).Orientation());
+        Assert.Equal(Forward, aModifier.ModifiedShape(SubShapes(aBox, ShapeType.Face)[0]).Orientation);
         aSnapshot.AssertUnchanged(aBox);
         AssertAllNew(aBox, aResult);
 
         // a mirror reverses the faces' new surfaces, so the faces are reversed
         Transform3D aMirror = new Transform3D().WithMirror(new Frame3D(new Point3D(), new Direction3D(0, 0, 1)));
         var aMirrored = new Modifier(aBox, new TrsfModification(aMirror));
-        Assert.Equal(Reversed, aMirrored.ModifiedShape(SubShapes(aBox, ShapeType.Face)[0]).Orientation());
+        Assert.Equal(Reversed, aMirrored.ModifiedShape(SubShapes(aBox, ShapeType.Face)[0]).Orientation);
         aSnapshot.AssertUnchanged(aBox);
     }
 
@@ -290,9 +290,9 @@ public class BRepTools_ModifierTests
         Curve2D aC1 = Tool.CurveOnSurface(aSeam, aResult, out double f, out double l)!;
         Curve2D aC2 = Tool.CurveOnSurface(ShapeCasts.Edge(aSeam.Reversed()), aResult, out _, out _)!;
         Surface aSurf = Tool.Surface(aResult)!;
-        aSurf.Bounds(out double u1, out double u2, out _, out _);
+        aSurf.ParameterBounds(out double u1, out double u2, out _, out _);
         double aMid = 0.5 * (f + l);
-        Assert.Equal(u2 - u1, Math.Abs(aC1.Value(aMid).X() - aC2.Value(aMid).X()), 1e-7);
+        Assert.Equal(u2 - u1, Math.Abs(aC1.Value(aMid).X - aC2.Value(aMid).X), 1e-7);
     }
 
     // Every face of the result on a B-spline surface, every edge's curve and pcurves B-splines, the pcurves on the
@@ -323,9 +323,9 @@ public class BRepTools_ModifierTests
                     {
                         double t = f + (l - f) * i / 10;
                         Point2D aUV = aPC.Value(t);
-                        Point3D aOnS = aSurf.Value(aUV.X(), aUV.Y()).Transformed(aSL.Transformation());
-                        Point3D aOnC = aC.Value(t).Transformed(aCL.Transformation());
-                        Assert.True(aOnS.Distance(aOnC) <= aTol, $"{aOnS.Distance(aOnC)} > {aTol}");
+                        Point3D aOnS = aSurf.Value(aUV.X, aUV.Y).Transformed(aSL.Transformation);
+                        Point3D aOnC = aC.Value(t).Transformed(aCL.Transformation);
+                        Assert.True(aOnS.DistanceTo(aOnC) <= aTol, $"{aOnS.DistanceTo(aOnC)} > {aTol}");
                     }
                 }
             }
@@ -502,9 +502,9 @@ public class BRepTools_ModifierTests
         Exploration.MapShapes(aResult, aMap, false, false);
         foreach (Shape aS in aMap)
         {
-            Transform3D aT = aS.Location().Transformation();
+            Transform3D aT = aS.Placement.Transformation;
             Assert.False(aT.IsNegative);
-            Assert.Equal(1.0, Math.Abs(aT.ScaleFactor()), 1e-14);
+            Assert.Equal(1.0, Math.Abs(aT.ScaleFactor), 1e-14);
         }
 
         var aBefore = SubShapes(aPlaced, ShapeType.Vertex).Select(v => Tool.Pnt(ShapeCasts.Vertex(v))).ToList();

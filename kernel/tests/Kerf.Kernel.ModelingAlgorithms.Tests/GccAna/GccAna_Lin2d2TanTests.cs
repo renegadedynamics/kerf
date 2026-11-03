@@ -19,18 +19,18 @@ public class GccAna_Lin2d2TanTests
     private static Circle2D Circ(double x, double y, double r) => new(new Axis2D(new Point2D(x, y), DX), r);
 
     private static void AssertNear(in Point2D theP, in Point2D theQ) =>
-        Assert.True(theP.Distance(theQ) < Tol, $"{theP} != {theQ}");
+        Assert.True(theP.DistanceTo(theQ) < Tol, $"{theP} != {theQ}");
 
     // The side of the line the point is on: the left (inside) is positive
     private static double Side(in Line2D theL, in Point2D theP) =>
-        new Vector2D(theL.Direction()).Crossed(new Vector2D(theL.Location(), theP));
+        new Vector2D(theL.Direction).Crossed(new Vector2D(theL.Location, theP));
 
     private static void CheckTangentToCircle(in Line2D theSol, in Circle2D theC, double theParSol, double theParArg,
                                              in Point2D thePnt)
     {
-        Assert.Equal(theC.Radius(), theSol.Distance(theC.Location()), Tol);
-        Assert.True(theSol.Distance(thePnt) < Tol);
-        Assert.Equal(theC.Radius(), thePnt.Distance(theC.Location()), Tol);
+        Assert.Equal(theC.Radius, theSol.DistanceTo(theC.Location), Tol);
+        Assert.True(theSol.DistanceTo(thePnt) < Tol);
+        Assert.Equal(theC.Radius, thePnt.DistanceTo(theC.Location), Tol);
         AssertNear(global::Kerf.Engine.Geometry.ElCLib.Value(theParSol, theSol), thePnt);
         AssertNear(global::Kerf.Engine.Geometry.ElCLib.Value(theParArg, theC), thePnt);
     }
@@ -55,7 +55,7 @@ public class GccAna_Lin2d2TanTests
         Assert.True(anAlgo.IsDone);
         Assert.Equal(1, anAlgo.SolutionCount);
         Line2D aSol = anAlgo.ThisSolution(1);
-        Assert.True(aSol.Distance(aP1) < Tol && aSol.Distance(aP2) < Tol);
+        Assert.True(aSol.DistanceTo(aP1) < Tol && aSol.DistanceTo(aP2) < Tol);
         anAlgo.Tangency1(1, out double aPs1, out double aPa1, out Point2D aT1);
         anAlgo.Tangency2(1, out double aPs2, out double aPa2, out Point2D aT2);
         AssertNear(aT1, aP1);
@@ -100,7 +100,7 @@ public class GccAna_Lin2d2TanTests
             Assert.Equal(global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified, aQ1);
             Assert.Equal(global::Kerf.Engine.Construction.Constraints.Qualifier.Noqualifier, aQ2);
         }
-        Assert.False(anAlgo.ThisSolution(1).Direction().IsParallel(anAlgo.ThisSolution(2).Direction(), 1.0e-6));
+        Assert.False(anAlgo.ThisSolution(1).Direction.IsParallel(anAlgo.ThisSolution(2).Direction, 1.0e-6));
     }
 
     [Fact]
@@ -113,8 +113,8 @@ public class GccAna_Lin2d2TanTests
         Assert.Equal(1, anEnc.SolutionCount);
         Assert.Equal(1, anOut.SolutionCount);
         // The circle is on the left (inside) of an enclosing solution and on the right of an outside one
-        Assert.True(Side(anEnc.ThisSolution(1), aC.Location()) > 0.0);
-        Assert.True(Side(anOut.ThisSolution(1), aC.Location()) < 0.0);
+        Assert.True(Side(anEnc.ThisSolution(1), aC.Location) > 0.0);
+        Assert.True(Side(anOut.ThisSolution(1), aC.Location) < 0.0);
         anEnc.WhichQualifier(1, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ, out _);
         Assert.Equal(global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing, aQ);
         anOut.WhichQualifier(1, out aQ, out _);
@@ -124,7 +124,7 @@ public class GccAna_Lin2d2TanTests
             AnalyticLin2d2Tan anAlgo = k == 0 ? anEnc : anOut;
             anAlgo.Tangency1(1, out double aPs, out double aPa, out Point2D aT);
             CheckTangentToCircle(anAlgo.ThisSolution(1), aC, aPs, aPa, aT);
-            Assert.True(anAlgo.ThisSolution(1).Distance(aP) < Tol);
+            Assert.True(anAlgo.ThisSolution(1).DistanceTo(aP) < Tol);
         }
     }
 
@@ -172,7 +172,7 @@ public class GccAna_Lin2d2TanTests
         for (int i = 1; i <= 4; i++)
         {
             Line2D aSol = anAlgo.ThisSolution(i);
-            if (Side(aSol, aC1.Location()) * Side(aSol, aC2.Location()) < 0.0)
+            if (Side(aSol, aC1.Location) * Side(aSol, aC2.Location) < 0.0)
             {
                 anInternal++;
             }
@@ -193,8 +193,8 @@ public class GccAna_Lin2d2TanTests
         Assert.Equal(1, anAlgo.SolutionCount);
         CheckTwoCircles(anAlgo, aC1, aC2);
         Line2D aSol = anAlgo.ThisSolution(1);
-        Assert.Equal(theQ1 == global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing, Side(aSol, aC1.Location()) > 0.0);
-        Assert.Equal(theQ2 == global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing, Side(aSol, aC2.Location()) > 0.0);
+        Assert.Equal(theQ1 == global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing, Side(aSol, aC1.Location) > 0.0);
+        Assert.Equal(theQ2 == global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing, Side(aSol, aC2.Location) > 0.0);
         // OCCT: the second qualifier is the first argument's
         anAlgo.WhichQualifier(1, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ1, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ2);
         Assert.Equal(theQ1, aQ1);
@@ -238,9 +238,9 @@ public class GccAna_Lin2d2TanTests
         for (int i = 1; i <= 2; i++)
         {
             Line2D aSol = anAlgo.ThisSolution(i);
-            Assert.Equal(aC1.Radius(), aSol.Distance(aC1.Location()), Tol);
-            Assert.Equal(aC2.Radius(), aSol.Distance(aC2.Location()), Tol);
-            Assert.True(Side(aSol, aC1.Location()) > 0.0);
+            Assert.Equal(aC1.Radius, aSol.DistanceTo(aC1.Location), Tol);
+            Assert.Equal(aC2.Radius, aSol.DistanceTo(aC2.Location), Tol);
+            Assert.True(Side(aSol, aC1.Location) > 0.0);
             anAlgo.Tangency2(i, out double aPs2, out double aPa2, out Point2D aT2);
             CheckTangentToCircle(aSol, aC2, aPs2, aPa2, aT2);
         }
@@ -248,7 +248,7 @@ public class GccAna_Lin2d2TanTests
         anAlgo.Tangency1(1, out _, out _, out Point2D aT11);
         anAlgo.Tangency1(2, out _, out _, out Point2D aT21);
         Assert.Equal(aT11, aT21);
-        Assert.False(anAlgo.ThisSolution(2).Distance(aT21) < Tol);
+        Assert.False(anAlgo.ThisSolution(2).DistanceTo(aT21) < Tol);
     }
 
     [Fact]

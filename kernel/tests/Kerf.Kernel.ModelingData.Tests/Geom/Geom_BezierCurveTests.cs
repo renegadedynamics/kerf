@@ -49,7 +49,7 @@ public class Geom_BezierCurve_Test
         BezierCurve3D aCopiedCurve = new(myOriginalCurve);
 
         // Verify basic properties are identical
-        Assert.Equal(myOriginalCurve.Degree(), aCopiedCurve.Degree());
+        Assert.Equal(myOriginalCurve.Degree, aCopiedCurve.Degree);
         Assert.Equal(myOriginalCurve.PoleCount, aCopiedCurve.PoleCount);
         Assert.Equal(myOriginalCurve.IsRational, aCopiedCurve.IsRational);
         Assert.Equal(myOriginalCurve.IsClosed, aCopiedCurve.IsClosed);
@@ -77,7 +77,7 @@ public class Geom_BezierCurve_Test
         Assert.NotNull(aCopiedCurve);
 
         // Verify the copy is functionally identical
-        Assert.Equal(myOriginalCurve.Degree(), aCopiedCurve.Degree());
+        Assert.Equal(myOriginalCurve.Degree, aCopiedCurve.Degree);
         Assert.Equal(myOriginalCurve.PoleCount, aCopiedCurve.PoleCount);
 
         // Test evaluation at several points
@@ -134,14 +134,14 @@ public class Geom_BezierCurve_Test
     public void Evaluation_D1()
     {
         myOriginalCurve.D1(0.5, out _, out Vector3D aV1);
-        Assert.True(aV1.Magnitude() > 0.0);
+        Assert.True(aV1.Magnitude > 0.0);
     }
 
     [Fact]
     public void Evaluation_D2()
     {
         myOriginalCurve.D2(0.5, out _, out Vector3D aV1, out _);
-        Assert.True(aV1.Magnitude() > 0.0);
+        Assert.True(aV1.Magnitude > 0.0);
     }
 
     [Fact]
@@ -150,26 +150,26 @@ public class Geom_BezierCurve_Test
         myOriginalCurve.D3(0.5, out _, out _, out _, out Vector3D aV3);
         // D3 of a degree 3 curve is constant
         myOriginalCurve.D3(0.25, out _, out _, out _, out Vector3D aV3b);
-        Assert.Equal(aV3b.X(), aV3.X(), 1e-8);
-        Assert.Equal(aV3b.Y(), aV3.Y(), 1e-8);
+        Assert.Equal(aV3b.X, aV3.X, 1e-8);
+        Assert.Equal(aV3b.Y, aV3.Y, 1e-8);
     }
 
     [Fact]
     public void Evaluation_DN()
     {
         Vector3D aDN1 = myOriginalCurve.DN(0.5, 1);
-        Assert.True(aDN1.Magnitude() > 0.0);
+        Assert.True(aDN1.Magnitude > 0.0);
 
         // DN(4) for a degree 3 curve should be zero
         Vector3D aDN4 = myOriginalCurve.DN(0.5, 4);
-        Assert.Equal(0.0, aDN4.Magnitude(), 1e-10);
+        Assert.Equal(0.0, aDN4.Magnitude, 1e-10);
     }
 
     [Fact]
     public void StartEndPoints()
     {
-        Point3D aStart = myOriginalCurve.StartPoint();
-        Point3D anEnd = myOriginalCurve.EndPoint();
+        Point3D aStart = myOriginalCurve.StartPoint;
+        Point3D anEnd = myOriginalCurve.EndPoint;
         Assert.True(aStart.IsEqual(new Point3D(0, 0, 0), 1e-10));
         Assert.True(anEnd.IsEqual(new Point3D(3, 0, 0), 1e-10));
     }
@@ -177,14 +177,14 @@ public class Geom_BezierCurve_Test
     [Fact]
     public void Properties()
     {
-        Assert.Equal(3, myOriginalCurve.Degree());
+        Assert.Equal(3, myOriginalCurve.Degree);
         Assert.False(myOriginalCurve.IsPeriodic);
         Assert.False(myOriginalCurve.IsRational);
         Assert.False(myOriginalCurve.IsClosed);
         Assert.True(myOriginalCurve.IsCN(100));
-        Assert.Equal(Continuity.CN, myOriginalCurve.Continuity());
-        Assert.Equal(0.0, myOriginalCurve.FirstParameter());
-        Assert.Equal(1.0, myOriginalCurve.LastParameter());
+        Assert.Equal(Continuity.CN, myOriginalCurve.Continuity);
+        Assert.Equal(0.0, myOriginalCurve.FirstParameter);
+        Assert.Equal(1.0, myOriginalCurve.LastParameter);
     }
 
     [Fact]
@@ -194,8 +194,8 @@ public class Geom_BezierCurve_Test
         myOriginalCurve.SetPole(2, aNewPole);
         Assert.True(myOriginalCurve.Pole(2).IsEqual(aNewPole, 1e-10));
         // Endpoints unchanged
-        Assert.True(myOriginalCurve.StartPoint().IsEqual(new Point3D(0, 0, 0), 1e-10));
-        Assert.True(myOriginalCurve.EndPoint().IsEqual(new Point3D(3, 0, 0), 1e-10));
+        Assert.True(myOriginalCurve.StartPoint.IsEqual(new Point3D(0, 0, 0), 1e-10));
+        Assert.True(myOriginalCurve.EndPoint.IsEqual(new Point3D(3, 0, 0), 1e-10));
     }
 
     [Fact]
@@ -211,7 +211,7 @@ public class Geom_BezierCurve_Test
 
         Point3D aMidAfter = aCurve.Value(0.5);
         // High weight pulls curve toward the control point
-        Assert.True(aMidAfter.Y() > aMidBefore.Y());
+        Assert.True(aMidAfter.Y > aMidBefore.Y);
     }
 
     [Fact]
@@ -221,7 +221,7 @@ public class Geom_BezierCurve_Test
         Point3D aNewPole = new(1.5, 2.0, 0);
         myOriginalCurve.InsertPoleAfter(2, aNewPole);
         Assert.Equal(aNbBefore + 1, myOriginalCurve.PoleCount);
-        Assert.Equal(4, myOriginalCurve.Degree());
+        Assert.Equal(4, myOriginalCurve.Degree);
         Assert.True(myOriginalCurve.Pole(3).IsEqual(aNewPole, 1e-10));
     }
 
@@ -243,7 +243,7 @@ public class Geom_BezierCurve_Test
         Assert.Equal(5, myOriginalCurve.PoleCount);
         myOriginalCurve.RemovePole(3);
         Assert.Equal(4, myOriginalCurve.PoleCount);
-        Assert.Equal(3, myOriginalCurve.Degree());
+        Assert.Equal(3, myOriginalCurve.Degree);
     }
 
     [Fact]
@@ -251,7 +251,7 @@ public class Geom_BezierCurve_Test
     {
         Point3D aValBefore = myOriginalCurve.Value(0.5);
         myOriginalCurve.Increase(5);
-        Assert.Equal(5, myOriginalCurve.Degree());
+        Assert.Equal(5, myOriginalCurve.Degree);
         Assert.Equal(6, myOriginalCurve.PoleCount);
         Point3D aValAfter = myOriginalCurve.Value(0.5);
         Assert.True(aValBefore.IsEqual(aValAfter, 1e-10));
@@ -263,18 +263,18 @@ public class Geom_BezierCurve_Test
         Point3D aP25 = myOriginalCurve.Value(0.25);
         Point3D aP75 = myOriginalCurve.Value(0.75);
         myOriginalCurve.Segment(0.25, 0.75);
-        Assert.True(myOriginalCurve.StartPoint().IsEqual(aP25, 1e-6));
-        Assert.True(myOriginalCurve.EndPoint().IsEqual(aP75, 1e-6));
+        Assert.True(myOriginalCurve.StartPoint.IsEqual(aP25, 1e-6));
+        Assert.True(myOriginalCurve.EndPoint.IsEqual(aP75, 1e-6));
     }
 
     [Fact]
     public void Reverse()
     {
-        Point3D aStart = myOriginalCurve.StartPoint();
-        Point3D anEnd = myOriginalCurve.EndPoint();
+        Point3D aStart = myOriginalCurve.StartPoint;
+        Point3D anEnd = myOriginalCurve.EndPoint;
         myOriginalCurve.Reverse();
-        Assert.True(myOriginalCurve.StartPoint().IsEqual(anEnd, 1e-10));
-        Assert.True(myOriginalCurve.EndPoint().IsEqual(aStart, 1e-10));
+        Assert.True(myOriginalCurve.StartPoint.IsEqual(anEnd, 1e-10));
+        Assert.True(myOriginalCurve.EndPoint.IsEqual(aStart, 1e-10));
     }
 
     [Fact]
@@ -291,16 +291,16 @@ public class Geom_BezierCurve_Test
         Point3D aPtBefore = myOriginalCurve.Value(0.5);
         myOriginalCurve.Transform(aTrsf);
         Point3D aPtAfter = myOriginalCurve.Value(0.5);
-        Assert.Equal(aPtBefore.X() + 10.0, aPtAfter.X(), 1e-10);
-        Assert.Equal(aPtBefore.Y() + 20.0, aPtAfter.Y(), 1e-10);
-        Assert.Equal(aPtBefore.Z() + 30.0, aPtAfter.Z(), 1e-10);
+        Assert.Equal(aPtBefore.X + 10.0, aPtAfter.X, 1e-10);
+        Assert.Equal(aPtBefore.Y + 20.0, aPtAfter.Y, 1e-10);
+        Assert.Equal(aPtBefore.Z + 30.0, aPtAfter.Z, 1e-10);
     }
 
     [Fact]
     public void PolesAccess()
     {
         // Poles() returns an immutable copy indexed from 0 (OCCT: a reference indexed from 1)
-        IReadOnlyList<Point3D> aPoles = myOriginalCurve.Poles();
+        IReadOnlyList<Point3D> aPoles = myOriginalCurve.Poles;
         Assert.Equal(4, aPoles.Count);
         Assert.True(aPoles[0].IsEqual(new Point3D(0, 0, 0), 1e-10));
     }
@@ -308,7 +308,7 @@ public class Geom_BezierCurve_Test
     [Fact]
     public void WeightsAccess_NonRational()
     {
-        IReadOnlyList<double>? aWeights = myOriginalCurve.Weights();
+        IReadOnlyList<double>? aWeights = myOriginalCurve.WeightsOrNull();
         Assert.Null(aWeights);
         Assert.Null(myOriginalCurve.InternalWeights());
     }
@@ -323,14 +323,14 @@ public class Geom_BezierCurve_Test
 
         // At u=0.5, the rational curve should be close to the unit circle
         Point3D aMid = aCurve.Value(0.5);
-        double aRadius = Math.Sqrt(aMid.X() * aMid.X() + aMid.Y() * aMid.Y());
+        double aRadius = Math.Sqrt(aMid.X * aMid.X + aMid.Y * aMid.Y);
         Assert.Equal(1.0, aRadius, 1e-6);
     }
 
     [Fact]
     public void MaxDegree()
     {
-        Assert.True(BezierCurve3D.MaxDegree() >= 25);
+        Assert.True(BezierCurve3D.MaxDegree >= 25);
     }
 
     [Fact]
@@ -387,7 +387,7 @@ public class Geom_BezierCurve_Test
                                       Weights3(1.0, 2.0, 1.0));
         Point3D aValBefore = aCurve.Value(0.5);
         aCurve.Increase(5);
-        Assert.Equal(5, aCurve.Degree());
+        Assert.Equal(5, aCurve.Degree);
         Assert.True(aCurve.IsRational);
         Point3D aValAfter = aCurve.Value(0.5);
         Assert.True(aValBefore.IsEqual(aValAfter, 1e-10));
@@ -398,11 +398,11 @@ public class Geom_BezierCurve_Test
     {
         BezierCurve3D aCurve = new(Poles3(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 0, 0)),
                                       Weights3(1.0, 3.0, 2.0));
-        Point3D aStart = aCurve.StartPoint();
-        Point3D anEnd = aCurve.EndPoint();
+        Point3D aStart = aCurve.StartPoint;
+        Point3D anEnd = aCurve.EndPoint;
         aCurve.Reverse();
-        Assert.True(aCurve.StartPoint().IsEqual(anEnd, 1e-10));
-        Assert.True(aCurve.EndPoint().IsEqual(aStart, 1e-10));
+        Assert.True(aCurve.StartPoint.IsEqual(anEnd, 1e-10));
+        Assert.True(aCurve.EndPoint.IsEqual(aStart, 1e-10));
         // Weights should be reversed
         Assert.Equal(2.0, aCurve.Weight(1));
         Assert.Equal(1.0, aCurve.Weight(3));
@@ -423,14 +423,14 @@ public class Geom_BezierCurve_Test
         aPoles[1] = new Point3D(0, 0, 0);
         aPoles[2] = new Point3D(3, 4, 0);
         BezierCurve3D aCurve = new(aPoles);
-        Assert.Equal(1, aCurve.Degree());
+        Assert.Equal(1, aCurve.Degree);
 
         Point3D aMid = aCurve.Value(0.5);
         Assert.True(aMid.IsEqual(new Point3D(1.5, 2.0, 0), 1e-10));
 
         // D2 should be zero for a line
         aCurve.D2(0.5, out _, out _, out Vector3D aV2);
-        Assert.Equal(0.0, aV2.Magnitude(), 1e-10);
+        Assert.Equal(0.0, aV2.Magnitude, 1e-10);
     }
 
     // OCCT checks the reference returned by WeightsArray(); the port's public WeightsArray() is a copy, so the
@@ -448,7 +448,7 @@ public class Geom_BezierCurve_Test
             Assert.Equal(1.0, aWeights[i]);
         }
         Assert.Same(aWeights, myOriginalCurve.InternalWeightsArray());
-        Assert.Equal(aWeights.AsSpan().ToArray(), myOriginalCurve.WeightsArray().ToArray());
+        Assert.Equal(aWeights.AsSpan().ToArray(), myOriginalCurve.Weights.ToArray());
     }
 
     [Fact]
@@ -465,7 +465,7 @@ public class Geom_BezierCurve_Test
         Assert.Equal(2.0, aWeights[2]);
         Assert.Equal(1.0, aWeights[3]);
         Assert.Same(aWeights, aRational.InternalWeightsArray());
-        Assert.Equal([1.0, 2.0, 1.0], aRational.WeightsArray().ToArray());
+        Assert.Equal([1.0, 2.0, 1.0], aRational.Weights.ToArray());
     }
 }
 
@@ -482,7 +482,7 @@ public class Geom_BezierCurveTest
         }
 
         BezierCurve3D aCurve = new(aPoles);
-        Assert.Equal(aNbPoles - 1, aCurve.Degree());
+        Assert.Equal(aNbPoles - 1, aCurve.Degree);
     }
 
     [Fact]

@@ -62,7 +62,7 @@ public class Geom2d_BSplineCurve_Test
         BSplineCurve2D aCopiedCurve = new BSplineCurve2D(myOriginalCurve);
 
         // Verify basic properties are identical
-        Assert.Equal(myOriginalCurve.Degree(), aCopiedCurve.Degree());
+        Assert.Equal(myOriginalCurve.Degree, aCopiedCurve.Degree);
         Assert.Equal(myOriginalCurve.PoleCount, aCopiedCurve.PoleCount);
         Assert.Equal(myOriginalCurve.KnotCount, aCopiedCurve.KnotCount);
         Assert.Equal(myOriginalCurve.IsPeriodic, aCopiedCurve.IsPeriodic);
@@ -106,7 +106,7 @@ public class Geom2d_BSplineCurve_Test
         Assert.NotNull(aCopiedCurve);
 
         // Verify the copy is functionally identical
-        Assert.Equal(myOriginalCurve.Degree(), aCopiedCurve.Degree());
+        Assert.Equal(myOriginalCurve.Degree, aCopiedCurve.Degree);
         Assert.Equal(myOriginalCurve.PoleCount, aCopiedCurve.PoleCount);
 
         // Test evaluation at several points
@@ -153,31 +153,31 @@ public class Geom2d_BSplineCurve_Test
     public void Evaluation_D1()
     {
         myOriginalCurve.D1(0.5, out _, out Vector2D aV1);
-        Assert.True(aV1.Magnitude() > 0.0);
+        Assert.True(aV1.Magnitude > 0.0);
     }
 
     [Fact]
     public void Evaluation_D2()
     {
         myOriginalCurve.D2(0.5, out _, out Vector2D aV1, out _);
-        Assert.True(aV1.Magnitude() > 0.0);
+        Assert.True(aV1.Magnitude > 0.0);
     }
 
     [Fact]
     public void Evaluation_DN()
     {
         Vector2D aDN1 = myOriginalCurve.DN(0.5, 1);
-        Assert.True(aDN1.Magnitude() > 0.0);
+        Assert.True(aDN1.Magnitude > 0.0);
         // DN(4) for degree 3 should be zero
         Vector2D aDN4 = myOriginalCurve.DN(0.5, 4);
-        Assert.Equal(0.0, aDN4.Magnitude(), 1e-10);
+        Assert.Equal(0.0, aDN4.Magnitude, 1e-10);
     }
 
     [Fact]
     public void StartEndPoints()
     {
-        Point2D aStart = myOriginalCurve.StartPoint();
-        Point2D anEnd = myOriginalCurve.EndPoint();
+        Point2D aStart = myOriginalCurve.StartPoint;
+        Point2D anEnd = myOriginalCurve.EndPoint;
         Assert.True(aStart.IsEqual(new Point2D(0, 0), 1e-10));
         Assert.True(anEnd.IsEqual(new Point2D(3, 0), 1e-10));
     }
@@ -185,7 +185,7 @@ public class Geom2d_BSplineCurve_Test
     [Fact]
     public void Properties()
     {
-        Assert.Equal(3, myOriginalCurve.Degree());
+        Assert.Equal(3, myOriginalCurve.Degree);
         Assert.False(myOriginalCurve.IsPeriodic);
         Assert.False(myOriginalCurve.IsRational);
         Assert.False(myOriginalCurve.IsClosed);
@@ -205,7 +205,7 @@ public class Geom2d_BSplineCurve_Test
     {
         Point2D aValBefore = myOriginalCurve.Value(0.5);
         myOriginalCurve.IncreaseDegree(5);
-        Assert.Equal(5, myOriginalCurve.Degree());
+        Assert.Equal(5, myOriginalCurve.Degree);
         Point2D aValAfter = myOriginalCurve.Value(0.5);
         Assert.True(aValBefore.IsEqual(aValAfter, 1e-10));
     }
@@ -236,20 +236,20 @@ public class Geom2d_BSplineCurve_Test
         Point2D aP25 = myOriginalCurve.Value(0.25);
         Point2D aP75 = myOriginalCurve.Value(0.75);
         myOriginalCurve.Segment(0.25, 0.75);
-        Assert.Equal(0.25, myOriginalCurve.FirstParameter(), 1e-10);
-        Assert.Equal(0.75, myOriginalCurve.LastParameter(), 1e-10);
-        Assert.True(myOriginalCurve.StartPoint().IsEqual(aP25, 1e-6));
-        Assert.True(myOriginalCurve.EndPoint().IsEqual(aP75, 1e-6));
+        Assert.Equal(0.25, myOriginalCurve.FirstParameter, 1e-10);
+        Assert.Equal(0.75, myOriginalCurve.LastParameter, 1e-10);
+        Assert.True(myOriginalCurve.StartPoint.IsEqual(aP25, 1e-6));
+        Assert.True(myOriginalCurve.EndPoint.IsEqual(aP75, 1e-6));
     }
 
     [Fact]
     public void Reverse()
     {
-        Point2D aStart = myOriginalCurve.StartPoint();
-        Point2D anEnd = myOriginalCurve.EndPoint();
+        Point2D aStart = myOriginalCurve.StartPoint;
+        Point2D anEnd = myOriginalCurve.EndPoint;
         myOriginalCurve.Reverse();
-        Assert.True(myOriginalCurve.StartPoint().IsEqual(anEnd, 1e-10));
-        Assert.True(myOriginalCurve.EndPoint().IsEqual(aStart, 1e-10));
+        Assert.True(myOriginalCurve.StartPoint.IsEqual(anEnd, 1e-10));
+        Assert.True(myOriginalCurve.EndPoint.IsEqual(aStart, 1e-10));
     }
 
     [Fact]
@@ -267,8 +267,8 @@ public class Geom2d_BSplineCurve_Test
         Point2D aPtBefore = myOriginalCurve.Value(0.5);
         myOriginalCurve.Transform(aTrsf);
         Point2D aPtAfter = myOriginalCurve.Value(0.5);
-        Assert.Equal(aPtBefore.X() + 10.0, aPtAfter.X(), 1e-10);
-        Assert.Equal(aPtBefore.Y() + 20.0, aPtAfter.Y(), 1e-10);
+        Assert.Equal(aPtBefore.X + 10.0, aPtAfter.X, 1e-10);
+        Assert.Equal(aPtBefore.Y + 20.0, aPtAfter.Y, 1e-10);
     }
 
     [Fact]
@@ -300,7 +300,7 @@ public class Geom2d_BSplineCurve_Test
     [Fact]
     public void WeightsAccess_NonRational()
     {
-        IReadOnlyList<double>? aWeights = myOriginalCurve.Weights();
+        IReadOnlyList<double>? aWeights = myOriginalCurve.WeightsOrNull();
         Assert.Null(aWeights);
     }
 
@@ -310,9 +310,9 @@ public class Geom2d_BSplineCurve_Test
         Assert.Equal(0.0, myOriginalCurve.Knot(1));
         Assert.Equal(1.0, myOriginalCurve.Knot(2));
         // OCCT returns references to its arrays; the port returns PackedLists (indexed from 0)
-        IReadOnlyList<double> aKnots = myOriginalCurve.Knots();
+        IReadOnlyList<double> aKnots = myOriginalCurve.Knots;
         Assert.Equal(2, aKnots.Count);
-        IReadOnlyList<int> aMults = myOriginalCurve.Multiplicities();
+        IReadOnlyList<int> aMults = myOriginalCurve.Multiplicities;
         Assert.Equal(2, aMults.Count);
         Assert.Equal(4, aMults[0]);
     }
@@ -339,7 +339,7 @@ public class Geom2d_BSplineCurve_Test
         Assert.Equal(5.0, aCurve.Weight(2));
         Assert.True(aCurve.IsRational);
         Point2D aMidAfter = aCurve.Value(0.5);
-        Assert.True(aMidAfter.Y() > aMidBefore.Y());
+        Assert.True(aMidAfter.Y > aMidBefore.Y);
     }
 
     [Fact]
@@ -368,8 +368,8 @@ public class Geom2d_BSplineCurve_Test
         myOriginalCurve.D1(0.25, out Point2D aPnt, out Vector2D aV1);
         myOriginalCurve.LocalD1(0.25, 1, 2, out Point2D aPntL, out Vector2D aV1L);
         Assert.True(aPnt.IsEqual(aPntL, 1e-10));
-        Assert.Equal(aV1L.X(), aV1.X(), 1e-10);
-        Assert.Equal(aV1L.Y(), aV1.Y(), 1e-10);
+        Assert.Equal(aV1L.X, aV1.X, 1e-10);
+        Assert.Equal(aV1L.Y, aV1.Y, 1e-10);
     }
 
     [Fact]

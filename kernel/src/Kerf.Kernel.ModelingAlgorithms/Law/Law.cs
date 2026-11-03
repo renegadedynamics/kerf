@@ -192,7 +192,7 @@ public static class Law
         for (i = 1; i <= 2 * nbPoints; i++)
         {
             p2 = curve.Value(u);
-            length += p2.Distance(p1);
+            length += p2.DistanceTo(p1);
             cumdist[i] = length;
             ucourbe[i] = u;
             u += du;

@@ -72,8 +72,8 @@ public sealed class Curve
         // Check for trimmed curve - if so, use bounds
         if (curve is TrimmedCurve3D trimmed)
         {
-            global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D domain = new(trimmed.FirstParameter(), trimmed.LastParameter());
-            InitFromGeomCurve(trimmed.BasisCurve(), domain);
+            global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D domain = new(trimmed.FirstParameter, trimmed.LastParameter);
+            InitFromGeomCurve(trimmed.BasisCurve, domain);
             return;
         }
 
@@ -97,10 +97,10 @@ public sealed class Curve
         // For trimmed curve, intersect input bounds with trimmed bounds
         if (curve is TrimmedCurve3D trimmed)
         {
-            baseCurve = trimmed.BasisCurve();
+            baseCurve = trimmed.BasisCurve;
             // Intersect bounds: take max of mins, min of maxs
-            effectiveUMin = Max(uMin, trimmed.FirstParameter());
-            effectiveUMax = Min(uMax, trimmed.LastParameter());
+            effectiveUMin = Max(uMin, trimmed.FirstParameter);
+            effectiveUMax = Min(uMax, trimmed.LastParameter);
         }
 
         // Use common helper for curve type detection and evaluator creation
@@ -113,7 +113,7 @@ public sealed class Curve
     {
         global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result resultPtr = THE_NOT_DONE_RESULT;
 
-        if (_trsf.Form() != Identity)
+        if (_trsf.Form != Identity)
         {
             // Inverse-transform query point and delegate to untransformed evaluator
             Point3D pInv = p.Transformed(_trsf.Inverted());
@@ -136,7 +136,7 @@ public sealed class Curve
     {
         global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result resultPtr = THE_NOT_DONE_RESULT;
 
-        if (_trsf.Form() != Identity)
+        if (_trsf.Form != Identity)
         {
             // Inverse-transform query point and delegate to untransformed evaluator
             Point3D pInv = p.Transformed(_trsf.Inverted());
@@ -208,7 +208,7 @@ public sealed class Curve
         // Identity transform on a 3D curve: delegate to the faster GeomAdaptor_Curve path
         // which avoids transform overhead in evaluators.
         // Skipped for CurveOnSurface since its myCurve member is empty.
-        if (curve.Is3DCurve() && curve.Trsf().Form() == Identity)
+        if (curve.Is3DCurve() && curve.Trsf().Form == Identity)
         {
             CurveAdaptor aCurve = curve.Curve();
             global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D domain0 =
@@ -292,11 +292,11 @@ public sealed class Curve
         {
             if (domain.HasValue)
             {
-                _evaluator = new LineExtrema(line.Lin(), domain.Value);
+                _evaluator = new LineExtrema(line.Line, domain.Value);
             }
             else
             {
-                _evaluator = new LineExtrema(line.Lin());
+                _evaluator = new LineExtrema(line.Line);
             }
             return;
         }
@@ -305,11 +305,11 @@ public sealed class Curve
         {
             if (domain.HasValue)
             {
-                _evaluator = new CircleExtrema(circle.Circ(), domain.Value);
+                _evaluator = new CircleExtrema(circle.Circle, domain.Value);
             }
             else
             {
-                _evaluator = new CircleExtrema(circle.Circ());
+                _evaluator = new CircleExtrema(circle.Circle);
             }
             return;
         }
@@ -318,11 +318,11 @@ public sealed class Curve
         {
             if (domain.HasValue)
             {
-                _evaluator = new EllipseExtrema(ellipse.Elips(), domain.Value);
+                _evaluator = new EllipseExtrema(ellipse.Ellipse, domain.Value);
             }
             else
             {
-                _evaluator = new EllipseExtrema(ellipse.Elips());
+                _evaluator = new EllipseExtrema(ellipse.Ellipse);
             }
             return;
         }
@@ -331,11 +331,11 @@ public sealed class Curve
         {
             if (domain.HasValue)
             {
-                _evaluator = new HyperbolaExtrema(hyperbola.Hypr(), domain.Value);
+                _evaluator = new HyperbolaExtrema(hyperbola.Hyperbola, domain.Value);
             }
             else
             {
-                _evaluator = new HyperbolaExtrema(hyperbola.Hypr());
+                _evaluator = new HyperbolaExtrema(hyperbola.Hyperbola);
             }
             return;
         }
@@ -344,11 +344,11 @@ public sealed class Curve
         {
             if (domain.HasValue)
             {
-                _evaluator = new ParabolaExtrema(parabola.Parab(), domain.Value);
+                _evaluator = new ParabolaExtrema(parabola.Parabola, domain.Value);
             }
             else
             {
-                _evaluator = new ParabolaExtrema(parabola.Parab());
+                _evaluator = new ParabolaExtrema(parabola.Parabola);
             }
             return;
         }
@@ -417,7 +417,7 @@ public sealed class Curve
 
     private global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result PostProcessTransform(global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result src)
     {
-        double sf = _trsf.ScaleFactor();
+        double sf = _trsf.ScaleFactor;
         double sfSq = sf * sf;
 
         _transformResult.Clear();

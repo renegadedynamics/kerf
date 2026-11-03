@@ -53,7 +53,7 @@ public class Transform : ModifyShape
     public void Perform(in Shape shape, bool copyGeom = false, bool copyMesh = false)
     {
         _useModif = copyGeom || _trsf.IsNegative
-                     || (Math.Abs(Math.Abs(_trsf.ScaleFactor()) - 1.0) > Placement.ScalePrec());
+                     || (Math.Abs(Math.Abs(_trsf.ScaleFactor) - 1.0) > Placement.ScalePrec());
         if (_useModif)
         {
             var theModif = (TrsfModification)_modification!;

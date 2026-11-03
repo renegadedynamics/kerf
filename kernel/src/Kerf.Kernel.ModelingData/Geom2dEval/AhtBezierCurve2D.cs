@@ -18,7 +18,7 @@ namespace Kerf.Engine.Geometry.Evaluation;
 /// basis functions, algDegree + 1 + 2*(alpha&gt;0) + 2*(beta&gt;0). The parameter range is [0, 1].
 /// Reversal and transformation are not supported (they throw <see cref="MethodNotImplementedException"/>).
 /// </summary>
-public sealed class AhtBezierCurve2D : BoundedCurve2D
+internal sealed class AhtBezierCurve2D : BoundedCurve2D
 {
     // The numerators (N) and denominators (W) of the derivatives up to the order evaluated.
     private struct PolyEvalData
@@ -475,10 +475,10 @@ public sealed class AhtBezierCurve2D : BoundedCurve2D
     public bool IsRational => _rational;
 
     /// <summary>The start point C(0).</summary>
-    public override Point2D StartPoint() => EvalD0(0.0);
+    public override Point2D StartPoint => EvalD0(0.0);
 
     /// <summary>The end point C(1).</summary>
-    public override Point2D EndPoint() => EvalD0(1.0);
+    public override Point2D EndPoint => EvalD0(1.0);
 
     /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     protected internal override void Reverse()
@@ -494,19 +494,19 @@ public sealed class AhtBezierCurve2D : BoundedCurve2D
     }
 
     /// <summary>0.</summary>
-    public override double FirstParameter() => 0.0;
+    public override double FirstParameter => 0.0;
 
     /// <summary>1.</summary>
-    public override double LastParameter() => 1.0;
+    public override double LastParameter => 1.0;
 
     /// <summary>True if the start and end points coincide (within Precision::Confusion()).</summary>
-    public override bool IsClosed => StartPoint().Distance(EndPoint()) <= global::Kerf.Engine.Foundation.Precision.Confusion();
+    public override bool IsClosed => StartPoint.DistanceTo(EndPoint) <= global::Kerf.Engine.Foundation.Precision.Confusion();
 
     public override bool IsPeriodic => false;
 
-    public override Continuity Continuity() => CN;
+    public override Continuity Continuity => CN;
 
-    public override bool IsCN(int n) => true;
+    internal override bool IsCN(int n) => true;
 
     // Evaluates all basis functions at theT. Unused, as in OCCT.
     private void EvalBasis(double t, NCollection_Array1<double> basis)
@@ -593,7 +593,7 @@ public sealed class AhtBezierCurve2D : BoundedCurve2D
         }
     }
 
-    public override Point2D EvalD0(double u)
+    internal override Point2D EvalD0(double u)
     {
         if (_alpha <= 0.0 && _beta <= 0.0)
         {
@@ -619,7 +619,7 @@ public sealed class AhtBezierCurve2D : BoundedCurve2D
         return new Point2D(mixed.N0 / mixed.W0);
     }
 
-    public override ResD1 EvalD1(double u)
+    internal override ResD1 EvalD1(double u)
     {
         if (_alpha <= 0.0 && _beta <= 0.0)
         {
@@ -657,7 +657,7 @@ public sealed class AhtBezierCurve2D : BoundedCurve2D
         return result;
     }
 
-    public override ResD2 EvalD2(double u)
+    internal override ResD2 EvalD2(double u)
     {
         if (_alpha <= 0.0 && _beta <= 0.0)
         {
@@ -704,7 +704,7 @@ public sealed class AhtBezierCurve2D : BoundedCurve2D
         return result;
     }
 
-    public override ResD3 EvalD3(double u)
+    internal override ResD3 EvalD3(double u)
     {
         if (_alpha <= 0.0 && _beta <= 0.0)
         {
@@ -763,7 +763,7 @@ public sealed class AhtBezierCurve2D : BoundedCurve2D
     }
 
     /// <exception cref="RangeErrorException">N &lt; 1.</exception>
-    public override Vector2D EvalDN(double u, int n)
+    internal override Vector2D EvalDN(double u, int n)
     {
         if (n < 1)
         {

@@ -116,9 +116,9 @@ public class ContapTests
         {
             ContourLine L = C.Line(l);
             Assert.Equal(ContourLineType.Circle, L.TypeContour());
-            Assert.Equal(10.0, L.Circle().Radius(), 1e-12);
-            Assert.True(L.Circle().Location().IsEqual(new Point3D(1, 2, 3), 1e-12));
-            Assert.True(L.Circle().Axis().Direction().IsParallel(new Direction3D(0, 0, 1), 1e-12));
+            Assert.Equal(10.0, L.Circle().Radius, 1e-12);
+            Assert.True(L.Circle().Location.IsEqual(new Point3D(1, 2, 3), 1e-12));
+            Assert.True(L.Circle().Axis.Direction.IsParallel(new Direction3D(0, 0, 1), 1e-12));
         }
     }
 
@@ -162,7 +162,7 @@ public class ContapTests
         C.Perform(aCyl, new Direction3D(1, 0, 0));
         Assert.Equal(2, C.ContourCount);
         Assert.Equal(CurveKind.Line, C.TypeContour());
-        Assert.True(C.Line(1).Location().IsEqual(new Point3D(0, 3, 0), 1e-12) || C.Line(1).Location().IsEqual(new Point3D(0, -3, 0), 1e-12));
+        Assert.True(C.Line(1).Location.IsEqual(new Point3D(0, 3, 0), 1e-12) || C.Line(1).Location.IsEqual(new Point3D(0, -3, 0), 1e-12));
         C.Perform(aCyl, new Direction3D(0, 0, 1));
         Assert.Equal(0, C.ContourCount);
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => C.TypeContour());

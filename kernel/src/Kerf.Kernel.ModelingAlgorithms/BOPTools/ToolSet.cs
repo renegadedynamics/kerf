@@ -98,17 +98,17 @@ public sealed class ToolSet : IEquatable<ToolSet>
                 }
             }
             //
-            or = sx.Orientation();
+            or = sx.Orientation;
             if (or == Internal)
             {
                 Shape sy;
                 //
                 sy = sx;
                 //
-                sy.Orientation(Forward);
+                sy.Orient(Forward);
                 _shapes.Add(sy);
                 //
-                sy.Orientation(Reversed);
+                sy.Orient(Reversed);
                 _shapes.Add(sy);
             }
             else

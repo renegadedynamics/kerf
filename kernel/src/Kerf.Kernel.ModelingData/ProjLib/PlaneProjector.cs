@@ -10,7 +10,7 @@ using static Kerf.Geometry.CurveKind;
 namespace Kerf.Engine.Geometry.Projection;
 
 /// <summary>Projects elementary curves on a plane.</summary>
-public class PlaneProjector : Projector
+internal class PlaneProjector : Projector
 {
     private Plane3D _plane = new();
 
@@ -70,20 +70,20 @@ public class PlaneProjector : Projector
 
     private static Point2D EvalPnt2d(in Point3D p, in Plane3D pl)
     {
-        Vector3D op = new(pl.Location(), p);
-        return new Point2D(op.Dot(new Vector3D(pl.Position().XDirection())),
-                            op.Dot(new Vector3D(pl.Position().YDirection())));
+        Vector3D op = new(pl.Location, p);
+        return new Point2D(op.Dot(new Vector3D(pl.Position.XDirection)),
+                            op.Dot(new Vector3D(pl.Position.YDirection)));
     }
 
     private static Direction2D EvalDir2d(in Direction3D d, in Plane3D pl)
     {
-        return new Direction2D(d.Dot(pl.Position().XDirection()), d.Dot(pl.Position().YDirection()));
+        return new Direction2D(d.Dot(pl.Position.XDirection), d.Dot(pl.Position.YDirection));
     }
 
     public override void Project(in Line3D l)
     {
         _type = global::Kerf.Geometry.CurveKind.Line;
-        _lin = new Line2D(EvalPnt2d(l.Location(), _plane), EvalDir2d(l.Direction(), _plane));
+        _lin = new Line2D(EvalPnt2d(l.Location, _plane), EvalDir2d(l.Direction, _plane));
         _isDone = true;
     }
 
@@ -91,12 +91,12 @@ public class PlaneProjector : Projector
     {
         _type = global::Kerf.Geometry.CurveKind.Circle;
 
-        Point2D p2d = EvalPnt2d(c.Location(), _plane);
-        Direction2D x2d = EvalDir2d(c.Position().XDirection(), _plane);
-        Direction2D y2d = EvalDir2d(c.Position().YDirection(), _plane);
+        Point2D p2d = EvalPnt2d(c.Location, _plane);
+        Direction2D x2d = EvalDir2d(c.Position.XDirection, _plane);
+        Direction2D y2d = EvalDir2d(c.Position.YDirection, _plane);
         Frame2D ax = new(p2d, x2d, y2d);
 
-        _circ = new Circle2D(ax, c.Radius());
+        _circ = new Circle2D(ax, c.Radius);
         _isPeriodic = true;
         _isDone = true;
     }
@@ -105,12 +105,12 @@ public class PlaneProjector : Projector
     {
         _type = global::Kerf.Geometry.CurveKind.Ellipse;
 
-        Point2D p2d = EvalPnt2d(e.Location(), _plane);
-        Direction2D x2d = EvalDir2d(e.Position().XDirection(), _plane);
-        Direction2D y2d = EvalDir2d(e.Position().YDirection(), _plane);
+        Point2D p2d = EvalPnt2d(e.Location, _plane);
+        Direction2D x2d = EvalDir2d(e.Position.XDirection, _plane);
+        Direction2D y2d = EvalDir2d(e.Position.YDirection, _plane);
         Frame2D ax = new(p2d, x2d, y2d);
 
-        _elips = new Ellipse2D(ax, e.MajorRadius(), e.MinorRadius());
+        _elips = new Ellipse2D(ax, e.MajorRadius, e.MinorRadius);
         _isPeriodic = true;
         _isDone = true;
     }
@@ -119,12 +119,12 @@ public class PlaneProjector : Projector
     {
         _type = global::Kerf.Geometry.CurveKind.Parabola;
 
-        Point2D p2d = EvalPnt2d(p.Location(), _plane);
-        Direction2D x2d = EvalDir2d(p.Position().XDirection(), _plane);
-        Direction2D y2d = EvalDir2d(p.Position().YDirection(), _plane);
+        Point2D p2d = EvalPnt2d(p.Location, _plane);
+        Direction2D x2d = EvalDir2d(p.Position.XDirection, _plane);
+        Direction2D y2d = EvalDir2d(p.Position.YDirection, _plane);
         Frame2D ax = new(p2d, x2d, y2d);
 
-        _parab = new Parabola2D(ax, p.Focal());
+        _parab = new Parabola2D(ax, p.Focal);
         _isDone = true;
     }
 
@@ -132,12 +132,12 @@ public class PlaneProjector : Projector
     {
         _type = global::Kerf.Geometry.CurveKind.Hyperbola;
 
-        Point2D p2d = EvalPnt2d(h.Location(), _plane);
-        Direction2D x2d = EvalDir2d(h.Position().XDirection(), _plane);
-        Direction2D y2d = EvalDir2d(h.Position().YDirection(), _plane);
+        Point2D p2d = EvalPnt2d(h.Location, _plane);
+        Direction2D x2d = EvalDir2d(h.Position.XDirection, _plane);
+        Direction2D y2d = EvalDir2d(h.Position.YDirection, _plane);
         Frame2D ax = new(p2d, x2d, y2d);
 
-        _hypr = new Hyperbola2D(ax, h.MajorRadius(), h.MinorRadius());
+        _hypr = new Hyperbola2D(ax, h.MajorRadius, h.MinorRadius);
         _isDone = true;
     }
 }

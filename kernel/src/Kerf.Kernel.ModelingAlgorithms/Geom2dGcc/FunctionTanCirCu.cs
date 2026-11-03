@@ -68,16 +68,16 @@ public sealed class FunctionTanCirCu : FunctionWithDerivative
             loc += (ConstraintCurveTool.Value(_curve, x)).XY();
             x += step;
         }
-        _weight = Max((loc - _theCirc.Location().XY()).SquareModulus(), _theCirc.Radius());
+        _weight = Max((loc - _theCirc.Location.XY()).SquareModulus(), _theCirc.Radius);
     }
 
     public override bool Value(double x, out double fval)
     {
         ConstraintCurveTool.D1(_curve, x, out Point2D point, out Vector2D vect1);
-        double   normeD1      = vect1.Magnitude();
-        Vector2D theDirection = new(_theCirc.Location(), point);
+        double   normeD1      = vect1.Magnitude;
+        Vector2D theDirection = new(_theCirc.Location, point);
         double   squaredir    = theDirection.Dot(theDirection);
-        double   r            = _theCirc.Radius();
+        double   r            = _theCirc.Radius;
         fval =
           squaredir - r * r - (theDirection.Dot(vect1)) * (theDirection.Dot(vect1)) / (normeD1 * normeD1);
         fval /= _weight;
@@ -87,8 +87,8 @@ public sealed class FunctionTanCirCu : FunctionWithDerivative
     public override bool Derivative(double x, out double deriv)
     {
         ConstraintCurveTool.D2(_curve, x, out Point2D point, out Vector2D vect1, out Vector2D vect2);
-        double   normeD1      = vect1.SquareMagnitude();
-        Vector2D theDirection = new(_theCirc.Location(), point);
+        double   normeD1      = vect1.SquareMagnitude;
+        Vector2D theDirection = new(_theCirc.Location, point);
         double   cp1dott      = theDirection.Dot(vect1);
         deriv =
           -2.0 * (cp1dott / normeD1) * ((theDirection.Dot(vect2)) - cp1dott * vect1.Dot(vect2) / normeD1);
@@ -99,11 +99,11 @@ public sealed class FunctionTanCirCu : FunctionWithDerivative
     public override bool Values(double x, out double fval, out double deriv)
     {
         ConstraintCurveTool.D2(_curve, x, out Point2D point, out Vector2D vect1, out Vector2D vect2);
-        double   normeD1      = vect1.SquareMagnitude();
-        Vector2D theDirection = new(_theCirc.Location(), point);
-        double   squaredir    = theDirection.SquareMagnitude();
+        double   normeD1      = vect1.SquareMagnitude;
+        Vector2D theDirection = new(_theCirc.Location, point);
+        double   squaredir    = theDirection.SquareMagnitude;
         double   cp1dott      = theDirection.Dot(vect1);
-        double   r            = _theCirc.Radius();
+        double   r            = _theCirc.Radius;
 
         fval = squaredir - r * r - cp1dott * cp1dott / normeD1;
         fval /= _weight;

@@ -22,15 +22,15 @@ public class ProjLib_ComputeApproxOnPolarSurfacePropertyTests
                                      double theTol, int theNb = 50)
     {
         Assert.NotNull(thePCurve);
-        double aFirst = Max(theCurve.FirstParameter(), thePCurve.FirstParameter());
-        double aLast = Min(theCurve.LastParameter(), thePCurve.LastParameter());
+        double aFirst = Max(theCurve.FirstParameter(), thePCurve.FirstParameter);
+        double aLast = Min(theCurve.LastParameter(), thePCurve.LastParameter);
         Assert.True(aLast - aFirst > 0.99 * (theCurve.LastParameter() - theCurve.FirstParameter()));
         for (int i = 0; i <= theNb; i++)
         {
             double t = aFirst + (aLast - aFirst) * i / theNb;
             Point2D aUV = thePCurve.Value(t);
-            Point3D aP = theSurf.Value(aUV.X(), aUV.Y());
-            double aDist = aP.Distance(theCurve.Value(t));
+            Point3D aP = theSurf.Value(aUV.X, aUV.Y);
+            double aDist = aP.DistanceTo(theCurve.Value(t));
             Assert.True(aDist <= theTol, $"distance {aDist} at t = {t}");
         }
     }
@@ -73,7 +73,7 @@ public class ProjLib_ComputeApproxOnPolarSurfacePropertyTests
         var aSphere = new SphericalSurface(Std, 2.0);
         Direction3D aN = new(0.15, 0.0, 1.0);
         double aR = 0.1, aD = Math.Sqrt(4.0 - aR * aR);
-        var aC = new CircleCurve3D(new Frame3D(new Point3D(aD * aN.X(), aD * aN.Y(), aD * aN.Z()), aN), aR);
+        var aC = new CircleCurve3D(new Frame3D(new Point3D(aD * aN.X, aD * aN.Y, aD * aN.Z), aN), aR);
         Project(aC, aSphere);
     }
 
@@ -84,8 +84,8 @@ public class ProjLib_ComputeApproxOnPolarSurfacePropertyTests
         var aSphere = new SphericalSurface(Std, 2.0);
         var aC = new TrimmedCurve3D(aSphere.UIso(0.4), 0.0, M_PI / 2.0);
         BSplineCurve2D aRes = Project(aC, aSphere);
-        Point2D aEnd = aRes.Value(aRes.LastParameter());
-        Assert.Equal(M_PI / 2.0, aEnd.Y(), 1.0e-6);
+        Point2D aEnd = aRes.Value(aRes.LastParameter);
+        Assert.Equal(M_PI / 2.0, aEnd.Y, 1.0e-6);
     }
 
     [Fact]
@@ -99,10 +99,10 @@ public class ProjLib_ComputeApproxOnPolarSurfacePropertyTests
     public void Cone_GeneratorToApex()
     {
         var aCone = new ConicalSurface(Std, M_PI / 6.0, 2.0);
-        Point3D anApex = aCone.Apex();
+        Point3D anApex = aCone.Apex;
         Point3D aBase = aCone.Value(0.8, 0.0);
         var aC = new TrimmedCurve3D(new LineCurve3D(aBase, new Direction3D(new Vector3D(aBase, anApex))), 0.0,
-                                       aBase.Distance(anApex));
+                                       aBase.DistanceTo(anApex));
         Project(aC, aCone);
     }
 
@@ -211,7 +211,7 @@ public class ProjLib_ComputeApproxOnPolarSurfacePropertyTests
         BSplineCurve2D aRes = Project(aCurve, aSurf);
         // The two pieces are concatenated with a knot of multiplicity = degree at the C0 parameter.
         Assert.Equal(1.0, aRes.Knot(2), 1.0e-12);
-        Assert.Equal(aRes.Degree(), aRes.Multiplicity(2));
+        Assert.Equal(aRes.Degree, aRes.Multiplicity(2));
     }
 
     [Fact]
@@ -223,7 +223,7 @@ public class ProjLib_ComputeApproxOnPolarSurfacePropertyTests
         for (int i = 1; i <= aCurve.PoleCount; i++)
         {
             Point3D aP = aCurve.Pole(i);
-            aP2d[i] = new Point2D(aP.X() / 10.0, aP.Y() / 10.0);
+            aP2d[i] = new Point2D(aP.X / 10.0, aP.Y / 10.0);
         }
         var anInit = new BSplineCurve2D(aP2d, aCurve.InternalKnots(), aCurve.InternalMultiplicities(), 2);
         var aC = new CurveAdaptor(aCurve);
@@ -245,7 +245,7 @@ public class ProjLib_ComputeApproxOnPolarSurfacePropertyTests
         Assert.NotNull(anInit);
         Assert.True(aProj.IsDone);
         // The initial curve is a degree-1 B-spline, stored as BSpline().
-        Assert.Equal(1, aProj.InternalBSpline()!.Degree());
+        Assert.Equal(1, aProj.InternalBSpline()!.Degree);
 
         BSplineCurve2D? aRes = aProj.Perform(anInit, aC, aS);
         Assert.NotNull(aRes);
@@ -290,7 +290,7 @@ public class ProjLib_ComputeApproxOnPolarSurfacePropertyTests
         Assert.True(aSecond.IsFrozen);
         CheckOnCurve(aFirst, aS, aC, 1.0e-5);
         CheckOnCurve(aSecond, aS, aC, 1.0e-5);
-        double aDU = Math.Abs(aFirst.Value(1.0).X() - aSecond.Value(1.0).X());
+        double aDU = Math.Abs(aFirst.Value(1.0).X - aSecond.Value(1.0).X);
         Assert.Equal(2.0 * M_PI, aDU, 1.0e-9);
     }
 
@@ -309,7 +309,7 @@ public class ProjLib_ComputeApproxOnPolarSurfacePropertyTests
         Assert.True(aProj.IsDone);
         BSplineCurve2D? aRes = aProj.BSpline();
         Assert.NotNull(aRes);
-        Assert.InRange(aRes.Degree(), 3, 5);
+        Assert.InRange(aRes.Degree, 3, 5);
         Assert.True(aRes.KnotCount - 1 <= 50);
         Assert.True(aProj.Tolerance() > 0.0);
     }
@@ -375,8 +375,8 @@ public class ProjLib_ComputeApproxOnPolarSurfacePropertyTests
         NCollection_Array1<int> aM = new(1, 2);
         aM.Init(2);
         var aSurf = new BSplineSurface(aSP, aK, aK, aM, aM, 1, 1);
-        Assert.Equal(1, aSurf.UDegree());
-        Assert.Equal(25, BSplineSurface.MaxDegree());
+        Assert.Equal(1, aSurf.UDegree);
+        Assert.Equal(25, BSplineSurface.MaxDegree);
 
         NCollection_Array1<Point3D> aCP = new(1, 4);
         aCP[1] = new Point3D(1, 1, 0);

@@ -102,7 +102,7 @@ public class EdgeCurveAdaptor : TransformedCurve
                 throw new NullObjectException("BRepAdaptor_Curve::No geometry");
             }
         }
-        _trsf = l.Transformation();
+        _trsf = l.Transformation;
     }
 
     /// <summary>Loads the geometry of the edge, computed from its pcurve on the face.</summary>
@@ -121,7 +121,7 @@ public class EdgeCurveAdaptor : TransformedCurve
         _conSurf = new CurveOnSurface();
         _conSurf.Load(hc, hs);
 
-        _trsf = l.Transformation();
+        _trsf = l.Transformation;
     }
 
     /// <summary>The edge.</summary>

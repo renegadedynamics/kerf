@@ -156,7 +156,7 @@ public class ShapeReader : ShapeSetBase
 
             result.Location(ReadLocation(stream), false);
             // OCCT.NET: untrusted input: OCCT casts any byte
-            result.Orientation(global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckOrientation(stream.ReadByte()));
+            result.Orient(global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckOrientation(stream.ReadByte()));
             return result;
         }
 
@@ -192,7 +192,7 @@ public class ShapeReader : ShapeSetBase
         result.Convex(conv);
         _shapePos[position] = result;
         _shapesInProgress.Remove(position);
-        result.Orientation(shapeOrientation);
+        result.Orient(shapeOrientation);
         result.Location(shapeLocation, false);
         return result;
     }

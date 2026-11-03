@@ -148,8 +148,8 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                 int aB = theO.Int(0, 3);
                 anA.Basis = BaseArg(theO, aB switch { 0 => Kind.Circle, 1 => Kind.Ellipse, 2 => Kind.Line, _ => Kind.BSpline });
                 Curve2D aC = BuildPort(anA.Basis);
-                double aFirst = global::Kerf.Engine.Foundation.Precision.IsInfinite(aC.FirstParameter()) ? -15 : aC.FirstParameter();
-                double aLast = global::Kerf.Engine.Foundation.Precision.IsInfinite(aC.LastParameter()) ? 15 : aC.LastParameter();
+                double aFirst = global::Kerf.Engine.Foundation.Precision.IsInfinite(aC.FirstParameter) ? -15 : aC.FirstParameter;
+                double aLast = global::Kerf.Engine.Foundation.Precision.IsInfinite(aC.LastParameter) ? 15 : aC.LastParameter;
                 double a = theO.Real(aFirst, aLast), b = theO.Real(aFirst, aLast);
                 if (Math.Abs(a - b) < 0.1 * (aLast - aFirst))
                 {
@@ -293,7 +293,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
             double u = theA.Kind == Kind.Trimmed ? theA.U1 : 0.7;
             using N.gp_Pnt2d aNP = aNA.Value(u);
             Point2D aPP = aPA.Value(u);
-            if (aNP.X() != aPP.X() || aNP.Y() != aPP.Y())
+            if (aNP.X() != aPP.X || aNP.Y() != aPP.Y)
             {
                 return null;
             }
@@ -303,7 +303,7 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
 
     private static double StartParam(Oracle theO, Curve2D theC)
     {
-        double aFirst = theC.FirstParameter(), aLast = theC.LastParameter();
+        double aFirst = theC.FirstParameter, aLast = theC.LastParameter;
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aFirst) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aLast))
         {
             return theO.Real(-10, 10);
@@ -356,8 +356,8 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
 
         public void P(string theName, in Point2D theP)
         {
-            D(theName + ".x", theP.X());
-            D(theName + ".y", theP.Y());
+            D(theName + ".x", theP.X);
+            D(theName + ".y", theP.Y);
         }
 
         public void Circ(string theName, N.gp_Circ2d theC)
@@ -377,12 +377,12 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
 
         public void Circ(string theName, in Circle2D theC)
         {
-            P(theName + ".loc", theC.Location());
-            D(theName + ".xd.x", theC.XAxis().Direction().X());
-            D(theName + ".xd.y", theC.XAxis().Direction().Y());
-            D(theName + ".yd.x", theC.YAxis().Direction().X());
-            D(theName + ".yd.y", theC.YAxis().Direction().Y());
-            D(theName + ".r", theC.Radius());
+            P(theName + ".loc", theC.Location);
+            D(theName + ".xd.x", theC.XAxis.Direction.X);
+            D(theName + ".xd.y", theC.XAxis.Direction.Y);
+            D(theName + ".yd.x", theC.YAxis.Direction.X);
+            D(theName + ".yd.y", theC.YAxis.Direction.Y);
+            D(theName + ".r", theC.Radius);
         }
 
         public void Lin(string theName, N.gp_Lin2d theL)
@@ -396,9 +396,9 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
 
         public void Lin(string theName, in Line2D theL)
         {
-            P(theName + ".loc", theL.Location());
-            D(theName + ".d.x", theL.Direction().X());
-            D(theName + ".d.y", theL.Direction().Y());
+            P(theName + ".loc", theL.Location);
+            D(theName + ".d.x", theL.Direction.X);
+            D(theName + ".d.y", theL.Direction.Y);
         }
     }
 

@@ -32,8 +32,8 @@ public sealed class MakeAxis2Placement2d : GeometryRoot
         StepDirection d;
 
         // OCCT: the 3D location and main direction, in an axis2_placement_2d (occt-issues.md, 8D)
-        MakeCartesianPoint mkPoint = new MakeCartesianPoint(a.Location(), localFactors.LengthFactor());
-        MakeDirection mkDir = new MakeDirection(a.Direction());
+        MakeCartesianPoint mkPoint = new MakeCartesianPoint(a.Location, localFactors.LengthFactor());
+        MakeDirection mkDir = new MakeDirection(a.Direction);
 
         p = mkPoint.Value();
         d = mkDir.Value();
@@ -63,8 +63,8 @@ public sealed class MakeAxis2Placement2d : GeometryRoot
         StepCartesianPoint p;
         StepDirection d1;
 
-        MakeCartesianPoint mkPoint = new MakeCartesianPoint(a.Location(), localFactors.LengthFactor());
-        MakeDirection mkDir = new MakeDirection(a.XDirection());
+        MakeCartesianPoint mkPoint = new MakeCartesianPoint(a.Location, localFactors.LengthFactor());
+        MakeDirection mkDir = new MakeDirection(a.XDirection);
 
         p = mkPoint.Value();
         d1 = mkDir.Value();

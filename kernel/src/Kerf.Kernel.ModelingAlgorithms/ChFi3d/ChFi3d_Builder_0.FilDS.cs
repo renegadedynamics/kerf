@@ -182,7 +182,7 @@ internal static partial class Builder_0
             {
                 if (ishape1 > 0)
                 {
-                    trafil1 = dStr.Shape(ishape1).Orientation();
+                    trafil1 = dStr.Shape(ishape1).Orientation;
                 }
                 else
                 {
@@ -196,7 +196,7 @@ internal static partial class Builder_0
             {
                 if (ishape2 > 0)
                 {
-                    trafil2 = dStr.Shape(ishape2).Orientation();
+                    trafil2 = dStr.Shape(ishape2).Orientation;
                 }
                 else
                 {
@@ -259,7 +259,7 @@ internal static partial class Builder_0
                         {
                             if (boutdeVtx.IsSame(ex.Current()))
                             {
-                                oVtx = ex.Current().Orientation();
+                                oVtx = ex.Current().Orientation;
                                 break;
                             }
                         }
@@ -353,7 +353,7 @@ internal static partial class Builder_0
                         {
                             if (boutdeVtx.IsSame(ex.Current()))
                             {
-                                oVtx = ex.Current().Orientation();
+                                oVtx = ex.Current().Orientation;
                                 break;
                             }
                         }
@@ -691,7 +691,7 @@ internal static partial class Builder_0
                         {
                             if (boutdeVtx.IsSame(ex.Current()))
                             {
-                                oVtx = ex.Current().Orientation();
+                                oVtx = ex.Current().Orientation;
                                 if (closed && (numEdge == 1))
                                 {
                                     trouve = (spine.EdgeCount == 1);

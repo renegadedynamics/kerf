@@ -10,7 +10,7 @@ namespace Kerf.Engine.Geometry.Evaluation.Grid;
 /// <summary>
 /// Efficient batch evaluator for 2D line grid points, by the direct formula P(t) = Location + t * Direction.
 /// </summary>
-public sealed class LineGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
+internal sealed class LineGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
 {
     private readonly LineCurve2D? _geom;
 
@@ -34,15 +34,15 @@ public sealed class LineGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
         NCollection_Array1<Point2D> result = new(1, theParams.Length());
 
         // Extract line data
-        Line2D lin = _geom.Lin2d();
-        Point2D loc = lin.Location();
-        Direction2D dir = lin.Direction();
+        Line2D lin = _geom.Line;
+        Point2D loc = lin.Location;
+        Direction2D dir = lin.Direction;
 
         // Pre-extract coordinates for vectorization potential
-        double locX = loc.X();
-        double locY = loc.Y();
-        double dirX = dir.X();
-        double dirY = dir.Y();
+        double locX = loc.X;
+        double locY = loc.Y;
+        double dirX = dir.X;
+        double dirY = dir.Y;
 
         for (int i = theParams.Lower(); i <= theParams.Upper(); ++i)
         {
@@ -62,14 +62,14 @@ public sealed class LineGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
 
         NCollection_Array1<Curve2D.ResD1> result = new(1, theParams.Length());
 
-        Line2D lin = _geom.Lin2d();
-        Point2D loc = lin.Location();
-        Direction2D dir = lin.Direction();
+        Line2D lin = _geom.Line;
+        Point2D loc = lin.Location;
+        Direction2D dir = lin.Direction;
 
-        double locX = loc.X();
-        double locY = loc.Y();
-        double dirX = dir.X();
-        double dirY = dir.Y();
+        double locX = loc.X;
+        double locY = loc.Y;
+        double dirX = dir.X;
+        double dirY = dir.Y;
 
         // D1 is constant for a line
         Vector2D d1 = new(dirX, dirY);
@@ -96,14 +96,14 @@ public sealed class LineGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
 
         NCollection_Array1<Curve2D.ResD2> result = new(1, theParams.Length());
 
-        Line2D lin = _geom.Lin2d();
-        Point2D loc = lin.Location();
-        Direction2D dir = lin.Direction();
+        Line2D lin = _geom.Line;
+        Point2D loc = lin.Location;
+        Direction2D dir = lin.Direction;
 
-        double locX = loc.X();
-        double locY = loc.Y();
-        double dirX = dir.X();
-        double dirY = dir.Y();
+        double locX = loc.X;
+        double locY = loc.Y;
+        double dirX = dir.X;
+        double dirY = dir.Y;
 
         Vector2D d1 = new(dirX, dirY);
         Vector2D d2 = new(0, 0); // Second derivative is zero for a line
@@ -131,14 +131,14 @@ public sealed class LineGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
 
         NCollection_Array1<Curve2D.ResD3> result = new(1, theParams.Length());
 
-        Line2D lin = _geom.Lin2d();
-        Point2D loc = lin.Location();
-        Direction2D dir = lin.Direction();
+        Line2D lin = _geom.Line;
+        Point2D loc = lin.Location;
+        Direction2D dir = lin.Direction;
 
-        double locX = loc.X();
-        double locY = loc.Y();
-        double dirX = dir.X();
-        double dirY = dir.Y();
+        double locX = loc.X;
+        double locY = loc.Y;
+        double dirX = dir.X;
+        double dirY = dir.Y;
 
         Vector2D d1 = new(dirX, dirY);
         Vector2D zero = new(0, 0);
@@ -170,8 +170,8 @@ public sealed class LineGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
         if (n == 1)
         {
             // D1 is constant for a line (the direction)
-            Direction2D dir = _geom.Lin2d().Direction();
-            Vector2D d1 = new(dir.X(), dir.Y());
+            Direction2D dir = _geom.Line.Direction;
+            Vector2D d1 = new(dir.X, dir.Y);
             for (int i = 1; i <= theParams.Length(); ++i)
             {
                 result.SetValue(i, d1);

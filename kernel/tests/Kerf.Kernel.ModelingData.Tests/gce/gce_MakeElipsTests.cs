@@ -23,8 +23,8 @@ public class gce_MakeElipsTest
         Assert.Equal(Done, aMaker.Status());
 
         Ellipse3D anElips = aMaker.Value();
-        Assert.Equal(10.0, anElips.MajorRadius(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(5.0, anElips.MinorRadius(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(10.0, anElips.MajorRadius, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(5.0, anElips.MinorRadius, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]

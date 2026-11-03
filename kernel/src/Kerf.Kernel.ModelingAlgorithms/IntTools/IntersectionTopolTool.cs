@@ -129,7 +129,7 @@ public class IntersectionTopolTool : TopolTool
                 break;
             case SurfaceKind.Cylinder:
                 {
-                    double radius = _s.Cylinder().Radius();
+                    double radius = _s.Cylinder().Radius;
                     double maxAngle = M_PI * 0.5;
                     double deflection = 1.0e-02;
 
@@ -168,13 +168,13 @@ public class IntersectionTopolTool : TopolTool
             case SurfaceKind.Cone:
                 {
                     Cone cone = _s.Cone();
-                    Circle3D circle = global::Kerf.Engine.Geometry.ElSLib.ConeVIso(cone.Position(), cone.RefRadius(), cone.SemiAngle(), vinf);
-                    double radius = circle.Radius();
-                    circle = global::Kerf.Engine.Geometry.ElSLib.ConeVIso(cone.Position(), cone.RefRadius(), cone.SemiAngle(), vsup);
+                    Circle3D circle = global::Kerf.Engine.Geometry.ElSLib.ConeVIso(cone.Position, cone.RefRadius, cone.SemiAngle, vinf);
+                    double radius = circle.Radius;
+                    circle = global::Kerf.Engine.Geometry.ElSLib.ConeVIso(cone.Position, cone.RefRadius, cone.SemiAngle, vsup);
 
-                    if (radius < circle.Radius())
+                    if (radius < circle.Radius)
                     {
-                        radius = circle.Radius();
+                        radius = circle.Radius;
                     }
                     double maxAngle = M_PI * 0.5;
                     double deflection = 1.0e-02;
@@ -221,21 +221,21 @@ public class IntersectionTopolTool : TopolTool
                     if (typS == SurfaceKind.Torus)
                     {
                         Torus torus = _s.Torus();
-                        circle = global::Kerf.Engine.Geometry.ElSLib.TorusUIso(torus.Position(), torus.MajorRadius(), torus.MinorRadius(), uinf);
-                        radius2 = circle.Radius();
-                        circle = global::Kerf.Engine.Geometry.ElSLib.TorusUIso(torus.Position(), torus.MajorRadius(), torus.MinorRadius(), usup);
-                        radius2 = (radius2 < circle.Radius()) ? circle.Radius() : radius2;
+                        circle = global::Kerf.Engine.Geometry.ElSLib.TorusUIso(torus.Position, torus.MajorRadius, torus.MinorRadius, uinf);
+                        radius2 = circle.Radius;
+                        circle = global::Kerf.Engine.Geometry.ElSLib.TorusUIso(torus.Position, torus.MajorRadius, torus.MinorRadius, usup);
+                        radius2 = (radius2 < circle.Radius) ? circle.Radius : radius2;
 
-                        circle = global::Kerf.Engine.Geometry.ElSLib.TorusVIso(torus.Position(), torus.MajorRadius(), torus.MinorRadius(), vinf);
-                        radius1 = circle.Radius();
-                        circle = global::Kerf.Engine.Geometry.ElSLib.TorusVIso(torus.Position(), torus.MajorRadius(), torus.MinorRadius(), vsup);
-                        radius1 = (radius1 < circle.Radius()) ? circle.Radius() : radius1;
+                        circle = global::Kerf.Engine.Geometry.ElSLib.TorusVIso(torus.Position, torus.MajorRadius, torus.MinorRadius, vinf);
+                        radius1 = circle.Radius;
+                        circle = global::Kerf.Engine.Geometry.ElSLib.TorusVIso(torus.Position, torus.MajorRadius, torus.MinorRadius, vsup);
+                        radius1 = (radius1 < circle.Radius) ? circle.Radius : radius1;
                     }
                     else
                     {
                         Sphere sphere = _s.Sphere();
-                        radius1 = sphere.Radius();
-                        radius2 = sphere.Radius();
+                        radius1 = sphere.Radius;
+                        radius2 = sphere.Radius;
                     }
                     double maxAngle = M_PI * 0.5;
                     double deflection = 1.0e-02;
@@ -452,9 +452,9 @@ public class IntersectionTopolTool : TopolTool
                 Point3D a = array2.Value(i, 1);
                 Point3D b = array2.Value(i, 2);
                 Point3D c = array2.Value(i, 3);
-                vi = vi.WithCoord(c.X() - b.X() - b.X() + a.X(),
-                            c.Y() - b.Y() - b.Y() + a.Y(),
-                            c.Z() - b.Z() - b.Z() + a.Z());
+                vi = vi.WithCoord(c.X - b.X - b.X + a.X,
+                            c.Y - b.Y - b.Y + a.Y,
+                            c.Z - b.Z - b.Z + a.Z);
                 int locnbch = 0;
 
                 for (j = array2.LowerCol() + 2; j < array2.UpperCol(); j++)
@@ -462,9 +462,9 @@ public class IntersectionTopolTool : TopolTool
                     Point3D ax = array2.Value(i, j - 1);
                     Point3D bx = array2.Value(i, j);
                     Point3D cx = array2.Value(i, j + 1);
-                    vip1 = vip1.WithCoord(cx.X() - bx.X() - bx.X() + ax.X(),
-                                  cx.Y() - bx.Y() - bx.Y() + ax.Y(),
-                                  cx.Z() - bx.Z() - bx.Z() + ax.Z());
+                    vip1 = vip1.WithCoord(cx.X - bx.X - bx.X + ax.X,
+                                  cx.Y - bx.Y - bx.Y + ax.Y,
+                                  cx.Z - bx.Z - bx.Z + ax.Z);
                     double pd = vi.Dot(vip1);
                     vi = vip1;
                     if (pd > 1.0e-7 || pd < -1.0e-7)
@@ -503,9 +503,9 @@ public class IntersectionTopolTool : TopolTool
                 Point3D a = array2.Value(array2.LowerRow(), j);
                 Point3D b = array2.Value(array2.LowerRow() + 1, j);
                 Point3D c = array2.Value(array2.LowerRow() + 2, j);
-                vi = vi.WithCoord(c.X() - b.X() - b.X() + a.X(),
-                            c.Y() - b.Y() - b.Y() + a.Y(),
-                            c.Z() - b.Z() - b.Z() + a.Z());
+                vi = vi.WithCoord(c.X - b.X - b.X + a.X,
+                            c.Y - b.Y - b.Y + a.Y,
+                            c.Z - b.Z - b.Z + a.Z);
                 int locnbch = 0;
 
                 for (i = array2.LowerRow() + 2; i < array2.UpperRow(); i++)
@@ -513,9 +513,9 @@ public class IntersectionTopolTool : TopolTool
                     Point3D ax = array2.Value(i - 1, j);
                     Point3D bx = array2.Value(i, j);
                     Point3D cx = array2.Value(i + 1, j);
-                    vip1 = vip1.WithCoord(cx.X() - bx.X() - bx.X() + ax.X(),
-                                  cx.Y() - bx.Y() - bx.Y() + ax.Y(),
-                                  cx.Z() - bx.Z() - bx.Z() + ax.Z());
+                    vip1 = vip1.WithCoord(cx.X - bx.X - bx.X + ax.X,
+                                  cx.Y - bx.Y - bx.Y + ax.Y,
+                                  cx.Z - bx.Z - bx.Z + ax.Z);
                     double pd = vi.Dot(vip1);
                     vi = vip1;
                     if (pd > 1.0e-7 || pd < -1.0e-7)

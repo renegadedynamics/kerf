@@ -277,7 +277,7 @@ public class ShapeFixWireOracleTests(ITestOutputHelper output) : IDisposable
         }
     }
 
-    private static N.gp_Pnt P(in Point3D theP) => new(theP.X(), theP.Y(), theP.Z());
+    private static N.gp_Pnt P(in Point3D theP) => new(theP.X, theP.Y, theP.Z);
 
     // A random wire as a sketch makes it: lines, arcs and B-splines around a loop in a random plane, each edge with
     // its own vertices, the ends moved apart by a gap; sometimes with tiny edges, shuffled, reversed or open.
@@ -293,9 +293,9 @@ public class ShapeFixWireOracleTests(ITestOutputHelper output) : IDisposable
         {
             double anAngle = 2.0 * Math.PI * (i + 0.3 * theOracle.Real(-1.0, 1.0)) / aNb;
             double r = aRadius * theOracle.Real(0.6, 1.4);
-            Point3D aP = anAx.Location();
-            aP = aP.Translated(new Vector3D(anAx.XDirection()) * (r * Math.Cos(anAngle)));
-            aP = aP.Translated(new Vector3D(anAx.YDirection()) * (r * Math.Sin(anAngle)));
+            Point3D aP = anAx.Location;
+            aP = aP.Translated(new Vector3D(anAx.XDirection) * (r * Math.Cos(anAngle)));
+            aP = aP.Translated(new Vector3D(anAx.YDirection) * (r * Math.Sin(anAngle)));
             aPoints[i] = aP;
         }
         bool isOpen = theOracle.Int(0, 4) == 0;
@@ -342,10 +342,10 @@ public class ShapeFixWireOracleTests(ITestOutputHelper output) : IDisposable
                 N.TopoDS_Edge? anEdge = null;
                 int aKind = theOracle.Int(0, 9);
                 Point3D aMid = new Point3D((aStart.XYZ() + anEnd.XYZ()) * 0.5);
-                Vector3D aSide = new Vector3D(anAx.Direction()).Crossed(new Vector3D(aStart, anEnd));
-                if (aKind >= 7 && aSide.Magnitude() > 1.0e-6)
+                Vector3D aSide = new Vector3D(anAx.Direction).Crossed(new Vector3D(aStart, anEnd));
+                if (aKind >= 7 && aSide.Magnitude > 1.0e-6)
                 {
-                    Point3D aBulge = aMid.Translated(aSide.Normalized() * (aStart.Distance(anEnd) * theOracle.Real(-0.3, 0.3)));
+                    Point3D aBulge = aMid.Translated(aSide.Normalized() * (aStart.DistanceTo(anEnd) * theOracle.Real(-0.3, 0.3)));
                     try
                     {
                         if (aKind == 9)

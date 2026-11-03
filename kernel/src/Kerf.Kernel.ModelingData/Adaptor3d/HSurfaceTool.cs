@@ -14,7 +14,7 @@ namespace Kerf.Engine.Geometry.Adaptors;
 /// Static access to a surface adaptor's services, as the generic algorithms (intersections, extrema) call them,
 /// plus sampling counts and a G1 test.
 /// </summary>
-public static class HSurfaceTool
+internal static class HSurfaceTool
 {
     public static double FirstUParameter(SurfaceAdaptorBase surf) => surf.FirstUParameter();
 
@@ -148,7 +148,7 @@ public static class HSurfaceTool
             if (c.GetType() == OffsetCurve)
             {
                 OffsetCurve3D oc = c.OffsetCurve();
-                c = new CurveAdaptor(oc.BasisCurve());
+                c = new CurveAdaptor(oc.BasisCurve);
             }
 
             if (c.GetType() == BSplineCurve)

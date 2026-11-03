@@ -45,21 +45,21 @@ public class GeomEval_CircularHelicoidSurfaceTest
 
         // S(0, 1) = (1, 0, 0)
         Point3D aP1 = aSurf.EvalD0(0.0, 1.0);
-        Assert.Equal(1.0, aP1.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aP1.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aP1.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aP1.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aP1.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aP1.Z, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // S(Pi/2, 1) = (0, 1, P/4)
         Point3D aP2 = aSurf.EvalD0(M_PI / 2.0, 1.0);
-        Assert.Equal(0.0, aP2.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(1.0, aP2.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(aP / 4.0, aP2.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aP2.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aP2.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aP / 4.0, aP2.Z, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // S(u, 0) = (0, 0, P*u/(2*Pi)) -- on the axis
         Point3D aP3 = aSurf.EvalD0(1.0, 0.0);
-        Assert.Equal(0.0, aP3.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aP3.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(aP / (2.0 * M_PI), aP3.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aP3.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aP3.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aP / (2.0 * M_PI), aP3.Z, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -72,7 +72,7 @@ public class GeomEval_CircularHelicoidSurfaceTest
         foreach (double[] aUV in aParams)
         {
             Surface.ResD2 aD2 = aSurf.EvalD2(aUV[0], aUV[1]);
-            Assert.Equal(0.0, aD2.D2V.Magnitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
+            Assert.Equal(0.0, aD2.D2V.Magnitude, global::Kerf.Engine.Foundation.Precision.Confusion());
         }
     }
 
@@ -87,7 +87,7 @@ public class GeomEval_CircularHelicoidSurfaceTest
         foreach (double aU in aParams)
         {
             Surface.ResD1 aD1 = aSurf.EvalD1(aU, 2.0);
-            Assert.Equal(1.0, aD1.D1V.Magnitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
+            Assert.Equal(1.0, aD1.D1V.Magnitude, global::Kerf.Engine.Foundation.Precision.Confusion());
         }
     }
 
@@ -95,7 +95,7 @@ public class GeomEval_CircularHelicoidSurfaceTest
     public void ComparisonWithHelix_ConstantV()
     {
         CoordinateSystem anAx3 = new();
-        Frame3D anAx2 = new(anAx3.Location(), anAx3.Direction(), anAx3.XDirection());
+        Frame3D anAx2 = new(anAx3.Location, anAx3.Direction, anAx3.XDirection);
         const double aP = 10.0, aR = 3.0;
         CircularHelicoidSurface aSurf = new(anAx3, aP);
         CircularHelixCurve aHelix = new(anAx2, aR, aP);
@@ -106,7 +106,7 @@ public class GeomEval_CircularHelicoidSurfaceTest
         {
             Point3D aPS = aSurf.EvalD0(aU, aR);
             Point3D aPH = aHelix.EvalD0(aU);
-            Assert.Equal(0.0, aPS.Distance(aPH), global::Kerf.Engine.Foundation.Precision.Confusion());
+            Assert.Equal(0.0, aPS.DistanceTo(aPH), global::Kerf.Engine.Foundation.Precision.Confusion());
         }
     }
 
@@ -135,7 +135,7 @@ public class GeomEval_CircularHelicoidSurfaceTest
     {
         CoordinateSystem anAx3 = new();
         CircularHelicoidSurface aSurf = new(anAx3, 10.0);
-        aSurf.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+        aSurf.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
         Assert.True(global::Kerf.Engine.Foundation.Precision.IsInfinite(aU1));
         Assert.True(global::Kerf.Engine.Foundation.Precision.IsInfinite(aU2));
         Assert.True(global::Kerf.Engine.Foundation.Precision.IsInfinite(aV1));

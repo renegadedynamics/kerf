@@ -11,7 +11,7 @@ using Occt;
 namespace Kerf.Engine.Topology.Brep;
 
 /// <summary>The representation of an edge by an array of nodes of a triangulation.</summary>
-public class PolygonOnTriangulationRepresentation : CurveRepresentation
+internal class PolygonOnTriangulationRepresentation : CurveRepresentation
 {
     private PolygonOnTriangulation? _polygon;
     private readonly Triangulation? _triangulation;
@@ -50,7 +50,7 @@ public class PolygonOnTriangulationRepresentation : CurveRepresentation
 
     /// <summary>A polygon in the definition of <paramref name="t"/> with location <paramref name="l"/>.</summary>
     public override bool IsPolygonOnTriangulation(Triangulation? t, in Placement l)
-        => ReferenceEquals(t, _triangulation) && (l == _location);
+        => ReferenceEquals(t, _triangulation) && (l.IsEqual(_location));
 
     internal override void PolygonOnTriangulation(PolygonOnTriangulation? p)
     {

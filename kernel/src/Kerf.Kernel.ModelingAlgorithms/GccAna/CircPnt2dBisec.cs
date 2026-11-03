@@ -54,7 +54,7 @@ public sealed class CircPnt2dBisec
     // Defines the number and the type of solutions depending on input data
     private void DefineSolutions()
     {
-        double dist = _circle.Radius() - _point.Distance(_circle.Location());
+        double dist = _circle.Radius - _point.DistanceTo(_circle.Location);
 
         if (Math.Abs(dist) < _tolerance)
         {
@@ -101,12 +101,12 @@ public sealed class CircPnt2dBisec
         }
 
         ConstraintBisec bissol;
-        double xpoint = _point.X();
-        double ypoint = _point.Y();
-        double xcencir = _circle.Location().X();
-        double ycencir = _circle.Location().Y();
-        double r1 = _circle.Radius();
-        double dist = _point.Distance(_circle.Location());
+        double xpoint = _point.X;
+        double ypoint = _point.Y;
+        double xcencir = _circle.Location.X;
+        double ycencir = _circle.Location.Y;
+        double r1 = _circle.Radius;
+        double dist = _point.DistanceTo(_circle.Location);
 
         if (dist < _tolerance)
         {

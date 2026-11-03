@@ -23,7 +23,7 @@ public class GeomFill_SectionsTests
         Assert.Equal(aBS.IsPeriodic, aLaw.IsUPeriodic);
         Assert.True(aLaw.IsRational);
         Assert.True(aLaw.IsVPeriodic);
-        Assert.Equal(aDeg, aBS.Degree());
+        Assert.Equal(aDeg, aBS.Degree);
 
         var aPoles = new NCollection_Array1<Point3D>(1, aNbPoles);
         var aWeights = new NCollection_Array1<double>(1, aNbPoles);
@@ -35,8 +35,8 @@ public class GeomFill_SectionsTests
         var aRebuilt = new BSplineCurve3D(aPoles, aWeights, aKnots, aMults, aDeg, aLaw.IsUPeriodic);
         for (double u = 0; u < 2 * M_PI; u += 0.4)
         {
-            Assert.True(aRebuilt.Value(u).Distance(aBS.Value(u)) < 1e-12);
-            Assert.Equal(2.0, aRebuilt.Value(u).Distance(new Point3D(0, 0, 0)), 1e-12);
+            Assert.True(aRebuilt.Value(u).DistanceTo(aBS.Value(u)) < 1e-12);
+            Assert.Equal(2.0, aRebuilt.Value(u).DistanceTo(new Point3D(0, 0, 0)), 1e-12);
         }
 
         var aDPoles = new NCollection_Array1<Vector3D>(1, aNbPoles);
@@ -77,12 +77,12 @@ public class GeomFill_SectionsTests
         BSplineSurface? aSurf = aLaw.BSplineSurface();
         Assert.NotNull(aSurf);
         Assert.False(aSurf!.IsFrozen);
-        Assert.Equal(1, aSurf.VDegree());
+        Assert.Equal(1, aSurf.VDegree);
         Assert.Equal(aCurve.Value(0.3), aSurf.Value(0.3, 4));
         Assert.False(aCurve.IsFrozen); // the caller's B-spline is only read
         Assert.False(aLaw.IsRational);
         Point3D aBary = aLaw.BarycentreOfSurf();
-        Assert.True(aBary.X() > 0 && aBary.X() < 4);
+        Assert.True(aBary.X > 0 && aBary.X < 4);
     }
 
     private static CurveAndTrihedron XLaw(double theFirst, double theLast)
@@ -110,11 +110,11 @@ public class GeomFill_SectionsTests
         Assert.NotSame(aCircle, aSection);
         Assert.False(aSection.IsFrozen);
         var aPlaced = Assert.IsType<CircleCurve3D>(aSection);
-        Assert.Equal(1.0, aPlaced.Radius(), 1e-15);
+        Assert.Equal(1.0, aPlaced.Radius, 1e-15);
         Curve3D aModified = aPlace.ModifiedSection(false);
         Assert.IsType<CircleCurve3D>(aModified);
         // the caller's circle is unchanged
-        Assert.Equal(new Direction3D(1, 0, 0), aCircle.Axis().Direction());
+        Assert.Equal(new Direction3D(1, 0, 0), aCircle.Axis.Direction);
     }
 
     [Fact]
@@ -132,9 +132,9 @@ public class GeomFill_SectionsTests
         Matrix3x3 M = new();
         Vector3D V = new();
         aLaw.D0(4.0, ref M, ref V);
-        Assert.True(Swept(M, V, aOnSection.Transformed(aTrsf)).Distance(aOnPath) < 1e-12);
+        Assert.True(Swept(M, V, aOnSection.Transformed(aTrsf)).DistanceTo(aOnPath) < 1e-12);
         Curve3D aSection = aPlace.Section(true);
-        Assert.True(Swept(M, V, aSection.Value(aPlace.ParameterOnSection())).Distance(aOnPath) < 1e-12);
+        Assert.True(Swept(M, V, aSection.Value(aPlace.ParameterOnSection())).DistanceTo(aOnPath) < 1e-12);
     }
 
     private static Point3D Swept(in Matrix3x3 M, in Vector3D V, in Point3D P) => new(P.XYZ().Multiplied(M).Added(V.XYZ()));
@@ -172,7 +172,7 @@ public class GeomFill_SectionsTests
         Vector3D V = new();
         aLaw.D0(5.0, ref M, ref V);
         Transform3D aTrsf = aPlace.Transformation(true);
-        Assert.True(Swept(M, V, new Point3D(3, 4, 0).Transformed(aTrsf)).Distance(new Point3D(3, 0, 0)) < 1e-12);
+        Assert.True(Swept(M, V, new Point3D(3, 4, 0).Transformed(aTrsf)).DistanceTo(new Point3D(3, 0, 0)) < 1e-12);
 
         aPlace.Perform(1.0, 1e-7);
         Assert.Equal(1.0, aPlace.ParameterOnPath());

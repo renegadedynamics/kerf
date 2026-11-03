@@ -67,7 +67,7 @@ public sealed class Lin2d2TanIter
             if (Math.Abs(norm) < tolang)
             {
                 ConstraintCurveTool.D2(cu2, usol, out Point2D origine, out Vector2D vect1, out Vector2D vect2);
-                Vector2D vdir  = new(c1.Location().XY() - origine.XY());
+                Vector2D vdir  = new(c1.Location.XY() - origine.XY());
                 double   sign1 = vect1.Dot(vdir);
                 if (sign1 <= 0.0)
                 {
@@ -78,30 +78,30 @@ public sealed class Lin2d2TanIter
                     || (qualified2.IsOutside && sign1 <= 0.0 && sign2 >= 0.0)
                     || (qualified2.IsEnclosed && sign1 >= 0.0 && sign2 >= 0.0))
                 {
-                    if (qualified1.IsUnqualified || (qualified1.IsOutside && vect1.Angle(vdir) <= 0.0)
-                        || (qualified1.IsEnclosing && vect1.Angle(vdir) >= 0.0))
+                    if (qualified1.IsUnqualified || (qualified1.IsOutside && vect1.AngleTo(vdir) <= 0.0)
+                        || (qualified1.IsEnclosing && vect1.AngleTo(vdir) >= 0.0))
                     {
                         Direction2D direc  = new(vect1);
-                        double   r1     = c1.Radius();
-                        Xy    normal = new(-r1 * direc.Y(), r1 * direc.X());
+                        double   r1     = c1.Radius;
+                        Xy    normal = new(-r1 * direc.Y, r1 * direc.X);
                         sign1           = vect1.Crossed(vdir);
                         if (qualified1.IsEnclosing)
                         {
-                            _pnttg1sol = new Point2D(c1.Location().XY() - normal);
+                            _pnttg1sol = new Point2D(c1.Location.XY() - normal);
                         }
                         else if (qualified1.IsOutside)
                         {
-                            _pnttg1sol = new Point2D(c1.Location().XY() + normal);
+                            _pnttg1sol = new Point2D(c1.Location.XY() + normal);
                         }
                         else
                         {
                             if (sign1 >= 0.0)
                             {
-                                _pnttg1sol = new Point2D(c1.Location().XY() - normal);
+                                _pnttg1sol = new Point2D(c1.Location.XY() - normal);
                             }
                             else
                             {
-                                _pnttg1sol = new Point2D(c1.Location().XY() + normal);
+                                _pnttg1sol = new Point2D(c1.Location.XY() + normal);
                             }
                         }
                         // 	 if (gp_Vec2d(direc.XY()).Angle(gp_Vec2d(pnttg1sol,Origine)) <= Tol) {
@@ -112,7 +112,7 @@ public sealed class Lin2d2TanIter
                         _qualifier2 = qualified2.Qualifier();
                         _pararg2    = usol;
                         _par1sol    = 0.0;
-                        _par2sol    = _pnttg2sol.Distance(_pnttg1sol);
+                        _par2sol    = _pnttg2sol.DistanceTo(_pnttg1sol);
                         _pararg1    = 0.0;
                     }
                 }
@@ -166,13 +166,13 @@ public sealed class Lin2d2TanIter
                 ConstraintCurveTool.D2(cu1, ufirst[1], out Point2D point1, out Vector2D vect11, out Vector2D vect12);
                 ConstraintCurveTool.D2(cu2, ufirst[2], out Point2D point2, out Vector2D vect21, out Vector2D vect22);
                 Vector2D vec    = new(new Point2D(point1.XY()), new Point2D(point2.XY()));
-                double   angle1 = vec.Angle(vect12);
+                double   angle1 = vec.AngleTo(vect12);
                 double   sign1  = vect11.Dot(vec);
                 if (qualified1.IsUnqualified || (qualified1.IsEnclosing && angle1 >= 0.0)
                     || (qualified1.IsOutside && angle1 <= 0.0 && sign1 <= 0.0)
                     || (qualified1.IsEnclosed && angle1 <= 0.0 && sign1 >= 0.0))
                 {
-                    angle1 = vec.Angle(vect22);
+                    angle1 = vec.AngleTo(vect22);
                     sign1  = vect21.Dot(vec);
                     if (qualified2.IsUnqualified || (qualified2.IsEnclosing && angle1 >= 0.0)
                         || (qualified2.IsOutside && angle1 <= 0.0 && sign1 <= 0.0)
@@ -185,8 +185,8 @@ public sealed class Lin2d2TanIter
                         _pnttg1sol    = point1;
                         _pararg2      = ufirst[2];
                         _pnttg2sol    = point2;
-                        _par2sol      = _pnttg2sol.Distance(_pnttg1sol);
-                        Direction2D dir = new(_pnttg2sol.X() - _pnttg1sol.X(), _pnttg2sol.Y() - _pnttg1sol.Y());
+                        _par2sol      = _pnttg2sol.DistanceTo(_pnttg1sol);
+                        Direction2D dir = new(_pnttg2sol.X - _pnttg1sol.X, _pnttg2sol.Y - _pnttg1sol.Y);
                         _linsol       = new Line2D(_pnttg1sol, dir);
                         _wellDone     = true;
                     }
@@ -245,7 +245,7 @@ public sealed class Lin2d2TanIter
                     _pnttg2sol  = thePoint;
                     _pararg1    = usol;
                     _par1sol    = 0.0;
-                    _pararg2    = thePoint.Distance(origine);
+                    _pararg2    = thePoint.DistanceTo(origine);
                     _par2sol    = 0.0;
                 }
             }

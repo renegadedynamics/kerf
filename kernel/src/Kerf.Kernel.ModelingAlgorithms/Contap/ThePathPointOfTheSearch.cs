@@ -141,5 +141,5 @@ public partial struct ThePathPointOfTheSearch
                                    in ThePathPointOfTheSearch right) => !left.Equals(right);
 
     public override readonly string ToString()
-        => $"{Constants.Format("Contap_ThePathPointOfTheSearch", _point.X(), _point.Y(), _point.Z(), _tol, _param)} new {_isnew}";
+        => $"{Constants.Format("Contap_ThePathPointOfTheSearch", _point.X, _point.Y, _point.Z, _tol, _param)} new {_isnew}";
 }

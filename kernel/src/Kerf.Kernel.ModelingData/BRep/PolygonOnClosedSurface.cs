@@ -12,7 +12,7 @@ using Occt;
 namespace Kerf.Engine.Topology.Brep;
 
 /// <summary>The representation of an edge by two 2D polygons in the parametric space of a closed surface.</summary>
-public class PolygonOnClosedSurface : PolygonOnSurface
+internal class PolygonOnClosedSurface : PolygonOnSurface
 {
     private Polygon2D? _polygon2;
 

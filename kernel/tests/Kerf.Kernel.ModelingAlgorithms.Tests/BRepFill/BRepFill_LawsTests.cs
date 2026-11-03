@@ -377,11 +377,11 @@ public class BRepFill_LawsTests
         Assert.True(AllFrozen(W));
         for (Explorer anExp = new(W, ShapeType.Edge); anExp.More(); anExp.Next())
         {
-            Assert.True(anExp.Current().Location().IsIdentity);
+            Assert.True(anExp.Current().Placement.IsIdentity);
         }
         Explorer anOrig = new(aProfile, ShapeType.Edge);
         Shape aMod = aSec.ModifiedShape(anOrig.Current());
-        Assert.Equal(ShapeType.Edge, aMod.ShapeType());
+        Assert.Equal(ShapeType.Edge, aMod.Type);
         Assert.True(aSec.ModifiedShape(aProfile).IsSame(W));
         Assert.True(aSec.OriginalShape().IsEqual(aProfile));
 
@@ -399,7 +399,7 @@ public class BRepFill_LawsTests
         FillingSection aSec = new(aV, new Vertex(), false, false);
         Assert.True(aSec.IsPunctual);
         Wire W = aSec.Wire();
-        Assert.True(W.Closed());
+        Assert.True(W.IsClosed);
         Explorer anExp = new(W, ShapeType.Edge);
         Assert.True(Tool.Degenerated(ShapeCasts.Edge(anExp.Current())));
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.FailureException>(() => new FillingSection(new MakeFace(new Plane3D(), 0, 1, 0, 1).Face(),
@@ -433,7 +433,7 @@ public class BRepFill_LawsTests
         Assert.True(aRL.Remove(aBox));
         Shape R = aRL.GetResult();
         Assert.True(AllFrozen(R));
-        Assert.True(R.Location().IsIdentity);
+        Assert.True(R.Placement.IsIdentity);
         for (Explorer anExp = new(R, ShapeType.Face); anExp.More(); anExp.Next())
         {
             Tool.Surface(ShapeCasts.Face(anExp.Current()), out Placement L);

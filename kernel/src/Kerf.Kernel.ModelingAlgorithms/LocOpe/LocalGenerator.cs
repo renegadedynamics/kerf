@@ -186,7 +186,7 @@ public sealed class LocalGenerator
                 Face fac = ShapeCasts.Face(exp2.Current());
                 for (exp3.Init(fac, ShapeType.Edge); exp3.More(); exp3.Next())
                 {
-                    if (exp3.Current().IsSame(edg) && exp3.Current().Orientation() == edg.Orientation())
+                    if (exp3.Current().IsSame(edg) && exp3.Current().Orientation == edg.Orientation)
                     {
                         theLeft.Add(fac);
                         NCollection_List<Shape> emptylist = new();
@@ -371,7 +371,7 @@ public sealed class LocalGenerator
                                 for (exp3.Init(fac.Oriented(Forward), ShapeType.Edge); exp3.More(); exp3.Next())
                                 {
                                     Edge eee = ShapeCasts.Edge(exp3.Current());
-                                    orient = eee.Orientation();
+                                    orient = eee.Orientation;
                                     if (!eee.IsSame(edg))
                                     {
                                         Exploration.Vertices(eee, out Vf, out Vl);
@@ -516,7 +516,7 @@ public sealed class LocalGenerator
             Tool.Range(edg, out f, out l);
             Shape localEdge = edg.EmptyCopied();
             newedg = ShapeCasts.Edge(localEdge);
-            newedg.Orientation(Forward);
+            newedg.Orient(Forward);
             for (exp.Init(edg.Oriented(Forward), ShapeType.Vertex); exp.More(); exp.Next())
             {
                 Vertex vtx = ShapeCasts.Vertex(exp.Current());
@@ -550,7 +550,7 @@ public sealed class LocalGenerator
 
                 if (toRemove.Contains(vtx) || (prm < l && prm > f))
                 {
-                    b.Add(newedg, newvtx.Oriented(vtx.Orientation()));
+                    b.Add(newedg, newvtx.Oriented(vtx.Orientation));
                     tol = Tool.Tolerance(newvtx);
                     b.UpdateVertex(newvtx, prm, newedg, tol);
                     toRemove.Add(itl.Value()); // i-e edgbis
@@ -558,7 +558,7 @@ public sealed class LocalGenerator
                 }
                 else
                 {
-                    b.Add(newedg, vtx.Oriented(vtx.Orientation()));
+                    b.Add(newedg, vtx.Oriented(vtx.Orientation));
                     tol = Tool.Tolerance(vtx);
                     b.UpdateVertex(vtx, prm, newedg, tol);
                 }
@@ -593,14 +593,14 @@ public sealed class LocalGenerator
                     break;
                 }
             }
-            orface = exp.Current().Orientation();
+            orface = exp.Current().Orientation;
             Shape localFaceEmptyCopied = fac.EmptyCopied();
             newface = ShapeCasts.Face(localFaceEmptyCopied);
-            newface.Orientation(Forward);
+            newface.Orient(Forward);
             s = Tool.Surface(fac)!;
             if (s.GetType() == typeof(TrimmedSurface))
             {
-                s = ((TrimmedSurface)s).BasisSurface();
+                s = ((TrimmedSurface)s).BasisSurface;
             }
             p = s as PlaneSurface;
             Wire wir;
@@ -648,8 +648,8 @@ public sealed class LocalGenerator
                             }
                             if (itl2.More())
                             {
-                                orient = itl2.Value().Orientation();
-                                facbis.Orientation(orient);
+                                orient = itl2.Value().Orientation;
+                                facbis.Orient(orient);
                             }
                             else
                             { // on fusionne avec une autre face du shape...
@@ -657,7 +657,7 @@ public sealed class LocalGenerator
                                 {
                                     if (exp2.Current().IsSame(facbis))
                                     {
-                                        facbis.Orientation(exp2.Current().Orientation());
+                                        facbis.Orient(exp2.Current().Orientation);
                                         break;
                                     }
                                 }
@@ -680,7 +680,7 @@ public sealed class LocalGenerator
                                     {
                                         Edge edg = ShapeCasts.Edge(exp2.Current());
 
-                                        orient = global::Kerf.Engine.Topology.TopAbs.Compose(orface, edg.Orientation());
+                                        orient = global::Kerf.Engine.Topology.TopAbs.Compose(orface, edg.Orientation);
                                         listofedg.Append(edg.Oriented(orient));
                                         edgAdded.Add(edg);
                                         if (p is null)
@@ -691,12 +691,12 @@ public sealed class LocalGenerator
                                             c = Tool.Curve(edg, out loc, out f, out l)!;
                                             if (!loc.IsIdentity)
                                             {
-                                                Geometry3D gg = c.Transformed(loc.Transformation());
+                                                Geometry3D gg = c.Transformed(loc.Transformation);
                                                 c = (Curve3D)gg;
                                             }
                                             if (c.GetType() == typeof(TrimmedCurve3D))
                                             {
-                                                c = ((TrimmedCurve3D)c).BasisCurve();
+                                                c = ((TrimmedCurve3D)c).BasisCurve;
                                             }
 
                                             Curve2D c2d0 = Translatable(global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(c, f, l, s, ref tol)!);
@@ -705,14 +705,14 @@ public sealed class LocalGenerator
                                             pf = c2d0.Value(f);
                                             pl = c2d0.Value(l);
                                             double tttol = global::Kerf.Engine.Foundation.Precision.Angular();
-                                            while (Min(pf.X(), pl.X()) >= umaxc - tttol)
+                                            while (Min(pf.X, pl.X) >= umaxc - tttol)
                                             {
                                                 c2d0.Translate(new Vector2D(-2.0 * Math.PI, 0));
                                                 pf = c2d0.Value(f);
                                                 pl = c2d0.Value(l);
                                             }
 
-                                            while (Max(pf.X(), pl.X()) <= uminc + tttol)
+                                            while (Max(pf.X, pl.X) <= uminc + tttol)
                                             {
                                                 c2d0.Translate(new Vector2D(2.0 * Math.PI, 0));
                                                 pf = c2d0.Value(f);
@@ -738,7 +738,7 @@ public sealed class LocalGenerator
                     for (exp2.Init(wir, ShapeType.Edge); exp2.More(); exp2.Next())
                     {
                         Edge edg = ShapeCasts.Edge(exp2.Current());
-                        orient = edg.Orientation();
+                        orient = edg.Orientation;
                         if (!toRemove.Contains(edg) && !theEEMap.ContainsKey(edg))
                         {
                             listofedg.Append(edg);
@@ -757,12 +757,12 @@ public sealed class LocalGenerator
                             c = Tool.Curve(newedg, out loc, out f, out l)!;
                             if (!loc.IsIdentity)
                             {
-                                Geometry3D gg = c.Transformed(loc.Transformation());
+                                Geometry3D gg = c.Transformed(loc.Transformation);
                                 c = (Curve3D)gg;
                             }
                             if (c.GetType() == typeof(TrimmedCurve3D))
                             {
-                                c = ((TrimmedCurve3D)c).BasisCurve();
+                                c = ((TrimmedCurve3D)c).BasisCurve;
                             }
                             if (p is null)
                             { // on met les courbes 2d si on n`est pas
@@ -814,14 +814,14 @@ public sealed class LocalGenerator
                                 {
                                     if (_modShapes.ContainsKey(edg))
                                     { // edg raccourci
-                                        if (orient == dontFuse.GetValue(edg).Orientation())
+                                        if (orient == dontFuse.GetValue(edg).Orientation)
                                         {
                                             addPart = true;
                                         }
                                     }
                                     else
                                     {
-                                        if (orient == global::Kerf.Engine.Topology.TopAbs.Reverse(dontFuse.GetValue(edg).Orientation()))
+                                        if (orient == global::Kerf.Engine.Topology.TopAbs.Reverse(dontFuse.GetValue(edg).Orientation))
                                         {
                                             addPart = true;
                                         }
@@ -863,12 +863,12 @@ public sealed class LocalGenerator
                                         c = Tool.Curve(edgbis, out loc, out f, out l)!;
                                         if (!loc.IsIdentity)
                                         {
-                                            Geometry3D gg = c.Transformed(loc.Transformation());
+                                            Geometry3D gg = c.Transformed(loc.Transformation);
                                             c = (Curve3D)gg;
                                         }
                                         if (c.GetType() == typeof(TrimmedCurve3D))
                                         {
-                                            c = ((TrimmedCurve3D)c).BasisCurve();
+                                            c = ((TrimmedCurve3D)c).BasisCurve;
                                         }
                                         prmvt = Tool.Parameter(ShapeCasts.Vertex(it1.Value()), edgbis);
                                         c.D1(prmvt, out ptbid, out dir2);
@@ -897,7 +897,7 @@ public sealed class LocalGenerator
                                             double uref;
                                             if (dontFuse.ContainsKey(edg))
                                             {
-                                                Orientation oredge = dontFuse.GetValue(edg).Orientation();
+                                                Orientation oredge = dontFuse.GetValue(edg).Orientation;
                                                 if (_modShapes.ContainsKey(edg))
                                                 { // edge raccourci...
                                                     Shape localShape = edg.Oriented(oredge);
@@ -910,17 +910,17 @@ public sealed class LocalGenerator
                                                     Shape localFace = fac.Oriented(Forward);
                                                     Tool.UVPoints(ShapeCasts.Edge(localShape), ShapeCasts.Face(localFace), out pf, out pl);
                                                 }
-                                                uref = pf.X();
+                                                uref = pf.X;
                                             }
                                             else
                                             {
                                                 Tool.UVPoints(edg, fac, out pf, out pl);
-                                                uref = pf.X();
+                                                uref = pf.X;
                                             }
 
-                                            double newU = (ptc.Value(f)).X();
+                                            double newU = (ptc.Value(f)).X;
 
-                                            if (Math.Abs(newU - uref) > Epsilon(s.UPeriod()))
+                                            if (Math.Abs(newU - uref) > Epsilon(s.UPeriod))
                                             {
                                                 ptc.Translate(new Vector2D((uref - newU), 0.0));
                                             }
@@ -952,8 +952,8 @@ public sealed class LocalGenerator
                         }
                         if (itl2.More())
                         {
-                            orient = itl2.Value().Orientation();
-                            facbis.Orientation(orient);
+                            orient = itl2.Value().Orientation;
+                            facbis.Orient(orient);
                         }
                         else
                         { // on fusionne avec une autre face du shape...
@@ -962,7 +962,7 @@ public sealed class LocalGenerator
                             {
                                 if (exp2.Current().IsSame(facbis))
                                 {
-                                    facbis.Orientation(exp2.Current().Orientation());
+                                    facbis.Orient(exp2.Current().Orientation);
                                     break;
                                 }
                             }
@@ -1021,7 +1021,7 @@ public sealed class LocalGenerator
                                 Edge edg = ShapeCasts.Edge(exp2.Current());
                                 if (!toRemove.Contains(edg) && !edgAdded.Contains(edg))
                                 {
-                                    orient = global::Kerf.Engine.Topology.TopAbs.Compose(orface, edg.Orientation());
+                                    orient = global::Kerf.Engine.Topology.TopAbs.Compose(orface, edg.Orientation);
                                     listofedg.Append(edg.Oriented(orient));
                                     edgAdded.Add(edg);
                                     if (p is null)
@@ -1032,12 +1032,12 @@ public sealed class LocalGenerator
                                         c = Tool.Curve(edg, out loc, out f, out l)!;
                                         if (!loc.IsIdentity)
                                         {
-                                            Geometry3D gg = c.Transformed(loc.Transformation());
+                                            Geometry3D gg = c.Transformed(loc.Transformation);
                                             c = (Curve3D)gg;
                                         }
                                         if (c.GetType() == typeof(TrimmedCurve3D))
                                         {
-                                            c = ((TrimmedCurve3D)c).BasisCurve();
+                                            c = ((TrimmedCurve3D)c).BasisCurve;
                                         }
 
                                         c2d = Translatable(global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(c, f, l, s, ref tol)!);
@@ -1046,14 +1046,14 @@ public sealed class LocalGenerator
                                         pf = c2d.Value(f);
                                         pl = c2d.Value(l);
                                         double tttol = global::Kerf.Engine.Foundation.Precision.Angular();
-                                        while (Min(pf.X(), pl.X()) >= umaxc - tttol)
+                                        while (Min(pf.X, pl.X) >= umaxc - tttol)
                                         {
                                             c2d.Translate(new Vector2D(-2.0 * Math.PI, 0));
                                             pf = c2d.Value(f);
                                             pl = c2d.Value(l);
                                         }
 
-                                        while (Max(pf.X(), pl.X()) <= uminc + tttol)
+                                        while (Max(pf.X, pl.X) <= uminc + tttol)
                                         {
                                             c2d.Translate(new Vector2D(2.0 * Math.PI, 0));
                                             pf = c2d.Value(f);
@@ -1118,12 +1118,12 @@ public sealed class LocalGenerator
                 }
                 else if (_modShapes.ContainsKey(fac))
                 {
-                    lfres.Append(_modShapes.GetValue(fac).First().Oriented(fac.Orientation()));
+                    lfres.Append(_modShapes.GetValue(fac).First().Oriented(fac.Orientation));
                 }
             }
         }
 
-        Orientation orsolid = _shape.Orientation();
+        Orientation orsolid = _shape.Orientation;
         for (itl.Initialize(OrientedFaces(g)); itl.More(); itl.Next())
         {
             Face fac = ShapeCasts.Face(itl.Value());
@@ -1151,7 +1151,7 @@ public sealed class LocalGenerator
         BuildShape bs = new(lfres);
         _res = bs.InternalShape();
         // Suite debug du 06.11.96
-        if (_res.ShapeType() == ShapeType.Solid)
+        if (_res.Type == ShapeType.Solid)
         {
             for (exp.Init(_res, ShapeType.Face); exp.More(); exp.Next())
             {
@@ -1160,7 +1160,7 @@ public sealed class LocalGenerator
                     break;
                 }
             }
-            if (exp.More() && exp.Current().Orientation() != faceRefOri.Orientation())
+            if (exp.More() && exp.Current().Orientation != faceRefOri.Orientation)
             {
                 // Si un seul Shell, on change son orientation
                 Solid newSol = new();
@@ -1215,12 +1215,12 @@ public sealed class LocalGenerator
 
         if (s1.GetType() == typeof(TrimmedSurface))
         {
-            s1 = ((TrimmedSurface)s1).BasisSurface();
+            s1 = ((TrimmedSurface)s1).BasisSurface;
         }
 
         if (s2.GetType() == typeof(TrimmedSurface))
         {
-            s2 = ((TrimmedSurface)s2).BasisSurface();
+            s2 = ((TrimmedSurface)s2).BasisSurface;
         }
 
         if (s1.GetType() != s2.GetType())
@@ -1231,13 +1231,13 @@ public sealed class LocalGenerator
         bool valRet = false;
         if (s1.GetType() == typeof(PlaneSurface))
         {
-            Plane3D pl1 = ((PlaneSurface)s1).Pln();
-            Plane3D pl2 = ((PlaneSurface)s2).Pln();
+            Plane3D pl1 = ((PlaneSurface)s1).Plane;
+            Plane3D pl2 = ((PlaneSurface)s2).Plane;
 
-            pl1 = pl1.Transformed(loc1.Transformation());
-            pl2 = pl2.Transformed(loc2.Transformation());
+            pl1 = pl1.Transformed(loc1.Transformation);
+            pl2 = pl2.Transformed(loc2.Transformation);
 
-            if (pl1.Position().IsCoplanar(pl2.Position(), tollin, tolang))
+            if (pl1.Position.IsCoplanar(pl2.Position, tollin, tolang))
             {
                 valRet = true;
             }
@@ -1259,24 +1259,24 @@ public sealed class LocalGenerator
         Curve3D c1 = Tool.Curve(e1, out Placement loc1, out _, out _)!;
         if (!loc1.IsIdentity)
         {
-            Geometry3D cc1 = c1.Transformed(loc1.Transformation());
+            Geometry3D cc1 = c1.Transformed(loc1.Transformation);
             c1 = (Curve3D)cc1;
         }
 
         Curve3D c2 = Tool.Curve(e2, out Placement loc2, out _, out _)!;
         if (!loc2.IsIdentity)
         {
-            Geometry3D cc2 = c2.Transformed(loc2.Transformation());
+            Geometry3D cc2 = c2.Transformed(loc2.Transformation);
             c2 = (Curve3D)cc2;
         }
 
         if (c1.GetType() == typeof(TrimmedCurve3D))
         {
-            c1 = ((TrimmedCurve3D)c1).BasisCurve();
+            c1 = ((TrimmedCurve3D)c1).BasisCurve;
         }
         if (c2.GetType() == typeof(TrimmedCurve3D))
         {
-            c2 = ((TrimmedCurve3D)c2).BasisCurve();
+            c2 = ((TrimmedCurve3D)c2).BasisCurve;
         }
 
         if (c1.GetType() != c2.GetType())
@@ -1287,10 +1287,10 @@ public sealed class LocalGenerator
         bool valRet = false;
         if (c1.GetType() == typeof(LineCurve3D))
         {
-            Line3D li1 = ((LineCurve3D)c1).Lin();
-            Line3D li2 = ((LineCurve3D)c2).Lin();
+            Line3D li1 = ((LineCurve3D)c1).Line;
+            Line3D li2 = ((LineCurve3D)c2).Line;
 
-            if (li1.Position().IsCoaxial(li2.Position(), tolang, tollin))
+            if (li1.Position.IsCoaxial(li2.Position, tolang, tollin))
             {
                 valRet = true;
             }
@@ -1324,30 +1324,30 @@ public sealed class LocalGenerator
         Curve3D c = Tool.Curve(edg, out Placement loc, out _, out _)!;
         if (!loc.IsIdentity)
         {
-            Geometry3D gg = c.Transformed(loc.Transformation());
+            Geometry3D gg = c.Transformed(loc.Transformation);
             c = (Curve3D)gg;
         }
         if (c.GetType() == typeof(TrimmedCurve3D))
         {
-            c = ((TrimmedCurve3D)c).BasisCurve();
+            c = ((TrimmedCurve3D)c).BasisCurve;
         }
 
         if (c.GetType() == typeof(LineCurve3D))
         {
-            return global::Kerf.Engine.Geometry.ElCLib.Parameter(((LineCurve3D)c).Lin(), p);
+            return global::Kerf.Engine.Geometry.ElCLib.Parameter(((LineCurve3D)c).Line, p);
         }
         else if (c.GetType() == typeof(CircleCurve3D))
         {
-            double prm = global::Kerf.Engine.Geometry.ElCLib.Parameter(((CircleCurve3D)c).Circ(), p);
+            double prm = global::Kerf.Engine.Geometry.ElCLib.Parameter(((CircleCurve3D)c).Circle, p);
             // Vtx vient d`une exploration de Edg orientee FORWARD
 
-            Orientation orient = global::Kerf.Engine.Topology.TopAbs.Reverse(vtx.Orientation());
+            Orientation orient = global::Kerf.Engine.Topology.TopAbs.Reverse(vtx.Orientation);
             if (orient == Forward || orient == Reversed)
             {
                 Explorer exp = new(newEdg.Oriented(Forward), ShapeType.Vertex);
                 for (; exp.More(); exp.Next())
                 {
-                    if (exp.Current().Orientation() == orient)
+                    if (exp.Current().Orientation == orient)
                     {
                         break;
                     }

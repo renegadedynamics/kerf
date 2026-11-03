@@ -233,7 +233,7 @@ public sealed class Collect
             {
                 Shape ns = itl.Value();
                 // Images contiennet des edges => ajout des edges resultat dans MSF.
-                if (!yaEdge && ns.ShapeType() == ShapeType.Edge)
+                if (!yaEdge && ns.Type == ShapeType.Edge)
                 {
                     for (exp.Init(sf, ShapeType.Edge); exp.More(); exp.Next())
                     {
@@ -242,7 +242,7 @@ public sealed class Collect
                     yaEdge = true;
                 }
                 // Images contiennet des vertex => ajout des vertex resultat dans MSF.
-                if (!yaVertex && ns.ShapeType() == ShapeType.Vertex)
+                if (!yaVertex && ns.Type == ShapeType.Vertex)
                 {
                     for (exp.Init(sf, ShapeType.Vertex); exp.More(); exp.Next())
                     {

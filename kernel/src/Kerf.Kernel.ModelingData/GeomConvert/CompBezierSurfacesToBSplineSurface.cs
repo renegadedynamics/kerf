@@ -20,7 +20,7 @@ namespace Kerf.Engine.Geometry.Conversion;
 /// <remarks>
 /// The grid's patches are not modified: OCCT raises their degrees in place to the grid's, the port raises copies.
 /// </remarks>
-public sealed class CompBezierSurfacesToBSplineSurface
+internal sealed class CompBezierSurfacesToBSplineSurface
 {
     private int _uDegree;
     private int _vDegree;
@@ -94,10 +94,10 @@ public sealed class CompBezierSurfacesToBSplineSurface
         firstCurve.D0(0.5, out p2);
         firstCurve.D1(1, out p3, out vec);
 
-        l1 = p1.Distance(p2) + p2.Distance(p3);
+        l1 = p1.DistanceTo(p2) + p2.DistanceTo(p3);
         _uKnots.SetValue(2, l1);
 
-        v1 = vec.Magnitude();
+        v1 = vec.Magnitude;
         // if the parameterization is too strange we keep the pseudo-length
         if ((v1 > 1000 * l1) || (v1 < l1 * 1.0e-3))
         {
@@ -108,11 +108,11 @@ public sealed class CompBezierSurfacesToBSplineSurface
         {
             secondCurve = beziers[ii, jj].VIso(0.3);
             secondCurve.D1(0, out p1, out vec);
-            v2 = vec.Magnitude();
+            v2 = vec.Magnitude;
             secondCurve.D0(0.5, out p2);
             secondCurve.D1(1, out p3, out vec);
-            v3 = vec.Magnitude();
-            l2 = p1.Distance(p2) + p2.Distance(p3);
+            v3 = vec.Magnitude;
+            l2 = p1.DistanceTo(p2) + p2.DistanceTo(p3);
 
             // Compute the ratio, avoiding degenerate cases...
             if ((v2 > 1000 * l2) || (v2 < l2 * 1.0e-3))
@@ -154,10 +154,10 @@ public sealed class CompBezierSurfacesToBSplineSurface
         firstCurve.D0(0.5, out p2);
         firstCurve.D1(1, out p3, out vec);
 
-        l1 = p1.Distance(p2) + p2.Distance(p3);
+        l1 = p1.DistanceTo(p2) + p2.DistanceTo(p3);
         _vKnots.SetValue(2, l1);
 
-        v1 = vec.Magnitude();
+        v1 = vec.Magnitude;
         // if the parameterization is too strange we keep the pseudo-length
         if ((v1 > 1000 * l1) || (v1 < l1 * 1.0e-3))
         {
@@ -168,11 +168,11 @@ public sealed class CompBezierSurfacesToBSplineSurface
         {
             secondCurve = beziers[ii, jj].UIso(0.3);
             secondCurve.D1(0, out p1, out vec);
-            v2 = vec.Magnitude();
+            v2 = vec.Magnitude;
             secondCurve.D0(0.5, out p2);
             secondCurve.D1(1, out p3, out vec);
-            v3 = vec.Magnitude();
-            l2 = p1.Distance(p2) + p2.Distance(p3);
+            v3 = vec.Magnitude;
+            l2 = p1.DistanceTo(p2) + p2.DistanceTo(p3);
 
             // Compute the ratio, avoiding degenerate cases...
             if ((v2 > 1000 * l2) || (v2 < l2 * 1.0e-3))
@@ -397,9 +397,9 @@ public sealed class CompBezierSurfacesToBSplineSurface
                     _isrational = true;
                 }
 
-                _uDegree = (beziers[iu, iv].UDegree() > _uDegree) ? beziers[iu, iv].UDegree() : _uDegree;
+                _uDegree = (beziers[iu, iv].UDegree > _uDegree) ? beziers[iu, iv].UDegree : _uDegree;
 
-                _vDegree = (beziers[iu, iv].VDegree() > _vDegree) ? beziers[iu, iv].VDegree() : _vDegree;
+                _vDegree = (beziers[iu, iv].VDegree > _vDegree) ? beziers[iu, iv].VDegree : _vDegree;
             }
         }
 

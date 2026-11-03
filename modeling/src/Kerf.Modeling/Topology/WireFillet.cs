@@ -41,9 +41,9 @@ public partial class Wire
         record = record.Merge(ShapeHistory.FromRelocation(filleted.TopoShape, globalized.TopoShape));
 
         // Back to the original location rather than the plane's
-        var ownLocation = TopoShape.Location();
+        var ownLocation = TopoShape.Placement;
         var geometryAdjust = new Location(ownLocation).Inverse() * globalized.Location;
-        var trsf = geometryAdjust.ToTopLoc().Transformation();
+        var trsf = geometryAdjust.ToTopLoc().Transformation;
         var identity = new Placement();
         var baseWire = globalized.TopoShape.Located(identity);
         record = record.Merge(ShapeHistory.FromRelocation(globalized.TopoShape, baseWire));
@@ -100,7 +100,7 @@ internal static class WireFillet
         var p = Tool.Pnt(vertex);
         var p0 = Tool.Pnt(v0);
         var p1 = Tool.Pnt(v1);
-        return p0.Distance(p) < Constants.Tolerance || p1.Distance(p) < Constants.Tolerance;
+        return p0.DistanceTo(p) < Constants.Tolerance || p1.DistanceTo(p) < Constants.Tolerance;
     }
 
     private static List<global::Kerf.Topology.Edge> SplitEdgeAtVertex(Edge edge, Vertex splitVertex)
@@ -193,7 +193,7 @@ internal static class WireFillet
                 continue;
             }
             // Flip any edge reversed by the trim
-            edges[index] = trimmed.Orientation() != original.Orientation() ? ShapeCasts.Edge(trimmed.Reversed()) : trimmed;
+            edges[index] = trimmed.Orientation != original.Orientation ? ShapeCasts.Edge(trimmed.Reversed()) : trimmed;
         }
 
         // The insert index, in the original index space
@@ -229,7 +229,7 @@ internal static class WireFillet
             {
                 history.AddGenerated(cornerVertex, placed);
                 foreach (var arcEnd in ShapeHistory.TrackedSubshapes([placed]))
-                    if (arcEnd.ShapeType() == global::Kerf.Topology.ShapeType.Vertex)
+                    if (arcEnd.Type == global::Kerf.Topology.ShapeType.Vertex)
                         history.AddGenerated(cornerVertex, arcEnd);
             }
             else

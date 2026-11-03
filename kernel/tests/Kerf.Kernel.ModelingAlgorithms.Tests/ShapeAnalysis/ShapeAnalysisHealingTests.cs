@@ -202,7 +202,7 @@ public class ShapeAnalysisHealingTests
         aPnts[5] = new Point3D(2, 1.5, 1);
         var aPln = new Plane3D();
         Assert.True(GeomAnalysis.NearestPlane(aPnts, ref aPln, out double aDMax));
-        Assert.Equal(1.0, Math.Abs(aPln.Axis().Direction().Z()), 1e-3);
+        Assert.Equal(1.0, Math.Abs(aPln.Axis.Direction.Z), 1e-3);
         Assert.True(aDMax < 2e-3);
 
         // points spread in 3D: no plane, the plane unchanged
@@ -214,31 +214,31 @@ public class ShapeAnalysisHealingTests
         aLine[5] = new Point3D(1, 1, 1);
         var aKept = new Plane3D(new Point3D(5, 5, 5), new Direction3D(1, 0, 0));
         Assert.False(GeomAnalysis.NearestPlane(aLine, ref aKept, out _));
-        Assert.Equal(5.0, aKept.Location().X());
+        Assert.Equal(5.0, aKept.Location.X);
     }
 
     [Fact]
     public void Geom_PositionTrsf()
     {
         Assert.True(GeomAnalysis.PositionTrsf(null, out Transform3D anId, 1.0, 1e-7));
-        Assert.Equal(TransformForm.Identity, anId.Form());
+        Assert.Equal(TransformForm.Identity, anId.Form);
 
         // a rotation of 90 degrees about Z (columns (0,1,0), (-1,0,0), (0,0,1)), translated by (1, 2, 3), unit 10.
         // OCCT's SetTransformation(axes) maps into the axes, the inverse rotation: (1,0,0) goes to (0,-1,0)
         NCollection_HArray2<double> aCoefs = Matrix(new double[,] { { 0, -1, 0, 1 }, { 1, 0, 0, 2 }, { 0, 0, 1, 3 } });
         Assert.True(GeomAnalysis.PositionTrsf(aCoefs, out Transform3D aT, 10.0, 1e-7));
         Point3D aP = new Point3D(1, 0, 0).Transformed(aT);
-        Assert.Equal(10.0, aP.X(), 1e-12);
-        Assert.Equal(19.0, aP.Y(), 1e-12);
-        Assert.Equal(30.0, aP.Z(), 1e-12);
+        Assert.Equal(10.0, aP.X, 1e-12);
+        Assert.Equal(19.0, aP.Y, 1e-12);
+        Assert.Equal(30.0, aP.Z, 1e-12);
 
         // scaled by 2: OCCT's SetScale replaces the rotation (occt-issues.md), so (1,0,0) only scales
         aCoefs = Matrix(new double[,] { { 0, -2, 0, 1 }, { 2, 0, 0, 2 }, { 0, 0, 2, 3 } });
         Assert.True(GeomAnalysis.PositionTrsf(aCoefs, out aT, 10.0, 1e-7));
         aP = new Point3D(1, 0, 0).Transformed(aT);
-        Assert.Equal(12.0, aP.X(), 1e-12);
-        Assert.Equal(20.0, aP.Y(), 1e-12);
-        Assert.Equal(30.0, aP.Z(), 1e-12);
+        Assert.Equal(12.0, aP.X, 1e-12);
+        Assert.Equal(20.0, aP.Y, 1e-12);
+        Assert.Equal(30.0, aP.Z, 1e-12);
 
         // not a similarity
         aCoefs[1, 1] = 3.0;
@@ -348,14 +348,14 @@ public class ShapeAnalysisHealingTests
         Point3D aSpot = new(7, 7, 7);
         double aSpotTol = 42.0;
         Assert.Equal(0, aCSF.IsSpotFace(aBig, ref aSpot, ref aSpotTol));
-        Assert.Equal(7.0, aSpot.X());
+        Assert.Equal(7.0, aSpot.X);
         Assert.False(aCSF.CheckSpotFace(aBig));
 
         // a triangle 1e-4 wide is a spot at tolerance 1e-3
         Face aSmall = PolygonFace(new Point3D(0, 0, 0), new Point3D(1e-4, 0, 0), new Point3D(1e-4, 1e-4, 0));
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aSmall);
         Assert.Equal(1, aCSF.IsSpotFace(aSmall, ref aSpot, ref aSpotTol, 1e-3));
-        Assert.Equal(0.5e-4, aSpot.X(), 1e-15);
+        Assert.Equal(0.5e-4, aSpot.X, 1e-15);
         Assert.Equal(0.5e-4, aSpotTol, 1e-15);
         Assert.True(aCSF.CheckSpotFace(aSmall, 1e-3));
         Assert.True(aCSF.StatusSpot(ExtendStatus.DONE1));
@@ -367,7 +367,7 @@ public class ShapeAnalysisHealingTests
         aBB.MakeFace(ref anEmpty, new PlaneSurface(new Plane3D()), 1e-7);
         aSpot = new Point3D(7, 7, 7);
         Assert.Equal(1, aCSF.IsSpotFace(anEmpty, ref aSpot, ref aSpotTol));
-        Assert.Equal(7.0, aSpot.X());
+        Assert.Equal(7.0, aSpot.X);
     }
 
     [Fact]
@@ -519,11 +519,11 @@ public class ShapeAnalysisHealingTests
         {
             var aLin = new Line3D();
             Assert.True(aCR.IsLine(1e-7, ref aLin));
-            Assert.Equal(5.0, aLin.Location().Y(), 1e-12);
+            Assert.Equal(5.0, aLin.Location.Y, 1e-12);
             Assert.Equal(0.0, aCR.GetGap());
         }
         aSnap.AssertUnchanged(aMoved);
-        Assert.Equal(0.0, aLine.Lin().Location().Y());
+        Assert.Equal(0.0, aLine.Line.Location.Y);
 
         // a status other than 0 blocks the operations until ClearStatus
         var aBad = new CanonicalRecognitionAnalysis(Box());

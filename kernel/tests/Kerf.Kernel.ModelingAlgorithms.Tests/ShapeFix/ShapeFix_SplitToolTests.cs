@@ -81,7 +81,7 @@ public class ShapeFix_SplitToolTests
         Assert.True(new SplitToolFixer().SplitEdge(anE, 2.0, aV1, 6.0, aV2, aF, aSeq, ref aNum, aContext, 1e-7, 1e-9));
         Assert.Equal(3, aSeq.Length());
         Assert.Equal(2, aNum);
-        Assert.Equal(ShapeType.Wire, aContext.InternalValue(anE).ShapeType());
+        Assert.Equal(ShapeType.Wire, aContext.InternalValue(anE).Type);
         Tool.Range(ShapeCasts.Edge(aSeq.Value(2)), out double f, out double l);
         Assert.Equal(2.0, f, 1e-9);
         Assert.Equal(6.0, l, 1e-9);

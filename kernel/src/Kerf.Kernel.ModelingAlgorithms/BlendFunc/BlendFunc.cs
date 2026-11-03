@@ -152,8 +152,8 @@ public static class BlendFunc
     public static bool ComputeNormal(SurfaceAdaptorBase surf, in Point2D p2d, ref Vector3D normal)
     {
         const int maxOrder = 3;
-        double u = p2d.X();
-        double v = p2d.Y();
+        double u = p2d.X;
+        double v = p2d.Y;
 
         int i, j;
 
@@ -201,8 +201,8 @@ public static class BlendFunc
                                       ref Vector3D dNv)
     {
         const int maxOrder = 3;
-        double u = p2d.X();
-        double v = p2d.Y();
+        double u = p2d.X;
+        double v = p2d.Y;
 
         int i, j;
 

@@ -17,7 +17,7 @@ namespace Kerf.Engine.Geometry.Evaluation.Grid;
 /// polynomial cache (BSplSLib_Cache) is built once per call; D3 and DN use BSplSLib directly. A tall column of
 /// points (many U values, one V value) is evaluated along the V-isoline curve with <see cref="CurveGrid"/>.
 /// </summary>
-public sealed class BezierSurfaceGrid : GeomGridEvalGrid.ISurfaceEvaluator
+internal sealed class BezierSurfaceGrid : GeomGridEvalGrid.ISurfaceEvaluator
 {
     /// <summary>
     /// Minimum number of points along varying dimension to use isoline optimization.
@@ -48,10 +48,10 @@ public sealed class BezierSurfaceGrid : GeomGridEvalGrid.ISurfaceEvaluator
         NCollection_Array2<Point3D> poles = geom.InternalPoles();
         NCollection_Array2<double>? weights = geom.InternalWeights();
 
-        SurfaceCache cache = new(geom.UDegree(),
+        SurfaceCache cache = new(geom.UDegree,
                                     false,
                                     uKnotSequence,
-                                    geom.VDegree(),
+                                    geom.VDegree,
                                     false,
                                     vKnotSequence,
                                     weights);
@@ -207,8 +207,8 @@ public sealed class BezierSurfaceGrid : GeomGridEvalGrid.ISurfaceEvaluator
         NCollection_Array2<Surface.ResD3> result = new(1, nbU, 1, nbV);
 
         // Get degrees, flat knots, poles, and weights from geometry
-        int uDegree = _geom.UDegree();
-        int vDegree = _geom.VDegree();
+        int uDegree = _geom.UDegree;
+        int vDegree = _geom.VDegree;
         NCollection_Array1<double> uKnotSequence = _geom.InternalUKnotSequence();
         NCollection_Array1<double> vKnotSequence = _geom.InternalVKnotSequence();
         NCollection_Array2<Point3D> poles = _geom.InternalPoles();
@@ -289,8 +289,8 @@ public sealed class BezierSurfaceGrid : GeomGridEvalGrid.ISurfaceEvaluator
         // For Bezier surfaces, derivatives become zero when order exceeds degree in that direction
         // OCCT: not for a rational surface, whose derivatives of every order are non-zero in general; the grid
         // returns zero where Geom_BezierSurface::DN (BSplSLib::DN) does not (occt-issues.md).
-        int uDegree = _geom.UDegree();
-        int vDegree = _geom.VDegree();
+        int uDegree = _geom.UDegree;
+        int vDegree = _geom.VDegree;
         if (nu > uDegree || nv > vDegree)
         {
             // All derivatives are zero

@@ -60,18 +60,18 @@ public sealed class Curve2d
             {
                 case 0:
                     pnt = _fonct.Value(par);
-                    result[0] = pnt.X();
-                    result[1] = pnt.Y();
+                    result[0] = pnt.X;
+                    result[1] = pnt.Y;
                     break;
                 case 1:
                     _fonct.D1(par, out pnt, out v1);
-                    result[0] = v1.X();
-                    result[1] = v1.Y();
+                    result[0] = v1.X;
+                    result[1] = v1.Y;
                     break;
                 case 2:
                     _fonct.D2(par, out pnt, out v1, out v2);
-                    result[0] = v2.X();
-                    result[1] = v2.Y();
+                    result[0] = v2.X;
+                    result[1] = v2.Y;
                     break;
                 default:
                     result[0] = result[1] = 0.0;

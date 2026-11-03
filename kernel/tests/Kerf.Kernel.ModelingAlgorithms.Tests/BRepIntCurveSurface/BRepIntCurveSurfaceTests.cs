@@ -117,6 +117,6 @@ public class BRepIntCurveSurfaceTests
         anInter.Init(new CurveAdaptor(new CircleCurve3D(new Frame3D(new Point3D(5, 5, 5), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 6.0)));
         aPoints = All(anInter);
         Assert.Equal(8, aPoints.Count);
-        Assert.All(aPoints, p => Assert.Equal(6.0, p.P.Distance(new Point3D(5, 5, 5)), 1e-9));
+        Assert.All(aPoints, p => Assert.Equal(6.0, p.P.DistanceTo(new Point3D(5, 5, 5)), 1e-9));
     }
 }

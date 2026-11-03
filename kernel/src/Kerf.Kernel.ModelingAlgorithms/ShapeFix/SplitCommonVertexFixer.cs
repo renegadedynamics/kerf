@@ -63,7 +63,7 @@ public class SplitCommonVertexFixer : RootFixer
     /// <summary>Splits the common vertices of the wires of each face.</summary>
     public void Perform()
     {
-        ShapeType st = _shape.ShapeType();
+        ShapeType st = _shape.Type;
         if (st > ShapeType.Face)
         {
             return;
@@ -80,7 +80,7 @@ public class SplitCommonVertexFixer : RootFixer
             var wires = new NCollection_Sequence<Shape>();
             for (var itw = new Iterator(f, false); itw.More(); itw.Next())
             {
-                if (itw.Value().ShapeType() != ShapeType.Wire)
+                if (itw.Value().Type != ShapeType.Wire)
                 {
                     continue;
                 }

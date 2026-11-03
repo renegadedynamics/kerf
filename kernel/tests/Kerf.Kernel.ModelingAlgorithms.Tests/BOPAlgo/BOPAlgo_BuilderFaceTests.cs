@@ -103,7 +103,7 @@ public class BOPAlgo_BuilderFaceTests
 
         BuilderFace aBF = Build(global::Kerf.Engine.Topology.ShapeCasts.Face(aF.Oriented(Reversed)), aLE);
         Assert.Equal(Reversed, aBF.Orientation());
-        Assert.Equal(Forward, aBF.Face().Orientation());
+        Assert.Equal(Forward, aBF.Face().Orientation);
         Assert.Equal(2, aBF.Loops().Extent());
         Assert.Equal(2, aBF.Areas().Extent());
         for (NCollection_List<Shape>.Iterator aIt = new(aBF.Areas()); aIt.More(); aIt.Next())
@@ -167,7 +167,7 @@ public class BOPAlgo_BuilderFaceTests
             aNbW++;
             for (global::Kerf.Engine.Topology.Iterator aItE = new(aItW.Value()); aItE.More(); aItE.Next())
             {
-                aNbInternal += aItE.Value().Orientation() == Internal ? 1 : 0;
+                aNbInternal += aItE.Value().Orientation == Internal ? 1 : 0;
             }
         }
         Assert.Equal(2, aNbW);

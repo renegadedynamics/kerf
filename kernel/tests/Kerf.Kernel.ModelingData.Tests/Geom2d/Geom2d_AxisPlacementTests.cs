@@ -15,10 +15,10 @@ public class Geom2d_AxisPlacementTest
         Axis2D                           anAxis = new(new Point2D(1.0, 2.0), new Direction2D(1.0, 0.0));
         AxisPlacement2 anAP = new AxisPlacement2(anAxis);
 
-        Assert.Equal(1.0, anAP.Location().X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(2.0, anAP.Location().Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(1.0, anAP.Direction().X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, anAP.Direction().Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, anAP.Location().X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(2.0, anAP.Location().Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, anAP.Direction().X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, anAP.Direction().Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -27,8 +27,8 @@ public class Geom2d_AxisPlacementTest
         AxisPlacement2 anAP =
             new AxisPlacement2(new Point2D(3.0, 4.0), new Direction2D(0.0, 1.0));
 
-        Assert.Equal(3.0, anAP.Location().X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(1.0, anAP.Direction().Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(3.0, anAP.Location().X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, anAP.Direction().Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -38,8 +38,8 @@ public class Geom2d_AxisPlacementTest
             new AxisPlacement2(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0));
         anAP.SetLocation(new Point2D(5.0, 6.0));
 
-        Assert.Equal(5.0, anAP.Location().X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(6.0, anAP.Location().Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(5.0, anAP.Location().X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(6.0, anAP.Location().Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -49,8 +49,8 @@ public class Geom2d_AxisPlacementTest
             new AxisPlacement2(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0));
         anAP.SetDirection(new Direction2D(0.0, 1.0));
 
-        Assert.Equal(0.0, anAP.Direction().X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(1.0, anAP.Direction().Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, anAP.Direction().X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, anAP.Direction().Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -62,8 +62,8 @@ public class Geom2d_AxisPlacementTest
         Axis2D aNewAxis = new(new Point2D(10.0, 20.0), new Direction2D(0.0, 1.0));
         anAP.SetAxis(aNewAxis);
 
-        Assert.Equal(10.0, anAP.Location().X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(1.0, anAP.Direction().Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(10.0, anAP.Location().X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, anAP.Direction().Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -73,8 +73,8 @@ public class Geom2d_AxisPlacementTest
             new AxisPlacement2(new Point2D(1.0, 2.0), new Direction2D(1.0, 0.0));
 
         Axis2D anAxis = anAP.Ax2d();
-        Assert.Equal(1.0, anAxis.Location().X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(1.0, anAxis.Direction().X(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, anAxis.Location.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, anAxis.Direction.X, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -117,10 +117,10 @@ public class Geom2d_AxisPlacementTest
             new AxisPlacement2(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0));
         anAP.Reverse();
 
-        Assert.Equal(-1.0, anAP.Direction().X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, anAP.Direction().Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(-1.0, anAP.Direction().X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, anAP.Direction().Y, global::Kerf.Engine.Foundation.Precision.Confusion());
         // Location unchanged
-        Assert.Equal(0.0, anAP.Location().X(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, anAP.Location().X, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -130,9 +130,9 @@ public class Geom2d_AxisPlacementTest
             new AxisPlacement2(new Point2D(0.0, 0.0), new Direction2D(1.0, 0.0));
         AxisPlacement2 aReversed = anAP.Reversed();
 
-        Assert.Equal(-1.0, aReversed.Direction().X(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(-1.0, aReversed.Direction().X, global::Kerf.Engine.Foundation.Precision.Confusion());
         // Original unchanged
-        Assert.Equal(1.0, anAP.Direction().X(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, anAP.Direction().X, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -144,10 +144,10 @@ public class Geom2d_AxisPlacementTest
         Transform2D aTrsf = new Transform2D().WithTranslation(new Vector2D(10.0, 20.0));
         anAP.Transform(aTrsf);
 
-        Assert.Equal(11.0, anAP.Location().X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(22.0, anAP.Location().Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(11.0, anAP.Location().X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(22.0, anAP.Location().Y, global::Kerf.Engine.Foundation.Precision.Confusion());
         // Direction unchanged
-        Assert.Equal(1.0, anAP.Direction().X(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, anAP.Direction().X, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -159,10 +159,10 @@ public class Geom2d_AxisPlacementTest
         Transform2D aTrsf = new Transform2D().WithRotation(new Point2D(0.0, 0.0), M_PI / 2.0);
         anAP.Transform(aTrsf);
 
-        Assert.Equal(0.0, anAP.Location().X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(1.0, anAP.Location().Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, anAP.Direction().X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(1.0, anAP.Direction().Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, anAP.Location().X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, anAP.Location().Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, anAP.Direction().X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, anAP.Direction().Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -174,11 +174,11 @@ public class Geom2d_AxisPlacementTest
         AxisPlacement2 aCopy     = (aCopyGeom as AxisPlacement2)!;
 
         Assert.False(aCopy is null);
-        Assert.Equal(1.0, aCopy.Location().X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(1.0, aCopy.Direction().Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aCopy.Location().X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aCopy.Direction().Y, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // Verify independence
         aCopy.SetLocation(new Point2D(99.0, 99.0));
-        Assert.Equal(1.0, anAP.Location().X(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, anAP.Location().X, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 }

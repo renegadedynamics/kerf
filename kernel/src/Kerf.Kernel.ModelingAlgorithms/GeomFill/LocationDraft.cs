@@ -628,7 +628,7 @@ public class LocationDraft : SurfaceLocationLaw
 
     public override void Rotation(ref Point3D centre)
     {
-        centre = _curve!.Circle().Location();
+        centre = _curve!.Circle().Location;
     }
 
     /// <summary>Whether the generatrix meets the stop surface all along the curve.</summary>

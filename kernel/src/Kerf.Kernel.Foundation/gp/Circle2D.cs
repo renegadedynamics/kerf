@@ -87,7 +87,7 @@ public readonly partial struct Circle2D : IEquatable<Circle2D>
 
     // Queries
 
-    public readonly double Area() => M_PI * _radius * _radius;
+    public readonly double Area => M_PI * _radius * _radius;
 
     /// <summary>
     /// The coefficients of the circle's implicit equation
@@ -95,8 +95,8 @@ public readonly partial struct Circle2D : IEquatable<Circle2D>
     /// </summary>
     public readonly void Coefficients(out double a, out double b, out double c, out double d, out double e, out double f)
     {
-        double xc = _pos.Location().X();
-        double yc = _pos.Location().Y();
+        double xc = _pos.Location.X;
+        double yc = _pos.Location.Y;
         a = 1.0;
         b = 1.0;
         c = 0.0;
@@ -105,12 +105,12 @@ public readonly partial struct Circle2D : IEquatable<Circle2D>
         f = xc * xc + yc * yc - _radius * _radius;
     }
 
-    public readonly bool Contains(in Point2D p, double linearTolerance) => Distance(p) <= linearTolerance;
+    public readonly bool Contains(in Point2D p, double linearTolerance) => DistanceTo(p) <= linearTolerance;
 
-    public readonly double Distance(in Point2D p)
+    public readonly double DistanceTo(in Point2D p)
     {
         Xy coord = p.XY();
-        coord.Subtract(_pos.Location().XY());
+        coord.Subtract(_pos.Location.XY());
         double d = _radius - coord.Modulus();
         if (d < 0)
         {
@@ -120,37 +120,37 @@ public readonly partial struct Circle2D : IEquatable<Circle2D>
         return d;
     }
 
-    public readonly double SquareDistance(in Point2D p)
+    public readonly double SquareDistanceTo(in Point2D p)
     {
         Xy coord = p.XY();
-        coord.Subtract(_pos.Location().XY());
+        coord.Subtract(_pos.Location.XY());
         double d = _radius - coord.Modulus();
         return d * d;
     }
 
-    public readonly double Length() => 2.0 * M_PI * _radius;
+    public readonly double Length => 2.0 * M_PI * _radius;
 
-    public readonly Point2D Location() => _pos.Location();
+    public readonly Point2D Location => _pos.Location;
 
-    public readonly double Radius() => _radius;
+    public readonly double Radius => _radius;
 
-    public readonly Frame2D Axis() => _pos;
+    public readonly Frame2D Axis => _pos;
 
-    public readonly Frame2D Position() => _pos;
+    public readonly Frame2D Position => _pos;
 
-    public readonly Axis2D XAxis() => _pos.XAxis();
+    public readonly Axis2D XAxis => _pos.XAxis;
 
-    public readonly Axis2D YAxis() => _pos.YAxis();
+    public readonly Axis2D YAxis => _pos.YAxis;
 
     /// <summary>True when the circle's system is direct (counterclockwise).</summary>
-    public readonly bool IsDirect => (_pos.XDirection().Crossed(_pos.YDirection())) >= 0.0;
+    public readonly bool IsDirect => (_pos.XDirection.Crossed(_pos.YDirection)) >= 0.0;
 
     public readonly Circle2D Reversed()
     {
         Frame2D pos = _pos;
-        Direction2D temp = _pos.YDirection();
+        Direction2D temp = _pos.YDirection;
         temp = temp.Reversed();
-        pos = pos.WithAxis(new Frame2D(_pos.Location(), _pos.XDirection(), temp));
+        pos = pos.WithAxis(new Frame2D(_pos.Location, _pos.XDirection, temp));
         return new Circle2D(pos, _radius);
     }
 
@@ -193,7 +193,7 @@ public readonly partial struct Circle2D : IEquatable<Circle2D>
     {
         Frame2D pos = _pos;
         double radius = _radius;
-        radius *= t.ScaleFactor();
+        radius *= t.ScaleFactor;
         if (radius < 0)
         {
             radius = -radius;

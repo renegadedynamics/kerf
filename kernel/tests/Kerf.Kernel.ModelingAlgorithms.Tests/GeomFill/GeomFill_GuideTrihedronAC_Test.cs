@@ -44,9 +44,9 @@ public class GeomFill_GuideTrihedronAC_Test
         Vector3D aTangent = new(), aNormal = new(), aBiNormal = new();
         bool isOk = aTrihedron.D0(0.5, ref aTangent, ref aNormal, ref aBiNormal);
         Assert.True(isOk);
-        Assert.True(aTangent.Magnitude() > global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.True(aNormal.Magnitude() > global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.True(aBiNormal.Magnitude() > global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(aTangent.Magnitude > global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(aNormal.Magnitude > global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(aBiNormal.Magnitude > global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -61,9 +61,9 @@ public class GeomFill_GuideTrihedronAC_Test
         Vector3D aTangent = new(), aDTangent = new(), aNormal = new(), aDNormal = new(), aBiNormal = new(), aDBiNormal = new();
         bool isOk = aTrihedron.D1(0.5, ref aTangent, ref aDTangent, ref aNormal, ref aDNormal, ref aBiNormal, ref aDBiNormal);
         Assert.True(isOk);
-        Assert.True(aTangent.Magnitude() > global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.True(aNormal.Magnitude() > global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.True(aBiNormal.Magnitude() > global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(aTangent.Magnitude > global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(aNormal.Magnitude > global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(aBiNormal.Magnitude > global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     // Regression test for bug #7: D2 was returning false despite completing computation.
@@ -85,9 +85,9 @@ public class GeomFill_GuideTrihedronAC_Test
         Assert.True(isOk);
 
         // Verify frame vectors are non-degenerate.
-        Assert.True(aTangent.Magnitude() > global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.True(aNormal.Magnitude() > global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.True(aBiNormal.Magnitude() > global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(aTangent.Magnitude > global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(aNormal.Magnitude > global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(aBiNormal.Magnitude > global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     // Verify D2 produces consistent results at multiple parameters.

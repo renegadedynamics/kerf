@@ -111,7 +111,7 @@ public class Curve2DAdaptorBase : Transient
     }
 
     /// <summary>The point and first derivative at U (calls <see cref="D1"/> unless redefined).</summary>
-    public virtual Curve2D.ResD1 EvalD1(double u)
+    internal virtual Curve2D.ResD1 EvalD1(double u)
     {
         Curve2D.ResD1 result;
         D1(u, out result.Point, out result.D1);
@@ -119,7 +119,7 @@ public class Curve2DAdaptorBase : Transient
     }
 
     /// <summary>The point and first two derivatives at U (calls <see cref="D2"/> unless redefined).</summary>
-    public virtual Curve2D.ResD2 EvalD2(double u)
+    internal virtual Curve2D.ResD2 EvalD2(double u)
     {
         Curve2D.ResD2 result;
         D2(u, out result.Point, out result.D1, out result.D2);
@@ -127,7 +127,7 @@ public class Curve2DAdaptorBase : Transient
     }
 
     /// <summary>The point and first three derivatives at U (calls <see cref="D3"/> unless redefined).</summary>
-    public virtual Curve2D.ResD3 EvalD3(double u)
+    internal virtual Curve2D.ResD3 EvalD3(double u)
     {
         Curve2D.ResD3 result;
         D3(u, out result.Point, out result.D1, out result.D2, out result.D3);

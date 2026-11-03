@@ -15,7 +15,7 @@ public class LocationTests
     static Vector Translation(Location loc)
     {
         var trsf = loc.ToGpTrsf();
-        var t = trsf.TranslationPart();
+        var t = trsf.TranslationXyz();
         return new Vector(t);
     }
 

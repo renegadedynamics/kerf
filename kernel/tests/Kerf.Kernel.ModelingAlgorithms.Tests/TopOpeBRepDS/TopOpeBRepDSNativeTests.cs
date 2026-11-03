@@ -81,7 +81,7 @@ public class TopOpeBRepDSNativeTests
             Shape S = aDS.Shape(i);
             Assert.False(S.IsNull);
             Assert.Equal(i, aDS.Shape(S));
-            if (S.ShapeType() == ShapeType.Solid || S.ShapeType() == ShapeType.Shell) // a fillet on a shell: its SSIs (unit 7N2)
+            if (S.Type == ShapeType.Solid || S.Type == ShapeType.Shell) // a fillet on a shell: its SSIs (unit 7N2)
             {
                 for (DsInterferenceIterator it = new(aDS.ShapeInterferences(S)); it.More(); it.Next())
                 {
@@ -91,7 +91,7 @@ public class TopOpeBRepDSNativeTests
                     aNbSolidSurfaces++;
                 }
             }
-            if (S.ShapeType() == ShapeType.Face)
+            if (S.Type == ShapeType.Face)
             {
                 for (DsCurveIterator it = aHDS.FaceCurves(S); it.More(); it.Next())
                 {

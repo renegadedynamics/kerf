@@ -195,7 +195,7 @@ public class GeomGridEval_CurveConsistencyTest(ITestOutputHelper theOutput)
     // An offset direction away from the basis curve's plane (or anywhere for a space curve)
     private static OffsetCurve3D RandomOffset(Random theRnd, Curve3D theBasis, double theScale)
     {
-        Direction3D aDir = theBasis is ConicCurve3D aConic ? aConic.Axis().Direction() : RandomDir(theRnd);
+        Direction3D aDir = theBasis is ConicCurve3D aConic ? aConic.Axis.Direction : RandomDir(theRnd);
         return new OffsetCurve3D(theBasis, (theRnd.NextDouble() * 2 - 1) * theScale, aDir);
     }
 
@@ -224,8 +224,8 @@ public class GeomGridEval_CurveConsistencyTest(ITestOutputHelper theOutput)
 
     private static (double First, double Last) Range(Curve3D theCurve)
     {
-        double aFirst = theCurve.FirstParameter();
-        double aLast = theCurve.LastParameter();
+        double aFirst = theCurve.FirstParameter;
+        double aLast = theCurve.LastParameter;
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aFirst) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aLast))
         {
             return Basis(theCurve) is HyperbolaCurve3D ? (-3.0, 3.0) : (-10.0, 10.0);
@@ -240,11 +240,11 @@ public class GeomGridEval_CurveConsistencyTest(ITestOutputHelper theOutput)
         {
             if (aBasis is TrimmedCurve3D aTrimmed)
             {
-                aBasis = aTrimmed.BasisCurve();
+                aBasis = aTrimmed.BasisCurve;
             }
             else if (aBasis is OffsetCurve3D anOffset)
             {
-                aBasis = anOffset.BasisCurve();
+                aBasis = anOffset.BasisCurve;
             }
             else
             {
@@ -258,15 +258,15 @@ public class GeomGridEval_CurveConsistencyTest(ITestOutputHelper theOutput)
         Curve3D aCurve = theCurve;
         while (aCurve is TrimmedCurve3D aTrimmed)
         {
-            aCurve = aTrimmed.BasisCurve();
+            aCurve = aTrimmed.BasisCurve;
         }
         // An offset curve's DN above 3 is its basis's DN, in the grid as in Geom_OffsetCurve
         int aFirstDelegatedN = aCurve is OffsetCurve3D ? 4 : 1;
         Curve3D aBasis = Basis(theCurve);
         return aBasis switch
         {
-            BSplineCurve3D aBS => new DnInfo(true, aBS.IsRational, aBS.Degree(), aFirstDelegatedN),
-            BezierCurve3D aBz => new DnInfo(false, aBz.IsRational, aBz.Degree(), aFirstDelegatedN),
+            BSplineCurve3D aBS => new DnInfo(true, aBS.IsRational, aBS.Degree, aFirstDelegatedN),
+            BezierCurve3D aBz => new DnInfo(false, aBz.IsRational, aBz.Degree, aFirstDelegatedN),
             _ => new DnInfo(false, false, int.MaxValue, aFirstDelegatedN),
         };
     }
@@ -325,7 +325,7 @@ public class GeomGridEval_CurveConsistencyTest(ITestOutputHelper theOutput)
                 // OCCT: zero above the degree, although a rational curve's derivatives aren't
                 for (int i = 1; i <= aNb; ++i)
                 {
-                    Assert.Equal(0.0, aDN.Value(i).Magnitude());
+                    Assert.Equal(0.0, aDN.Value(i).Magnitude);
                 }
                 continue;
             }
@@ -545,7 +545,7 @@ public class GeomGridEval_CurveConsistencyTest(ITestOutputHelper theOutput)
         aParams.SetValue(1, 0.5);
         Vector3D aGrid = new BSplineCurveGrid(aCurve).EvaluateGridDN(aParams, 1).Value(1);
         Vector3D aPoint = aCurve.EvalDN(0.5, 1);
-        Assert.True((aGrid - aPoint).Magnitude() > 1e-3); // the span [3, 4] extrapolated to 0.5
+        Assert.True((aGrid - aPoint).Magnitude > 1e-3); // the span [3, 4] extrapolated to 0.5
 
         // What OCCT computes: BSplCLib::DN with knot index 4
         global::Kerf.Engine.Geometry.Splines.BSplCLib.DN(0.5, 1, 4, 3, false, aCurve.InternalPoles(), null, aKnots, aMults, out Vector3D aSpan4);
@@ -578,8 +578,8 @@ public class GeomGridEval_CurveConsistencyTest(ITestOutputHelper theOutput)
         NCollection_Array1<double> aParams = new(1, 1);
         aParams.SetValue(1, 0.5);
         Vector3D aGrid = new BezierCurveGrid(aBezier).EvaluateGridDN(aParams, 3).Value(1);
-        Assert.Equal(0.0, aGrid.Magnitude());
-        Assert.True(aBezier.EvalDN(0.5, 3).Magnitude() > 0.1);
+        Assert.Equal(0.0, aGrid.Magnitude);
+        Assert.True(aBezier.EvalDN(0.5, 3).Magnitude > 0.1);
 
         // The same quarter circle as a rational B-spline
         NCollection_Array1<double> aKnots = new(1, 2);
@@ -590,8 +590,8 @@ public class GeomGridEval_CurveConsistencyTest(ITestOutputHelper theOutput)
         aMults.SetValue(2, 3);
         BSplineCurve3D aBSpline = new(aPoles, aWeights, aKnots, aMults, 2);
         Vector3D aGridBS = new BSplineCurveGrid(aBSpline).EvaluateGridDN(aParams, 3).Value(1);
-        Assert.Equal(0.0, aGridBS.Magnitude());
-        Assert.True(aBSpline.EvalDN(0.5, 3).Magnitude() > 0.1);
+        Assert.Equal(0.0, aGridBS.Magnitude);
+        Assert.True(aBSpline.EvalDN(0.5, 3).Magnitude > 0.1);
     }
 
     // OCCT's GeomGridEval_OffsetCurve::EvaluateGridDN reads the D1, D2 or D3 grid without checking that it is not
@@ -627,8 +627,8 @@ public class GeomGridEval_CurveConsistencyTest(ITestOutputHelper theOutput)
             for (int i = 1; i <= aParams.Length(); ++i)
             {
                 Curve3D.ResD3 aRef = aParab.EvalD3(aParams.Value(i));
-                Assert.True(aGrid.Value(i).Point.Distance(aRef.Point) <= 1e-12 * Math.Max(1.0, aRef.Point.XYZ().Modulus()));
-                Assert.True((aGrid.Value(i).D1 - aRef.D1).Magnitude() <= 1e-12 * Math.Max(1.0, aRef.D1.Magnitude()));
+                Assert.True(aGrid.Value(i).Point.DistanceTo(aRef.Point) <= 1e-12 * Math.Max(1.0, aRef.Point.XYZ().Modulus()));
+                Assert.True((aGrid.Value(i).D1 - aRef.D1).Magnitude <= 1e-12 * Math.Max(1.0, aRef.D1.Magnitude));
                 Assert.Equal(aRef.D2, aGrid.Value(i).D2);
                 Assert.Equal(aRef.D3, aGrid.Value(i).D3);
             }
@@ -647,9 +647,9 @@ public class GeomGridEval_CurveConsistencyTest(ITestOutputHelper theOutput)
 
         Assert.Equal(new Point3D(2.5, 2, 3), aParab.EvalD0(1.5));
         NCollection_Array1<Point3D> aGrid = new ParabolaGrid(aParab).EvaluateGrid(aParams);
-        Assert.True(double.IsNaN(aGrid.Value(1).X())); // 0 * inf
-        Assert.True(double.IsInfinity(aGrid.Value(2).X()));
-        Assert.True(double.IsInfinity(new ParabolaGrid(aParab).EvaluateGridDN(aParams, 2).Value(1).X()));
+        Assert.True(double.IsNaN(aGrid.Value(1).X)); // 0 * inf
+        Assert.True(double.IsInfinity(aGrid.Value(2).X));
+        Assert.True(double.IsInfinity(new ParabolaGrid(aParab).EvaluateGridDN(aParams, 2).Value(1).X));
     }
 
     [Fact]

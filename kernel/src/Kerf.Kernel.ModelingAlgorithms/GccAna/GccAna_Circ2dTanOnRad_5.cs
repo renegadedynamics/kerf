@@ -42,9 +42,9 @@ public sealed partial class AnalyticCirc2dTanOnRad
         double   tol   = Math.Abs(tolerance);
         _wellDone       = false;
         _nbrSol         = 0;
-        double roncirc = onCirc.Radius();
-        double dist1   = point1.Distance(onCirc.Location()) - roncirc;
-        double dist2   = point1.Distance(onCirc.Location()) + roncirc;
+        double roncirc = onCirc.Radius;
+        double dist1   = point1.DistanceTo(onCirc.Location) - roncirc;
+        double dist2   = point1.DistanceTo(onCirc.Location) + roncirc;
 
         if (radius < 0.0)
         {
@@ -67,10 +67,10 @@ public sealed partial class AnalyticCirc2dTanOnRad
             }
             if (signe != 0)
             {
-                Axis2D axe = new(new Point2D(onCirc.Location().XY()
+                Axis2D axe = new(new Point2D(onCirc.Location.XY()
                                                           - roncirc
-                                                                  * new Direction2D(onCirc.Location().X() - signe * point1.X(), // OCCT: Location - signe * Point1 is a sum when signe is -1
-                                                                                        onCirc.Location().Y() - signe * point1.Y())
+                                                                  * new Direction2D(onCirc.Location.X - signe * point1.X, // OCCT: Location - signe * Point1 is a sum when signe is -1
+                                                                                        onCirc.Location.Y - signe * point1.Y)
                                                                           .XY()),
                                         dirx);
                 _cirsol[1] = new Circle2D(axe, radius);
@@ -78,7 +78,7 @@ public sealed partial class AnalyticCirc2dTanOnRad
                 _qualifier1[1] = Qualifier.Noqualifier;
                 _theSame1[1]   = 0;
                 _pnttg1sol[1]  = point1;
-                _pntcen3[1]    = _cirsol[1].Location();
+                _pntcen3[1]    = _cirsol[1].Location;
                 _pararg1[1]    = 0.0;
                 _par1sol[1]    = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[1], _pnttg1sol[1]);
                 _parcen3[1]    = global::Kerf.Engine.Geometry.ElCLib.Parameter(onCirc, _pntcen3[1]);
@@ -101,7 +101,7 @@ public sealed partial class AnalyticCirc2dTanOnRad
                             _qualifier1[1] = Qualifier.Noqualifier; // OCCT: index 1, not NbrSol, here and below
                             _theSame1[1]   = 0;
                             _pnttg1sol[1]  = point1;
-                            _pntcen3[1]    = _cirsol[1].Location();
+                            _pntcen3[1]    = _cirsol[1].Location;
                             _par1sol[1]    = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[1], _pnttg1sol[1]);
                             _parcen3[1]    = global::Kerf.Engine.Geometry.ElCLib.Parameter(onCirc, _pntcen3[1]);
                             _pararg1[1]    = 0.0;

@@ -21,7 +21,7 @@ namespace Kerf.Engine.Geometry.Bounds;
 /// OCCT's default (and <c>new Bnd_B2f()</c>) is a void box. <c>default(Bnd_B2f)</c> is not: it is a box reduced to
 /// the origin. Ported code must write <c>new Bnd_B2f()</c>.
 /// </remarks>
-public partial struct B2f : IEquatable<B2f>
+internal partial struct B2f : IEquatable<B2f>
 {
     /// <summary>Two reals, as OCCT's <c>std::array&lt;RealType, 2&gt;</c>.</summary>
     [InlineArray(2)]
@@ -277,8 +277,8 @@ public partial struct B2f : IEquatable<B2f>
     public readonly B2f Transformed(in Transform2D trsf)
     {
         B2f result = new();
-        TransformForm form = trsf.Form();
-        double scale = trsf.ScaleFactor();
+        TransformForm form = trsf.Form;
+        double scale = trsf.ScaleFactor;
         double scaleAbs = Math.Abs(scale);
         if (form == Identity)
         {
@@ -286,8 +286,8 @@ public partial struct B2f : IEquatable<B2f>
         }
         else if (form == Translation || form == PntMirror || form == Scale)
         {
-            result._center[0] = (RealType)(_center[0] * scale + trsf.TranslationPart().X());
-            result._center[1] = (RealType)(_center[1] * scale + trsf.TranslationPart().Y());
+            result._center[0] = (RealType)(_center[0] * scale + trsf.TranslationXy().X());
+            result._center[1] = (RealType)(_center[1] * scale + trsf.TranslationXy().Y());
             result._hSize[0] = (RealType)(_hSize[0] * scaleAbs);
             result._hSize[1] = (RealType)(_hSize[1] * scaleAbs);
         }
@@ -298,7 +298,7 @@ public partial struct B2f : IEquatable<B2f>
             result._center[0] = (RealType)center.X();
             result._center[1] = (RealType)center.Y();
             Span<double> mat = stackalloc double[4];
-            trsf.HVectorialPart().CopyTo(mat);
+            trsf.RotationPart.CopyTo(mat);
             result._hSize[0] =
                 (RealType)(scaleAbs * (Math.Abs(mat[0]) * _hSize[0] + Math.Abs(mat[1]) * _hSize[1]));
             result._hSize[1] =
@@ -383,15 +383,15 @@ public partial struct B2f : IEquatable<B2f>
     public readonly bool IsOut(in B2f box, in Transform2D trsf)
     {
         bool result = false;
-        TransformForm form = trsf.Form();
-        double scale = trsf.ScaleFactor();
+        TransformForm form = trsf.Form;
+        double scale = trsf.ScaleFactor;
         double scaleAbs = Math.Abs(scale);
         if (form == Translation || form == Identity || form == PntMirror || form == Scale)
         {
             result =
-                (Math.Abs((RealType)(box._center[0] * scale + trsf.TranslationPart().X()) - _center[0])
+                (Math.Abs((RealType)(box._center[0] * scale + trsf.TranslationXy().X()) - _center[0])
                      > (RealType)(box._hSize[0] * scaleAbs) + _hSize[0]
-                 || Math.Abs((RealType)(box._center[1] * scale + trsf.TranslationPart().Y()) - _center[1])
+                 || Math.Abs((RealType)(box._center[1] * scale + trsf.TranslationXy().Y()) - _center[1])
                      > (RealType)(box._hSize[1] * scaleAbs) + _hSize[1]);
         }
         else
@@ -399,7 +399,7 @@ public partial struct B2f : IEquatable<B2f>
             // theBox is transformed and we check the resulting (enlarged) box against
             // 'this' box.
             Span<double> mat = stackalloc double[4];
-            trsf.HVectorialPart().CopyTo(mat);
+            trsf.RotationPart.CopyTo(mat);
             Xy center = new((double)box._center[0], (double)box._center[1]);
             trsf.Transforms(ref center);
             Span<double> dist = [center.X() - (double)_center[0], center.Y() - (double)_center[1]];
@@ -441,10 +441,10 @@ public partial struct B2f : IEquatable<B2f>
         // Intersect the line containing the segment.
         Span<double> prod =
         [
-            line.Direction().XY()
-                ^ (new Xy(_center[0] - line.Location().X(), _center[1] - line.Location().Y())),
-            line.Direction().X() * (double)_hSize[1],
-            line.Direction().Y() * (double)_hSize[0],
+            line.Direction.XY()
+                ^ (new Xy(_center[0] - line.Location.X, _center[1] - line.Location.Y)),
+            line.Direction.X * (double)_hSize[1],
+            line.Direction.Y * (double)_hSize[0],
         ];
         return (Math.Abs(prod[0]) > (Math.Abs(prod[1]) + Math.Abs(prod[2])));
     }
@@ -485,15 +485,15 @@ public partial struct B2f : IEquatable<B2f>
     public readonly bool IsIn(in B2f box, in Transform2D trsf)
     {
         bool result = false;
-        TransformForm form = trsf.Form();
-        double scale = trsf.ScaleFactor();
+        TransformForm form = trsf.Form;
+        double scale = trsf.ScaleFactor;
         double scaleAbs = Math.Abs(scale);
         if (form == Translation || form == Identity || form == PntMirror || form == Scale)
         {
             result =
-                (Math.Abs((RealType)(box._center[0] * scale + trsf.TranslationPart().X()) - _center[0])
+                (Math.Abs((RealType)(box._center[0] * scale + trsf.TranslationXy().X()) - _center[0])
                      < (RealType)(box._hSize[0] * scaleAbs) - _hSize[0]
-                 && Math.Abs((RealType)(box._center[1] * scale + trsf.TranslationPart().Y()) - _center[1])
+                 && Math.Abs((RealType)(box._center[1] * scale + trsf.TranslationXy().Y()) - _center[1])
                      < (RealType)(box._hSize[1] * scaleAbs) - _hSize[1]);
         }
         else
@@ -501,7 +501,7 @@ public partial struct B2f : IEquatable<B2f>
             // theBox is rotated, scaled and translated. We apply the reverse
             // translation and scaling then check against the rotated box 'this'
             Span<double> mat = stackalloc double[4];
-            trsf.HVectorialPart().CopyTo(mat);
+            trsf.RotationPart.CopyTo(mat);
             Xy center = new((double)box._center[0], (double)box._center[1]);
             trsf.Transforms(ref center);
             Span<double> dist = [center.X() - (double)_center[0], center.Y() - (double)_center[1]];

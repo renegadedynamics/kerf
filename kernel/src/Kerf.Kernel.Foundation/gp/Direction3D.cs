@@ -48,7 +48,7 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
 
     public Direction3D(in Vector3D v) : this(v.XYZ()) { }
 
-    public Direction3D(in Xyz xyz) : this(xyz.X(), xyz.Y(), xyz.Z()) { }
+    internal Direction3D(in Xyz xyz) : this(xyz.X(), xyz.Y(), xyz.Z()) { }
 
     public Direction3D(double xv, double yv, double zv)
     {
@@ -66,13 +66,13 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
 
     // Copies
 
-    public readonly Direction3D WithCoord(int index, double xi)
+    internal readonly Direction3D WithCoord(int index, double xi)
     {
         Standard_OutOfRange_Raise_if(index < 1 || index > 3, "gp_Dir::SetCoord() - index is out of range [1, 3]");
         return index == 1 ? WithX(xi) : index == 2 ? WithY(xi) : WithZ(xi);
     }
 
-    public readonly Direction3D WithCoord(double xv, double yv, double zv) => new(xv, yv, zv);
+    internal readonly Direction3D WithCoord(double xv, double yv, double zv) => new(xv, yv, zv);
 
     public readonly Direction3D WithX(double x) => new(x, _coord.Y(), _coord.Z());
 
@@ -80,27 +80,27 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
 
     public readonly Direction3D WithZ(double z) => new(_coord.X(), _coord.Y(), z);
 
-    public readonly Direction3D WithXYZ(in Xyz xyz) => new(xyz);
+    internal readonly Direction3D WithXYZ(in Xyz xyz) => new(xyz);
 
     // Queries
 
-    public readonly double Coord(int index) => _coord.Coord(index);
+    internal readonly double Coord(int index) => _coord.Coord(index);
 
-    public readonly void Coord(out double xv, out double yv, out double zv) => _coord.Coord(out xv, out yv, out zv);
+    internal readonly void Coord(out double xv, out double yv, out double zv) => _coord.Coord(out xv, out yv, out zv);
 
-    public readonly double X() => _coord.X();
+    public readonly double X => _coord.X();
 
-    public readonly double Y() => _coord.Y();
+    public readonly double Y => _coord.Y();
 
-    public readonly double Z() => _coord.Z();
+    public readonly double Z => _coord.Z();
 
-    public readonly Xyz XYZ() => _coord;
+    internal readonly Xyz XYZ() => _coord;
 
-    public readonly bool IsEqual(in Direction3D other, double angularTolerance) => Angle(other) <= angularTolerance;
+    public readonly bool IsEqual(in Direction3D other, double angularTolerance) => AngleTo(other) <= angularTolerance;
 
     public readonly bool IsNormal(in Direction3D other, double angularTolerance)
     {
-        double ang = M_PI / 2.0 - Angle(other);
+        double ang = M_PI / 2.0 - AngleTo(other);
         if (ang < 0)
         {
             ang = -ang;
@@ -109,15 +109,15 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
         return ang <= angularTolerance;
     }
 
-    public readonly bool IsOpposite(in Direction3D other, double angularTolerance) => M_PI - Angle(other) <= angularTolerance;
+    public readonly bool IsOpposite(in Direction3D other, double angularTolerance) => M_PI - AngleTo(other) <= angularTolerance;
 
     public readonly bool IsParallel(in Direction3D other, double angularTolerance)
     {
-        double ang = Angle(other);
+        double ang = AngleTo(other);
         return ang <= angularTolerance || M_PI - ang <= angularTolerance;
     }
 
-    public readonly double Angle(in Direction3D other)
+    public readonly double AngleTo(in Direction3D other)
     {
         double cosinus = _coord.Dot(other._coord);
         if (cosinus > -0.70710678118655 && cosinus < 0.70710678118655)
@@ -234,7 +234,7 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
     public readonly Direction3D Mirrored(in Axis3D a1)
     {
         Xyz coord = _coord;
-        Xyz xyz = a1.Direction()._coord;
+        Xyz xyz = a1.Direction._coord;
         double a = xyz.X();
         double b = xyz.Y();
         double c = xyz.Z();
@@ -253,7 +253,7 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
 
     public readonly Direction3D Mirrored(in Frame3D a2)
     {
-        Direction3D vz = a2.Direction();
+        Direction3D vz = a2.Direction;
         return Mirrored(vz).Reversed();
     }
 
@@ -261,33 +261,33 @@ public readonly partial struct Direction3D : IEquatable<Direction3D>
     {
         Xyz coord = _coord;
         Transform3D t = new Transform3D().WithRotation(a1, ang);
-        coord.Multiply(t.HVectorialPart());
+        coord.Multiply(t.RotationPart);
         return new Direction3D(coord, isUnit: true);
     }
 
     public readonly Direction3D Transformed(in Transform3D t)
     {
         Xyz coord = _coord;
-        if (t.Form() == Identity || t.Form() == Translation)
+        if (t.Form == Identity || t.Form == Translation)
         {
         }
-        else if (t.Form() == PntMirror)
+        else if (t.Form == PntMirror)
         {
             coord.Reverse();
         }
-        else if (t.Form() == Scale)
+        else if (t.Form == Scale)
         {
-            if (t.ScaleFactor() < 0.0)
+            if (t.ScaleFactor < 0.0)
             {
                 coord.Reverse();
             }
         }
         else
         {
-            coord.Multiply(t.HVectorialPart());
+            coord.Multiply(t.RotationPart);
             double d = coord.Modulus();
             coord.Divide(d);
-            if (t.ScaleFactor() < 0.0)
+            if (t.ScaleFactor < 0.0)
             {
                 coord.Reverse();
             }

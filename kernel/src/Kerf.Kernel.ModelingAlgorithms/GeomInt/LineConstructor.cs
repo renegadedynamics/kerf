@@ -881,12 +881,12 @@ public class LineConstructor
         //
         if (aType == PatchLineType.Circle)
         {
-            r = aGLine.Circle().Radius();
+            r = aGLine.Circle().Radius;
             bRet = (r < aTol3D);
         }
         else if (aType == PatchLineType.Ellipse)
         {
-            r = aGLine.Ellipse().MajorRadius();
+            r = aGLine.Ellipse().MajorRadius;
             bRet = (r < aTol3D);
         }
         return bRet;

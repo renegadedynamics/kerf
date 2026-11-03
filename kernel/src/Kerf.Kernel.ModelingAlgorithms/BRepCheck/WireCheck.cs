@@ -48,7 +48,7 @@ public class WireCheck : ResultCheck
     }
 
     private static bool IsOriented(in Shape s)
-        => s.Orientation() == Forward || s.Orientation() == Reversed;
+        => s.Orientation == Forward || s.Orientation == Reversed;
 
     /// <summary>The status list of the wire itself, read under the lock in parallel mode.</summary>
     private NCollection_List<StatusCheck> LockedStatusList()
@@ -188,7 +188,7 @@ public class WireCheck : ResultCheck
         }
 
         StatusCheck st = StatusCheck.NoError;
-        ShapeType styp = s.ShapeType();
+        ShapeType styp = s.Type;
         switch (styp)
         {
             case ShapeType.Face:
@@ -351,7 +351,7 @@ public class WireCheck : ResultCheck
             }
             else if (itdm.Value.Extent() == 2)
             {
-                if (itdm.Value.First().Orientation() == itdm.Value.Last().Orientation())
+                if (itdm.Value.First().Orientation == itdm.Value.Last().Orientation)
                 {
                     yabug = true;
                 }
@@ -394,7 +394,7 @@ public class WireCheck : ResultCheck
     // Return true if distance between thePnt_f and thePnt_l is not more, than aTol3d
     private static bool IsDistanceIn3DTolerance(in Point3D pnt_f, in Point3D pnt_l, double aTol3d)
     {
-        double dist = pnt_f.Distance(pnt_l);
+        double dist = pnt_f.DistanceTo(pnt_l);
 
         return dist < aTol3d;
     }
@@ -407,8 +407,8 @@ public class WireCheck : ResultCheck
     {
         double dumax = 0.01 * (aFaceSurface.LastUParameter() - aFaceSurface.FirstUParameter());
         double dvmax = 0.01 * (aFaceSurface.LastVParameter() - aFaceSurface.FirstVParameter());
-        double dumin = Math.Abs(pnt.X() - pntRef.X());
-        double dvmin = Math.Abs(pnt.Y() - pntRef.Y());
+        double dumin = Math.Abs(pnt.X - pntRef.X);
+        double dvmin = Math.Abs(pnt.Y - pntRef.Y);
 
         if ((dumin < dumax) && (dvmin < dvmax))
         {
@@ -417,16 +417,16 @@ public class WireCheck : ResultCheck
 
         dumax = aFaceSurface.UResolution(aTol3d);
         dvmax = aFaceSurface.VResolution(aTol3d);
-        double um = (pnt.X() + pntRef.X()) / 2.0;
-        double vm = (pnt.Y() + pntRef.Y()) / 2.0;
+        double um = (pnt.X + pntRef.X) / 2.0;
+        double vm = (pnt.Y + pntRef.Y) / 2.0;
         aFaceSurface.D1(um, vm, out Point3D _, out Vector3D du, out Vector3D dv);
-        double mdu = du.Magnitude();
+        double mdu = du.Magnitude;
         if (mdu > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             dumax = Max((aTol3d / mdu), dumax);
         }
 
-        double mdv = dv.Magnitude();
+        double mdv = dv.Magnitude;
         if (mdv > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             dvmax = Max((aTol3d / mdv), dvmax);
@@ -516,7 +516,7 @@ public class WireCheck : ResultCheck
         bool isLastInfinite = false;
         Orientation ori;
 
-        ori = firstEdge.Orientation();
+        ori = firstEdge.Orientation;
         Tool.Range(firstEdge, out double f, out double l);
         if ((ori == Forward && global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(f))
             || (ori == Reversed && global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(l)))
@@ -524,7 +524,7 @@ public class WireCheck : ResultCheck
             isFirstInfinite = true;
         }
 
-        ori = lastEdge.Orientation();
+        ori = lastEdge.Orientation;
         Tool.Range(lastEdge, out f, out l);
 
         if ((ori == Forward && global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(l))
@@ -558,13 +558,13 @@ public class WireCheck : ResultCheck
 
         // get last point
         Tool.UVPoints(lastEdge, face, out p_temp, out p_last);
-        if (lastEdge.Orientation() == Reversed)
+        if (lastEdge.Orientation == Reversed)
         {
             p_last = p_temp;
         }
 
         // get first point
-        if (firstEdge.Orientation() == Reversed)
+        if (firstEdge.Orientation == Reversed)
         {
             Tool.UVPoints(firstEdge, face, out p_temp, out p_first);
         }
@@ -646,7 +646,7 @@ public class WireCheck : ResultCheck
         for (exp.Init(_shape, ShapeType.Edge); exp.More(); exp.Next())
         {
             Edge edg = ShapeCasts.Edge(exp.Current());
-            orient = edg.Orientation();
+            orient = edg.Orientation;
             if (IsOriented(edg))
             {
                 mapS.Add(edg);
@@ -654,7 +654,7 @@ public class WireCheck : ResultCheck
                 theRef = edg;
                 for (vte.Init(edg, ShapeType.Vertex); vte.More(); vte.Next())
                 {
-                    Orientation vto = vte.Current().Orientation();
+                    Orientation vto = vte.Current().Orientation;
                     if (vto == Forward)
                     {
                         vf = ShapeCasts.Vertex(vte.Current());
@@ -716,7 +716,7 @@ public class WireCheck : ResultCheck
                 {
                     Edge edg = ShapeCasts.Edge(itls.Value());
 
-                    orient = edg.Orientation();
+                    orient = edg.Orientation;
                     if (mapS.Contains(edg))
                     {
                         ortmp = GetOrientation(mapS, edg);
@@ -727,7 +727,7 @@ public class WireCheck : ResultCheck
                     {
                         for (vte.Init(edg, ShapeType.Vertex); vte.More(); vte.Next())
                         {
-                            Orientation vto = vte.Current().Orientation();
+                            Orientation vto = vte.Current().Orientation;
                             if (!vl.IsNull)
                             {
                                 if (vto == Forward && vl.IsSame(vte.Current()))
@@ -751,7 +751,7 @@ public class WireCheck : ResultCheck
                     {
                         for (vte.Init(edg, ShapeType.Vertex); vte.More(); vte.Next())
                         {
-                            Orientation vto = vte.Current().Orientation();
+                            Orientation vto = vte.Current().Orientation;
                             if (!vl.IsNull)
                             {
                                 if (vto == Forward && vl.IsSame(vte.Current()))
@@ -853,7 +853,7 @@ public class WireCheck : ResultCheck
                     // offset the vertex
                     for (vte.Init(ledge.First(), ShapeType.Vertex); vte.More(); vte.Next())
                     {
-                        Orientation vto = vte.Current().Orientation();
+                        Orientation vto = vte.Current().Orientation;
                         if (!vl.IsNull)
                         {
                             if (vto == Reversed)
@@ -921,12 +921,12 @@ public class WireCheck : ResultCheck
                          itlsh.Next())
                     {
                         Edge edg = ShapeCasts.Edge(itlsh.Value());
-                        orient = edg.Orientation();
+                        orient = edg.Orientation;
                         if (!theRef.IsSame(edg))
                         {
                             for (vte.Init(edg, ShapeType.Vertex); vte.More(); vte.Next())
                             {
-                                Orientation vto = vte.Current().Orientation();
+                                Orientation vto = vte.Current().Orientation;
                                 if (vto == Reversed && vRef.IsSame(vte.Current()))
                                 {
                                     ledge.Append(edg);
@@ -996,7 +996,7 @@ public class WireCheck : ResultCheck
         //
         for (var iter1 = new Iterator(_shape); iter1.More(); iter1.Next())
         {
-            if (iter1.Value().ShapeType() == ShapeType.Edge)
+            if (iter1.Value().Type == ShapeType.Edge)
             {
                 eMap.Add(iter1.Value());
             }
@@ -1093,12 +1093,12 @@ public class WireCheck : ResultCheck
                         {
                             //-- try to test in 3d. (ParamOnSecond gives the same result)
                             p3d = conS.Value(ip.ParamOnFirst());
-                            p3d = p3d.Transformed(l.Transformation());
+                            p3d = p3d.Transformed(l.Transformation);
                         }
                         else
                         {
                             Point2D p2d = c1.Value(ip.ParamOnFirst());
-                            p3d = hs.Value(p2d.X(), p2d.Y());
+                            p3d = hs.Value(p2d.X, p2d.Y);
                         }
 
                         var explVtx = new Explorer();
@@ -1111,7 +1111,7 @@ public class WireCheck : ResultCheck
                             p3dvtt = Tool.Pnt(vtt);
                             tolvtt = Tool.Tolerance(vtt);
                             tolvtt = tolvtt * tolvtt;
-                            p3dvttDistanceP3d = p3dvtt.SquareDistance(p3d);
+                            p3dvttDistanceP3d = p3dvtt.SquareDistanceTo(p3d);
                             if (p3dvttDistanceP3d <= tolvtt)
                             {
                                 localok = true;
@@ -1257,24 +1257,24 @@ public class WireCheck : ResultCheck
                             if (conS is not null)
                             {
                                 p3d = conS.Value(IP_ParamOnFirst);
-                                p3d = p3d.Transformed(l.Transformation());
+                                p3d = p3d.Transformed(l.Transformation);
                             }
                             else
                             {
                                 Point2D p2d = c1.Value(IP_ParamOnFirst);
-                                p3d = hs.Value(p2d.X(), p2d.Y());
+                                p3d = hs.Value(p2d.X, p2d.Y);
                             }
 
                             //
                             if (conS2 is not null)
                             {
                                 p3d2 = conS2.Value(IP_ParamOnSecond);
-                                p3d2 = p3d2.Transformed(L2.Transformation());
+                                p3d2 = p3d2.Transformed(L2.Transformation);
                             }
                             else
                             {
                                 Point2D p2d = c2.Value(IP_ParamOnSecond);
-                                p3d2 = hs.Value(p2d.X(), p2d.Y());
+                                p3d2 = hs.Value(p2d.X, p2d.Y);
                             }
 
                             itl.Initialize(commonVertices);
@@ -1288,8 +1288,8 @@ public class WireCheck : ResultCheck
                                 tolvtt = Tool.Tolerance(vtt);
                                 tolvtt = 1.1 * tolvtt;
                                 tolvtt = tolvtt * tolvtt;
-                                p3dvttDistanceP3d = p3dvtt.SquareDistance(p3d);
-                                p3dvttDistanceP3d2 = p3dvtt.SquareDistance(p3d2);
+                                p3dvttDistanceP3d = p3dvtt.SquareDistanceTo(p3d);
+                                p3dvttDistanceP3d2 = p3dvtt.SquareDistanceTo(p3d2);
                                 //
                                 if (p3dvttDistanceP3d <= tolvtt && p3dvttDistanceP3d2 <= tolvtt)
                                 {
@@ -1320,7 +1320,7 @@ public class WireCheck : ResultCheck
                                     //
                                     Vertex vtt = ShapeCasts.Vertex(itl.Value());
                                     p3dvtt = Tool.Pnt(vtt);
-                                    disptvtx = p3d.Distance(p3dvtt);
+                                    disptvtx = p3d.DistanceTo(p3dvtt);
                                     if (disptvtx < distauvtxleplusproche)
                                     {
                                         vertexLePlusProche = p3dvtt;
@@ -1347,8 +1347,8 @@ public class WireCheck : ResultCheck
 
                                 // Patch: extraordinar situation (e.g. tolerance(v) == 0.)
                                 //   Modified by skv - Wed Jul 23 12:28:11 2003 OCC1764
-                                if (vertexLePlusProche.Distance(p3d) <= Constants.Resolution()
-                                    || vertexLePlusProche.Distance(p3d2) <= Constants.Resolution())
+                                if (vertexLePlusProche.DistanceTo(p3d) <= Constants.Resolution()
+                                    || vertexLePlusProche.DistanceTo(p3d2) <= Constants.Resolution())
                                 {
                                     localok = true;
                                 }
@@ -1369,15 +1369,15 @@ public class WireCheck : ResultCheck
                                         if (conS is not null)
                                         {
                                             p1 = conS.Value(u);
-                                            p1 = p1.Transformed(l.Transformation());
+                                            p1 = p1.Transformed(l.Transformation);
                                         }
                                         else
                                         {
                                             Point2D p2d = c1.Value(u);
-                                            p1 = hs.Value(p2d.X(), p2d.Y());
+                                            p1 = hs.Value(p2d.X, p2d.Y);
                                         }
 
-                                        double d1 = lig.Distance(p1);
+                                        double d1 = lig.DistanceTo(p1);
                                         if (d1 > maxd1)
                                         {
                                             maxd1 = d1;
@@ -1402,15 +1402,15 @@ public class WireCheck : ResultCheck
                                         if (conS2 is not null)
                                         {
                                             p2 = conS2.Value(u);
-                                            p2 = p2.Transformed(L2.Transformation());
+                                            p2 = p2.Transformed(L2.Transformation);
                                         }
                                         else
                                         {
                                             Point2D p2d = c2.Value(u);
-                                            p2 = hs.Value(p2d.X(), p2d.Y());
+                                            p2 = hs.Value(p2d.X, p2d.Y);
                                         }
 
-                                        double d2 = lig.Distance(p2);
+                                        double d2 = lig.DistanceTo(p2);
                                         if (d2 > maxd2)
                                         {
                                             maxd2 = d2;
@@ -1497,14 +1497,14 @@ public class WireCheck : ResultCheck
                                         t1m = (1.0 - par_T) * t11 + par_T * t12;
                                         p1m = c1.Value(t1m);
                                         //
-                                        aD2 = aL2.SquareDistance(p1m);
+                                        aD2 = aL2.SquareDistanceTo(p1m);
                                         if (aD2 < tol2)
                                         {
                                             t2m = global::Kerf.Engine.Geometry.ElCLib.Parameter(aL2, p1m);
                                             if (t2m > t21 && t2m < t22)
                                             {
-                                                Direction2D dir1 = aL1.Direction();
-                                                Direction2D dir2 = aL2.Direction();
+                                                Direction2D dir1 = aL1.Direction;
+                                                Direction2D dir2 = aL2.Direction;
                                                 if (dir1.IsParallel(dir2, global::Kerf.Engine.Foundation.Precision.Angular()))
                                                 {
                                                     localok = false;
@@ -1526,23 +1526,23 @@ public class WireCheck : ResultCheck
                                 if (conS is not null)
                                 {
                                     p3d = conS.Value(IP_ParamOnFirst);
-                                    p3d = p3d.Transformed(l.Transformation());
+                                    p3d = p3d.Transformed(l.Transformation);
                                 }
                                 else
                                 {
                                     Point2D p2d = c1.Value(IP_ParamOnFirst);
-                                    p3d = hs.Value(p2d.X(), p2d.Y());
+                                    p3d = hs.Value(p2d.X, p2d.Y);
                                 }
 
                                 if (conS2 is not null)
                                 {
                                     p3d2 = conS2.Value(IP_ParamOnSecond);
-                                    p3d2 = p3d2.Transformed(L2.Transformation());
+                                    p3d2 = p3d2.Transformed(L2.Transformation);
                                 }
                                 else
                                 {
                                     Point2D p2d = c2.Value(IP_ParamOnSecond);
-                                    p3d2 = hs.Value(p2d.X(), p2d.Y());
+                                    p3d2 = hs.Value(p2d.X, p2d.Y);
                                 }
 
                                 itl.Initialize(commonVertices);
@@ -1556,8 +1556,8 @@ public class WireCheck : ResultCheck
                                     tolvtt = Tool.Tolerance(vtt);
                                     tolvtt = 1.1 * tolvtt;
                                     tolvtt = tolvtt * tolvtt;
-                                    p3dvttDistanceP3d = p3dvtt.SquareDistance(p3d);
-                                    p3dvttDistanceP3d2 = p3dvtt.SquareDistance(p3d2);
+                                    p3dvttDistanceP3d = p3dvtt.SquareDistanceTo(p3d);
+                                    p3dvttDistanceP3d2 = p3dvtt.SquareDistanceTo(p3d2);
                                     if (p3dvttDistanceP3d <= tolvtt && p3dvttDistanceP3d2 <= tolvtt)
                                     {
                                         localok = true;
@@ -1684,7 +1684,7 @@ public class WireCheck : ResultCheck
             }
         }
 
-        return key.Orientation();
+        return key.Orientation;
     }
 
     // For vertex theVertex given function find an edge along that we should go further.
@@ -1724,8 +1724,8 @@ public class WireCheck : ResultCheck
             return;
         }
 
-        vOrientation = vertex.Orientation();
-        edgOrientation = edge.Orientation();
+        vOrientation = vertex.Orientation;
+        edgOrientation = edge.Orientation;
 
         parPiv = (vOrientation == edgOrientation) ? firstParam : lastParam;
         minAngle = RealLast();
@@ -1753,7 +1753,7 @@ public class WireCheck : ResultCheck
 
             var ca = new CurveAdaptor2D(c2d);
 
-            param = (vOrientation != e.Orientation()) ? firstParam : lastParam;
+            param = (vOrientation != e.Orientation) ? firstParam : lastParam;
             pnt = ca.Value(param);
 
             if (!IsDistanceIn2DTolerance(faceSurface, pnt, pntRef, tol3d))
@@ -1763,25 +1763,25 @@ public class WireCheck : ResultCheck
 
             CurveDirForParameter(ca, param, out pnt, out der);
 
-            if (vOrientation == e.Orientation())
+            if (vOrientation == e.Orientation)
             {
                 der = der.Reversed();
             }
 
-            if ((derRef.Magnitude() <= a_gpResolution) || (der.Magnitude() <= a_gpResolution))
+            if ((derRef.Magnitude <= a_gpResolution) || (der.Magnitude <= a_gpResolution))
             {
                 // Vector length is too small
                 continue;
             }
 
-            angle = -derRef.Angle(der);
+            angle = -derRef.AngleTo(der);
 
             if (angle < 0.0)
             {
                 angle += 2.0 * M_PI;
             }
 
-            if (face.Orientation() == Forward)
+            if (face.Orientation == Forward)
             {
                 if (angle < minAngle)
                 {
@@ -1864,12 +1864,12 @@ public class WireCheck : ResultCheck
 
         aC2d.D1(aPrm, out pnt, out aVec2d);
         //
-        if (aVec2d.Magnitude() <= tol)
+        if (aVec2d.Magnitude <= tol)
         {
             for (i = 2; i <= 100; i++)
             {
                 aVec2d = aC2d.DN(aPrm, i);
-                if (aVec2d.Magnitude() > tol)
+                if (aVec2d.Magnitude > tol)
                 {
                     break;
                 }
@@ -1950,7 +1950,7 @@ public class WireCheck : ResultCheck
         double uResol = faceSurface.UResolution(tol);
         double vResol = faceSurface.VResolution(tol);
         double vicinity = Math.Sqrt(uResol * uResol + vResol * vResol);
-        double distP1P2 = p1.Distance(p2);
+        double distP1P2 = p1.DistanceTo(p2);
 
         var iter = new NCollection_List<Shape>.Iterator(seamEdges);
 
@@ -1983,7 +1983,7 @@ public class WireCheck : ResultCheck
                         continue;
                     }
 
-                    a2dTol = pnt1.Distance(pnt2) * 1.0e-2;
+                    a2dTol = pnt1.DistanceTo(pnt2) * 1.0e-2;
                     a2dTol = Max(a2dTol, vicinity);
 
                     if (distP1P2 > a2dTol)

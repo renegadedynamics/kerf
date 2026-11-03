@@ -75,7 +75,7 @@ public partial class WireSplitter
                 EdgeInfo ei = new();
                 //
                 ei.SetEdge(e);
-                or = v.Orientation();
+                or = v.Orientation;
                 bIsIN = or == Reversed;
                 ei.SetInFlag(bIsIN);
                 lei.Append(ei);
@@ -214,7 +214,7 @@ public partial class WireSplitter
                 vv = v;
                 bIsIN = ei.IsIn;
                 or = bIsIN ? Reversed : Forward;
-                vv.Orientation(or);
+                vv.Orient(or);
                 angle = Angle2D(vv, e, myFace, bas, bIsIN, context);
                 ei.SetAngle(angle);
             }
@@ -307,7 +307,7 @@ public partial class WireSplitter
             infoSeq.Append(edgeInfo);
 
             Vertex pVa = va;
-            pVa.Orientation(Forward);
+            pVa.Orient(Forward);
             Point2D pa = Coord2d(pVa, eOuta, myFace);
             aCoordVa.Append(pa);
 
@@ -349,12 +349,12 @@ public partial class WireSplitter
                     {
                         if (bIsClosed)
                         {
-                            d2 = paPrev.SquareDistance(pb);
+                            d2 = paPrev.SquareDistanceTo(pb);
                             isSameV2d = d2 < tol2D2;
                             if (isSameV2d)
                             {
-                                double udist = Math.Abs(paPrev.X() - pb.X());
-                                double vdist = Math.Abs(paPrev.Y() - pb.Y());
+                                double udist = Math.Abs(paPrev.X - pb.X);
+                                double vdist = Math.Abs(paPrev.Y - pb.Y);
                                 double tolU = 2.0 * UTolerance2D(vb, aGAS);
                                 double tolV = 2.0 * VTolerance2D(vb, aGAS);
                                 //
@@ -473,7 +473,7 @@ public partial class WireSplitter
                             //
                             p2Dx = Coord2dVf(e, myFace);
                             //
-                            d2 = p2Dx.SquareDistance(pb);
+                            d2 = p2Dx.SquareDistanceTo(pb);
                             if (d2 > tol2D2)
                             {
                                 continue;
@@ -578,7 +578,7 @@ public partial class WireSplitter
         for (; it.More(); it.Next())
         {
             Shape vx = it.Value();
-            if (vx.Orientation() == Forward)
+            if (vx.Orientation == Forward)
             {
                 Vertex vxx = ShapeCasts.Vertex(vx);
                 p2D1 = Coord2d(vxx, aE, aF);
@@ -726,7 +726,7 @@ public partial class WireSplitter
         Direction2D refDir = new(Direction2D.D.X);
         double angle;
 
-        angle = refDir.Angle(aDir2D);
+        angle = refDir.AngleTo(aDir2D);
         if (angle < 0.0)
         {
             angle += M_PI + M_PI;

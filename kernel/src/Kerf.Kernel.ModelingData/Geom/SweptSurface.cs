@@ -13,15 +13,20 @@ namespace Kerf.Geometry;
 /// </summary>
 public abstract class SweptSurface : Surface
 {
-    protected Curve3D? _basisCurve;
-    protected Direction3D _direction = new Direction3D();
-    protected Continuity _smooth;
+    /// <summary>Only the kernel derives from it (unit 10L1).</summary>
+    private protected SweptSurface()
+    {
+    }
+
+    private protected Curve3D? _basisCurve;
+    private protected Direction3D _direction = new Direction3D();
+    private protected Continuity _smooth;
 
     /// <summary>The continuity of the surface.</summary>
-    public override Continuity Continuity() => _smooth;
+    public override Continuity Continuity => _smooth;
 
     /// <summary>The reference direction: the axis of revolution, or the direction of extrusion.</summary>
-    public Direction3D Direction() => _direction;
+    public Direction3D Direction => _direction;
 
     /// <summary>The swept curve: the revolved curve, or the extruded curve.</summary>
     /// <remarks>
@@ -29,10 +34,13 @@ public abstract class SweptSurface : Surface
     /// surface's mutators copy it again before changing it (decision 159). Set by the constructors of the derived
     /// classes; null only while one is running.
     /// </remarks>
-    public Curve3D BasisCurve()
+    public Curve3D BasisCurve
     {
-        _basisCurve!.Freeze();
-        return _basisCurve;
+        get
+        {
+            _basisCurve!.Freeze();
+            return _basisCurve;
+        }
     }
 
     /// <summary>

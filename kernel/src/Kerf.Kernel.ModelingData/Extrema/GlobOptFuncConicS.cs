@@ -80,10 +80,10 @@ public class GlobOptFuncConicS : MultipleVarFunction
         if (ct >= _tf && ct <= _tl)
         {
             Point3D pc = _c!.Value(ct);
-            f = Min(f, ps.SquareDistance(pc));
+            f = Min(f, ps.SquareDistanceTo(pc));
         }
-        f = Min(f, ps.SquareDistance(_cPf));
-        f = Min(f, ps.SquareDistance(_cPl));
+        f = Min(f, ps.SquareDistanceTo(_cPf));
+        f = Min(f, ps.SquareDistanceTo(_cPl));
     }
 
     private bool CheckInputData(math_Vector x, out double su, out double sv)
@@ -220,15 +220,15 @@ public class GlobOptFuncConicS : MultipleVarFunction
         if (ct >= _tf && ct <= _tl)
         {
             Point3D pc = _c!.Value(ct);
-            f = Min(f, ps.SquareDistance(pc));
+            f = Min(f, ps.SquareDistanceTo(pc));
         }
-        double fext = ps.SquareDistance(_cPf);
+        double fext = ps.SquareDistanceTo(_cPf);
         if (fext < f)
         {
             f = fext;
             ct = _tf;
         }
-        fext = ps.SquareDistance(_cPl);
+        fext = ps.SquareDistanceTo(_cPl);
         if (fext < f)
         {
             f = fext;

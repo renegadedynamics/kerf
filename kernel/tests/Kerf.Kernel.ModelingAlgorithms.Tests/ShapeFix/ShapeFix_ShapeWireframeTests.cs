@@ -42,7 +42,7 @@ internal static class ShapeFixPolylines
         for (int i = 0; i < thePoints.Length; i++)
         {
             Point3D aP2 = thePoints[(i + 1) % thePoints.Length];
-            aB.Add(aW, TestShapes.Edge(thePoints[i], new Point3D(aP2.X() + theGap, aP2.Y() + theGap, aP2.Z())));
+            aB.Add(aW, TestShapes.Edge(thePoints[i], new Point3D(aP2.X + theGap, aP2.Y + theGap, aP2.Z)));
         }
         aW.Closed(true);
         return aW;
@@ -93,7 +93,7 @@ public class ShapeFix_ShapeTests
         Shape aResult = aFix.Shape();
         aSnap.AssertUnchanged(aWire);
         Assert.True(aResult.TShape()!.IsFrozen);
-        Assert.Equal(ShapeType.Wire, aResult.ShapeType());
+        Assert.Equal(ShapeType.Wire, aResult.Type);
         Assert.Equal(4, ShapeFixShapes.Count(aResult, ShapeType.Vertex));
         Assert.True(aFix.Context()!.Apply(aWire).IsSame(aResult));
     }
@@ -131,7 +131,7 @@ public class ShapeFix_ShapeTests
         Assert.True(aFix.Perform());
         Shape aResult = aFix.Shape();
         aSnap.AssertUnchanged(aComp);
-        Assert.Equal(ShapeType.Compound, aResult.ShapeType());
+        Assert.Equal(ShapeType.Compound, aResult.Type);
         Assert.Equal(3, ShapeFixShapes.Count(aResult, ShapeType.Vertex) - 2);
         // the free edge needed nothing: it is the caller's
         Assert.True(ShapeFixShapes.HasTShapeOf(aResult, anEdge, ShapeType.Edge));
@@ -267,7 +267,7 @@ public class ShapeFix_WireframeTests
         Assert.True(aFix.FixSmallEdges());
         Shape aResult = aFix.Shape();
         aSnap.AssertUnchanged(aFace);
-        Assert.Equal(ShapeType.Face, aResult.ShapeType());
+        Assert.Equal(ShapeType.Face, aResult.Type);
         Assert.Equal(4, ShapeFixShapes.Count(aResult, ShapeType.Edge));
         Assert.True(aResult.TShape()!.IsFrozen);
     }

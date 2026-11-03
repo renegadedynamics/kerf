@@ -11,7 +11,7 @@ namespace Kerf.Engine.Geometry.Evaluation.Grid;
 /// <summary>
 /// Efficient batch evaluator for ellipse grid points: P(u) = C + MajR * cos(u) * X + MinR * sin(u) * Y.
 /// </summary>
-public sealed class EllipseGrid : GeomGridEvalGrid.ICurveEvaluator
+internal sealed class EllipseGrid : GeomGridEvalGrid.ICurveEvaluator
 {
     private readonly EllipseCurve3D? _geom;
 
@@ -35,22 +35,22 @@ public sealed class EllipseGrid : GeomGridEvalGrid.ICurveEvaluator
         int nb = theParams.Length();
         NCollection_Array1<Point3D> result = new(1, nb);
 
-        Ellipse3D elips = _geom.Elips();
-        Point3D center = elips.Location();
-        Direction3D xDir = elips.XAxis().Direction();
-        Direction3D yDir = elips.YAxis().Direction();
-        double majR = elips.MajorRadius();
-        double minR = elips.MinorRadius();
+        Ellipse3D elips = _geom.Ellipse;
+        Point3D center = elips.Location;
+        Direction3D xDir = elips.XAxis.Direction;
+        Direction3D yDir = elips.YAxis.Direction;
+        double majR = elips.MajorRadius;
+        double minR = elips.MinorRadius;
 
-        double cx = center.X();
-        double cy = center.Y();
-        double cz = center.Z();
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double xz = xDir.Z();
-        double yx = yDir.X();
-        double yy = yDir.Y();
-        double yz = yDir.Z();
+        double cx = center.X;
+        double cy = center.Y;
+        double cz = center.Z;
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double xz = xDir.Z;
+        double yx = yDir.X;
+        double yy = yDir.Y;
+        double yz = yDir.Z;
 
         for (int i = theParams.Lower(); i <= theParams.Upper(); ++i)
         {
@@ -78,22 +78,22 @@ public sealed class EllipseGrid : GeomGridEvalGrid.ICurveEvaluator
         int nb = theParams.Length();
         NCollection_Array1<Curve3D.ResD1> result = new(1, nb);
 
-        Ellipse3D elips = _geom.Elips();
-        Point3D center = elips.Location();
-        Direction3D xDir = elips.XAxis().Direction();
-        Direction3D yDir = elips.YAxis().Direction();
-        double majR = elips.MajorRadius();
-        double minR = elips.MinorRadius();
+        Ellipse3D elips = _geom.Ellipse;
+        Point3D center = elips.Location;
+        Direction3D xDir = elips.XAxis.Direction;
+        Direction3D yDir = elips.YAxis.Direction;
+        double majR = elips.MajorRadius;
+        double minR = elips.MinorRadius;
 
-        double cx = center.X();
-        double cy = center.Y();
-        double cz = center.Z();
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double xz = xDir.Z();
-        double yx = yDir.X();
-        double yy = yDir.Y();
-        double yz = yDir.Z();
+        double cx = center.X;
+        double cy = center.Y;
+        double cz = center.Z;
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double xz = xDir.Z;
+        double yx = yDir.X;
+        double yy = yDir.Y;
+        double yz = yDir.Z;
 
         for (int i = theParams.Lower(); i <= theParams.Upper(); ++i)
         {
@@ -127,22 +127,22 @@ public sealed class EllipseGrid : GeomGridEvalGrid.ICurveEvaluator
         int nb = theParams.Length();
         NCollection_Array1<Curve3D.ResD2> result = new(1, nb);
 
-        Ellipse3D elips = _geom.Elips();
-        Point3D center = elips.Location();
-        Direction3D xDir = elips.XAxis().Direction();
-        Direction3D yDir = elips.YAxis().Direction();
-        double majR = elips.MajorRadius();
-        double minR = elips.MinorRadius();
+        Ellipse3D elips = _geom.Ellipse;
+        Point3D center = elips.Location;
+        Direction3D xDir = elips.XAxis.Direction;
+        Direction3D yDir = elips.YAxis.Direction;
+        double majR = elips.MajorRadius;
+        double minR = elips.MinorRadius;
 
-        double cx = center.X();
-        double cy = center.Y();
-        double cz = center.Z();
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double xz = xDir.Z();
-        double yx = yDir.X();
-        double yy = yDir.Y();
-        double yz = yDir.Z();
+        double cx = center.X;
+        double cy = center.Y;
+        double cz = center.Z;
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double xz = xDir.Z;
+        double yx = yDir.X;
+        double yy = yDir.Y;
+        double yz = yDir.Z;
 
         for (int i = theParams.Lower(); i <= theParams.Upper(); ++i)
         {
@@ -180,22 +180,22 @@ public sealed class EllipseGrid : GeomGridEvalGrid.ICurveEvaluator
         int nb = theParams.Length();
         NCollection_Array1<Curve3D.ResD3> result = new(1, nb);
 
-        Ellipse3D elips = _geom.Elips();
-        Point3D center = elips.Location();
-        Direction3D xDir = elips.XAxis().Direction();
-        Direction3D yDir = elips.YAxis().Direction();
-        double majR = elips.MajorRadius();
-        double minR = elips.MinorRadius();
+        Ellipse3D elips = _geom.Ellipse;
+        Point3D center = elips.Location;
+        Direction3D xDir = elips.XAxis.Direction;
+        Direction3D yDir = elips.YAxis.Direction;
+        double majR = elips.MajorRadius;
+        double minR = elips.MinorRadius;
 
-        double cx = center.X();
-        double cy = center.Y();
-        double cz = center.Z();
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double xz = xDir.Z();
-        double yx = yDir.X();
-        double yy = yDir.Y();
-        double yz = yDir.Z();
+        double cx = center.X;
+        double cy = center.Y;
+        double cz = center.Z;
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double xz = xDir.Z;
+        double yx = yDir.X;
+        double yy = yDir.Y;
+        double yz = yDir.Z;
 
         for (int i = theParams.Lower(); i <= theParams.Upper(); ++i)
         {
@@ -237,18 +237,18 @@ public sealed class EllipseGrid : GeomGridEvalGrid.ICurveEvaluator
         int nb = theParams.Length();
         NCollection_Array1<Vector3D> result = new(1, nb);
 
-        Ellipse3D elips = _geom.Elips();
-        Direction3D xDir = elips.XAxis().Direction();
-        Direction3D yDir = elips.YAxis().Direction();
-        double majR = elips.MajorRadius();
-        double minR = elips.MinorRadius();
+        Ellipse3D elips = _geom.Ellipse;
+        Direction3D xDir = elips.XAxis.Direction;
+        Direction3D yDir = elips.YAxis.Direction;
+        double majR = elips.MajorRadius;
+        double minR = elips.MinorRadius;
 
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double xz = xDir.Z();
-        double yx = yDir.X();
-        double yy = yDir.Y();
-        double yz = yDir.Z();
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double xz = xDir.Z;
+        double yx = yDir.X;
+        double yy = yDir.Y;
+        double yz = yDir.Z;
 
         // Ellipse derivatives are cyclic with period 4:
         // D1 = -MajR * sin(u) * X + MinR * cos(u) * Y  -> coefficients: (-sin, cos)

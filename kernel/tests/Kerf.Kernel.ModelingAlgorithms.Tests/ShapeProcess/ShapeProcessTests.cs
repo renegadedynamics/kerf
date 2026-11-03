@@ -190,7 +190,7 @@ public class ShapeProcessTests
             if (aMap.TryGetValue(aFace, out Shape aNew))
             {
                 Assert.True(aNew.TShape()!.IsFrozen);
-                aSplit += aNew.ShapeType() == ShapeType.Compound || aNew.ShapeType() == ShapeType.Shell ? 1 : 0;
+                aSplit += aNew.Type == ShapeType.Compound || aNew.Type == ShapeType.Shell ? 1 : 0;
             }
         }
         Assert.Equal(1, aSplit);

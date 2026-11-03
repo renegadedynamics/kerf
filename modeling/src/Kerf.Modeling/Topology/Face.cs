@@ -101,9 +101,9 @@ public partial class Face : Shape2D
             {
                 Surface? basis = null;
                 if ((surface as TrimmedSurface) is { } trimmed)
-                    basis = trimmed.BasisSurface();
+                    basis = trimmed.BasisSurface;
                 else if ((surface as OffsetSurface) is { } offset)
-                    basis = offset.BasisSurface();
+                    basis = offset.BasisSurface;
                 if (basis is null)
                     break;
                 surface = basis;
@@ -115,28 +115,28 @@ public partial class Face : Shape2D
                     case SurfaceKind.Cone:
                     {
                         var cone = adaptor.Cone();
-                        var ax = cone.Axis();
+                        var ax = cone.Axis;
                         return new Axis(ax);
                     }
                     case SurfaceKind.Cylinder:
                     {
                         var cylinder = adaptor.Cylinder();
-                        var ax = cylinder.Axis();
+                        var ax = cylinder.Axis;
                         return new Axis(ax);
                     }
                     case SurfaceKind.Sphere:
                     {
                         var sphere = adaptor.Sphere();
-                        var ax3 = sphere.Position();
-                        var loc = ax3.Location();
-                        var dir = ax3.Direction();
+                        var ax3 = sphere.Position;
+                        var loc = ax3.Location;
+                        var dir = ax3.Direction;
                         var ax1 = new Axis3D(loc, dir);
                         return new Axis(ax1);
                     }
                     case SurfaceKind.Torus:
                     {
                         var torus = adaptor.Torus();
-                        var ax = torus.Axis();
+                        var ax = torus.Axis;
                         return new Axis(ax);
                     }
                     case SurfaceKind.SurfaceOfRevolution:
@@ -290,7 +290,7 @@ public partial class Face : Shape2D
                     var point = new Point3D();
                     var normal = new Vector3D();
                     outward.Normal(u, v, out point, out normal);
-                    if (normal.Magnitude() < 1e-12)
+                    if (normal.Magnitude < 1e-12)
                         continue;
                     // Curvatures signed toward the outward normal: negative bends away
                     var propsNormal = props.Normal();
@@ -343,11 +343,11 @@ public partial class Face : Shape2D
             if (!searcher.IsPlanar)
                 return null;
             var pln = searcher.Plan();
-            var position = pln.Position();
-            if (!position.Direct())
+            var position = pln.Position;
+            if (!position.IsDirect)
             {
                 // A left-handed plane was returned
-                var ax2 = position.Ax2();
+                var ax2 = position.Frame;
                 var ax3 = new CoordinateSystem(ax2);
                 pln = new Plane3D(ax3);
             }
@@ -407,7 +407,7 @@ public partial class Face : Shape2D
                 return null;
             var adaptor = new FaceSurfaceAdaptor(TopoFace);
             var torus = adaptor.Torus();
-            return (torus.MajorRadius(), torus.MinorRadius());
+            return (torus.MajorRadius, torus.MinorRadius);
         }
     }
 
@@ -424,12 +424,12 @@ public partial class Face : Shape2D
                 case GeomType.Cylinder:
                 {
                     var c = adaptor.Cylinder();
-                    return c.Radius();
+                    return c.Radius;
                 }
                 case GeomType.Sphere:
                 {
                     var s = adaptor.Sphere();
-                    return s.Radius();
+                    return s.Radius;
                 }
                 default:
                     return null;
@@ -456,7 +456,7 @@ public partial class Face : Shape2D
                 return null;
             var adaptor = new FaceSurfaceAdaptor(TopoFace);
             var cone = adaptor.Cone();
-            return cone.SemiAngle() * Constants.RadToDeg;
+            return cone.SemiAngle * Constants.RadToDeg;
         }
     }
 
@@ -660,7 +660,7 @@ public partial class Face : Shape2D
         var groups = new List<ShapeList<Face>>();
         foreach (var top in TopoUtil.TopLevelShapes(sewn))
         {
-            groups.Add(top.ShapeType() switch
+            groups.Add(top.Type switch
             {
                 global::Kerf.Topology.ShapeType.Face => [new Face(ShapeCasts.Face(top))],
                 global::Kerf.Topology.ShapeType.Shell => new Shell(ShapeCasts.Shell(top)).Faces(),
@@ -802,7 +802,7 @@ public partial class Face : Shape2D
             throw new InvalidOperationException("Can't find param on empty face");
         var location = new Placement();
         var surface = Tool.Surface(TopoFace, out location)!;
-        var trsf = location.Transformation();
+        var trsf = location.Transformation;
         var inverse = trsf.Inverted();
         var pnt = point.ToGpPnt();
         var local = pnt.Transformed(inverse);
@@ -811,16 +811,16 @@ public partial class Face : Shape2D
         var separation = analysis.Gap();
         if (separation > Constants.Tolerance)
             throw new ArgumentException($"point ({point}) is {separation} from the face's surface");
-        double u = uv.X(), v = uv.Y();
+        double u = uv.X, v = uv.Y;
         var (uMin, uMax, vMin, vMax) = UVBounds();
         if (surface.IsUPeriodic)
         {
-            var period = surface.UPeriod();
+            var period = surface.UPeriod;
             u += period * Math.Round(((uMin + uMax) / 2 - u) / period, MidpointRounding.ToEven);
         }
         if (surface.IsVPeriodic)
         {
-            var period = surface.VPeriod();
+            var period = surface.VPeriod;
             v += period * Math.Round(((vMin + vMax) / 2 - v) / period, MidpointRounding.ToEven);
         }
         if (normalize)
@@ -866,7 +866,7 @@ public partial class Face : Shape2D
         var origin = new Vector(pnt);
         var zDir = new Vector(du).Cross(new Vector(dv)).Normalized();
         // The surface normal ignores the face's orientation, so flip it to match the face's own (see NormalAt)
-        if (TopoShape.Orientation() == global::Kerf.Topology.Orientation.Reversed)
+        if (TopoShape.Orientation == global::Kerf.Topology.Orientation.Reversed)
             zDir = -zDir;
         var x = xDir is { } given ? given.Normalized() : new Vector(du).Normalized();
         return new Location(Plane.Create(origin, x, zDir));

@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Geometry.Properties;
 
 /// <summary>Thrown when a local property (tangent, normal, curvature, centre of curvature) is not defined.</summary>
-public class NotDefinedException : FailureException
+internal class NotDefinedException : FailureException
 {
     public NotDefinedException() { }
     public NotDefinedException(string? message) : base(message) { }

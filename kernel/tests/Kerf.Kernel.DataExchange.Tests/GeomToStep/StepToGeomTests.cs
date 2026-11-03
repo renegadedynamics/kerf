@@ -89,13 +89,13 @@ public sealed class StepToGeomTests
     {
         Axis2Placement? A = global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeAxis2Placement(Placement());
         Assert.NotNull(A);
-        Assert.Equal(new Point3D(1, 2, 3), A.Ax2().Location());
-        Assert.Equal(new Direction3D(0, 0, 1), A.Ax2().Direction());
+        Assert.Equal(new Point3D(1, 2, 3), A.Ax2().Location);
+        Assert.Equal(new Direction3D(0, 0, 1), A.Ax2().Direction);
 
         // a reference direction parallel to the axis is ignored
         Axis2Placement? B = global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeAxis2Placement(Placement(Direction(1, 0, 0), Direction(-2, 0, 0)));
-        Assert.Equal(new Direction3D(1, 0, 0), B!.Ax2().Direction());
-        Assert.True(B.Ax2().XDirection().IsNormal(new Direction3D(1, 0, 0), 1e-12));
+        Assert.Equal(new Direction3D(1, 0, 0), B!.Ax2().Direction);
+        Assert.True(B.Ax2().XDirection.IsNormal(new Direction3D(1, 0, 0), 1e-12));
     }
 
     [Fact]
@@ -105,9 +105,9 @@ public sealed class StepToGeomTests
         E.Init(Name(), Select(Placement(Direction(0, 0, 1), Direction(1, 0, 0))), 2, 5);
         EllipseCurve3D? G = global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeEllipse(E);
         Assert.NotNull(G);
-        Assert.Equal(5, G.MajorRadius());
-        Assert.Equal(2, G.MinorRadius());
-        Assert.True(G.XAxis().Direction().IsParallel(new Direction3D(0, 1, 0), 1e-12));
+        Assert.Equal(5, G.MajorRadius);
+        Assert.Equal(2, G.MinorRadius);
+        Assert.True(G.XAxis.Direction.IsParallel(new Direction3D(0, 1, 0), 1e-12));
     }
 
     [Fact]
@@ -117,11 +117,11 @@ public sealed class StepToGeomTests
         C.Init(Name(), Placement(), 2, 30);
         ConicalSurface? G = global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeConicalSurface(C, Inches);
         Assert.NotNull(G);
-        Assert.Equal(30 * (M_PI / 180.0), G.SemiAngle());
-        Assert.Equal(2 * 25.4, G.RefRadius());
+        Assert.Equal(30 * (M_PI / 180.0), G.SemiAngle);
+        Assert.Equal(2 * 25.4, G.RefRadius);
 
         C.SetSemiAngle(0);
-        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeConicalSurface(C)!.SemiAngle());
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeConicalSurface(C)!.SemiAngle);
     }
 
     [Fact]
@@ -142,9 +142,9 @@ public sealed class StepToGeomTests
 
         TrimmedCurve3D? G = global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeTrimmedCurve(T, Inches);
         Assert.NotNull(G);
-        Assert.Equal(M_PI / 2, G.FirstParameter(), 1e-14);
-        Assert.Equal(M_PI, G.LastParameter(), 1e-14);
-        Assert.Equal(254, (G.BasisCurve() as CircleCurve3D)!.Radius());
+        Assert.Equal(M_PI / 2, G.FirstParameter, 1e-14);
+        Assert.Equal(M_PI, G.LastParameter, 1e-14);
+        Assert.Equal(254, (G.BasisCurve as CircleCurve3D)!.Radius);
     }
 
     [Fact]
@@ -204,7 +204,7 @@ public sealed class StepToGeomTests
         Assert.True(global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeTransformation3d(anOperator, ref T));
         // the inverse of the change of coordinates into the operator's system: its origin is the global origin's
         // image, and its first axis the X axis's
-        Assert.True(new Point3D(0, 0, 0).Transformed(T).Distance(new Point3D(1, 2, 3)) < 1e-12);
+        Assert.True(new Point3D(0, 0, 0).Transformed(T).DistanceTo(new Point3D(1, 2, 3)) < 1e-12);
         Assert.True(new Direction3D(1, 0, 0).Transformed(T).IsEqual(new Direction3D(0, 1, 0), 1e-12));
 
         var aNoOrigin = new StepCartesianTransformationOperator3d();

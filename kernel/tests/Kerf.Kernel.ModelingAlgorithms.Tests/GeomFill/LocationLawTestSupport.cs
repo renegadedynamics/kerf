@@ -168,7 +168,7 @@ internal static class LocationLawTestSupport
 
     internal static void AssertNear(in Vector3D theExpected, in Vector3D theActual, double theTol, string theWhat)
     {
-        Assert.True(theExpected.Subtracted(theActual).Magnitude() <= theTol,
+        Assert.True(theExpected.Subtracted(theActual).Magnitude <= theTol,
                     $"{theWhat}: expected {theExpected}, got {theActual}");
     }
 

@@ -78,14 +78,14 @@ public class BRepAdaptor_CurveTests
         Placement aL = SomeLocation();
         Edge aMoved = ShapeCasts.Edge(anE.Moved(aL));
         var aC = new EdgeCurveAdaptor(aMoved);
-        Assert.Equal(aL.Transformation().TranslationPart(), aC.Trsf().TranslationPart());
+        Assert.Equal(aL.Transformation.TranslationXyz(), aC.Trsf().TranslationXyz());
         for (double u = -1.0; u <= 4.0; u += 0.5)
         {
-            Assert.True(aC.Value(u).Distance(aLine.Value(u).Transformed(aL.Transformation())) < 1e-13);
+            Assert.True(aC.Value(u).DistanceTo(aLine.Value(u).Transformed(aL.Transformation)) < 1e-13);
         }
 
         Line3D aLin = aC.Line();
-        Assert.True(aLin.Direction().IsEqual(new Direction3D(1, 2, 2).Transformed(aL.Transformation()), 1e-14));
+        Assert.True(aLin.Direction.IsEqual(new Direction3D(1, 2, 2).Transformed(aL.Transformation), 1e-14));
 
         // the orientation doesn't change the parametrisation
         var aR = new EdgeCurveAdaptor(ShapeCasts.Edge(aMoved.Reversed()));
@@ -102,7 +102,7 @@ public class BRepAdaptor_CurveTests
         Assert.False(aC.Is3DCurve());
         Assert.Equal(0.0, aC.FirstParameter());
         Assert.Equal(5.0, aC.LastParameter());
-        Assert.True(aC.Value(5.0).Distance(new Point3D(3, 4, 1)) < 1e-14);
+        Assert.True(aC.Value(5.0).DistanceTo(new Point3D(3, 4, 1)) < 1e-14);
         Assert.Equal(Line, aC.GetType());
 
         // the same through the face, and at a location
@@ -110,7 +110,7 @@ public class BRepAdaptor_CurveTests
         Assert.Equal(aC.Value(2.0), aCF.Value(2.0));
         Placement aL = SomeLocation();
         var aCL = new EdgeCurveAdaptor(ShapeCasts.Edge(anE.Moved(aL)));
-        Assert.True(aCL.Value(2.0).Distance(aC.Value(2.0).Transformed(aL.Transformation())) < 1e-13);
+        Assert.True(aCL.Value(2.0).DistanceTo(aC.Value(2.0).Transformed(aL.Transformation)) < 1e-13);
 
         var aT = (EdgeCurveAdaptor)aC.Trim(1.0, 2.0, 1e-9);
         Assert.True(aT.IsCurveOnSurface);
@@ -179,15 +179,15 @@ public class BRepAdaptor_CurveTests
             var aC3 = new EdgeCurveAdaptor(anE, aFace);
             var aC3d = new EdgeCurveAdaptor(anE);
             double u = 0.3 * f + 0.7 * l;
-            Assert.True(aC3.Value(u).Distance(aC3d.Value(u)) < 1e-12);
+            Assert.True(aC3.Value(u).DistanceTo(aC3d.Value(u)) < 1e-12);
         }
         Assert.Equal(4, aCount);
 
         // the seam's two pcurves: FORWARD at U = 2 Pi, REVERSED at U = 0
         Edge aSeam = ShapeCasts.Edge(TopExp_Explorer_At(aFace, 1));
         Assert.Equal(Line, new EdgeCurve2DAdaptor(aSeam, aFace).GetType());
-        double aU = new EdgeCurve2DAdaptor(ShapeCasts.Edge(aSeam.Oriented(Forward)), aFace).Value(1.0).X();
-        double aUr = new EdgeCurve2DAdaptor(ShapeCasts.Edge(aSeam.Oriented(Reversed)), aFace).Value(1.0).X();
+        double aU = new EdgeCurve2DAdaptor(ShapeCasts.Edge(aSeam.Oriented(Forward)), aFace).Value(1.0).X;
+        double aUr = new EdgeCurve2DAdaptor(ShapeCasts.Edge(aSeam.Oriented(Reversed)), aFace).Value(1.0).X;
         Assert.Equal(2 * Math.PI, aU, 1e-15);
         Assert.Equal(0.0, aUr, 1e-15);
 
@@ -228,6 +228,6 @@ public class BRepAdaptor_CurveTests
         Assert.Equal(new CurveAdaptor(aBS).Resolution(0.1), aC.Resolution(0.1));
         // the B-spline is handed out transformed
         BSplineCurve3D aT = aC.BSpline();
-        Assert.True(aT.Value(1.5).Distance(aC.Value(1.5)) < 1e-13);
+        Assert.True(aT.Value(1.5).DistanceTo(aC.Value(1.5)) < 1e-13);
     }
 }

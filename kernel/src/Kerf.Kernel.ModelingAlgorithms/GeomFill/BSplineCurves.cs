@@ -59,10 +59,10 @@ public class BSplineCurves
             // search for a degenerated curve = point, which would match first
             for (j = i; j <= 3 && !trouve; j++)
             {
-                if (gc[j].StartPoint().Distance(gc[j].EndPoint()) < tol)
+                if (gc[j].StartPoint.DistanceTo(gc[j].EndPoint) < tol)
                 {
                     // this is a degenerated line, does it match the last endpoint?
-                    if (gc[j].StartPoint().Distance(gc[i - 1].EndPoint()) < tol)
+                    if (gc[j].StartPoint.DistanceTo(gc[i - 1].EndPoint) < tol)
                     {
                         dummy = gc[i];
                         gc[i] = gc[j];
@@ -76,14 +76,14 @@ public class BSplineCurves
             {
                 for (j = i; j <= 3 && !trouve; j++)
                 {
-                    if (gc[j].StartPoint().Distance(gc[i - 1].EndPoint()) < tol)
+                    if (gc[j].StartPoint.DistanceTo(gc[i - 1].EndPoint) < tol)
                     {
                         dummy = gc[i];
                         gc[i] = gc[j];
                         gc[j] = dummy;
                         trouve = true;
                     }
-                    else if (gc[j].EndPoint().Distance(gc[i - 1].EndPoint()) < tol)
+                    else if (gc[j].EndPoint.DistanceTo(gc[i - 1].EndPoint) < tol)
                     {
                         gc[j] = (BSplineCurve3D)gc[j].Reversed();
                         dummy = gc[i];
@@ -141,31 +141,31 @@ public class BSplineCurves
         }
 
         int np, nk;
-        if (global::Kerf.Engine.Geometry.Splines.BSplCLib.PrepareInsertKnots(c1.Degree(), false, k1, m1, k2, m2, out np, out nk, global::Kerf.Engine.Foundation.Precision.PConfusion(), false))
+        if (global::Kerf.Engine.Geometry.Splines.BSplCLib.PrepareInsertKnots(c1.Degree, false, k1, m1, k2, m2, out np, out nk, global::Kerf.Engine.Foundation.Precision.PConfusion(), false))
         {
             NCollection_Array1<Point3D> newP = new(1, np);
             NCollection_Array1<double> newW = new(1, np);
             NCollection_Array1<double> newK = new(1, nk);
             NCollection_Array1<int> newM = new(1, nk);
-            global::Kerf.Engine.Geometry.Splines.BSplCLib.InsertKnots(c1.Degree(), false, p1, w1, k1, m1, k2, m2, newP, newW, newK, newM,
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.InsertKnots(c1.Degree, false, p1, w1, k1, m1, k2, m2, newP, newW, newK, newM,
                                  global::Kerf.Engine.Foundation.Precision.PConfusion(), false);
             if (c1.IsRational)
             {
-                c1 = new BSplineCurve3D(newP, newW, newK, newM, c1.Degree());
+                c1 = new BSplineCurve3D(newP, newW, newK, newM, c1.Degree);
             }
             else
             {
-                c1 = new BSplineCurve3D(newP, newK, newM, c1.Degree());
+                c1 = new BSplineCurve3D(newP, newK, newM, c1.Degree);
             }
-            global::Kerf.Engine.Geometry.Splines.BSplCLib.InsertKnots(c2.Degree(), false, p2, w2, k2, m2, k1, m1, newP, newW, newK, newM,
+            global::Kerf.Engine.Geometry.Splines.BSplCLib.InsertKnots(c2.Degree, false, p2, w2, k2, m2, k1, m1, newP, newW, newK, newM,
                                  global::Kerf.Engine.Foundation.Precision.PConfusion(), false);
             if (c2.IsRational)
             {
-                c2 = new BSplineCurve3D(newP, newW, newK, newM, c2.Degree());
+                c2 = new BSplineCurve3D(newP, newW, newK, newM, c2.Degree);
             }
             else
             {
-                c2 = new BSplineCurve3D(newP, newK, newM, c2.Degree());
+                c2 = new BSplineCurve3D(newP, newK, newM, c2.Degree);
             }
         }
         else
@@ -216,10 +216,10 @@ public class BSplineCurves
         Standard_ConstructionError_Raise_if(!isOK, " GeomFill_BSplineCurves: Courbes non jointives");
 
         // Mise en conformite des degres
-        int deg1 = cc1.Degree();
-        int deg2 = cc2.Degree();
-        int deg3 = cc3.Degree();
-        int deg4 = cc4.Degree();
+        int deg1 = cc1.Degree;
+        int deg2 = cc2.Degree;
+        int deg3 = cc3.Degree;
+        int deg4 = cc4.Degree;
         int degU = Max(deg1, deg3);
         int degV = Max(deg2, deg4);
         if (deg1 < degU)
@@ -312,12 +312,12 @@ public class BSplineCurves
         {
             NCollection_Array2<double> weights = new(1, nbUPoles, 1, nbVPoles);
             caro.Weights(weights);
-            _surface = new BSplineSurface(poles, weights, uKnots, vKnots, uMults, vMults, cc1.Degree(),
-                                                cc2.Degree());
+            _surface = new BSplineSurface(poles, weights, uKnots, vKnots, uMults, vMults, cc1.Degree,
+                                                cc2.Degree);
         }
         else
         {
-            _surface = new BSplineSurface(poles, uKnots, vKnots, uMults, vMults, cc1.Degree(), cc2.Degree());
+            _surface = new BSplineSurface(poles, uKnots, vKnots, uMults, vMults, cc1.Degree, cc2.Degree);
         }
     }
 
@@ -330,24 +330,24 @@ public class BSplineCurves
         NCollection_Array1<int> mults = new(1, 2);
         double tol = global::Kerf.Engine.Foundation.Precision.Confusion();
         tol = tol * tol;
-        if (c1.StartPoint().SquareDistance(c2.StartPoint()) > tol
-            && c1.StartPoint().SquareDistance(c2.EndPoint()) > tol)
+        if (c1.StartPoint.SquareDistanceTo(c2.StartPoint) > tol
+            && c1.StartPoint.SquareDistanceTo(c2.EndPoint) > tol)
         {
-            poles[1] = c1.StartPoint();
+            poles[1] = c1.StartPoint;
         }
         else
         {
-            poles[1] = c1.EndPoint();
+            poles[1] = c1.EndPoint;
         }
 
-        if (c3.StartPoint().SquareDistance(c2.StartPoint()) > tol
-            && c3.StartPoint().SquareDistance(c2.EndPoint()) > tol)
+        if (c3.StartPoint.SquareDistanceTo(c2.StartPoint) > tol
+            && c3.StartPoint.SquareDistanceTo(c2.EndPoint) > tol)
         {
-            poles[2] = c3.StartPoint();
+            poles[2] = c3.StartPoint;
         }
         else
         {
-            poles[2] = c3.EndPoint();
+            poles[2] = c3.EndPoint;
         }
 
         knots[1] = c2.Knot(c2.FirstUKnotIndex());
@@ -366,8 +366,8 @@ public class BSplineCurves
         BSplineCurve3D cc1 = (BSplineCurve3D)c1.Copy();
         BSplineCurve3D cc2 = (BSplineCurve3D)c2.Copy();
 
-        int deg1 = cc1.Degree();
-        int deg2 = cc2.Degree();
+        int deg1 = cc1.Degree;
+        int deg2 = cc2.Degree;
 
         bool isRat = (cc1.IsRational || cc2.IsRational);
 
@@ -375,11 +375,11 @@ public class BSplineCurves
         {
             int degU = Max(deg1, deg2);
 
-            if (cc1.Degree() < degU)
+            if (cc1.Degree < degU)
             {
                 cc1.IncreaseDegree(degU);
             }
-            if (cc2.Degree() < degU)
+            if (cc2.Degree < degU)
             {
                 cc2.IncreaseDegree(degU);
             }
@@ -416,35 +416,35 @@ public class BSplineCurves
                     weights[i, 1] = w1[i];
                     weights[i, 2] = w2[i];
                 }
-                _surface = new BSplineSurface(poles, weights, uKnots, vKnots, uMults, vMults, cc1.Degree(), 1,
+                _surface = new BSplineSurface(poles, weights, uKnots, vKnots, uMults, vMults, cc1.Degree, 1,
                                                     cc1.IsPeriodic, false);
             }
             else
             {
-                _surface = new BSplineSurface(poles, uKnots, vKnots, uMults, vMults, cc1.Degree(), 1);
+                _surface = new BSplineSurface(poles, uKnots, vKnots, uMults, vMults, cc1.Degree, 1);
             }
         }
         else
         {
             double eps = global::Kerf.Engine.Foundation.Precision.Confusion();
             bool isOK = false;
-            if (cc1.StartPoint().IsEqual(cc2.StartPoint(), eps))
+            if (cc1.StartPoint.IsEqual(cc2.StartPoint, eps))
             {
                 isOK = true;
             }
-            else if (cc1.StartPoint().IsEqual(cc2.EndPoint(), eps))
+            else if (cc1.StartPoint.IsEqual(cc2.EndPoint, eps))
             {
                 cc2.Reverse();
                 isOK = true;
             }
-            else if (cc1.EndPoint().IsEqual(cc2.StartPoint(), eps))
+            else if (cc1.EndPoint.IsEqual(cc2.StartPoint, eps))
             {
                 // OCCT: reverses the caller's C1, not its copy CC1, so the filling is built from the unreversed
                 // copy. The port leaves the caller's curve unchanged (decision 846): the result is OCCT's
                 // (occt-issues.md).
                 isOK = true;
             }
-            else if (cc1.EndPoint().IsEqual(cc2.EndPoint(), eps))
+            else if (cc1.EndPoint.IsEqual(cc2.EndPoint, eps))
             {
                 cc1.Reverse();
                 cc2.Reverse();

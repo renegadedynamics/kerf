@@ -50,7 +50,7 @@ public sealed class FunctionInter : FunctionWithDerivative
         Point2D pb1 = _bisector1.Value(x);
         Point2D pb2 = _bisector2.Value(x);
 
-        f = pc.Distance(pb1) - pc.Distance(pb2);
+        f = pc.DistanceTo(pb1) - pc.DistanceTo(pb2);
 
         return true;
     }
@@ -70,8 +70,8 @@ public sealed class FunctionInter : FunctionWithDerivative
         _bisector1.D1(x, out Point2D pb1, out Vector2D tb1);
         _bisector2.D1(x, out Point2D pb2, out Vector2D tb2);
 
-        f1 = pc.Distance(pb1);
-        f2 = pc.Distance(pb2);
+        f1 = pc.DistanceTo(pb1);
+        f2 = pc.DistanceTo(pb2);
 
         f = f1 - f2;
 
@@ -81,7 +81,7 @@ public sealed class FunctionInter : FunctionWithDerivative
         }
         else
         {
-            df1 = ((pc.X() - pb1.X()) * (tc.X() - tb1.X()) + (pc.Y() - pb1.Y()) * (tc.Y() - tb1.Y())) / f1;
+            df1 = ((pc.X - pb1.X) * (tc.X - tb1.X) + (pc.Y - pb1.Y) * (tc.Y - tb1.Y)) / f1;
         }
         if (Math.Abs(f2) < Constants.Resolution())
         {
@@ -89,7 +89,7 @@ public sealed class FunctionInter : FunctionWithDerivative
         }
         else
         {
-            df2 = ((pc.X() - pb2.X()) * (tc.X() - tb2.X()) + (pc.Y() - pb2.Y()) * (tc.Y() - tb2.Y())) / f2;
+            df2 = ((pc.X - pb2.X) * (tc.X - tb2.X) + (pc.Y - pb2.Y) * (tc.Y - tb2.Y)) / f2;
         }
         d = df1 - df2;
 

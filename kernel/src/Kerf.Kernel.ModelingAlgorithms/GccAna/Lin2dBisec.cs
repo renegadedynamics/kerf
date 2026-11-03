@@ -69,9 +69,9 @@ public sealed class Lin2dBisec
                     // Attention : do not use dist = Lin1.Distance(Lin2);
                     // as straight lines can be concurrent for gp_Lin2d
                     // so dist = 0.0 (test of the angle too strict ?)
-                    double dist = lin1.Distance(lin2.Location()) / 2.0;
-                    double cross = new Vector2D(-lin2.Direction().Y(), lin2.Direction().X())
-                                       .Dot(new Vector2D(lin2.Location(), lin1.Location()));
+                    double dist = lin1.DistanceTo(lin2.Location) / 2.0;
+                    double cross = new Vector2D(-lin2.Direction.Y, lin2.Direction.X)
+                                       .Dot(new Vector2D(lin2.Location, lin1.Location));
                     if (cross < 0)
                     {
                         dist = -dist;
@@ -79,9 +79,9 @@ public sealed class Lin2dBisec
                     _nbrSol++;
                     _wellDone = true;
                     _linsol[_nbrSol] =
-                        new Line2D(new Point2D(lin2.Location().XY()
-                                                  + new Xy(-lin2.Direction().Y() * dist, lin2.Direction().X() * dist)),
-                                     lin2.Direction());
+                        new Line2D(new Point2D(lin2.Location.XY()
+                                                  + new Xy(-lin2.Direction.Y * dist, lin2.Direction.X * dist)),
+                                     lin2.Direction);
                 }
             }
             else
@@ -92,11 +92,11 @@ public sealed class Lin2dBisec
                     {
                         _nbrSol++;
                         _linsol[_nbrSol] = new Line2D(intp.Point(i).Value(),
-                                                      new Direction2D(lin1.Direction().XY() + lin2.Direction().XY()));
+                                                      new Direction2D(lin1.Direction.XY() + lin2.Direction.XY()));
                         _nbrSol++;
                         _linsol[_nbrSol] = new Line2D(intp.Point(i).Value(),
-                                                      new Direction2D(lin1.Direction().XY() - lin2.Direction().XY()));
-                        if (lin1.Angle(lin2) >= 0.0)
+                                                      new Direction2D(lin1.Direction.XY() - lin2.Direction.XY()));
+                        if (lin1.AngleTo(lin2) >= 0.0)
                         {
                             _linsol[_nbrSol] = _linsol[_nbrSol].Reversed();
                         }
@@ -108,7 +108,7 @@ public sealed class Lin2dBisec
 
         for (int i = 1; i <= _nbrSol; i++)
         {
-            _pntint1sol[i] = _linsol[i].Location();
+            _pntint1sol[i] = _linsol[i].Location;
             _pntint2sol[i] = _pntint1sol[i];
             _par1sol[i] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_linsol[i], _pntint1sol[i]);
             _par2sol[i] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_linsol[i], _pntint2sol[i]);

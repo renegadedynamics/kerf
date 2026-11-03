@@ -376,7 +376,7 @@ public class ExtremaPC_ComparisonTest
             // Verify the found point is actually on the curve
             var aExtremum = aNewResult[aNewResult.MinIndex()];
             Point3D aCurvePnt = anAdaptor.Value(aExtremum.Parameter);
-            Assert.Equal(0.0, aCurvePnt.Distance(aExtremum.Point), 1.0e-6); // "Point should be on curve"
+            Assert.Equal(0.0, aCurvePnt.DistanceTo(aExtremum.Point), 1.0e-6); // "Point should be on curve"
         }
 
         // Log the difference for information

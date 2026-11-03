@@ -54,7 +54,7 @@ public static partial class Bounds
             Face f = ShapeCasts.Face(ex.Current());
             Triangulation? t = Tool.Triangulation(f, out l);
             Surface? gs = Tool.Surface(f, out dummyLoc);
-            if ((useTriangulation || gs is null) && t is not null && t.MinMax(ref b, l.Transformation()))
+            if ((useTriangulation || gs is null) && t is not null && t.MinMax(ref b, l.Transformation))
             {
                 //       B.Enlarge(T->Deflection());
                 b.Enlarge(t.Deflection() + Tool.Tolerance(f));
@@ -121,7 +121,7 @@ public static partial class Bounds
                     }
                     else
                     {
-                        b.Add(nodes[i].Transformed(l.Transformation()));
+                        b.Add(nodes[i].Transformed(l.Transformation));
                     }
                 }
 
@@ -146,7 +146,7 @@ public static partial class Bounds
                     {
                         for (i = 1; i <= nbNodes; i++)
                         {
-                            b.Add(t.Node(indices[i]).Transformed(l.Transformation()));
+                            b.Add(t.Node(indices[i]).Transformed(l.Transformation));
                         }
                     }
 
@@ -231,7 +231,7 @@ public static partial class Bounds
             Face f = ShapeCasts.Face(ex.Current());
             t = Tool.Triangulation(f, out l);
             Box locBox = new();
-            if (useTriangulation && t is not null && t.MinMax(ref locBox, l.Transformation()))
+            if (useTriangulation && t is not null && t.MinMax(ref locBox, l.Transformation))
             {
                 //       B.Enlarge(T->Deflection());
                 locBox.Enlarge(t.Deflection() + Tool.Tolerance(f));
@@ -331,7 +331,7 @@ public static partial class Bounds
                     }
                     else
                     {
-                        locBox.Add(nodes[i].Transformed(l.Transformation()));
+                        locBox.Add(nodes[i].Transformed(l.Transformation));
                     }
                 }
 
@@ -353,7 +353,7 @@ public static partial class Bounds
                         }
                         else
                         {
-                            locBox.Add(t.Node(indices[i]).Transformed(l.Transformation()));
+                            locBox.Add(t.Node(indices[i]).Transformed(l.Transformation));
                         }
                     }
 
@@ -414,13 +414,13 @@ public static partial class Bounds
         else if (st == SurfaceKind.BSplineSurface)
         {
             global::Kerf.Geometry.BSplineSurface bSpl = bs.BSpline();
-            return (bSpl.UDegree() == 1 && bSpl.UKnotCount == 2)
-                   || (bSpl.VDegree() == 1 && bSpl.VKnotCount == 2);
+            return (bSpl.UDegree == 1 && bSpl.UKnotCount == 2)
+                   || (bSpl.VDegree == 1 && bSpl.VKnotCount == 2);
         }
         else if (st == SurfaceKind.BezierSurface)
         {
             global::Kerf.Geometry.BezierSurface bz = bs.Bezier();
-            return (bz.UDegree() == 1) || (bz.VDegree() == 1);
+            return (bz.UDegree == 1) || (bz.VDegree == 1);
         }
 
         return false;
@@ -438,7 +438,7 @@ public static partial class Bounds
         // starts them at 0 (decision 32)
         umin = umax = vmin = vmax = 0.0;
         Face f = ff;
-        f.Orientation(Forward);
+        f.Orient(Forward);
         var ex = new Explorer(f, ShapeType.Edge);
         //
         // Check Natural restriction
@@ -474,7 +474,7 @@ public static partial class Bounds
 
                 //
                 c2D.D1((t1 + t2) / 2.0, out Point2D p, out Vector2D aV);
-                double magn = aV.SquareMagnitude();
+                double magn = aV.SquareMagnitude;
                 if (magn < Constants.Resolution())
                 {
                     break;
@@ -484,7 +484,7 @@ public static partial class Bounds
                     aV /= Math.Sqrt(magn);
                 }
 
-                double u = p.X(), v = p.Y();
+                double u = p.X, v = p.Y;
                 if (isUperiodic)
                 {
                     // OCCT discards the result of ElCLib::InPeriod (it returns the value), so u is unchanged (occt-issues.md)
@@ -583,7 +583,7 @@ public static partial class Bounds
 
         //
         Surface s = Tool.Surface(ff, out Placement _)!;
-        s.Bounds(out double aUmin, out double aUmax, out double aVmin, out double aVmax);
+        s.ParameterBounds(out double aUmin, out double aUmax, out double aVmin, out double aVmax);
         if (!s.IsUPeriodic)
         {
             umin = Max(aUmin, umin);
@@ -591,9 +591,9 @@ public static partial class Bounds
         }
         else
         {
-            if (umax - umin > s.UPeriod())
+            if (umax - umin > s.UPeriod)
             {
-                double delta = umax - umin - s.UPeriod();
+                double delta = umax - umin - s.UPeriod;
                 umin += delta / 2.0;
                 umax -= delta / 2;
             }
@@ -607,9 +607,9 @@ public static partial class Bounds
         }
         else
         {
-            if (vmax - vmin > s.VPeriod())
+            if (vmax - vmin > s.VPeriod)
             {
-                double delta = vmax - vmin - s.VPeriod();
+                double delta = vmax - vmin - s.VPeriod;
                 vmin += delta / 2.0;
                 vmax -= delta / 2;
             }
@@ -638,7 +638,7 @@ public static partial class Bounds
                                      double tolV)
     {
         double pu1 = 0, pu2, pv1 = 0, pv2;
-        global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(pln.Position(), p, out pu2, out pv2);
+        global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(pln.Position, p, out pu2, out pv2);
         Reorder(ref pu1, ref pu2);
         Reorder(ref pv1, ref pv2);
         var plane = new PlaneSurface(pln);

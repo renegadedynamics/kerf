@@ -38,7 +38,7 @@ internal sealed class FaceBuilder
 
     public void Init(BrepBuilder b, Surface s)
     {
-        s.Bounds(out double uMin, out double uMax, out double vMin, out double vMax);
+        s.ParameterBounds(out double uMin, out double uMax, out double vMin, out double vMax);
         Init(b, s, uMin, uMax, vMin, vMax);
     }
 
@@ -46,7 +46,7 @@ internal sealed class FaceBuilder
     public void Init(BrepBuilder b, Surface s, double uMin, double uMax, double vMin, double vMax)
     {
         // Check the values
-        s.Bounds(out double usMin, out double usMax, out double vsMin, out double vsMax);
+        s.ParameterBounds(out double usMin, out double usMax, out double vsMin, out double vsMax);
 
         if (uMin >= uMax)
         {
@@ -110,21 +110,21 @@ internal sealed class FaceBuilder
         b.UpdateVertex(_vertex[0], vMax - vMin, _edges[3], 0);
 
         // insert vertices in edges
-        _vertex[0].Orientation(Reversed);
+        _vertex[0].Orient(Reversed);
         b.Add(_edges[3], _vertex[0]);
-        _vertex[0].Orientation(Forward);
+        _vertex[0].Orient(Forward);
         b.Add(_edges[0], _vertex[0]);
-        _vertex[1].Orientation(Reversed);
+        _vertex[1].Orient(Reversed);
         b.Add(_edges[0], _vertex[1]);
-        _vertex[1].Orientation(Forward);
+        _vertex[1].Orient(Forward);
         b.Add(_edges[1], _vertex[1]);
-        _vertex[2].Orientation(Reversed);
+        _vertex[2].Orient(Reversed);
         b.Add(_edges[1], _vertex[2]);
-        _vertex[2].Orientation(Forward);
+        _vertex[2].Orient(Forward);
         b.Add(_edges[2], _vertex[2]);
-        _vertex[3].Orientation(Reversed);
+        _vertex[3].Orient(Reversed);
         b.Add(_edges[2], _vertex[3]);
-        _vertex[3].Orientation(Forward);
+        _vertex[3].Orient(Forward);
         b.Add(_edges[3], _vertex[3]);
 
         // insert edges in a wire and the wire in the face

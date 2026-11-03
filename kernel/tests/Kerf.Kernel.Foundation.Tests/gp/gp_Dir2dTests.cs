@@ -14,8 +14,8 @@ public class gp_Dir2dTests
     public void CoordinateConstructor()
     {
         Direction2D aDir = new(1.0, 0.0);
-        Assert.Equal(1.0, aDir.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aDir.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aDir.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aDir.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -23,8 +23,8 @@ public class gp_Dir2dTests
     {
         Xy aXY = new(0.0, 3.0);
         Direction2D aDir = new(aXY);
-        Assert.Equal(0.0, aDir.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(1.0, aDir.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aDir.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aDir.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -32,8 +32,8 @@ public class gp_Dir2dTests
     {
         Vector2D aVec = new(3.0, 0.0);
         Direction2D aDir = new(aVec);
-        Assert.Equal(1.0, aDir.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aDir.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aDir.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aDir.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -41,7 +41,7 @@ public class gp_Dir2dTests
     {
         Direction2D aD1 = new(1.0, 0.0);
         Direction2D aD2 = new(0.0, 1.0);
-        Assert.Equal(M_PI_2, aD1.Angle(aD2), global::Kerf.Engine.Foundation.Precision.Angular());
+        Assert.Equal(M_PI_2, aD1.AngleTo(aD2), global::Kerf.Engine.Foundation.Precision.Angular());
     }
 
     [Fact]
@@ -101,8 +101,8 @@ public class gp_Dir2dTests
     {
         Direction2D aDir = new(1.0, 0.0);
         Direction2D aRotated = aDir.Rotated(M_PI_2);
-        Assert.Equal(0.0, aRotated.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(1.0, aRotated.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aRotated.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aRotated.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -114,8 +114,8 @@ public class gp_Dir2dTests
         Direction2D aMirrored = aDir.Mirrored(anAxis);
         // Mirroring (1,0) through axis with direction (0,1):
         // d_mirror = 2*(d.axis_dir)*axis_dir - d = 2*0*(0,1) - (1,0) = (-1,0)
-        Assert.Equal(-1.0, aMirrored.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aMirrored.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(-1.0, aMirrored.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aMirrored.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -124,8 +124,8 @@ public class gp_Dir2dTests
         Direction2D aDir = new(1.0, 0.0);
         Transform2D aTrsf = new Transform2D().WithRotation(new Point2D(0.0, 0.0), M_PI);
         Direction2D aTransformed = aDir.Transformed(aTrsf);
-        Assert.Equal(-1.0, aTransformed.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aTransformed.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(-1.0, aTransformed.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aTransformed.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]

@@ -65,8 +65,8 @@ public sealed class BRepMeshGeomToolOracleTests(ITestOutputHelper output) : IDis
         Direction3D aZ = theO.Dir();
         Direction3D aRef = theO.Dir();
         Direction3D aX = aZ.Crossed(aRef.IsParallel(aZ, 0.1) ? (aZ.IsParallel(new Direction3D(1, 0, 0), 0.1) ? new Direction3D(0, 1, 0) : new Direction3D(1, 0, 0)) : aRef);
-        using var aNZ = new N.gp_Dir(aZ.X(), aZ.Y(), aZ.Z());
-        using var aNX = new N.gp_Dir(aX.X(), aX.Y(), aX.Z());
+        using var aNZ = new N.gp_Dir(aZ.X, aZ.Y, aZ.Z);
+        using var aNX = new N.gp_Dir(aX.X, aX.Y, aX.Z);
         using var aNAx2 = new N.gp_Ax2(aNP, aNZ, aNX);
         double a = theO.Real(-3, 3);
         double b = a + theO.Real(0.2, 2 * Math.PI - 0.1);

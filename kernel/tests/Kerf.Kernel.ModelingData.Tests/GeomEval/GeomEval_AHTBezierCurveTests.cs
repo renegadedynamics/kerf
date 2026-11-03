@@ -84,8 +84,8 @@ public class GeomEval_AHTBezierCurveTest
     public void ParameterRange()
     {
         AhtBezierCurve aCurve = createFullBasisCurve();
-        Assert.Equal(0.0, aCurve.FirstParameter(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(1.0, aCurve.LastParameter(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aCurve.FirstParameter, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aCurve.LastParameter, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -93,11 +93,11 @@ public class GeomEval_AHTBezierCurveTest
     {
         AhtBezierCurve aCurve = createFullBasisCurve();
 
-        Point3D aStart = aCurve.EvalD0(aCurve.FirstParameter());
-        Point3D aEnd = aCurve.EvalD0(aCurve.LastParameter());
+        Point3D aStart = aCurve.EvalD0(aCurve.FirstParameter);
+        Point3D aEnd = aCurve.EvalD0(aCurve.LastParameter);
 
-        Assert.Equal(0.0, aStart.Distance(aCurve.StartPoint()), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aEnd.Distance(aCurve.EndPoint()), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aStart.DistanceTo(aCurve.StartPoint), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aEnd.DistanceTo(aCurve.EndPoint), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -112,9 +112,9 @@ public class GeomEval_AHTBezierCurveTest
 
         Vector3D aFD = new((aP1.XYZ() - aP2.XYZ()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
 
-        Assert.Equal(aFD.X(), aD1.D1.X(), THE_FD_TOL_D1);
-        Assert.Equal(aFD.Y(), aD1.D1.Y(), THE_FD_TOL_D1);
-        Assert.Equal(aFD.Z(), aD1.D1.Z(), THE_FD_TOL_D1);
+        Assert.Equal(aFD.X, aD1.D1.X, THE_FD_TOL_D1);
+        Assert.Equal(aFD.Y, aD1.D1.Y, THE_FD_TOL_D1);
+        Assert.Equal(aFD.Z, aD1.D1.Z, THE_FD_TOL_D1);
     }
 
     [Fact]
@@ -181,9 +181,9 @@ public class GeomEval_AHTBezierCurveTest
 
         Vector3D aFD = new((aD1Plus.D1.XYZ() - aD1Minus.D1.XYZ()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
 
-        Assert.Equal(aFD.X(), aD2.D2.X(), THE_FD_TOL_D2);
-        Assert.Equal(aFD.Y(), aD2.D2.Y(), THE_FD_TOL_D2);
-        Assert.Equal(aFD.Z(), aD2.D2.Z(), THE_FD_TOL_D2);
+        Assert.Equal(aFD.X, aD2.D2.X, THE_FD_TOL_D2);
+        Assert.Equal(aFD.Y, aD2.D2.Y, THE_FD_TOL_D2);
+        Assert.Equal(aFD.Z, aD2.D2.Z, THE_FD_TOL_D2);
     }
 
     [Fact]
@@ -198,9 +198,9 @@ public class GeomEval_AHTBezierCurveTest
 
         Vector3D aFD = new((aD2Plus.D2.XYZ() - aD2Minus.D2.XYZ()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
 
-        Assert.Equal(aFD.X(), aD3.D3.X(), THE_FD_TOL_D2);
-        Assert.Equal(aFD.Y(), aD3.D3.Y(), THE_FD_TOL_D2);
-        Assert.Equal(aFD.Z(), aD3.D3.Z(), THE_FD_TOL_D2);
+        Assert.Equal(aFD.X, aD3.D3.X, THE_FD_TOL_D2);
+        Assert.Equal(aFD.Y, aD3.D3.Y, THE_FD_TOL_D2);
+        Assert.Equal(aFD.Z, aD3.D3.Z, THE_FD_TOL_D2);
     }
 
     [Fact]
@@ -212,9 +212,9 @@ public class GeomEval_AHTBezierCurveTest
         Curve3D.ResD1 aD1 = aCurve.EvalD1(aU);
         Vector3D aDN = aCurve.EvalDN(aU, 1);
 
-        Assert.Equal(aDN.X(), aD1.D1.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(aDN.Y(), aD1.D1.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(aDN.Z(), aD1.D1.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aDN.X, aD1.D1.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aDN.Y, aD1.D1.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aDN.Z, aD1.D1.Z, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -232,21 +232,21 @@ public class GeomEval_AHTBezierCurveTest
 
         // P(0) = P0
         Point3D aVal0 = aCurve.EvalD0(0.0);
-        Assert.Equal(0.0, aVal0.Distance(aP0), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aVal0.DistanceTo(aP0), global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // P(0.5) = P0 + 0.5*P1 + 0.25*P2
-        Point3D aExpected05 = new(aP0.X() + 0.5 * aP1.X() + 0.25 * aP2.X(),
-            aP0.Y() + 0.5 * aP1.Y() + 0.25 * aP2.Y(),
-            aP0.Z() + 0.5 * aP1.Z() + 0.25 * aP2.Z());
+        Point3D aExpected05 = new(aP0.X + 0.5 * aP1.X + 0.25 * aP2.X,
+            aP0.Y + 0.5 * aP1.Y + 0.25 * aP2.Y,
+            aP0.Z + 0.5 * aP1.Z + 0.25 * aP2.Z);
         Point3D aVal05 = aCurve.EvalD0(0.5);
-        Assert.Equal(0.0, aVal05.Distance(aExpected05), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aVal05.DistanceTo(aExpected05), global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // P(1) = P0 + P1 + P2
-        Point3D aExpected1 = new(aP0.X() + aP1.X() + aP2.X(),
-            aP0.Y() + aP1.Y() + aP2.Y(),
-            aP0.Z() + aP1.Z() + aP2.Z());
+        Point3D aExpected1 = new(aP0.X + aP1.X + aP2.X,
+            aP0.Y + aP1.Y + aP2.Y,
+            aP0.Z + aP1.Z + aP2.Z);
         Point3D aVal1 = aCurve.EvalD0(1.0);
-        Assert.Equal(0.0, aVal1.Distance(aExpected1), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aVal1.DistanceTo(aExpected1), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -261,7 +261,7 @@ public class GeomEval_AHTBezierCurveTest
         {
             Point3D aPAHT = aAHT.EvalD0(aU);
             Point3D aPCirc = global::Kerf.Engine.Geometry.ElCLib.Value(aU, aCircle);
-            Assert.Equal(0.0, aPAHT.Distance(aPCirc), global::Kerf.Engine.Foundation.Precision.Angular());
+            Assert.Equal(0.0, aPAHT.DistanceTo(aPCirc), global::Kerf.Engine.Foundation.Precision.Angular());
         }
     }
 
@@ -279,16 +279,16 @@ public class GeomEval_AHTBezierCurveTest
             Curve3D.ResD3 aDC;
             global::Kerf.Engine.Geometry.ElCLib.D3(aU, aCircle, out aDC.Point, out aDC.D1, out aDC.D2, out aDC.D3);
 
-            Assert.Equal(0.0, aDT.Point.Distance(aDC.Point), global::Kerf.Engine.Foundation.Precision.Angular());
-            Assert.Equal(aDC.D1.X(), aDT.D1.X(), global::Kerf.Engine.Foundation.Precision.Angular());
-            Assert.Equal(aDC.D1.Y(), aDT.D1.Y(), global::Kerf.Engine.Foundation.Precision.Angular());
-            Assert.Equal(aDC.D1.Z(), aDT.D1.Z(), global::Kerf.Engine.Foundation.Precision.Angular());
-            Assert.Equal(aDC.D2.X(), aDT.D2.X(), global::Kerf.Engine.Foundation.Precision.Angular());
-            Assert.Equal(aDC.D2.Y(), aDT.D2.Y(), global::Kerf.Engine.Foundation.Precision.Angular());
-            Assert.Equal(aDC.D2.Z(), aDT.D2.Z(), global::Kerf.Engine.Foundation.Precision.Angular());
-            Assert.Equal(aDC.D3.X(), aDT.D3.X(), global::Kerf.Engine.Foundation.Precision.Angular());
-            Assert.Equal(aDC.D3.Y(), aDT.D3.Y(), global::Kerf.Engine.Foundation.Precision.Angular());
-            Assert.Equal(aDC.D3.Z(), aDT.D3.Z(), global::Kerf.Engine.Foundation.Precision.Angular());
+            Assert.Equal(0.0, aDT.Point.DistanceTo(aDC.Point), global::Kerf.Engine.Foundation.Precision.Angular());
+            Assert.Equal(aDC.D1.X, aDT.D1.X, global::Kerf.Engine.Foundation.Precision.Angular());
+            Assert.Equal(aDC.D1.Y, aDT.D1.Y, global::Kerf.Engine.Foundation.Precision.Angular());
+            Assert.Equal(aDC.D1.Z, aDT.D1.Z, global::Kerf.Engine.Foundation.Precision.Angular());
+            Assert.Equal(aDC.D2.X, aDT.D2.X, global::Kerf.Engine.Foundation.Precision.Angular());
+            Assert.Equal(aDC.D2.Y, aDT.D2.Y, global::Kerf.Engine.Foundation.Precision.Angular());
+            Assert.Equal(aDC.D2.Z, aDT.D2.Z, global::Kerf.Engine.Foundation.Precision.Angular());
+            Assert.Equal(aDC.D3.X, aDT.D3.X, global::Kerf.Engine.Foundation.Precision.Angular());
+            Assert.Equal(aDC.D3.Y, aDT.D3.Y, global::Kerf.Engine.Foundation.Precision.Angular());
+            Assert.Equal(aDC.D3.Z, aDT.D3.Z, global::Kerf.Engine.Foundation.Precision.Angular());
         }
     }
 
@@ -306,13 +306,13 @@ public class GeomEval_AHTBezierCurveTest
             Curve3D.ResD2 aDC;
             global::Kerf.Engine.Geometry.ElCLib.D2(aU, anEllipse, out aDC.Point, out aDC.D1, out aDC.D2);
 
-            Assert.Equal(0.0, aDT.Point.Distance(aDC.Point), global::Kerf.Engine.Foundation.Precision.Angular());
-            Assert.Equal(aDC.D1.X(), aDT.D1.X(), global::Kerf.Engine.Foundation.Precision.Angular());
-            Assert.Equal(aDC.D1.Y(), aDT.D1.Y(), global::Kerf.Engine.Foundation.Precision.Angular());
-            Assert.Equal(aDC.D1.Z(), aDT.D1.Z(), global::Kerf.Engine.Foundation.Precision.Angular());
-            Assert.Equal(aDC.D2.X(), aDT.D2.X(), global::Kerf.Engine.Foundation.Precision.Angular());
-            Assert.Equal(aDC.D2.Y(), aDT.D2.Y(), global::Kerf.Engine.Foundation.Precision.Angular());
-            Assert.Equal(aDC.D2.Z(), aDT.D2.Z(), global::Kerf.Engine.Foundation.Precision.Angular());
+            Assert.Equal(0.0, aDT.Point.DistanceTo(aDC.Point), global::Kerf.Engine.Foundation.Precision.Angular());
+            Assert.Equal(aDC.D1.X, aDT.D1.X, global::Kerf.Engine.Foundation.Precision.Angular());
+            Assert.Equal(aDC.D1.Y, aDT.D1.Y, global::Kerf.Engine.Foundation.Precision.Angular());
+            Assert.Equal(aDC.D1.Z, aDT.D1.Z, global::Kerf.Engine.Foundation.Precision.Angular());
+            Assert.Equal(aDC.D2.X, aDT.D2.X, global::Kerf.Engine.Foundation.Precision.Angular());
+            Assert.Equal(aDC.D2.Y, aDT.D2.Y, global::Kerf.Engine.Foundation.Precision.Angular());
+            Assert.Equal(aDC.D2.Z, aDT.D2.Z, global::Kerf.Engine.Foundation.Precision.Angular());
         }
     }
 

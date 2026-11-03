@@ -56,7 +56,7 @@ public class EmptyShapeDefinitionTests
             var zero = make();
             Assert.IsType(cls, zero);
             Assert.True(zero.IsEmpty);
-            Assert.Equal(global::Kerf.Topology.ShapeType.Compound, zero.Wrapped.ShapeType());
+            Assert.Equal(global::Kerf.Topology.ShapeType.Compound, zero.Wrapped.Type);
             Assert.Equal(dim, zero.Dim);
         }
     }

@@ -105,11 +105,11 @@ public class GenExtCS
         }
         if (c.GetType() == OffsetCurve)
         {
-            Curve3D bc = c.OffsetCurve().BasisCurve();
+            Curve3D bc = c.OffsetCurve().BasisCurve;
             TrimmedCurve3D? tc = bc as TrimmedCurve3D;
             if (tc is not null)
             {
-                bc = tc.BasisCurve();
+                bc = tc.BasisCurve;
             }
             if (bc is HyperbolaCurve3D)
             {
@@ -449,7 +449,7 @@ public class GenExtCS
                 double cu2 = minTUV[1];
                 for (int cui = 0; cui <= newCsample; cui++, cu2 += stepCU)
                 {
-                    double sqDist = _surfPnts!.Value(sui, svi).SquareDistance(curvPnts.Value(cui));
+                    double sqDist = _surfPnts!.Value(sui, svi).SquareDistanceTo(curvPnts.Value(cui));
 
                     if (sqDist < particle.Distance)
                     {
@@ -569,14 +569,14 @@ public class GenExtCS
         bool isBadSol = false;
         _s!.D1(uv[1], uv[2], out Point3D pOnS, out Vector3D du, out Vector3D dv);
         c.D1(ct, out Point3D pOnC, out Vector3D dt);
-        double sqDist2 = pOnC.SquareDistance(pOnS);
+        double sqDist2 = pOnC.SquareDistanceTo(pOnS);
         if (sqDist2 <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             return;
         }
 
         Vector3D n = du.Crossed(dv);
-        if (n.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+        if (n.SquareMagnitude < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             return;
         }
@@ -586,7 +586,7 @@ public class GenExtCS
         double angMin = M_PI_2 - M_PI_2 / 10.0;
         double angMax = M_PI_2 + M_PI_2 / 10.0;
 
-        double angN = pcPs.Angle(n);
+        double angN = pcPs.AngleTo(n);
         if (angN >= angMin && angN <= angMax)
         {
             // PcPs is perpendicular to surface normal, it means that
@@ -604,19 +604,19 @@ public class GenExtCS
                     v = Max(uVinf[2], v);
                     v = Min(uVsup[2], v);
                     _s.D1(u, v, out pOnS, out du, out dv);
-                    if (pOnC.SquareDistance(pOnS) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+                    if (pOnC.SquareDistanceTo(pOnS) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         isBadSol = false;
                         break;
                     }
                     n = du.Crossed(dv);
-                    if (n.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+                    if (n.SquareMagnitude < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         isBadSol = false;
                         break;
                     }
                     pcPs = pcPs.WithXYZ(pOnS.XYZ() - pOnC.XYZ());
-                    angN = pcPs.Angle(n);
+                    angN = pcPs.AngleTo(n);
                     if (angN < angMin || angN > angMax)
                     {
                         isBadSol = false;

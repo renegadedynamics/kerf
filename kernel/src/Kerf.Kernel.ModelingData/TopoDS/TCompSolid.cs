@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Topology;
 
 /// <summary>A set of solids connected by their faces.</summary>
-public class TCompSolid : TShape
+internal class TCompSolid : TShape
 {
     /// <summary>An empty TCompSolid.</summary>
     public TCompSolid() : base(global::Kerf.Topology.ShapeType.CompSolid)

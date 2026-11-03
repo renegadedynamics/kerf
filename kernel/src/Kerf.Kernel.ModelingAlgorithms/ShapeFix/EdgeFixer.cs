@@ -117,7 +117,7 @@ public partial class EdgeFixer : Transient
         Surface transSurf = surface;
         if (!location.IsIdentity)
         {
-            Transform3D trsf = location.Transformation();
+            Transform3D trsf = location.Transformation;
             transSurf = (Surface)surface.Transformed(trsf);
         }
         var sas = new SurfaceAnalysis(transSurf);
@@ -145,40 +145,40 @@ public partial class EdgeFixer : Transient
 
     private static Curve2D TranslatePCurve(Surface aSurf, Curve2D aC2d, double aTol)
     {
-        aSurf.Bounds(out double uf, out double ul, out double vf, out double vl);
+        aSurf.ParameterBounds(out double uf, out double ul, out double vf, out double vl);
 
         // case of a line
         if (aC2d is LineCurve2D theL2d)
         {
-            Point2D theLoc = theL2d.Location();
-            Direction2D theDir = theL2d.Direction();
+            Point2D theLoc = theL2d.Location;
+            Direction2D theDir = theL2d.Direction;
 
             var         newLoc    = new Point2D();
             LineCurve2D theNewL2d = theL2d;
 
             // case UClosed
-            if (Math.Abs(theDir.X()) <= aTol && Math.Abs(theDir.Y()) >= aTol)
+            if (Math.Abs(theDir.X) <= aTol && Math.Abs(theDir.Y) >= aTol)
             {
-                if (Math.Abs(theLoc.X() - uf) < Math.Abs(theLoc.X() - ul))
+                if (Math.Abs(theLoc.X - uf) < Math.Abs(theLoc.X - ul))
                 {
-                    newLoc = newLoc.WithCoord(theLoc.X() + (ul - uf), theLoc.Y());
+                    newLoc = newLoc.WithCoord(theLoc.X + (ul - uf), theLoc.Y);
                 }
                 else
                 {
-                    newLoc = newLoc.WithCoord(theLoc.X() - (ul - uf), theLoc.Y());
+                    newLoc = newLoc.WithCoord(theLoc.X - (ul - uf), theLoc.Y);
                 }
                 theNewL2d = new LineCurve2D(newLoc, theDir);
             }
             // case VClosed
-            if (Math.Abs(theDir.X()) >= aTol && Math.Abs(theDir.Y()) <= aTol)
+            if (Math.Abs(theDir.X) >= aTol && Math.Abs(theDir.Y) <= aTol)
             {
-                if (Math.Abs(theLoc.Y() - vf) < Math.Abs(theLoc.Y() - vl))
+                if (Math.Abs(theLoc.Y - vf) < Math.Abs(theLoc.Y - vl))
                 {
-                    newLoc = newLoc.WithCoord(theLoc.X(), theLoc.Y() + (vl - vf));
+                    newLoc = newLoc.WithCoord(theLoc.X, theLoc.Y + (vl - vf));
                 }
                 else
                 {
-                    newLoc = newLoc.WithCoord(theLoc.X(), theLoc.Y() - (vl - vf));
+                    newLoc = newLoc.WithCoord(theLoc.X, theLoc.Y - (vl - vf));
                 }
                 theNewL2d = new LineCurve2D(newLoc, theDir);
             }
@@ -193,8 +193,8 @@ public partial class EdgeFixer : Transient
                 return aC2d;
             }
             var      newC       = (BSplineCurve2D)bc.Copy();
-            Point2D firstPoint = bc.StartPoint();
-            Point2D lastPoint  = bc.EndPoint();
+            Point2D firstPoint = bc.StartPoint;
+            Point2D lastPoint  = bc.EndPoint;
             var      theVector  = new Vector2D(firstPoint, lastPoint);
             Point2D p00        = new Point2D(uf, vf), p01 = new Point2D(uf, vl), p10 = new Point2D(ul, vf);
             var      vectIsoUF  = new Vector2D(p00, p01);
@@ -203,7 +203,7 @@ public partial class EdgeFixer : Transient
             var t = new Transform2D();
             if (theVector.IsParallel(vectIsoUF, aTol))
             {
-                if (Math.Abs(firstPoint.X() - uf) < Math.Abs(firstPoint.X() - ul))
+                if (Math.Abs(firstPoint.X - uf) < Math.Abs(firstPoint.X - ul))
                 {
                     t = t.WithTranslation(p00, p10);
                 }
@@ -216,7 +216,7 @@ public partial class EdgeFixer : Transient
             }
             else if (theVector.IsParallel(vectIsoVF, aTol))
             {
-                if (Math.Abs(firstPoint.Y() - vf) < Math.Abs(firstPoint.Y() - vl))
+                if (Math.Abs(firstPoint.Y - vf) < Math.Abs(firstPoint.Y - vl))
                 {
                     t = t.WithTranslation(p00, p01);
                 }
@@ -298,7 +298,7 @@ public partial class EdgeFixer : Transient
                             if (CurveAnalysis.IsPeriodic(curve2dPtr!))
                             {
                                 var    tc    = new TrimmedCurve2D(curve2dPtr!, oldFirst, oldLast);
-                                double shift = tc.FirstParameter() - oldFirst;
+                                double shift = tc.FirstParameter - oldFirst;
                                 oldFirst += shift;
                                 oldLast += shift;
                             }
@@ -442,7 +442,7 @@ public partial class EdgeFixer : Transient
                 //  ATTENTION : TranslatePCurve reconstruit une Line // bords, en
                 //  intuitant U ou V ...
                 //  Ici, on exploite les infos deja connues
-                surf.Bounds(out double uf, out double ul, out double vf, out double vl);
+                surf.ParameterBounds(out double uf, out double ul, out double vf, out double vl);
                 // #4 rln 19/02/98 ProSTEP ug_exhaust-A.stp entity #284920 (toroidal surface)
                 // #13 rln 17/03/98 (updating fix #4) call to TranslatePCurve in the case
                 // when a surface is either u- and vclosed or neither u- nor vclosed
@@ -473,8 +473,8 @@ public partial class EdgeFixer : Transient
             //  Conclusion
             if (_projector.Status(ExtendStatus.DONE3))
             {
-                double g3dCFirst = c3d.FirstParameter();
-                double g3dCLast  = c3d.LastParameter();
+                double g3dCFirst = c3d.FirstParameter;
+                double g3dCLast  = c3d.LastParameter;
                 b.UpdateEdge(edge, c3d, 0.0);
                 b.Range(edge, g3dCFirst, g3dCLast, true);
             }
@@ -523,7 +523,7 @@ public partial class EdgeFixer : Transient
         if (Context() is not null)
         {
             Shape shape = Context()!.InternalApply(edge);
-            if (shape.IsNull || shape.ShapeType() != ShapeType.Edge)
+            if (shape.IsNull || shape.Type != ShapeType.Edge)
             {
                 return false;
             }
@@ -570,7 +570,7 @@ public partial class EdgeFixer : Transient
         if (Context() is not null)
         {
             Shape shape = Context()!.InternalApply(edge);
-            if (shape.IsNull || shape.ShapeType() != ShapeType.Edge)
+            if (shape.IsNull || shape.Type != ShapeType.Edge)
             {
                 return false;
             }

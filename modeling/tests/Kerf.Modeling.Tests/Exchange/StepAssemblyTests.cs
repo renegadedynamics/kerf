@@ -80,7 +80,7 @@ public class StepAssemblyTests
             {
                 var c = it.Value();
                 if (child is Compound { AssemblyChildren.Count: > 0 } sub)
-                    doc.AddComponent(label, Assembly(sub, c.Located(new global::Kerf.Topology.Placement())), c.Location());
+                    doc.AddComponent(label, Assembly(sub, c.Located(new global::Kerf.Topology.Placement())), c.Placement);
                 else
                 {
                     doc.AddComponent(label, c, false);

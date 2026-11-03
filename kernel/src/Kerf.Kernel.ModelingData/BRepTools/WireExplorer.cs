@@ -33,7 +33,7 @@ namespace Kerf.Engine.Topology.Tools;
 /// first one can differ.
 /// </para>
 /// </remarks>
-public sealed class WireExplorer
+internal sealed class WireExplorer
 {
     private readonly Dictionary<Shape, NCollection_List<Shape>> _map =
         new(ShapeHasher.Instance);
@@ -161,7 +161,7 @@ public sealed class WireExplorer
             {
                 gas.D1(uMin, vMin, out Point3D p, out Vector3D d1U, out Vector3D d1V);
                 double tol1, tol2, maxtol = .0005 * (uMax - uMin);
-                double a = d1U.Magnitude();
+                double a = d1U.Magnitude;
 
                 if (a <= global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
@@ -173,7 +173,7 @@ public sealed class WireExplorer
                 }
 
                 gas.D1(uMin, vMax, out p, out d1U, out d1V);
-                a = d1U.Magnitude();
+                a = d1U.Magnitude;
                 if (a <= global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     tol2 = maxtol;
@@ -202,7 +202,7 @@ public sealed class WireExplorer
                 }
             }
 
-            _reverse = (_face.Orientation() == Reversed);
+            _reverse = (_face.Orientation == Reversed);
         }
 
         // map of vertices to know if the wire is open
@@ -217,7 +217,7 @@ public sealed class WireExplorer
         while (it.More())
         {
             Edge e = ShapeCasts.Edge(it.Value());
-            Orientation eori = e.Orientation();
+            Orientation eori = e.Orientation;
             if (eori == Internal || eori == External)
             {
                 it.Next();
@@ -235,7 +235,7 @@ public sealed class WireExplorer
                 _map.GetValue(v1).Append(e);
 
                 // add or remove in the vertex map
-                v1.Orientation(Forward);
+                v1.Orient(Forward);
                 int currsize = vmap.Count, ind = vmap.Add(v1) + 1;
                 if (currsize >= ind)
                 {
@@ -245,7 +245,7 @@ public sealed class WireExplorer
 
             if (!v2.IsNull)
             {
-                v2.Orientation(Reversed);
+                v2.Orient(Reversed);
                 int currsize = vmap.Count, ind = vmap.Add(v2) + 1;
                 if (currsize >= ind)
                 {
@@ -293,7 +293,7 @@ public sealed class WireExplorer
             int ind = 0;
             for (ind = 1; ind <= vmap.Count; ++ind)
             {
-                if (vmap[ind - 1].Orientation() == Forward)
+                if (vmap[ind - 1].Orientation == Forward)
                 {
                     v1 = ShapeCasts.Vertex(vmap[ind - 1]);
                     break;
@@ -308,7 +308,7 @@ public sealed class WireExplorer
                 foreach (Shape key in infEmap)
                 {
                     Edge edge = ShapeCasts.Edge(key);
-                    Orientation ori = edge.Orientation();
+                    Orientation ori = edge.Orientation;
 
                     Tool.Range(edge, out double aF, out double aL);
                     if ((ori == Forward && aF == -global::Kerf.Engine.Foundation.Precision.Infinite())
@@ -327,7 +327,7 @@ public sealed class WireExplorer
             while (it.More())
             {
                 Edge e = ShapeCasts.Edge(it.Value());
-                Orientation eori = e.Orientation();
+                Orientation eori = e.Orientation;
                 if (eori == Internal || eori == External)
                 {
                     // JYL 10-03-97 : waiting for correct processing
@@ -406,7 +406,7 @@ public sealed class WireExplorer
                     return;
                 }
 
-                if (_edge.Orientation() == Forward)
+                if (_edge.Orientation == Forward)
                 {
                     prevPar = par12;
                 }
@@ -415,7 +415,7 @@ public sealed class WireExplorer
                     prevPar = par11;
                 }
 
-                if (nextEdge.Orientation() == Forward)
+                if (nextEdge.Orientation == Forward)
                 {
                     nextFPar = par21;
                     nextLPar = par22;
@@ -430,7 +430,7 @@ public sealed class WireExplorer
                 Point2D pNextF = nextPC.Value(nextFPar);
                 Point2D pNextL = nextPC.Value(nextLPar);
 
-                if (pPrev.SquareDistance(pNextF) > pPrev.SquareDistance(pNextL))
+                if (pPrev.SquareDistanceTo(pNextF) > pPrev.SquareDistanceTo(pNextL))
                 {
                     _edge = new Edge();
                     return;
@@ -498,7 +498,7 @@ public sealed class WireExplorer
 
                 // Get 2D point equals to < myVertex > in 2D for current edge.
                 Point2D pRef;
-                if (_edge.Orientation() == Reversed)
+                if (_edge.Orientation == Reversed)
                 {
                     pCurve.D0(dfFPar, out pRef);
                 }
@@ -509,13 +509,13 @@ public sealed class WireExplorer
 
                 // Get next 2D point from current edge's PCurve with parameter
                 // F + dP (REV) or L - dP (FOR)
-                bool isrevese = (_edge.Orientation() == Reversed);
+                bool isrevese = (_edge.Orientation == Reversed);
                 double dfMPar = GetNextParamOnPC(pCurve, pRef, dfFPar, dfLPar, _tolU, _tolV, isrevese);
 
                 pCurve.D0(dfMPar, out Point2D pRefm);
                 // Get vector from PRef to PRefm
                 Vector2D eRefDir = new Vector2D(pRef, pRefm);
-                if (eRefDir.SquareMagnitude() < Constants.Resolution())
+                if (eRefDir.SquareMagnitude < Constants.Resolution())
                 {
                     _edge = new Edge();
                     return;
@@ -563,7 +563,7 @@ public sealed class WireExplorer
                         Point2D pEb, pEe;
                         if (vert1.IsSame(vert2) == isDegenerated)
                         {
-                            if (e.Orientation() == Reversed)
+                            if (e.Orientation == Reversed)
                             {
                                 pCurve.D0(dfLPar, out pEb);
                             }
@@ -574,17 +574,17 @@ public sealed class WireExplorer
 
                             if (Math.Abs(dfLPar - dfFPar) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                             {
-                                isrevese = (e.Orientation() == Reversed);
+                                isrevese = (e.Orientation == Reversed);
                                 isrevese = !isrevese;
                                 double ePm =
                                     GetNextParamOnPC(pCurve, pEb, dfFPar, dfLPar, _tolU, _tolV, isrevese);
 
                                 pCurve.D0(ePm, out pEe);
-                                if (pEb.SquareDistance(pEe) <= Constants.Resolution())
+                                if (pEb.SquareDistanceTo(pEe) <= Constants.Resolution())
                                 {
                                     // seems to be very short curve
                                     pCurve.D1(ePm, out pEe, out Vector2D aD);
-                                    if (e.Orientation() == Reversed)
+                                    if (e.Orientation == Reversed)
                                     {
                                         pEe = pEe.WithXY(pEb.XY() - aD.XY());
                                     }
@@ -593,7 +593,7 @@ public sealed class WireExplorer
                                         pEe = pEe.WithXY(pEb.XY() + aD.XY());
                                     }
 
-                                    if (pEb.SquareDistance(pEe) <= Constants.Resolution())
+                                    if (pEb.SquareDistanceTo(pEe) <= Constants.Resolution())
                                     {
                                         it.Next();
                                         k++;
@@ -601,17 +601,17 @@ public sealed class WireExplorer
                                     }
                                 }
                                 Vector2D eDir = new Vector2D(pEb, pEe);
-                                dfCurAngle = Math.Abs(eDir.Angle(eRefDir));
+                                dfCurAngle = Math.Abs(eDir.AngleTo(eRefDir));
                             }
 
                             if (dfCurAngle <= dfMinAngle)
                             {
-                                double d = pRef.SquareDistance(pEb);
+                                double d = pRef.SquareDistanceTo(pEb);
                                 if (d <= global::Kerf.Engine.Foundation.Precision.PConfusion())
                                 {
                                     d = 0.0;
                                 }
-                                if (Math.Abs(pEb.X() - pRef.X()) < _tolU && Math.Abs(pEb.Y() - pRef.Y()) < _tolV)
+                                if (Math.Abs(pEb.X - pRef.X) < _tolU && Math.Abs(pEb.Y - pRef.Y) < _tolV)
                                 {
                                     if (d <= dmin)
                                     {
@@ -681,7 +681,7 @@ public sealed class WireExplorer
         {
             if (_vertex.IsSame(it.Value()))
             {
-                return it.Value().Orientation();
+                return it.Value().Orientation;
             }
             it.Next();
         }
@@ -755,7 +755,7 @@ public sealed class WireExplorer
             {
                 startPar += dP;
                 aPC.D0(startPar, out Point2D pnt);
-                if (Math.Abs(aPRef.X() - pnt.X()) < tolU && Math.Abs(aPRef.Y() - pnt.Y()) < tolV)
+                if (Math.Abs(aPRef.X - pnt.X) < tolU && Math.Abs(aPRef.Y - pnt.Y) < tolV)
                 {
                     continue;
                 }
@@ -785,7 +785,7 @@ public sealed class WireExplorer
             {
                 startPar -= dP;
                 aPC.D0(startPar, out Point2D pnt);
-                if (Math.Abs(aPRef.X() - pnt.X()) < tolU && Math.Abs(aPRef.Y() - pnt.Y()) < tolV)
+                if (Math.Abs(aPRef.X - pnt.X) < tolU && Math.Abs(aPRef.Y - pnt.Y) < tolV)
                 {
                     continue;
                 }

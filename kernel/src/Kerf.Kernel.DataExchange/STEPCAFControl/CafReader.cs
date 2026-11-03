@@ -542,7 +542,7 @@ public class CafReader
     {
         Shape s0 = s.Located(new Placement());
         map.Add(s0);
-        if (s.ShapeType() != ShapeType.Compound)
+        if (s.Type != ShapeType.Compound)
         {
             return;
         }
@@ -893,7 +893,7 @@ public class CafReader
         }
 
         // if shape is located, create instance
-        if (!s.Location().IsIdentity)
+        if (!s.Placement.IsIdentity)
         {
             Shape s0 = s.Located(new Placement());
             AddShape(s0, sTool, newShapesMap, shapePDMap, pdFileMap);
@@ -903,7 +903,7 @@ public class CafReader
         }
 
         // if shape is not compound, simple add it
-        if (s.ShapeType() != ShapeType.Compound)
+        if (s.Type != ShapeType.Compound)
         {
             Label l = sTool.AddShape(s, false);
             _map[s] = l;
@@ -970,7 +970,7 @@ public class CafReader
             Label subL = AddShape(sub0, sTool, newShapesMap, shapePDMap, pdFileMap);
             if (!subL.IsNull)
             {
-                Label instL = sTool.AddComponent(la, subL, it.Value().Location());
+                Label instL = sTool.AddComponent(la, subL, it.Value().Placement);
                 if (!_map.ContainsKey(it.Value()))
                 {
                     _map[it.Value()] = instL;

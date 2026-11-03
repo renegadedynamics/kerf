@@ -37,8 +37,8 @@ public sealed partial class AnalyticCirc2d2TanOn
         // calculation of bisectrices of L1 and L2
         Line2D l1 = qualified1.Qualified();
         Line2D l2 = qualified2.Qualified();
-        Point2D originL1 = l1.Location();
-        Point2D originL2 = l2.Location();
+        Point2D originL1 = l1.Location;
+        Point2D originL2 = l2.Location;
         Lin2dBisec bis = new(l1, l2);
 
         if (bis.IsDone)
@@ -63,7 +63,7 @@ public sealed partial class AnalyticCirc2d2TanOn
                             {
                                 Point2D pt = intp.Point(l).Value();
                                 Axis2D axe = new(pt, dirx);
-                                double radius = l1.Distance(pt);
+                                double radius = l1.DistanceTo(pt);
                                 if (!l1.Contains(pt, tol) && radius < 1.0 / tol && _nbrSol < 2)
                                 {
                                     // acceptable solution : the radius is correct
@@ -81,13 +81,13 @@ public sealed partial class AnalyticCirc2d2TanOn
 
         for (int i = 1; i <= _nbrSol; i++)
         {
-            Point2D pbid = _cirsol[i].Location();
-            double radius = _cirsol[i].Radius();
+            Point2D pbid = _cirsol[i].Location;
+            double radius = _cirsol[i].Radius;
             bool ok = false;
 
             // solution Outside or Enclosed / L1
             Direction2D dc1 = new(originL1.XY() - pbid.XY());
-            double sign1 = dc1.Dot(new Direction2D(-l1.Direction().Y(), l1.Direction().X()));
+            double sign1 = dc1.Dot(new Direction2D(-l1.Direction.Y, l1.Direction.X));
             if (sign1 > 0.0)
             {
                 ok = (qualified1.IsUnqualified || qualified1.IsOutside);
@@ -99,7 +99,7 @@ public sealed partial class AnalyticCirc2d2TanOn
 
             // solution Outside or Enclosed / L2
             Direction2D dc2 = new(originL2.XY() - pbid.XY());
-            double sign2 = dc2.Dot(new Direction2D(-l2.Direction().Y(), l2.Direction().X()));
+            double sign2 = dc2.Dot(new Direction2D(-l2.Direction.Y, l2.Direction.X));
             if (sign2 > 0.0)
             {
                 ok = ok && (qualified2.IsUnqualified || qualified2.IsOutside);
@@ -112,7 +112,7 @@ public sealed partial class AnalyticCirc2d2TanOn
             if (ok)
             {
                 // solution to be preserved
-                dc1 = new Direction2D(sign1 * new Xy(-l1.Direction().Y(), l1.Direction().X()));
+                dc1 = new Direction2D(sign1 * new Xy(-l1.Direction.Y, l1.Direction.X));
                 _pnttg1sol[i] = new Point2D(pbid.XY() + radius * dc1.XY());
                 if (sign1 > 0.0)
                 {
@@ -122,7 +122,7 @@ public sealed partial class AnalyticCirc2d2TanOn
                 {
                     _qualifier1[i] = Qualifier.Enclosed;
                 }
-                dc2 = new Direction2D(sign2 * new Xy(-l2.Direction().Y(), l2.Direction().X()));
+                dc2 = new Direction2D(sign2 * new Xy(-l2.Direction.Y, l2.Direction.X));
                 _pnttg2sol[i] = new Point2D(pbid.XY() + radius * dc2.XY());
                 if (sign2 > 0.0)
                 {

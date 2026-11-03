@@ -108,7 +108,7 @@ public class ShellSplitter : BooleanAlgorithm
             for (i = 1; i <= nbE; ++i)
             {
                 Edge e = ShapeCasts.Edge(efMap.KeyAt(i - 1));
-                if (!Tool.Degenerated(e) && e.Orientation() != Internal)
+                if (!Tool.Degenerated(e) && e.Orientation != Internal)
                 {
                     NCollection_List<Shape> lf = efMap.ValueAt(i - 1);
                     if (lf.Extent() == 1)
@@ -196,7 +196,7 @@ public class ShellSplitter : BooleanAlgorithm
                         }
                     }
                     // avoid processing of internal edges
-                    or = e.Orientation();
+                    or = e.Orientation;
                     if (or == Internal)
                     {
                         continue;
@@ -330,7 +330,7 @@ public class ShellSplitter : BooleanAlgorithm
     private static Shape FindShape(in Shape shapeToFind, in Shape shape)
     {
         Shape res = new();
-        Explorer exp = new(shape, shapeToFind.ShapeType());
+        Explorer exp = new(shape, shapeToFind.Type);
         for (; exp.More(); exp.Next())
         {
             Shape aShape = exp.Current();
@@ -377,7 +377,7 @@ public class ShellSplitter : BooleanAlgorithm
                 Shape e1 = FindShape(e, f1);
                 Shape e2 = FindShape(e, f2);
 
-                if (e1.Orientation() == e2.Orientation())
+                if (e1.Orientation == e2.Orientation)
                 {
                     meStop.Add(e);
                     continue;
@@ -398,7 +398,7 @@ public class ShellSplitter : BooleanAlgorithm
                     Shape ef = exp0.Current();
                     if (ef.IsSame(e))
                     {
-                        if (ef.Orientation() == Internal)
+                        if (ef.Orientation == Internal)
                         {
                             ++nbF;
                         }
@@ -458,7 +458,7 @@ public class ShellSplitter : BooleanAlgorithm
                             continue;
                         }
                         //
-                        if (e.Orientation() == Internal)
+                        if (e.Orientation == Internal)
                         {
                             continue;
                         }

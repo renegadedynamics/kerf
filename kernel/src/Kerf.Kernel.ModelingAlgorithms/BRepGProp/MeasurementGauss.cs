@@ -302,13 +302,13 @@ public sealed class MeasurementGauss
                                                         bool isByPoint,
                                                         ref Inertia outInertia)
     {
-        double x = point.X() - location.X();
-        double y = point.Y() - location.Y();
-        double z = point.Z() - location.Z();
+        double x = point.X - location.X;
+        double y = point.Y - location.Y;
+        double z = point.Z - location.Z;
 
-        double xn = normal.X() * weight;
-        double yn = normal.Y() * weight;
-        double zn = normal.Z() * weight;
+        double xn = normal.X * weight;
+        double yn = normal.Y * weight;
+        double zn = normal.Z * weight;
 
         if (isByPoint)
         {
@@ -382,10 +382,10 @@ public sealed class MeasurementGauss
                                                  ref Inertia outInertia)
     {
         // ds - Jacobien (x, y, z) -> (u, v) = ||n||
-        double ds = MultCore(normal.Magnitude(), weight);
-        double x = AddCore(point.X(), -location.X());
-        double y = AddCore(point.Y(), -location.Y());
-        double z = AddCore(point.Z(), -location.Z());
+        double ds = MultCore(normal.Magnitude, weight);
+        double x = AddCore(point.X, -location.X);
+        double y = AddCore(point.Y, -location.Y);
+        double z = AddCore(point.Z, -location.Z);
 
         outInertia.Mass = AddCore(outInertia.Mass, ds);
 
@@ -725,15 +725,15 @@ public sealed class MeasurementGauss
                                     else
                                     {
                                         surface.D12d(l, out puv, out vuv);
-                                        dul = vuv.Y() * lGaussW[iGL].Value(iL); // Dul = Du / Dl
+                                        dul = vuv.Y * lGaussW[iGL].Value(iL); // Dul = Du / Dl
 
                                         if (Math.Abs(dul) < EPS_PARAM)
                                         {
                                             continue;
                                         }
 
-                                        v = puv.Y();
-                                        u2 = puv.X();
+                                        v = puv.Y;
+                                        u2 = puv.X;
 
                                         // Check on cause out off bounds of value current parameter
                                         if (v < bv1)
@@ -847,7 +847,7 @@ public sealed class MeasurementGauss
                                                         {
                                                             if (iGU > 0)
                                                             {
-                                                                local[iGU].Mass += (w * normal.Magnitude());
+                                                                local[iGU].Mass += (w * normal.Magnitude);
                                                             }
                                                             else
                                                             {
@@ -1141,10 +1141,10 @@ public sealed class MeasurementGauss
 
                 surface.D12d(l, out Point2D puv, out Vector2D vuv);
 
-                double v = puv.Y();
-                u2 = puv.X();
+                double v = puv.Y;
+                u2 = puv.X;
 
-                double dul = vuv.Y() * gaussCW[i];
+                double dul = vuv.Y * gaussCW[i];
                 double um = 0.5 * (u2 + u1);
                 double ur = 0.5 * (u2 - u1);
 
@@ -1223,11 +1223,11 @@ public sealed class MeasurementGauss
 
                 surface.D12d(l, out Point2D puv, out Vector2D vuv);
 
-                u2 = puv.X();
+                u2 = puv.X;
                 u2 = Min(Max(u1, u2), _u2); // OCC104
-                double v = Min(Max(puv.Y(), v1), v2);
+                double v = Min(Max(puv.Y, v1), v2);
 
-                double dul = vuv.Y() * gaussW[i];
+                double dul = vuv.Y * gaussW[i];
                 double um = 0.5 * (u2 + u1);
                 double ur = 0.5 * (u2 - u1);
 

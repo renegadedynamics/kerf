@@ -111,7 +111,7 @@ public class ChFi2d_BuilderTests
 
         // the chamfer is a segment of length sqrt(1 + 4)
         var aCurve = new EdgeCurveAdaptor(aChamfer);
-        Assert.Equal(Math.Sqrt(5.0), aCurve.Value(aCurve.FirstParameter()).Distance(aCurve.Value(aCurve.LastParameter())), 1.0e-12);
+        Assert.Equal(Math.Sqrt(5.0), aCurve.Value(aCurve.FirstParameter()).DistanceTo(aCurve.Value(aCurve.LastParameter())), 1.0e-12);
 
         Assert.True(aMaker.IsModified(E1));
         Assert.True(aMaker.IsModified(E2));
@@ -178,7 +178,7 @@ public class ChFi2d_BuilderTests
         Face aFlat = Polygon(new Point3D(0, 0, 0), new Point3D(5, 0, 0), new Point3D(10, 0, 0), new Point3D(10, 10, 0));
         var aFlatMaker = new MakeFillet2D(aFlat);
         Vertex aMid = ShapeCasts.Vertex(Sub(aFlat, ShapeType.Vertex)
-                                           .First(v => Tool.Pnt(ShapeCasts.Vertex(v)).Distance(new Point3D(5, 0, 0)) < 1e-9));
+                                           .First(v => Tool.Pnt(ShapeCasts.Vertex(v)).DistanceTo(new Point3D(5, 0, 0)) < 1e-9));
         aFlatMaker.AddFillet(aMid, 1.0);
         Assert.Equal(ConstructionError.TangencyError, aFlatMaker.Status());
     }
@@ -255,14 +255,14 @@ public class ChFi2d_BuilderTests
         Edge anArc = anAlgo.Result(ref M1, ref M2);
         Assert.False(anArc.IsNull || M1.IsNull || M2.IsNull);
         var aFillet = new EdgeCurveAdaptor(anArc);
-        Assert.Equal(theR, aFillet.Circle().Radius(), 1.0e-9);
-        Point3D aCentre = aFillet.Circle().Location();
+        Assert.Equal(theR, aFillet.Circle().Radius, 1.0e-9);
+        Point3D aCentre = aFillet.Circle().Location;
         foreach (Edge anE in new[] { theE1, theE2 })
         {
             var aC = new EdgeCurveAdaptor(anE);
             double aGap = aC.GetType() == CurveKind.Line
-                              ? aC.Line().Distance(aCentre)
-                              : Math.Abs(Math.Abs(aC.Circle().Location().Distance(aCentre) - aC.Circle().Radius()));
+                              ? aC.Line().DistanceTo(aCentre)
+                              : Math.Abs(Math.Abs(aC.Circle().Location.DistanceTo(aCentre) - aC.Circle().Radius));
             Assert.Equal(theR, aGap, 1.0e-9);
         }
         // the arc's ends are the shrunk edges' ends at the corner
@@ -270,7 +270,7 @@ public class ChFi2d_BuilderTests
         bool Touches(Edge theEdge, Point3D theP)
         {
             var aC = new EdgeCurveAdaptor(theEdge);
-            return aC.Value(aC.FirstParameter()).Distance(theP) < 1.0e-7 || aC.Value(aC.LastParameter()).Distance(theP) < 1.0e-7;
+            return aC.Value(aC.FirstParameter()).DistanceTo(theP) < 1.0e-7 || aC.Value(aC.LastParameter()).DistanceTo(theP) < 1.0e-7;
         }
         Assert.True((Touches(M1, aStart) && Touches(M2, anEnd)) || (Touches(M1, anEnd) && Touches(M2, aStart)));
     }
@@ -307,11 +307,11 @@ public class ChFi2d_BuilderTests
         anAlgo.Result(ref M1, ref M2);
         var aC2 = new EdgeCurveAdaptor(M2);
         Point3D[] anEnds = [aC2.Value(aC2.FirstParameter()), aC2.Value(aC2.LastParameter())];
-        Assert.Contains(anEnds, p => p.Distance(new Point3D(10, 10, 0)) < 1.0e-9);
-        Assert.Contains(anEnds, p => p.Distance(new Point3D(10, 2, 0)) < 1.0e-9);
+        Assert.Contains(anEnds, p => p.DistanceTo(new Point3D(10, 10, 0)) < 1.0e-9);
+        Assert.Contains(anEnds, p => p.DistanceTo(new Point3D(10, 2, 0)) < 1.0e-9);
         var aC1 = new EdgeCurveAdaptor(M1);
-        Assert.True(aC1.Value(aC1.FirstParameter()).Distance(new Point3D(0, 0, 0)) < 1.0e-9);
-        Assert.True(aC1.Value(aC1.LastParameter()).Distance(new Point3D(8, 0, 0)) < 1.0e-9);
+        Assert.True(aC1.Value(aC1.FirstParameter()).DistanceTo(new Point3D(0, 0, 0)) < 1.0e-9);
+        Assert.True(aC1.Value(aC1.LastParameter()).DistanceTo(new Point3D(8, 0, 0)) < 1.0e-9);
     }
 
     [Fact]
@@ -337,7 +337,7 @@ public class ChFi2d_BuilderTests
         {
             List<Shape> aWires = Sub(theFace, ShapeType.Wire);
             Assert.Equal(2, aWires.Count);
-            Assert.All(aWires, w => Assert.True(!theFlagged || ShapeCasts.Wire(w).Closed()));
+            Assert.All(aWires, w => Assert.True(!theFlagged || ShapeCasts.Wire(w).IsClosed));
             Assert.Equal(theArea, Area(theFace), 1.0e-9);
             Assert.True(new Analyzer(theFace).IsValid());
         }
@@ -383,8 +383,8 @@ public class ChFi2d_BuilderTests
         Edge anArc = aFillet.Result(new Point3D(10, 0, 0), ref M1, ref M2);
         var aCurve = new EdgeCurveAdaptor(anArc);
         Assert.Equal(CurveKind.Circle, aCurve.GetType());
-        Assert.Equal(2.0, aCurve.Circle().Radius(), 1.0e-12);
-        Assert.True(aCurve.Circle().Location().IsEqual(new Point3D(8, 2, 0), 1.0e-12));
+        Assert.Equal(2.0, aCurve.Circle().Radius, 1.0e-12);
+        Assert.True(aCurve.Circle().Location.IsEqual(new Point3D(8, 2, 0), 1.0e-12));
         Assert.Equal(8.0, new EdgeCurveAdaptor(M1).LastParameter() - new EdgeCurveAdaptor(M1).FirstParameter(), 1.0e-12);
 
         // apart by a gap: the iterative algorithm
@@ -392,7 +392,7 @@ public class ChFi2d_BuilderTests
         var anIterative = new FilletAlgo(E1, E3, aPln);
         Assert.True(anIterative.Perform(2.0));
         Edge anArc2 = anIterative.Result(new Point3D(10, 0, 0), ref M1, ref M2);
-        Assert.Equal(2.0, new EdgeCurveAdaptor(anArc2).Circle().Radius(), 1.0e-12);
+        Assert.Equal(2.0, new EdgeCurveAdaptor(anArc2).Circle().Radius, 1.0e-12);
 
         // a chamfer of lengths 1 and 3
         var aChamfer = new ChamferApi(E1, E2);

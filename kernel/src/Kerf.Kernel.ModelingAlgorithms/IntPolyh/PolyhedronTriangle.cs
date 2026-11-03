@@ -299,7 +299,7 @@ public partial struct PolyhedronTriangle : IEquatable<PolyhedronTriangle>
         double gv = (p1.V() + p2.V() + p3.V()) / 3.0;
         Point3D ptXYZ = surface.Value(gu, gv);
         // Point on the surface
-        PolyhedronPoint barycentreReel = new(ptXYZ.X(), ptXYZ.Y(), ptXYZ.Z(), gu, gv);
+        PolyhedronPoint barycentreReel = new(ptXYZ.X, ptXYZ.Y, ptXYZ.Z, gu, gv);
         // compute distance to plane
         normaleTri = normaleTri / Math.Sqrt(sqNorm);
         _deflection = Math.Abs(normaleTri.Dot(barycentreReel - p1));

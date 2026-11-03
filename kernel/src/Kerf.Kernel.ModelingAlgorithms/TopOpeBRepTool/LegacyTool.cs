@@ -59,7 +59,7 @@ public static class LegacyTool
                 p2 = bc.Value(t);
             }
 
-            d = p1.Distance(p2);
+            d = p1.DistanceTo(p2);
             ln += d;
             p1 = p2;
         }
@@ -133,7 +133,7 @@ public static class LegacyTool
             return false;
         }
         normt = new Direction3D(nggeom);
-        if (f.Orientation() == Orientation.Reversed)
+        if (f.Orientation == Orientation.Reversed)
         {
             normt = normt.Reversed();
         }
@@ -154,24 +154,24 @@ public static class LegacyTool
         // ###############################
         Point3D p;
         Vector3D d1u, d1v;
-        bs.D1(uv.X(), uv.Y(), out p, out d1u, out d1v);
+        bs.D1(uv.X, uv.Y, out p, out d1u, out d1v);
 
         double delta = MinDUV(f);
         delta *= 1.0e-1;
 
-        double du = d1u.Magnitude();
-        double dv = d1v.Magnitude();
+        double du = d1u.Magnitude;
+        double dv = d1v.Magnitude;
         bool kpart = (du < tolu) || (dv < tolv);
         if (kpart)
         {
             SurfaceKind st = bs.GetType();
             if (st == SurfaceKind.Cone)
             {
-                bool nullx = (Math.Abs(uv.X()) < tolu);
-                bool apex = nullx && (Math.Abs(uv.Y()) < tolv);
+                bool nullx = (Math.Abs(uv.X) < tolu);
+                bool apex = nullx && (Math.Abs(uv.Y) < tolv);
                 if (apex)
                 {
-                    Direction3D axis = bs.Cone().Axis().Direction();
+                    Direction3D axis = bs.Cone().Axis.Direction;
                     Vector3D ng = new(axis);
                     ng = ng.Reversed();
                     ngF = ng;
@@ -179,9 +179,9 @@ public static class LegacyTool
                 }
                 else if (du < tolu)
                 {
-                    double x = uv.X();
+                    double x = uv.X;
 
-                    double y = uv.Y();
+                    double y = uv.Y;
                     double vf = bs.FirstVParameter();
 
                     if (Math.Abs(vf - y) < tolu)
@@ -205,13 +205,13 @@ public static class LegacyTool
             if (st == SurfaceKind.Sphere)
             {
                 double pisur2 = M_PI * .5;
-                double u = uv.X(), v = uv.Y();
+                double u = uv.X, v = uv.Y;
                 bool vpisur2 = (Math.Abs(v - pisur2) < tolv);
                 bool vmoinspisur2 = (Math.Abs(v + pisur2) < tolv);
                 bool apex = vpisur2 || vmoinspisur2;
                 if (apex)
                 {
-                    Point3D center = bs.Sphere().Location();
+                    Point3D center = bs.Sphere().Location;
                     Point3D value = bs.Value(u, v);
                     Vector3D ng = new(center, value);
                     ngF = ng;

@@ -72,7 +72,7 @@ public sealed class TrimSurfaceTool
             {
                 Point3D p1 = seq.Value(i);
                 Point3D p2 = seq.Value(i + 1);
-                if (p2.X() < p1.X())
+                if (p2.X < p1.X)
                 {
                     seq.Exchange(i, i + 1);
                     invert = true;
@@ -87,20 +87,20 @@ public sealed class TrimSurfaceTool
         double vDeg;
         double v = 0.0;
         Tool.UVPoints(edge, face, out Point2D pe1, out Point2D _);
-        vDeg = pe1.Y();
+        vDeg = pe1.Y;
         Explorer exp = new(face, global::Kerf.Topology.ShapeType.Edge);
         for (; exp.More(); exp.Next())
         {
             if (!ShapeCasts.Edge(exp.Current()).IsSame(edge))
             {
                 Tool.UVPoints(ShapeCasts.Edge(exp.Current()), face, out pf1, out pf2);
-                v = (Math.Abs(pf1.Y() - vDeg) > Math.Abs(pf2.Y() - vDeg)) ? pf1.Y() : pf2.Y();
+                v = (Math.Abs(pf1.Y - vDeg) > Math.Abs(pf2.Y - vDeg)) ? pf1.Y : pf2.Y;
                 break;
             }
         }
         Point3D p = gas.Value(0.0, v);
 
-        if (new Vector3D(axis.Location(), p).Dot(new Vector3D(axis.XDirection())) < 0.0)
+        if (new Vector3D(axis.Location, p).Dot(new Vector3D(axis.XDirection)) < 0.0)
         {
             return Math.PI;
         }
@@ -131,7 +131,7 @@ public sealed class TrimSurfaceTool
         {
             Curve3D c = Tool.Curve(edge, out Placement L, out double f, out double l)!;
             ct = new TrimmedCurve3D(c, f, l);
-            ct.Transform(L.Transformation());
+            ct.Transform(L.Transformation);
             // projection of 3d curves in the plane xOy
             Curve2D c2d = global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(ct, plane)!;
 
@@ -166,13 +166,13 @@ public sealed class TrimSurfaceTool
 
                 if (canElongateC)
                 {
-                    tc2d.SetTrim(tc2d.FirstParameter() - tol, tc2d.LastParameter() + tol);
+                    tc2d.SetTrim(tc2d.FirstParameter - tol, tc2d.LastParameter + tol);
                     ac.Load(tc2d);
                 }
                 if (canElongateBis)
                 {
                     // OCCT: lengthens the caller's bisector in place, so that later calls see it lengthened
-                    tBis.SetTrim(tBis.FirstParameter() - tol, tBis.LastParameter() + tol);
+                    tBis.SetTrim(tBis.FirstParameter - tol, tBis.LastParameter + tol);
                     aBis.Load(tBis);
                 }
                 intersector = new GInter(aBis, ac, tolC, tol * 10);
@@ -224,7 +224,7 @@ public sealed class TrimSurfaceTool
             {
                 p1 = seq.Value(i);
                 p2 = seq.Value(i + 1);
-                if (p2.X() - p1.X() < tol)
+                if (p2.X - p1.X < tol)
                 {
                     seq.Remove(i--);
                     nbPoints--;
@@ -238,9 +238,9 @@ public sealed class TrimSurfaceTool
             // on the bissectrice.
 
             Point3D p3d = Tool.Pnt(Exploration.FirstVertex(edge));
-            Point2D p2d = new(p3d.X(), p3d.Y());
+            Point2D p2d = new(p3d.X, p3d.Y);
 
-            double uBis = bis.FirstParameter();
+            double uBis = bis.FirstParameter;
             Point2D pBis = bis.Value(uBis);
 
             //  modified by NIZHNY-EAP Wed Jan 12 11:41:30 2000 ___BEGIN___
@@ -248,17 +248,17 @@ public sealed class TrimSurfaceTool
             // Infinite * Infinite => Exception: DefaultNumericError
             // Case encounered: UBis < Precision::Infinite()
             // but PBis.X() > Precision::Infinite()
-            if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(Math.Abs(pBis.X()))
-                || global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(Math.Abs(pBis.Y())) || pBis.Distance(p2d) > tol)
+            if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(Math.Abs(pBis.X))
+                || global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(Math.Abs(pBis.Y)) || pBis.DistanceTo(p2d) > tol)
             {
                 //  modified by NIZHNY-EAP Wed Jan 12 11:41:40 2000 ___END___
-                uBis = bis.LastParameter();
+                uBis = bis.LastParameter;
                 if (uBis >= global::Kerf.Engine.Foundation.Precision.Infinite())
                 {
                     return;
                 }
                 pBis = bis.Value(uBis);
-                if (pBis.Distance(p2d) > tol)
+                if (pBis.DistanceTo(p2d) > tol)
                 {
                     return;
                 }
@@ -274,7 +274,7 @@ public sealed class TrimSurfaceTool
             switch (gas.GetType())
             {
                 case SurfaceKind.Sphere:
-                    axis = gas.Sphere().Position();
+                    axis = gas.Sphere().Position;
                     break;
                 case SurfaceKind.Cone:
                     {
@@ -282,15 +282,15 @@ public sealed class TrimSurfaceTool
                         // if myFace1 is not at the same side of the apex as the point
                         // of parameter 0 0 on the cone => phase = M_PI.
                         //----------------------------------------------------------
-                        axis = gas.Cone().Position();
+                        axis = gas.Cone().Position;
                         phase = EvalPhase(edge, face, gas, axis);
                         break;
                     }
                 case SurfaceKind.Torus:
-                    axis = gas.Torus().Position();
+                    axis = gas.Torus().Position;
                     break;
                 case SurfaceKind.Cylinder:
-                    axis = gas.Cylinder().Position();
+                    axis = gas.Cylinder().Position;
                     break;
                 case SurfaceOfRevolution:
                     {
@@ -299,7 +299,7 @@ public sealed class TrimSurfaceTool
                         // of parameter 0 0 on the cone => phase = M_PI.
                         //----------------------------------------------------------
                         RevolutionSurface gsRev = (RevolutionSurface)gs;
-                        CurveAdaptor hc = new(gsRev.BasisCurve());
+                        CurveAdaptor hc = new(gsRev.BasisCurve);
                         RevolutionSurfaceAdaptor asRev = new(hc, gas.AxeOfRevolution());
                         axis = asRev.Axis();
                         phase = EvalPhase(edge, face, gas, axis);
@@ -310,16 +310,16 @@ public sealed class TrimSurfaceTool
             }
 
             Vector2D d12d = bis.DN(uBis, 1);
-            Vector3D d1 = new(d12d.X(), d12d.Y(), 0.0);
+            Vector3D d1 = new(d12d.X, d12d.Y, 0.0);
 
-            double u = axis.XDirection().AngleWithRef(new Direction3D(d1), axis.XDirection() ^ axis.YDirection());
+            double u = axis.XDirection.AngleWithRef(new Direction3D(d1), axis.XDirection ^ axis.YDirection);
             u += phase;
             if (u < 0.0)
             {
                 u += 2 * Math.PI;
             }
 
-            p = new Point3D(bis.FirstParameter(), u, 0.0);
+            p = new Point3D(bis.FirstParameter, u, 0.0);
             seq.Append(p);
         }
     }
@@ -345,7 +345,7 @@ public sealed class TrimSurfaceTool
         for (int i = 1; i <= nbPoints; i++)
         {
             pSeq = points[i];
-            pSeq = pSeq.WithZ((points2.Value(i)).Y());
+            pSeq = pSeq.WithZ((points2.Value(i)).Y);
             points.SetValue(i, pSeq);
         }
     }
@@ -353,7 +353,7 @@ public sealed class TrimSurfaceTool
     /// <summary>True if the vertical line through <paramref name="point"/> meets one of the two faces.</summary>
     public bool IsOnFace(in Point2D point)
     {
-        Point3D p = new(point.X(), point.Y(), 0.0);
+        Point3D p = new(point.X, point.Y, 0.0);
         Line3D line = new(p, Constants.DZ());
 
         CurveShapeIntersector inter = new();
@@ -377,7 +377,7 @@ public sealed class TrimSurfaceTool
     {
         Curve3D c1 = Tool.Curve(edge, out Placement L, out double f, out double l)!;
         TrimmedCurve3D ct = new(c1, f, l);
-        ct.Transform(L.Transformation());
+        ct.Transform(L.Transformation);
 
         // projection of curves 3d in the plane xOy
         PlaneSurface plane = new(0, 0, 1, 0);

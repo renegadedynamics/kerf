@@ -86,7 +86,7 @@ public class ApproxLine : Transient, IWLine<ApproxLine>
         }
 
         PntOn2S pntOn2S = new();
-        pntOn2S.SetValue(p, p1.X(), p1.Y(), p2.X(), p2.Y());
+        pntOn2S.SetValue(p, p1.X, p1.Y, p2.X, p2.Y);
 
         return pntOn2S;
     }

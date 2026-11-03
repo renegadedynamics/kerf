@@ -101,28 +101,34 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
 
     /// <summary>The first asymptote, of direction X + (MinorRadius / MajorRadius) * Y.</summary>
     /// <exception cref="ConstructionErrorException">The major radius is at most <see cref="Constants.Resolution"/>.</exception>
-    public readonly Axis2D Asymptote1()
+    public readonly Axis2D Asymptote1
     {
-        Standard_ConstructionError_Raise_if(_majorRadius <= Constants.Resolution(), "gp_Hypr2d::Asymptote1() - major radius is zero");
-        Direction2D vdir = _pos.XDirection();
-        Xy coord1 = _pos.XDirection().XY();
-        Xy coord2 = _pos.YDirection().XY().Multiplied(_minorRadius / _majorRadius);
-        coord1.Add(coord2);
-        vdir = vdir.WithXY(coord1);
-        return new Axis2D(_pos.Location(), vdir);
+        get
+        {
+            Standard_ConstructionError_Raise_if(_majorRadius <= Constants.Resolution(), "gp_Hypr2d::Asymptote1() - major radius is zero");
+            Direction2D vdir = _pos.XDirection;
+            Xy coord1 = _pos.XDirection.XY();
+            Xy coord2 = _pos.YDirection.XY().Multiplied(_minorRadius / _majorRadius);
+            coord1.Add(coord2);
+            vdir = vdir.WithXY(coord1);
+            return new Axis2D(_pos.Location, vdir);
+        }
     }
 
     /// <summary>The second asymptote, of direction X - (MinorRadius / MajorRadius) * Y.</summary>
     /// <exception cref="ConstructionErrorException">The major radius is at most <see cref="Constants.Resolution"/>.</exception>
-    public readonly Axis2D Asymptote2()
+    public readonly Axis2D Asymptote2
     {
-        Standard_ConstructionError_Raise_if(_majorRadius <= Constants.Resolution(), "gp_Hypr2d::Asymptote2() - major radius is zero");
-        Vector2D vdir = new(_pos.XDirection());
-        Xy coord1 = _pos.XDirection().XY();
-        Xy coord2 = _pos.YDirection().XY().Multiplied(-_minorRadius / _majorRadius);
-        coord1.Add(coord2);
-        vdir = vdir.WithXY(coord1);
-        return new Axis2D(_pos.Location(), new Direction2D(vdir));
+        get
+        {
+            Standard_ConstructionError_Raise_if(_majorRadius <= Constants.Resolution(), "gp_Hypr2d::Asymptote2() - major radius is zero");
+            Vector2D vdir = new(_pos.XDirection);
+            Xy coord1 = _pos.XDirection.XY();
+            Xy coord2 = _pos.YDirection.XY().Multiplied(-_minorRadius / _majorRadius);
+            coord1.Add(coord2);
+            vdir = vdir.WithXY(coord1);
+            return new Axis2D(_pos.Location, new Direction2D(vdir));
+        }
     }
 
     /// <summary>
@@ -139,7 +145,7 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
         }
         else
         {
-            Transform2D t = new Transform2D().WithTransformation(_pos.XAxis());
+            Transform2D t = new Transform2D().WithTransformation(_pos.XAxis);
             double t11 = t.Value(1, 1);
             double t12 = t.Value(1, 2);
             double t13 = t.Value(1, 3);
@@ -170,101 +176,119 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
     /// <summary>The conjugate branch on the positive side of the Y axis.</summary>
     public readonly Hyperbola2D ConjugateBranch1()
     {
-        Direction2D v = _pos.YDirection();
-        bool isSign = (_pos.XDirection().Crossed(_pos.YDirection())) >= 0.0;
-        return new Hyperbola2D(new Axis2D(_pos.Location(), v), _minorRadius, _majorRadius, isSign);
+        Direction2D v = _pos.YDirection;
+        bool isSign = (_pos.XDirection.Crossed(_pos.YDirection)) >= 0.0;
+        return new Hyperbola2D(new Axis2D(_pos.Location, v), _minorRadius, _majorRadius, isSign);
     }
 
     /// <summary>The conjugate branch on the negative side of the Y axis.</summary>
     public readonly Hyperbola2D ConjugateBranch2()
     {
-        Direction2D v = _pos.YDirection().Reversed();
-        bool isSign = (_pos.XDirection().Crossed(_pos.YDirection())) >= 0.0;
-        return new Hyperbola2D(new Axis2D(_pos.Location(), v), _minorRadius, _majorRadius, isSign);
+        Direction2D v = _pos.YDirection.Reversed();
+        bool isSign = (_pos.XDirection.Crossed(_pos.YDirection)) >= 0.0;
+        return new Hyperbola2D(new Axis2D(_pos.Location, v), _minorRadius, _majorRadius, isSign);
     }
 
     /// <summary>The directrix on the positive side of the major axis, at distance MajorRadius / e from the centre.</summary>
     /// <exception cref="DomainErrorException">The major radius is at most <see cref="Constants.Resolution"/>.</exception>
-    public readonly Axis2D Directrix1()
+    public readonly Axis2D Directrix1
     {
-        double e = Eccentricity();
-        Xy orig = _pos.XDirection().XY();
-        orig.Multiply(_majorRadius / e);
-        orig.Add(_pos.Location().XY());
-        return new Axis2D(new Point2D(orig), _pos.YDirection());
+        get
+        {
+            double e = Eccentricity;
+            Xy orig = _pos.XDirection.XY();
+            orig.Multiply(_majorRadius / e);
+            orig.Add(_pos.Location.XY());
+            return new Axis2D(new Point2D(orig), _pos.YDirection);
+        }
     }
 
     /// <summary>The directrix on the negative side of the major axis, at distance MajorRadius / e from the centre.</summary>
     /// <exception cref="DomainErrorException">The major radius is at most <see cref="Constants.Resolution"/>.</exception>
-    public readonly Axis2D Directrix2()
+    public readonly Axis2D Directrix2
     {
-        double e = Eccentricity();
-        Xy orig = _pos.XDirection().XY();
-        orig.Multiply(-_majorRadius / e);
-        orig.Add(_pos.Location().XY());
-        return new Axis2D(new Point2D(orig), _pos.YDirection());
+        get
+        {
+            double e = Eccentricity;
+            Xy orig = _pos.XDirection.XY();
+            orig.Multiply(-_majorRadius / e);
+            orig.Add(_pos.Location.XY());
+            return new Axis2D(new Point2D(orig), _pos.YDirection);
+        }
     }
 
     /// <exception cref="DomainErrorException">The major radius is at most <see cref="Constants.Resolution"/>.</exception>
-    public readonly double Eccentricity()
+    public readonly double Eccentricity
     {
-        Standard_DomainError_Raise_if(_majorRadius <= Constants.Resolution(), "gp_Hypr2d::Eccentricity() - major radius is zero");
-        return Math.Sqrt(_majorRadius * _majorRadius + _minorRadius * _minorRadius) / _majorRadius;
+        get
+        {
+            Standard_DomainError_Raise_if(_majorRadius <= Constants.Resolution(), "gp_Hypr2d::Eccentricity() - major radius is zero");
+            return Math.Sqrt(_majorRadius * _majorRadius + _minorRadius * _minorRadius) / _majorRadius;
+        }
     }
 
     /// <summary>The distance between the foci.</summary>
-    public readonly double Focal() => 2.0 * Math.Sqrt(_majorRadius * _majorRadius + _minorRadius * _minorRadius);
+    public readonly double Focal => 2.0 * Math.Sqrt(_majorRadius * _majorRadius + _minorRadius * _minorRadius);
 
-    public readonly Point2D Focus1()
+    public readonly Point2D Focus1
     {
-        double c = Math.Sqrt(_majorRadius * _majorRadius + _minorRadius * _minorRadius);
-        return new Point2D(_pos.Location().X() + c * _pos.XDirection().X(),
-                            _pos.Location().Y() + c * _pos.XDirection().Y());
+        get
+        {
+            double c = Math.Sqrt(_majorRadius * _majorRadius + _minorRadius * _minorRadius);
+            return new Point2D(_pos.Location.X + c * _pos.XDirection.X,
+                                _pos.Location.Y + c * _pos.XDirection.Y);
+        }
     }
 
-    public readonly Point2D Focus2()
+    public readonly Point2D Focus2
     {
-        double c = Math.Sqrt(_majorRadius * _majorRadius + _minorRadius * _minorRadius);
-        return new Point2D(_pos.Location().X() - c * _pos.XDirection().X(),
-                            _pos.Location().Y() - c * _pos.XDirection().Y());
+        get
+        {
+            double c = Math.Sqrt(_majorRadius * _majorRadius + _minorRadius * _minorRadius);
+            return new Point2D(_pos.Location.X - c * _pos.XDirection.X,
+                                _pos.Location.Y - c * _pos.XDirection.Y);
+        }
     }
 
-    public readonly Point2D Location() => _pos.Location();
+    public readonly Point2D Location => _pos.Location;
 
-    public readonly double MajorRadius() => _majorRadius;
+    public readonly double MajorRadius => _majorRadius;
 
-    public readonly double MinorRadius() => _minorRadius;
+    public readonly double MinorRadius => _minorRadius;
 
     /// <summary>The branch on the negative side of the X axis.</summary>
     public readonly Hyperbola2D OtherBranch()
     {
-        bool isSign = (_pos.XDirection().Crossed(_pos.YDirection())) >= 0.0;
-        return new Hyperbola2D(new Axis2D(_pos.Location(), _pos.XDirection().Reversed()), _majorRadius, _minorRadius, isSign);
+        bool isSign = (_pos.XDirection.Crossed(_pos.YDirection)) >= 0.0;
+        return new Hyperbola2D(new Axis2D(_pos.Location, _pos.XDirection.Reversed()), _majorRadius, _minorRadius, isSign);
     }
 
     /// <summary>The parameter (semi-latus rectum) of the hyperbola: MinorRadius^2 / MajorRadius.</summary>
     /// <exception cref="DomainErrorException">The major radius is at most <see cref="Constants.Resolution"/>.</exception>
-    public readonly double Parameter()
+    public readonly double Parameter
     {
-        Standard_DomainError_Raise_if(_majorRadius <= Constants.Resolution(), "gp_Hypr2d::Parameter() - major radius is zero");
-        return (_minorRadius * _minorRadius) / _majorRadius;
+        get
+        {
+            Standard_DomainError_Raise_if(_majorRadius <= Constants.Resolution(), "gp_Hypr2d::Parameter() - major radius is zero");
+            return (_minorRadius * _minorRadius) / _majorRadius;
+        }
     }
 
-    public readonly Frame2D Axis() => _pos;
+    public readonly Frame2D Axis => _pos;
 
-    public readonly Axis2D XAxis() => _pos.XAxis();
+    public readonly Axis2D XAxis => _pos.XAxis;
 
-    public readonly Axis2D YAxis() => _pos.YAxis();
+    public readonly Axis2D YAxis => _pos.YAxis;
 
     /// <summary>True when the hyperbola's system is direct (counterclockwise).</summary>
-    public readonly bool IsDirect => (_pos.XDirection().Crossed(_pos.YDirection())) >= 0.0;
+    public readonly bool IsDirect => (_pos.XDirection.Crossed(_pos.YDirection)) >= 0.0;
 
     public readonly Hyperbola2D Reversed()
     {
         Frame2D pos = _pos;
-        Direction2D temp = _pos.YDirection();
+        Direction2D temp = _pos.YDirection;
         temp = temp.Reversed();
-        pos = pos.WithAxis(new Frame2D(_pos.Location(), _pos.XDirection(), temp));
+        pos = pos.WithAxis(new Frame2D(_pos.Location, _pos.XDirection, temp));
         return new Hyperbola2D(pos, _majorRadius, _minorRadius);
     }
 
@@ -315,13 +339,13 @@ public readonly partial struct Hyperbola2D : IEquatable<Hyperbola2D>
         Frame2D pos = _pos;
         double majorRadius = _majorRadius;
         double minorRadius = _minorRadius;
-        majorRadius *= t.ScaleFactor();
+        majorRadius *= t.ScaleFactor;
         if (majorRadius < 0)
         {
             majorRadius = -majorRadius;
         }
 
-        minorRadius *= t.ScaleFactor();
+        minorRadius *= t.ScaleFactor;
         if (minorRadius < 0)
         {
             minorRadius = -minorRadius;

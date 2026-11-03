@@ -20,33 +20,33 @@ public class Geom2d_TrimmedCurveTest
     public void ConstructFromLine()
     {
         TrimmedCurve2D aTrim = new TrimmedCurve2D(myLine, 0.0, 10.0);
-        Assert.Equal(0.0, aTrim.FirstParameter());
-        Assert.Equal(10.0, aTrim.LastParameter());
+        Assert.Equal(0.0, aTrim.FirstParameter);
+        Assert.Equal(10.0, aTrim.LastParameter);
     }
 
     [Fact]
     public void ConstructFromCircle()
     {
         TrimmedCurve2D aTrim = new TrimmedCurve2D(myCircle, 0.0, M_PI);
-        Assert.Equal(0.0, aTrim.FirstParameter());
-        Assert.Equal(M_PI, aTrim.LastParameter());
+        Assert.Equal(0.0, aTrim.FirstParameter);
+        Assert.Equal(M_PI, aTrim.LastParameter);
     }
 
     [Fact]
     public void StartAndEndPoints()
     {
         TrimmedCurve2D aTrim = new TrimmedCurve2D(myLine, 2.0, 8.0);
-        Point2D aStart = aTrim.StartPoint();
-        Point2D anEnd = aTrim.EndPoint();
-        Assert.Equal(2.0, aStart.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(8.0, anEnd.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Point2D aStart = aTrim.StartPoint;
+        Point2D anEnd = aTrim.EndPoint;
+        Assert.Equal(2.0, aStart.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(8.0, anEnd.X, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
     public void BasisCurve()
     {
         TrimmedCurve2D aTrim = new TrimmedCurve2D(myCircle, 0.0, M_PI);
-        Curve2D aBasis = aTrim.BasisCurve();
+        Curve2D aBasis = aTrim.BasisCurve;
         Assert.NotNull(aBasis);
     }
 
@@ -69,15 +69,15 @@ public class Geom2d_TrimmedCurveTest
         Curve2D.ResD1 aT = aTrim.EvalD1(5.0);
         Curve2D.ResD1 aB = myLine.EvalD1(5.0);
         Assert.True(aT.Point.IsEqual(aB.Point, global::Kerf.Engine.Foundation.Precision.Confusion()));
-        Assert.Equal(aB.D1.X(), aT.D1.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(aB.D1.Y(), aT.D1.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aB.D1.X, aT.D1.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aB.D1.Y, aT.D1.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
     public void Continuity()
     {
         TrimmedCurve2D aTrim = new TrimmedCurve2D(myLine, 0.0, 10.0);
-        Assert.Equal(CN, aTrim.Continuity());
+        Assert.Equal(CN, aTrim.Continuity);
     }
 
     [Fact]
@@ -130,8 +130,8 @@ public class Geom2d_TrimmedCurveTest
     {
         TrimmedCurve2D aTrim = new TrimmedCurve2D(myLine, 0.0, 10.0);
         aTrim.SetTrim(3.0, 7.0);
-        Assert.Equal(3.0, aTrim.FirstParameter());
-        Assert.Equal(7.0, aTrim.LastParameter());
+        Assert.Equal(3.0, aTrim.FirstParameter);
+        Assert.Equal(7.0, aTrim.LastParameter);
     }
 
     [Fact]
@@ -141,8 +141,8 @@ public class Geom2d_TrimmedCurveTest
         Geometry2D aCopyGeom = aTrim.Copy();
         TrimmedCurve2D? aCopy = aCopyGeom as TrimmedCurve2D;
         Assert.NotNull(aCopy);
-        Assert.Equal(0.0, aCopy.FirstParameter());
-        Assert.Equal(M_PI, aCopy.LastParameter());
+        Assert.Equal(0.0, aCopy.FirstParameter);
+        Assert.Equal(M_PI, aCopy.LastParameter);
     }
 
     [Fact]
@@ -151,9 +151,9 @@ public class Geom2d_TrimmedCurveTest
         TrimmedCurve2D aTrim = new TrimmedCurve2D(myLine, 0.0, 10.0);
         Transform2D aTrsf = new Transform2D().WithTranslation(new Vector2D(5.0, 5.0));
         aTrim.Transform(aTrsf);
-        Point2D aStart = aTrim.StartPoint();
-        Assert.Equal(5.0, aStart.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(5.0, aStart.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Point2D aStart = aTrim.StartPoint;
+        Assert.Equal(5.0, aStart.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(5.0, aStart.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -161,11 +161,11 @@ public class Geom2d_TrimmedCurveTest
     {
         // Quarter circle arc
         TrimmedCurve2D aTrim = new TrimmedCurve2D(myCircle, 0.0, M_PI / 2.0);
-        Point2D aStart = aTrim.StartPoint();
-        Point2D anEnd = aTrim.EndPoint();
-        Assert.Equal(5.0, aStart.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aStart.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, anEnd.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(5.0, anEnd.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Point2D aStart = aTrim.StartPoint;
+        Point2D anEnd = aTrim.EndPoint;
+        Assert.Equal(5.0, aStart.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aStart.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, anEnd.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(5.0, anEnd.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 }

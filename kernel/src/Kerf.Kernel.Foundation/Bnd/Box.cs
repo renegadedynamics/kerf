@@ -63,12 +63,12 @@ public partial struct Box : IEquatable<Box>, ISpatialTreeBox<Box>
     /// <summary>Creates a (non-void) box from its minimum and maximum corners, with a null gap.</summary>
     public Box(in Point3D min, in Point3D max)
     {
-        _xmin = min.X();
-        _xmax = max.X();
-        _ymin = min.Y();
-        _ymax = max.Y();
-        _zmin = min.Z();
-        _zmax = max.Z();
+        _xmin = min.X;
+        _xmax = max.X;
+        _ymin = min.Y;
+        _ymax = max.Y;
+        _zmin = min.Z;
+        _zmax = max.Z;
         _gap = 0.0;
         _flags = 0;
     }
@@ -670,18 +670,18 @@ public partial struct Box : IEquatable<Box>, ISpatialTreeBox<Box>
         {
             return new Box();
         }
-        else if (t.Form() == Identity)
+        else if (t.Form == Identity)
         {
             return this;
         }
-        else if (t.Form() == Translation)
+        else if (t.Form == Translation)
         {
             if (!HasFinitePart)
             {
                 return this;
             }
 
-            Xyz delta = t.TranslationPart();
+            Xyz delta = t.TranslationXyz();
             Box newBox = this;
             newBox._xmin += delta.X();
             newBox._xmax += delta.X();
@@ -879,8 +879,8 @@ public partial struct Box : IEquatable<Box>, ISpatialTreeBox<Box>
             bool xToSet, yToSet;
             Get(out double myXmin, out double myYmin, out double myZmin, out double myXmax, out double myYmax, out double myZmax);
 
-            Xyz loc = l.Location().XYZ();
-            Xyz dir = l.Direction().XYZ();
+            Xyz loc = l.Location.XYZ();
+            Xyz dir = l.Direction.XYZ();
             double dirX = Math.Abs(dir.X());
             double dirY = Math.Abs(dir.Y());
             double dirZ = Math.Abs(dir.Z());
@@ -1105,47 +1105,47 @@ public partial struct Box : IEquatable<Box>, ISpatialTreeBox<Box>
         double eps = RealSmall();
         Get(out double myXmin, out double myYmin, out double myZmin, out double myXmax, out double myYmax, out double myZmax);
 
-        if (Math.Abs(d.X()) < eps && Math.Abs(d.Y()) < eps)
+        if (Math.Abs(d.X) < eps && Math.Abs(d.Y) < eps)
         {
-            return IsSegmentOut(myXmin, myYmin, myXmax, myYmax, p1.X(), p1.Y(), p2.X(), p2.Y());
+            return IsSegmentOut(myXmin, myYmin, myXmax, myYmax, p1.X, p1.Y, p2.X, p2.Y);
         }
 
-        if (Math.Abs(d.X()) < eps && Math.Abs(d.Z()) < eps)
+        if (Math.Abs(d.X) < eps && Math.Abs(d.Z) < eps)
         {
-            return IsSegmentOut(myXmin, myZmin, myXmax, myZmax, p1.X(), p1.Z(), p2.X(), p2.Z());
+            return IsSegmentOut(myXmin, myZmin, myXmax, myZmax, p1.X, p1.Z, p2.X, p2.Z);
         }
 
-        if (Math.Abs(d.Y()) < eps && Math.Abs(d.Z()) < eps)
+        if (Math.Abs(d.Y) < eps && Math.Abs(d.Z) < eps)
         {
-            return IsSegmentOut(myYmin, myZmin, myYmax, myZmax, p1.Y(), p1.Z(), p2.Y(), p2.Z());
+            return IsSegmentOut(myYmin, myZmin, myYmax, myZmax, p1.Y, p1.Z, p2.Y, p2.Z);
         }
 
-        if (Math.Abs(d.X()) < eps)
+        if (Math.Abs(d.X) < eps)
         {
             if (!IsSegmentOut(myXmin, myZmin, myXmax, myZmax,
-                              p1.X(), (myYmin - p1.Y()) * d.Z() / d.Y() + p1.Z(),
-                              p2.X(), (myYmin - p2.Y()) * d.Z() / d.Y() + p2.Z()))
+                              p1.X, (myYmin - p1.Y) * d.Z / d.Y + p1.Z,
+                              p2.X, (myYmin - p2.Y) * d.Z / d.Y + p2.Z))
             {
                 return false;
             }
 
             if (!IsSegmentOut(myXmin, myZmin, myXmax, myZmax,
-                              p1.X(), (myYmax - p1.Y()) * d.Z() / d.Y() + p1.Z(),
-                              p2.X(), (myYmax - p2.Y()) * d.Z() / d.Y() + p2.Z()))
+                              p1.X, (myYmax - p1.Y) * d.Z / d.Y + p1.Z,
+                              p2.X, (myYmax - p2.Y) * d.Z / d.Y + p2.Z))
             {
                 return false;
             }
 
             if (!IsSegmentOut(myXmin, myYmin, myXmax, myYmax,
-                              p1.X(), (myZmin - p1.Z()) * d.Y() / d.Z() + p1.Y(),
-                              p2.X(), (myZmin - p2.Z()) * d.Y() / d.Z() + p2.Y()))
+                              p1.X, (myZmin - p1.Z) * d.Y / d.Z + p1.Y,
+                              p2.X, (myZmin - p2.Z) * d.Y / d.Z + p2.Y))
             {
                 return false;
             }
 
             if (!IsSegmentOut(myXmin, myYmin, myXmax, myYmax,
-                              p1.X(), (myZmax - p1.Z()) * d.Y() / d.Z() + p1.Y(),
-                              p2.X(), (myZmax - p2.Z()) * d.Y() / d.Z() + p2.Y()))
+                              p1.X, (myZmax - p1.Z) * d.Y / d.Z + p1.Y,
+                              p2.X, (myZmax - p2.Z) * d.Y / d.Z + p2.Y))
             {
                 return false;
             }
@@ -1153,32 +1153,32 @@ public partial struct Box : IEquatable<Box>, ISpatialTreeBox<Box>
             return true;
         } // if(D.X() == 0)
 
-        if (Math.Abs(d.Y()) < eps)
+        if (Math.Abs(d.Y) < eps)
         {
             if (!IsSegmentOut(myYmin, myZmin, myYmax, myZmax,
-                              p1.Y(), (myXmin - p1.X()) * d.Z() / d.X() + p1.Z(),
-                              p2.Y(), (myXmin - p2.X()) * d.Z() / d.X() + p2.Z()))
+                              p1.Y, (myXmin - p1.X) * d.Z / d.X + p1.Z,
+                              p2.Y, (myXmin - p2.X) * d.Z / d.X + p2.Z))
             {
                 return false;
             }
 
             if (!IsSegmentOut(myYmin, myZmin, myYmax, myZmax,
-                              p1.Y(), (myXmax - p1.X()) * d.Z() / d.X() + p1.Z(),
-                              p2.Y(), (myXmax - p2.X()) * d.Z() / d.X() + p2.Z()))
+                              p1.Y, (myXmax - p1.X) * d.Z / d.X + p1.Z,
+                              p2.Y, (myXmax - p2.X) * d.Z / d.X + p2.Z))
             {
                 return false;
             }
 
             if (!IsSegmentOut(myYmin, myXmin, myYmax, myXmax,
-                              p1.Y(), (myZmin - p1.Z()) * d.X() / d.Z() + p1.X(),
-                              p2.Y(), (myZmin - p2.Z()) * d.X() / d.Z() + p2.X()))
+                              p1.Y, (myZmin - p1.Z) * d.X / d.Z + p1.X,
+                              p2.Y, (myZmin - p2.Z) * d.X / d.Z + p2.X))
             {
                 return false;
             }
 
             if (!IsSegmentOut(myYmin, myXmin, myYmax, myXmax,
-                              p1.Y(), (myZmax - p1.Z()) * d.X() / d.Z() + p1.X(),
-                              p2.Y(), (myZmax - p2.Z()) * d.X() / d.Z() + p2.X()))
+                              p1.Y, (myZmax - p1.Z) * d.X / d.Z + p1.X,
+                              p2.Y, (myZmax - p2.Z) * d.X / d.Z + p2.X))
             {
                 return false;
             }
@@ -1186,32 +1186,32 @@ public partial struct Box : IEquatable<Box>, ISpatialTreeBox<Box>
             return true;
         } // if(D.Y() == 0)
 
-        if (Math.Abs(d.Z()) < eps)
+        if (Math.Abs(d.Z) < eps)
         {
             if (!IsSegmentOut(myZmin, myXmin, myZmax, myXmax,
-                              p1.Z(), (myYmax - p1.Y()) * d.X() / d.Y() + p1.X(),
-                              p2.Z(), (myYmax - p2.Y()) * d.X() / d.Y() + p2.X()))
+                              p1.Z, (myYmax - p1.Y) * d.X / d.Y + p1.X,
+                              p2.Z, (myYmax - p2.Y) * d.X / d.Y + p2.X))
             {
                 return false;
             }
 
             if (!IsSegmentOut(myZmin, myXmin, myZmax, myXmax,
-                              p1.Z(), (myYmin - p1.Y()) * d.X() / d.Y() + p1.X(),
-                              p2.Z(), (myYmin - p2.Y()) * d.X() / d.Y() + p2.X()))
+                              p1.Z, (myYmin - p1.Y) * d.X / d.Y + p1.X,
+                              p2.Z, (myYmin - p2.Y) * d.X / d.Y + p2.X))
             {
                 return false;
             }
 
             if (!IsSegmentOut(myZmin, myYmin, myZmax, myYmax,
-                              p1.Z(), (myXmax - p1.X()) * d.Y() / d.X() + p1.Y(),
-                              p2.Z(), (myXmax - p2.X()) * d.Y() / d.X() + p2.Y()))
+                              p1.Z, (myXmax - p1.X) * d.Y / d.X + p1.Y,
+                              p2.Z, (myXmax - p2.X) * d.Y / d.X + p2.Y))
             {
                 return false;
             }
 
             if (!IsSegmentOut(myZmin, myYmin, myZmax, myYmax,
-                              p1.Z(), (myXmin - p1.X()) * d.Y() / d.X() + p1.Y(),
-                              p2.Z(), (myXmin - p2.X()) * d.Y() / d.X() + p2.Y()))
+                              p1.Z, (myXmin - p1.X) * d.Y / d.X + p1.Y,
+                              p2.Z, (myXmin - p2.X) * d.Y / d.X + p2.Y))
             {
                 return false;
             }
@@ -1220,55 +1220,55 @@ public partial struct Box : IEquatable<Box>, ISpatialTreeBox<Box>
         } // if(D.Z() == 0)
 
         if (!IsSegmentOut(myXmin, myZmin, myXmax, myZmax,
-                          (myYmin - p1.Y()) / d.Y() * d.X() + p1.X(),
-                          (myYmin - p1.Y()) / d.Y() * d.Z() + p1.Z(),
-                          (myYmin - p2.Y()) / d.Y() * d.X() + p2.X(),
-                          (myYmin - p2.Y()) / d.Y() * d.Z() + p2.Z()))
+                          (myYmin - p1.Y) / d.Y * d.X + p1.X,
+                          (myYmin - p1.Y) / d.Y * d.Z + p1.Z,
+                          (myYmin - p2.Y) / d.Y * d.X + p2.X,
+                          (myYmin - p2.Y) / d.Y * d.Z + p2.Z))
         {
             return false;
         }
 
         if (!IsSegmentOut(myXmin, myZmin, myXmax, myZmax,
-                          (myYmax - p1.Y()) / d.Y() * d.X() + p1.X(),
-                          (myYmax - p1.Y()) / d.Y() * d.Z() + p1.Z(),
-                          (myYmax - p2.Y()) / d.Y() * d.X() + p2.X(),
-                          (myYmax - p2.Y()) / d.Y() * d.Z() + p2.Z()))
+                          (myYmax - p1.Y) / d.Y * d.X + p1.X,
+                          (myYmax - p1.Y) / d.Y * d.Z + p1.Z,
+                          (myYmax - p2.Y) / d.Y * d.X + p2.X,
+                          (myYmax - p2.Y) / d.Y * d.Z + p2.Z))
         {
             return false;
         }
 
         if (!IsSegmentOut(myXmin, myYmin, myXmax, myYmax,
-                          (myZmin - p1.Z()) / d.Z() * d.X() + p1.X(),
-                          (myZmin - p1.Z()) / d.Z() * d.Y() + p1.Y(),
-                          (myZmin - p2.Z()) / d.Z() * d.X() + p2.X(),
-                          (myZmin - p2.Z()) / d.Z() * d.Y() + p2.Y()))
+                          (myZmin - p1.Z) / d.Z * d.X + p1.X,
+                          (myZmin - p1.Z) / d.Z * d.Y + p1.Y,
+                          (myZmin - p2.Z) / d.Z * d.X + p2.X,
+                          (myZmin - p2.Z) / d.Z * d.Y + p2.Y))
         {
             return false;
         }
 
         if (!IsSegmentOut(myXmin, myYmin, myXmax, myYmax,
-                          (myZmax - p1.Z()) / d.Z() * d.X() + p1.X(),
-                          (myZmax - p1.Z()) / d.Z() * d.Y() + p1.Y(),
-                          (myZmax - p2.Z()) / d.Z() * d.X() + p2.X(),
-                          (myZmax - p2.Z()) / d.Z() * d.Y() + p2.Y()))
+                          (myZmax - p1.Z) / d.Z * d.X + p1.X,
+                          (myZmax - p1.Z) / d.Z * d.Y + p1.Y,
+                          (myZmax - p2.Z) / d.Z * d.X + p2.X,
+                          (myZmax - p2.Z) / d.Z * d.Y + p2.Y))
         {
             return false;
         }
 
         if (!IsSegmentOut(myZmin, myYmin, myZmax, myYmax,
-                          (myXmin - p1.X()) / d.X() * d.Z() + p1.Z(),
-                          (myXmin - p1.X()) / d.X() * d.Y() + p1.Y(),
-                          (myXmin - p2.X()) / d.X() * d.Z() + p2.Z(),
-                          (myXmin - p2.X()) / d.X() * d.Y() + p2.Y()))
+                          (myXmin - p1.X) / d.X * d.Z + p1.Z,
+                          (myXmin - p1.X) / d.X * d.Y + p1.Y,
+                          (myXmin - p2.X) / d.X * d.Z + p2.Z,
+                          (myXmin - p2.X) / d.X * d.Y + p2.Y))
         {
             return false;
         }
 
         if (!IsSegmentOut(myZmin, myYmin, myZmax, myYmax,
-                          (myXmax - p1.X()) / d.X() * d.Z() + p1.Z(),
-                          (myXmax - p1.X()) / d.X() * d.Y() + p1.Y(),
-                          (myXmax - p2.X()) / d.X() * d.Z() + p2.Z(),
-                          (myXmax - p2.X()) / d.X() * d.Y() + p2.Y()))
+                          (myXmax - p1.X) / d.X * d.Z + p1.Z,
+                          (myXmax - p1.X) / d.X * d.Y + p1.Y,
+                          (myXmax - p2.X) / d.X * d.Z + p2.Z,
+                          (myXmax - p2.X) / d.X * d.Y + p2.Y))
         {
             return false;
         }

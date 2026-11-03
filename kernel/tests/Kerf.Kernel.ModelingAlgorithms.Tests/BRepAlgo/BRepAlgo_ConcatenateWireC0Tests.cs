@@ -55,8 +55,8 @@ public class BRepAlgo_ConcatenateWireC0Tests(ITestOutputHelper output)
             Assert.Equal(Length(aWire), Length(anEdge), Length(aWire) * 1e-6);
             Exploration.Vertices(aWire, out Vertex aV1, out Vertex aV2);
             Exploration.Vertices(anEdge, out Vertex aE1, out Vertex aE2);
-            Assert.True(Tool.Pnt(aV1).Distance(Tool.Pnt(aE1)) < 1e-6 || Tool.Pnt(aV1).Distance(Tool.Pnt(aE2)) < 1e-6);
-            Assert.True(Tool.Pnt(aV2).Distance(Tool.Pnt(aE1)) < 1e-6 || Tool.Pnt(aV2).Distance(Tool.Pnt(aE2)) < 1e-6);
+            Assert.True(Tool.Pnt(aV1).DistanceTo(Tool.Pnt(aE1)) < 1e-6 || Tool.Pnt(aV1).DistanceTo(Tool.Pnt(aE2)) < 1e-6);
+            Assert.True(Tool.Pnt(aV2).DistanceTo(Tool.Pnt(aE1)) < 1e-6 || Tool.Pnt(aV2).DistanceTo(Tool.Pnt(aE2)) < 1e-6);
             aWires++;
         }
         Assert.Equal(2, aWires);

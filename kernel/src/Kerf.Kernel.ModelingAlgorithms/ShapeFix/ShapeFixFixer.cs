@@ -154,7 +154,7 @@ public static partial class ShapeFixFixer
                 {
                     if (surf is TrimmedSurface grts)
                     {
-                        plane = grts.BasisSurface() as PlaneSurface;
+                        plane = grts.BasisSurface as PlaneSurface;
                     }
                     if (plane is null)
                     {
@@ -190,7 +190,7 @@ public static partial class ShapeFixFixer
                         double par  = (f * (ncontrol - 1 - i) + l * i) / (ncontrol - 1);
                         Point3D pnt  = crv.Value(par);
                         Point3D prj  = acs.Value(par);
-                        double dist = pnt.SquareDistance(prj);
+                        double dist = pnt.SquareDistanceTo(prj);
                         if (tol2 < dist)
                         {
                             tol2      = dist;
@@ -286,19 +286,19 @@ public static partial class ShapeFixFixer
         if (fwd)
         {
             v1 = newVertex;
-            v1.Orientation(Forward);
+            v1.Orient(Forward);
         }
         else
         {
             v2 = newVertex;
-            v2.Orientation(Reversed);
+            v2.Orient(Reversed);
         }
         var                sbe = new BuildEdgeBuilder();
         Edge        e1   = edge;
-        Orientation ori  = e1.Orientation();
-        e1.Orientation(Forward);
+        Orientation ori  = e1.Orientation;
+        e1.Orient(Forward);
         Edge newEdge = sbe.InternalCopyReplaceVertices(e1, v1, v2);
-        newEdge.Orientation(ori);
+        newEdge.Orient(ori);
         return newEdge;
     }
 
@@ -319,7 +319,7 @@ public static partial class ShapeFixFixer
             for (; j <= aSeq2.Length(); j++)
             {
                 Point3D p2 = aSeq2.Value(j);
-                double d  = p1.Distance(p2);
+                double d  = p1.DistanceTo(p2);
                 if (Math.Abs(d - mindist) <= Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     continue;
@@ -436,7 +436,7 @@ public static partial class ShapeFixFixer
                 var    acent    = new Xyz();
                 if (!isSame && !isSame1)
                 {
-                    minDist = p1.Distance(p11);
+                    minDist = p1.DistanceTo(p11);
                     acent    = (p1.XYZ() + p11.XYZ()) / 2.0;
                 }
                 else
@@ -614,7 +614,7 @@ public static partial class ShapeFixFixer
                     // if distance between ends of curve more than specified tolerance
                     // but vertices are the same that one of the vertex will be replaced.
 
-                    bool isReplace = (vert1n.IsSame(vert2n) && p1.Distance(p2) > tolerance);
+                    bool isReplace = (vert1n.IsSame(vert2n) && p1.DistanceTo(p2) > tolerance);
 
                     if (isFirst)
                     {
@@ -626,7 +626,7 @@ public static partial class ShapeFixFixer
                         if (isReplace)
                         {
                             Edge enew;
-                            if (p1.Distance(new Point3D(acenter)) < p2.Distance(new Point3D(acenter)))
+                            if (p1.DistanceTo(new Point3D(acenter)) < p2.DistanceTo(new Point3D(acenter)))
                             {
                                 enew = ReplaceVertex(edge, p2, false);
                             }
@@ -648,7 +648,7 @@ public static partial class ShapeFixFixer
                         if (isReplace)
                         {
                             Edge enew;
-                            if (p1.Distance(new Point3D(acenter)) < p2.Distance(new Point3D(acenter)))
+                            if (p1.DistanceTo(new Point3D(acenter)) < p2.DistanceTo(new Point3D(acenter)))
                             {
                                 enew = ReplaceVertex(edge, p2, false);
                             }
@@ -665,7 +665,7 @@ public static partial class ShapeFixFixer
                 }
             }
 
-            if (isAdd && pvert.Distance(new Point3D(acenter)) > tolerance)
+            if (isAdd && pvert.DistanceTo(new Point3D(acenter)) > tolerance)
             {
                 var b = new BrepBuilder();
 
@@ -674,7 +674,7 @@ public static partial class ShapeFixFixer
                 isDone = true;
                 var newVertex = new Vertex();
                 b.MakeVertex(ref newVertex, new Point3D(acenter), Kerf.Engine.Foundation.Precision.Confusion());
-                newVertex.Orientation(vert.Orientation());
+                newVertex.Orient(vert.Orientation);
                 thecontext.Replace(vert, newVertex);
             }
 

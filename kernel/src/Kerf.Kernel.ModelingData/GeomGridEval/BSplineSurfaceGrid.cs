@@ -21,7 +21,7 @@ namespace Kerf.Engine.Geometry.Evaluation.Grid;
 /// As in OCCT, the parameters of a non-periodic direction must be ascending: a parameter below the current span's
 /// end is evaluated on the current span without being located again.
 /// </remarks>
-public sealed class BSplineSurfaceGrid : GeomGridEvalGrid.ISurfaceEvaluator
+internal sealed class BSplineSurfaceGrid : GeomGridEvalGrid.ISurfaceEvaluator
 {
     // Threshold for using cache vs direct evaluation.
     // For small spans (few points), direct BSplSLib evaluation is faster than building cache.
@@ -47,8 +47,8 @@ public sealed class BSplineSurfaceGrid : GeomGridEvalGrid.ISurfaceEvaluator
             VFlatKnots = geom.InternalVKnotSequence();
             Poles = geom.InternalPoles();
             Weights = geom.InternalWeights();
-            UDegree = geom.UDegree();
-            VDegree = geom.VDegree();
+            UDegree = geom.UDegree;
+            VDegree = geom.VDegree;
             IsUPeriodic = geom.IsUPeriodic;
             IsVPeriodic = geom.IsVPeriodic;
             IsURational = geom.IsURational;

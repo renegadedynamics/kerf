@@ -78,12 +78,12 @@ internal static class ComputeData
         FaceSurfaceAdaptor? hs = s1 as FaceSurfaceAdaptor;
         if (hs is not null)
         {
-            orFace1 = hs.Face().Orientation();
+            orFace1 = hs.Face().Orientation;
         }
         hs = s2 as FaceSurfaceAdaptor;
         if (hs is not null)
         {
-            orFace2 = hs.Face().Orientation();
+            orFace2 = hs.Face().Orientation;
         }
 
         if (spine is not null)
@@ -343,8 +343,8 @@ internal static class ComputeData
         if (typ2 == SurfaceKind.Cylinder)
         {
             cyl = s2.Cylinder();
-            fu = p1S2.X();
-            lu = p2S2.X();
+            fu = p1S2.X;
+            lu = p2S2.X;
         }
         else
         {
@@ -359,10 +359,10 @@ internal static class ComputeData
             {
                 data.ChangeInterferenceOnS2().ChangePCurveOnFace() = ChFiKPart_PCurve(p1S2, p2S2, first, last);
             }
-            data.ChangeVertexFirstOnS1().SetPoint(s1.Value(p1S1.X(), p1S1.Y()));
-            data.ChangeVertexLastOnS1().SetPoint(s1.Value(p2S1.X(), p2S1.Y()));
-            data.ChangeVertexFirstOnS2().SetPoint(s2.Value(p1S2.X(), p1S2.Y()));
-            data.ChangeVertexLastOnS2().SetPoint(s2.Value(p2S2.X(), p2S2.Y()));
+            data.ChangeVertexFirstOnS1().SetPoint(s1.Value(p1S1.X, p1S1.Y));
+            data.ChangeVertexLastOnS1().SetPoint(s1.Value(p2S1.X, p2S1.Y));
+            data.ChangeVertexFirstOnS2().SetPoint(s2.Value(p1S2.X, p1S2.Y));
+            data.ChangeVertexLastOnS2().SetPoint(s2.Value(p2S2.X, p2S2.Y));
             data.ChangeInterferenceOnS1().SetFirstParameter(first);
             data.ChangeInterferenceOnS1().SetLastParameter(last);
             data.ChangeInterferenceOnS2().SetFirstParameter(first);

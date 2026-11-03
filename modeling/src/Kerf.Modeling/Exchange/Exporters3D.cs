@@ -174,7 +174,7 @@ public static class Exporters3D
         {
             var children = assembly.AssemblyChildren.Where(c => !c.IsEmpty)
                                    .Select(c => MeshTree(c, linearDeflection, angularDeflection)).ToList();
-            return ExchangeNode.Assembly(children, assembly.TopoShape.Location(), name, color);
+            return ExchangeNode.Assembly(children, assembly.TopoShape.Placement, name, color);
         }
         return ExchangeNode.Part(shape.MeshedCopy(linearDeflection, angularDeflection), name, color);
     }
@@ -188,7 +188,7 @@ public static class Exporters3D
         if (shape is Compound { AssemblyChildren.Count: > 0 } assembly)
         {
             var children = assembly.AssemblyChildren.Where(c => !c.IsEmpty).Select(StepTree).ToList();
-            return ExchangeNode.Assembly(children, assembly.TopoShape.Location(), name, color);
+            return ExchangeNode.Assembly(children, assembly.TopoShape.Placement, name, color);
         }
         return ExchangeNode.Part(shape.TopoShape, name, color);
     }

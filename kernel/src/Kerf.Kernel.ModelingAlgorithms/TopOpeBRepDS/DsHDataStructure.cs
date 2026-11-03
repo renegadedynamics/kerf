@@ -376,7 +376,7 @@ public sealed class DsHDataStructure : Transient
         {
             if (_ds.KeepShape(i, findKeep))
             {
-                if (_ds.Shape(i, findKeep).ShapeType() == s)
+                if (_ds.Shape(i, findKeep).Type == s)
                 {
                     res++;
                 }
@@ -392,7 +392,7 @@ public sealed class DsHDataStructure : Transient
         for (i = 1; i <= n; i++)
         {
             Shape s = _ds.Shape(i);
-            if (s.ShapeType() == ShapeType.Edge)
+            if (s.Type == ShapeType.Edge)
             {
                 Edge e = ShapeCasts.Edge(s);
                 if (!Tool.SameParameter(e))

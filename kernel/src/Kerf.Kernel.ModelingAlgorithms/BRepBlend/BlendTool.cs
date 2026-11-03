@@ -25,14 +25,14 @@ public static class BlendTool
         paramproj = HCurve2dTool.FirstParameter(c);
         Point2D p2d;
         HCurve2dTool.D0(c, paramproj, out p2d);
-        dist = p2d.Distance(p);
+        dist = p2d.DistanceTo(p);
 
         double t = HCurve2dTool.LastParameter(c);
         HCurve2dTool.D0(c, t, out p2d);
-        if (p2d.Distance(p) < dist)
+        if (p2d.DistanceTo(p) < dist)
         {
             paramproj = t;
-            dist = p2d.Distance(p);
+            dist = p2d.DistanceTo(p);
         }
 
         const double epsX = 1.0e-8;
@@ -69,7 +69,7 @@ public static class BlendTool
     {
         const double tol = 1.0e-8;
         Vector2D v = new(p1, p2);
-        double mag = v.Magnitude();
+        double mag = v.Magnitude;
         if (mag < tol)
         {
             return false;
@@ -93,7 +93,7 @@ public static class BlendTool
 
         IntersectionPoint2D ip = inter.Point(1);
         param = ip.ParamOnSecond();
-        dist = p1.Distance(ip.Value());
+        dist = p1.DistanceTo(ip.Value());
         return true;
     }
 
