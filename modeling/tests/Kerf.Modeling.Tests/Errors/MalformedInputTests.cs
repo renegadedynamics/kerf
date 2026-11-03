@@ -87,7 +87,7 @@ public class MalformedInputTests
                 _ = shape.Volume;
                 _ = shape.Faces().Sum(f => f.Area);
             }
-            catch (Exception e) when (e is FailureException or ArgumentException or InvalidOperationException)
+            catch (Exception e) when (e is FailureException or Kerf.KerfException or ArgumentException or InvalidOperationException)
             {
             }
         }
@@ -146,7 +146,7 @@ public class MalformedInputTests
         {
             _ = Degenerate[name]();
         }
-        catch (Exception e) when (e is FailureException or ArgumentException or InvalidOperationException)
+        catch (Exception e) when (e is FailureException or Kerf.KerfException or ArgumentException or InvalidOperationException)
         {
             Assert.False(string.IsNullOrWhiteSpace(e.Message), $"{name}: an exception without a message");
         }

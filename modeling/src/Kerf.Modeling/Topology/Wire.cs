@@ -436,7 +436,11 @@ public partial class Wire : Shape1D
         if (!fixedShape.IsFace())
             throw new InvalidOperationException("An internal error occured creating the chamfer");
         var result = new Wire(BrepTools.OuterWire(ShapeCasts.Face(fixedShape)));
-        return (Wire)result.MadeBy(ShapeHistory.FromAlgorithm(builder, [TopoShape], result.TopoShape));
+        // The builder answers Modified only for an edge it trimmed and throws for anything else (OCCT's DescendantEdge),
+        // so it is asked only about those: the same history, without an exception per vertex and untouched edge
+        IEnumerable<global::Kerf.Topology.Shape> Modified(global::Kerf.Topology.Shape s) =>
+            s.IsEdge() && builder.IsModified(ShapeCasts.Edge(s)) ? builder.Modified(s) : [];
+        return (Wire)result.MadeBy(ShapeHistory.FromAlgorithm(Modified, s => builder.Generated(s), [TopoShape], result.TopoShape));
     }
 
     /// <summary>This wire with its very short edges (below <paramref name="precision"/>) and gaps fixed.</summary>

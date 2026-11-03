@@ -8,6 +8,9 @@ using Kerf.Analyzers;
 
 namespace Kerf.Kernel.Foundation.Tests.Analyzers;
 
+// Roslyn's, not Kerf's (namespace Kerf's types come before the file's usings)
+using Diagnostic = Microsoft.CodeAnalysis.Diagnostic;
+
 public class DefensiveCopyAnalyzerTests
 {
     // A struct shaped like the gp types: a readonly query and an internal mutator

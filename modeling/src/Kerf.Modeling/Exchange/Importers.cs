@@ -55,8 +55,8 @@ public static class Importers
         ArgumentNullException.ThrowIfNull(stream);
         var exchangeLimits = (limits ?? ImportLimits.Default).ToExchange();
         var status = Extras.ReadStep(name, stream, exchangeLimits, externalFiles, out var root, cancellationToken);
-        if (status != ReturnStatus.RetDone)
-            throw new ArgumentException($"Could not import {name}: it isn't readable STEP data ({status})");
+        if (ExchangeDiagnostics.ToDiagnostic(status) is { } error)
+            throw new ArgumentException($"Could not import {name}: it isn't readable STEP data. {error.Message}", new KerfException(error));
         return root is null ? new Compound() : Shape.Result(FromNode(root));
     }
 

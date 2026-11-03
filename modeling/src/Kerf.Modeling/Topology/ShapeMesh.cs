@@ -62,10 +62,11 @@ public sealed class ShapeMesh
     /// Triangulates a shape. The shape isn't changed: a private copy is meshed (OCCT stores a mesh in the faces it
     /// meshes), so meshing is safe from any thread, on shapes that share geometry too.
     /// </summary>
-    internal static ShapeMesh Of(Shape shape, MeshTolerances tolerances)
+    internal static ShapeMesh Of(Shape shape, MeshTolerances tolerances) =>
+        shape.IsEmpty ? Empty : Failures.Doing(() => "triangulate", () => Mesh(shape, tolerances));
+
+    private static ShapeMesh Mesh(Shape shape, MeshTolerances tolerances)
     {
-        if (shape.IsEmpty)
-            return Empty;
         var copy = shape.MeshedCopy(tolerances.Linear, tolerances.Angular, tolerances.Relative);
         // The copy has the shape's structure, so its faces, edges and vertices come in the same order
         var meshed = shape.Placed(copy);

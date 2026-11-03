@@ -109,6 +109,8 @@ Percentages after are of a smaller total, so a hot spot left alone grows. In Ben
   `Measures`, `Storage_StreamFormatError` from the malformed-BRep tests, and ChFi3d's `Standard_Failure` while
   searching for a fillet's maximum radius). At tens of microseconds each, that is well under a second. Bento's workload
   throws none.
+  Unit 10F counted them again (decision 1368) and removed the one frequent pair it found, ShapeProcess catching a
+  missing parameter's exception (32,869 of the ModelingAlgorithms tests' 38,602).
 - **Copy at entry, `Handle` wrappers, locks:** none showed in the samples above 0.5%.
 
 **The JIT** doesn't show in the samples (it runs in native code): a serial run spends 15 to 21 s of thread time

@@ -18,6 +18,7 @@ implementation) build. It follows phase10-plan.md 2.1, 2.2, 2.5 and 2.6 and [des
 | [measurement.md](measurement.md) | `Kerf.Measurement`: mass properties, bounds, distance, classification |
 | [meshing.md](meshing.md) | `Kerf.Meshing` |
 | [exchange.md](exchange.md) | `Kerf.Exchange`: STEP, STL, glTF, 3MF, OBJ, BREP |
+| [diagnostics.md](diagnostics.md) | The diagnostic codes, and the bridges from OCCT's exceptions, alerts and statuses (unit 10F) |
 | [classification.tsv](classification.tsv) | Every public type today: public API, engine or removed, with its new name |
 | [classification-rules.txt](classification-rules.txt) | The rules that table comes from: by package, with exceptions by type |
 | [kerf.map](kerf.map) | The name map unit 10E applied, in kerf-rename's format (decision 1349 settled the draft) |
@@ -153,7 +154,10 @@ public sealed class KerfException : Exception { public ImmutableArray<Diagnostic
 - `Try…(out T)` where a single bool says enough: `Face.TryGetPlane(out Plane3D)`.
 
 The definitions above compiled as written, with C# 14's extension members below, in a scratch project with warnings as
-errors (not committed: tests belong in kernel/tests, which unit 10A holds; 10F adds the types with their tests).
+errors. **Unit 10F added them** (decision 1365): in Foundation rather than ModelingData, with a diagnostic's shapes as
+extension members from ModelingData (`diagnostic.Shapes`, `diagnostic.WithShapes(…)`); `Result<T>.Failure` also takes
+several diagnostics, `IsFailure` and `Diagnostic.Error`/`Warning` were added, and `KerfException`'s message is the
+first error's. [diagnostics.md](diagnostics.md) lists the codes.
 
 ### 2.1 Shape results carry their history
 

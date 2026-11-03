@@ -619,7 +619,7 @@ internal static class Measures
                 _ => null,
             };
         }
-        catch (Exception e) when (e is InvalidOperationException or ArgumentException or FailureException or NotImplementedException)
+        catch (Exception e) when (e is InvalidOperationException or ArgumentException or FailureException or KerfException or NotImplementedException)
         {
             return null;
         }

@@ -14006,3 +14006,83 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        removes `CopyAtEntry`, `ExactCopyForWrite`, `KeepUnchanged…`, `CopyFrozenForWrite`, `HoldsFrozen` and the
        `…Unfrozen`/`…OfFrozen` builder forms; the frozen-shape exceptions stay as long as a write outside an overlay can
        reach a frozen shape.
+## Phase 10: unit 10F, errors
+
+1365. **The result types are in Foundation, in the namespace `Kerf`** (10D put them in ModelingData because a
+       diagnostic names shapes; the unit's brief asked for Foundation, the lowest assembly, so every engine package can
+       return them). `Result<T>`, `Result`, `Diagnostic`, `DiagnosticCode`, `Severity` and `KerfException` are 10D's
+       design (README.md section 2), with tests (Foundation.Tests/Results). A diagnostic's shapes, which Foundation
+       can't name, are C# 14 extension members from ModelingData (`diagnostic.Shapes`, `diagnostic.WithShapes(…)`,
+       class `Kerf.DiagnosticShapes`), stored in an internal field. Additions to 10D's draft: `IsFailure`;
+       `Failure(ImmutableArray<Diagnostic>)` for several errors; `Diagnostic.Error`/`Warning` factories and `IsError`;
+       `default(Result<T>)` is a failure coded `result.default`; a success can't carry an error and a failure must
+       (`ArgumentException`); `KerfException`'s message is the first error's, with how many more there are.
+       `Built<TShape>` is in ModelingData with the engine's `History` and `where TShape : struct` until 10L's
+       `ShapeHistory` and `IShape<T>` exist. A type in `Kerf` hides a same-named one a file in a `Kerf.*` namespace
+       imports (Roslyn's `Diagnostic` in the analyzer tests needed an alias inside the namespace); 10L should avoid
+       public names in `Kerf` that the engine or modelling layer import from elsewhere.
+1366. **Diagnostic codes are dotted lower-case strings** (decision 1349, 61: "strings, like analyzer IDs", read as
+       stable strings rather than an enum; the form is 10D's `boolean.self-interference`, not `KERF1234`):
+       words of letters, digits and hyphens, the first the area. `DiagnosticCode` refuses any other form. Four
+       bridges make them, each in the assembly of what it reads (docs/api/diagnostics.md has the table):
+       `FailureDiagnostics` (Foundation: an OCCT exception is `engine.` plus its class name without the package,
+       kebab-cased, `StdFail_NotDone` → `engine.not-done`; any other exception from the engine `engine.fault`;
+       `BRepAlgoAPI_Failure` → `boolean.failed`), `AlertDiagnostics` (ModelingData: a report's failures as errors, its
+       alarms and warnings as warnings, coded area plus the alert's name, `boolean.self-interfering-shape`, the message
+       from OCCT's message table, the alert's shape named), `StatusDiagnostics` and `OperationDiagnostics`
+       (ModelingAlgorithms: the construction, loft, fillet, offset and feature status enums by hand-written codes and
+       messages; a failed operation's exception or report), `ExchangeDiagnostics` (DataExchange: `IFSelect_ReturnStatus`).
+       Codes derived by rule follow OCCT's names, which `OcctTypeNames` keeps; the table is regenerated from the
+       bridges when they change.
+1367. **The modelling layer's kernel failures say what was being done again** (decision 1342's loss). An internal
+       `Failures.Doing(what, operation)` around the kernel calls of the primitives (box, cone, cylinder, sphere,
+       torus, wedge), lofts, extrusions (plain, with rotation, tapered, until), revolutions, sweeps, thickening,
+       triangulation and every Boolean turns an escaping `FailureException` (or a failed Boolean's report) into a
+       `KerfException`: the kernel's diagnostics, each error's message prefixed `box 0.0 × 1.0 × 1.0 failed: `,
+       nested operations joined (`extrude until / extrude failed: …`), the kernel's exception as the inner exception.
+       It is what `Result<T>.Value` will throw once 10M gives the layer results, and Bento's `#VALUE!` shows the
+       message. The Booleans' `ThrowIfFailed` gives the report's alerts as diagnostics (with their shapes) where it
+       threw `StdFail_NotDone` naming them. The public signatures are unchanged; the exception type of those
+       operations' kernel failures changes from OCCT.NET's to `KerfException`. The layer's best-effort catches that
+       caught `FailureException` catch `KerfException` too, so no path changes. Fillets, chamfers and offsets keep
+       build123d's own `ArgumentException`/`InvalidOperationException` messages, which already name the operation;
+       STEP import keeps its `ArgumentException`, its message now the exchange status's diagnostic, with a
+       `KerfException` inside. Tests changed: `ErrorContextTests` (`APrimitiveSaysWhatItWasMaking` and
+       `AFeatureSaysWhichItWas` expect `KerfException` and the context, as before 10B; `AFailedBooleanNamesOcctsReasons`
+       checks the diagnostics; three new: `ANestedOperationSaysBoth`, `TheLayersOwnErrorsPassThrough`,
+       `TheContextIsFormattedOnlyOnFailure`, new names rather than 10B's removed ones), and the catch filters of
+       `MalformedInputTests` and `InputsUnchangedTests`. 1,875 tests (1,872 and three).
+1368. **Exceptions as statuses, measured** (plan 2.5). A startup hook counted every first-chance exception with its
+       stack: Bento's workload throws none (as 9E found); build123d.NET's suite 1,977, of which the kernel's are
+       mostly the malformed-BRep tests' own and failing fillets (one per failed stripe, ChFi3d's `StartSol`, a failure
+       path); the ModelingAlgorithms suite 38,602, of which 32,869 were one pair: ShapeProcess's
+       `ProcessContext.GetBoolean`/`StringVal` reading a parameter with `Resource_Manager.Integer`/`Value` and catching
+       its `Standard_NoSuchObject` when the parameter isn't set, which is usual (every operator asks for each option).
+       Replaced by `Resource_Manager.TryGetInteger` (new, beside `Integer`) and `Find(name, out value)`: the same
+       answers, no exception (0.07 µs a lookup pair against 4 µs; the ShapeProcess, ShapeUpgrade and ShapeCustom tests
+       throw 20 exceptions in place of 32,890; the tests' own times are within the machine's noise, 15 to 24 s either
+       way). The other pair that fires routinely crosses the boundary:
+       build123d.NET's 2D chamfer asked `BRepFilletAPI_MakeFillet2d::Modified` about every vertex and untouched edge,
+       which throws (OCCT's `DescendantEdge`), and caught it; it now asks `IsModified` first (17 exceptions per two
+       chamfers to none; the time is within noise). The 55 catches inside loops that a search found are OCCT's guards
+       around a step that may fail (`OCC_CATCH_SIGNALS`), firing only on failure, and stay with the long tail (plan 2.5).
+       What remains in the kernel's source: 3,298 `throw` sites of its own exception types and 913 `Raise_if` checks;
+       221 catch sites, 109 of OCCT's types and 112 of `Exception` under a filter (`ModelAlgo.IsCaughtFailure`), two
+       fewer than before. The modelling layer's own exceptions-as-statuses (`Selector`'s
+       measures, 553 per suite) are 10M's.
+1369. **How 10L wraps the engine's `Perform`/`IsDone` algorithms** (they stay as they are: the engine, Draw-lite and
+       the oracle use them). Each public operation:
+       1. checks its arguments first, throwing .NET's argument exceptions for misuse;
+       2. builds the engine algorithm, adapts `(IProgress<double>?, CancellationToken)` to a `Message_ProgressRange`,
+          and runs it inside a `try` that turns an escaping `FailureException` (or a fault, `ModelAlgo.IsCaughtFailure`'s
+          .NET exceptions) into `Result<T>.Failure(OperationDiagnostics.FromException(e))`, and rethrows
+          `OperationCanceledException` (a user break is cancellation, not a diagnostic);
+       3. reads the algorithm's own account before `Shape()`: not `IsDone` gives the error from its status enum
+          (`StatusDiagnostics`), its report (`OperationDiagnostics.FromReport`, with a per-operation fallback error), or
+          a per-operation code (`<area>.failed`) when it has neither; it never calls `Shape()` on an algorithm that isn't
+          done, which would throw `StdFail_NotDone`;
+       4. on success, collects warnings (the report's warnings and alarms, `HasWarnings`) into the success's
+          diagnostics, and returns `Built<T>` with the shape and the algorithm's history.
+       One shared helper in ModelingAlgorithms should do 2 to 4 for `BRepBuilderAPI_MakeShape` and `BOPAlgo_Options`
+       algorithms, so each operation is a few lines. New codes go into diagnostics.md, and those a program will test
+       for become static properties on the area's operations class.

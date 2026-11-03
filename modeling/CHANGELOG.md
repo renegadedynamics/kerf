@@ -89,3 +89,9 @@ The first packages, for Bento's 3D-models extension.
   renamed kernel (`Kerf.Kernel.*`): the kernel types it shows are the kernel's new names (`Kerf.Geometry.Point3D`,
   `Kerf.Topology.Shape`…). Its own classes keep their names (`Shape`, `Edge`, `Box`…) until unit 10M merges its shapes
   onto the kernel's. No behaviour changes.
+- Kerf's unit 10F: a failure in the kernel says what was being done again, as it did before 10B: the primitives,
+  lofts, extrusions, revolutions, sweeps, thickening, triangulation and Booleans throw a `Kerf.KerfException` whose
+  message starts with the operation ("box 0.0 × 1.0 × 1.0 failed: …", "extrude until / extrude failed: …"), whose
+  diagnostics are the kernel's (a failed Boolean's alerts, with their codes and shapes) and whose inner exception is the
+  kernel's own (OCCT.NET's exception type before). A STEP file that can't be read keeps its `ArgumentException`, with
+  the exchange status's message. The 2D chamfer's history is read without an exception per vertex.

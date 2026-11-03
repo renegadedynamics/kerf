@@ -147,7 +147,7 @@ public abstract partial class Shape3D : Shape
             if (!result.IsValid)
                 throw new InvalidOperationException();
         }
-        catch (Exception e) when (e is FailureException or InvalidOperationException)
+        catch (Exception e) when (e is FailureException or KerfException or InvalidOperationException)
         {
             string details = "";
             try

@@ -44,62 +44,66 @@ public partial class Solid : Shape3D
     // ---- Primitives ----
 
     /// <summary>A box from the plane's origin (default XY), extending along each of its positive axes.</summary>
-    public static Solid MakeBox(double length, double width, double height, Plane? plane = null)
-    {
-        var ax2 = (plane ?? Plane.XY).ToGpAx2();
-        var maker = new MakeBox(ax2, length, width, height);
-        return new Solid(ShapeCasts.Solid(maker.Shape()));
-    }
+    public static Solid MakeBox(double length, double width, double height, Plane? plane = null) =>
+        Failures.Doing(() => $"box {PyFormat.Repr(length)} × {PyFormat.Repr(width)} × {PyFormat.Repr(height)}", () =>
+        {
+            var ax2 = (plane ?? Plane.XY).ToGpAx2();
+            var maker = new MakeBox(ax2, length, width, height);
+            return new Solid(ShapeCasts.Solid(maker.Shape()));
+        });
 
     /// <summary>A full or partial cone from the plane's origin (default XY).</summary>
-    public static Solid MakeCone(double baseRadius, double topRadius, double height, Plane? plane = null, double angle = 360)
-    {
-        var ax2 = (plane ?? Plane.XY).ToGpAx2();
-        var maker = new ApiMakeCone(ax2, baseRadius, topRadius, height, angle * Constants.DegToRad);
-        return new Solid(ShapeCasts.Solid(maker.Shape()));
-    }
+    public static Solid MakeCone(double baseRadius, double topRadius, double height, Plane? plane = null, double angle = 360) =>
+        Failures.Doing(() => $"cone of radii {PyFormat.Repr(baseRadius)} and {PyFormat.Repr(topRadius)}, height {PyFormat.Repr(height)}", () =>
+        {
+            var ax2 = (plane ?? Plane.XY).ToGpAx2();
+            var maker = new ApiMakeCone(ax2, baseRadius, topRadius, height, angle * Constants.DegToRad);
+            return new Solid(ShapeCasts.Solid(maker.Shape()));
+        });
 
     /// <summary>A full or partial cylinder with its base centred on the plane's origin (default XY).</summary>
-    public static Solid MakeCylinder(double radius, double height, Plane? plane = null, double angle = 360)
-    {
-        var ax2 = (plane ?? Plane.XY).ToGpAx2();
-        var maker = new ApiMakeCylinder(ax2, radius, height, angle * Constants.DegToRad);
-        return new Solid(ShapeCasts.Solid(maker.Shape()));
-    }
+    public static Solid MakeCylinder(double radius, double height, Plane? plane = null, double angle = 360) =>
+        Failures.Doing(() => $"cylinder of radius {PyFormat.Repr(radius)}, height {PyFormat.Repr(height)}", () =>
+        {
+            var ax2 = (plane ?? Plane.XY).ToGpAx2();
+            var maker = new ApiMakeCylinder(ax2, radius, height, angle * Constants.DegToRad);
+            return new Solid(ShapeCasts.Solid(maker.Shape()));
+        });
 
     /// <summary>A full or partial sphere centred on the plane's origin (default XY).</summary>
-    public static Solid MakeSphere(double radius, Plane? plane = null, double angle1 = -90, double angle2 = 90, double angle3 = 360)
-    {
-        var ax2 = (plane ?? Plane.XY).ToGpAx2();
-        var maker = new MakeSphere(ax2, radius, angle1 * Constants.DegToRad, angle2 * Constants.DegToRad,
-                                                     angle3 * Constants.DegToRad);
-        return new Solid(ShapeCasts.Solid(maker.Shape()));
-    }
+    public static Solid MakeSphere(double radius, Plane? plane = null, double angle1 = -90, double angle2 = 90, double angle3 = 360) =>
+        Failures.Doing(() => $"sphere of radius {PyFormat.Repr(radius)}", () =>
+        {
+            var ax2 = (plane ?? Plane.XY).ToGpAx2();
+            var maker = new MakeSphere(ax2, radius, angle1 * Constants.DegToRad, angle2 * Constants.DegToRad,
+                                       angle3 * Constants.DegToRad);
+            return new Solid(ShapeCasts.Solid(maker.Shape()));
+        });
 
     /// <summary>A full or partial torus centred on the plane's origin (default XY).</summary>
     public static Solid MakeTorus(double majorRadius, double minorRadius, Plane? plane = null, double startAngle = 0,
-                                  double endAngle = 360, double majorAngle = 360)
-    {
-        var ax2 = (plane ?? Plane.XY).ToGpAx2();
-        var maker = new MakeTorus(ax2, majorRadius, minorRadius, startAngle * Constants.DegToRad,
-                                                    endAngle * Constants.DegToRad, majorAngle * Constants.DegToRad);
-        return new Solid(ShapeCasts.Solid(maker.Shape()));
-    }
+                                  double endAngle = 360, double majorAngle = 360) =>
+        Failures.Doing(() => $"torus of radii {PyFormat.Repr(majorRadius)} and {PyFormat.Repr(minorRadius)}", () =>
+        {
+            var ax2 = (plane ?? Plane.XY).ToGpAx2();
+            var maker = new MakeTorus(ax2, majorRadius, minorRadius, startAngle * Constants.DegToRad,
+                                      endAngle * Constants.DegToRad, majorAngle * Constants.DegToRad);
+            return new Solid(ShapeCasts.Solid(maker.Shape()));
+        });
 
     /// <summary>A wedge on the plane (default XY).</summary>
     public static Solid MakeWedge(double deltaX, double deltaY, double deltaZ, double minX, double minZ, double maxX, double maxZ,
-                                  Plane? plane = null)
-    {
-        var ax2 = (plane ?? Plane.XY).ToGpAx2();
-        var maker = new MakeWedge(ax2, deltaX, deltaY, deltaZ, minX, minZ, maxX, maxZ);
-        return new Solid(maker.Solid());
-    }
+                                  Plane? plane = null) =>
+        Failures.Doing(() => "wedge", () =>
+        {
+            var ax2 = (plane ?? Plane.XY).ToGpAx2();
+            var maker = new MakeWedge(ax2, deltaX, deltaY, deltaZ, minX, minZ, maxX, maxZ);
+            return new Solid(maker.Solid());
+        });
 
     /// <summary>A loft through wires, optionally starting or ending with a vertex; ruled (stepped) or smooth.</summary>
-    public static Solid MakeLoft(IEnumerable<Shape> objs, bool ruled = false)
-    {
-        return Result(new Solid(ShapeCasts.Solid(TopoUtil.MakeLoft(objs, true, ruled))));
-    }
+    public static Solid MakeLoft(IEnumerable<Shape> objs, bool ruled = false) =>
+        Failures.Doing(() => "loft", () => Result(new Solid(ShapeCasts.Solid(TopoUtil.MakeLoft(objs, true, ruled)))));
 
     /// <summary>A box the size of a bounding box, where it is.</summary>
     public static Solid FromBoundingBox(BoundBox box) => MakeBox(box.Size.X, box.Size.Y, box.Size.Z).Located(new Location(box.Min));
@@ -114,10 +118,8 @@ public partial class Solid : Shape3D
     // ---- Extrusions, sweeps and revolutions ----
 
     /// <summary>A face extruded into a solid.</summary>
-    public static Solid Extrude(Face obj, Vector direction)
-    {
-        return Result(new Solid(ShapeCasts.Solid(TopoUtil.Extrude(obj.TopoShape, direction))));
-    }
+    public static Solid Extrude(Face obj, Vector direction) =>
+        Failures.Doing(() => "extrude", () => Result(new Solid(ShapeCasts.Solid(TopoUtil.Extrude(obj.TopoShape, direction)))));
 
     /// <summary>
     /// A "twisted prism": a section (a face, or a wire with optional holes) extruded along <paramref name="normal"/> while
@@ -129,7 +131,10 @@ public partial class Solid : Shape3D
             : throw new ArgumentException("section must be a Face or a Wire");
 
     /// <inheritdoc cref="ExtrudeLinearWithRotation(Shape2D, Vector, Vector, double)"/>
-    public static Solid ExtrudeLinearWithRotation(Wire section, Vector center, Vector normal, double angle, IEnumerable<Wire>? innerWires = null)
+    public static Solid ExtrudeLinearWithRotation(Wire section, Vector center, Vector normal, double angle, IEnumerable<Wire>? innerWires = null) =>
+        Failures.Doing(() => "extrude with rotation", () => ExtrudeLinearWithRotationCore(section, center, normal, angle, innerWires));
+
+    private static Solid ExtrudeLinearWithRotationCore(Wire section, Vector center, Vector normal, double angle, IEnumerable<Wire>? innerWires)
     {
         static global::Kerf.Topology.Shape ExtrudeAuxSpine(global::Kerf.Topology.Wire wire, global::Kerf.Topology.Wire spine, global::Kerf.Topology.Wire auxSpine)
         {
@@ -166,7 +171,10 @@ public partial class Solid : Shape3D
     /// is lofted to an offset copy. <paramref name="flipInner"/> tapers holes the opposite way, for mould release.
     /// </summary>
     /// <exception cref="InvalidOperationException">The taper can't be built, as when it collapses the profile.</exception>
-    public static Solid ExtrudeTaper(Face profile, Vector direction, double taper, bool flipInner = true)
+    public static Solid ExtrudeTaper(Face profile, Vector direction, double taper, bool flipInner = true) =>
+        Failures.Doing(() => "tapered extrude", () => ExtrudeTaperCore(profile, direction, taper, flipInner));
+
+    private static Solid ExtrudeTaperCore(Face profile, Vector direction, double taper, bool flipInner)
     {
         var pull = direction.Normalized();
         var profileWires = new List<Wire> { profile.OuterWire() };
@@ -251,7 +259,7 @@ public partial class Solid : Shape3D
                 }
                 solids = [.. profileWires.Zip(taperWires).Select(p => MakeLoft([p.First, p.Second]))];
             }
-            catch (Exception e) when (e is InvalidOperationException or FailureException)
+            catch (Exception e) when (e is InvalidOperationException || Failures.IsKernelFailure(e))
             {
                 throw new InvalidOperationException(
                     $"Tapered extrusion of {PyFormat.Repr(taper)} degrees over {PyFormat.Repr(direction.Length)} could not be built. "
@@ -268,7 +276,10 @@ public partial class Solid : Shape3D
     /// fully cover the profile where they meet.
     /// </summary>
     /// <exception cref="ArgumentException">The extrusion doesn't reach the target, or the surface reached doesn't cut it.</exception>
-    public static Solid ExtrudeUntil(Face profile, Shape target, Vector direction, Until until = Until.Next)
+    public static Solid ExtrudeUntil(Face profile, Shape target, Vector direction, Until until = Until.Next) =>
+        Failures.Doing(() => "extrude until", () => ExtrudeUntilCore(profile, target, direction, until));
+
+    private static Solid ExtrudeUntilCore(Face profile, Shape target, Vector direction, Until until)
     {
         if (until is Until.Previous or Until.First)
         {
@@ -331,12 +342,13 @@ public partial class Solid : Shape3D
     }
 
     /// <summary>A cross section (a face, or a wire with optional holes) revolved through <paramref name="angle"/> degrees about an axis.</summary>
-    public static Solid Revolve(Face section, double angle, Axis axis)
-    {
-        var ax1 = axis.ToGpAx1();
-        var builder = new ApiMakeRevol(section.TopoShape, ax1, angle * Constants.DegToRad, true);
-        return Result(new Solid(ShapeCasts.Solid(builder.Shape())));
-    }
+    public static Solid Revolve(Face section, double angle, Axis axis) =>
+        Failures.Doing(() => "revolve", () =>
+        {
+            var ax1 = axis.ToGpAx1();
+            var builder = new ApiMakeRevol(section.TopoShape, ax1, angle * Constants.DegToRad, true);
+            return Result(new Solid(ShapeCasts.Solid(builder.Shape())));
+        });
 
     /// <inheritdoc cref="Revolve(Face, double, Axis)"/>
     public static Solid Revolve(Wire section, double angle, Axis axis, IEnumerable<Wire>? innerWires = null) =>
@@ -362,7 +374,11 @@ public partial class Solid : Shape3D
         SweepCore(section, innerWires?.ToList() ?? [], path, makeSolid, isFrenet, mode, transition);
 
     private static Shape SweepCore(Wire outerWire, IReadOnlyList<Wire> innerWires, Shape1D path, bool makeSolid, bool isFrenet,
-                                   object? mode, Transition transition)
+                                   object? mode, Transition transition) =>
+        Failures.Doing(() => "sweep", () => SweepShapes(outerWire, innerWires, path, makeSolid, isFrenet, mode, transition));
+
+    private static Shape SweepShapes(Wire outerWire, IReadOnlyList<Wire> innerWires, Shape1D path, bool makeSolid, bool isFrenet,
+                                     object? mode, Transition transition)
     {
         var shapes = new List<Shape>();
         var pathWire = path as Wire ?? new Wire((Edge)path);
@@ -421,7 +437,10 @@ public partial class Solid : Shape3D
         SweepMulti(profiles.Select(p => ((Face)p).OuterWire()), path, makeSolid, isFrenet, binormal);
 
     /// <inheritdoc cref="SweepMulti(IEnumerable{Shape2D}, Shape1D, bool, bool, object?)"/>
-    public static Solid SweepMulti(IEnumerable<Wire> profiles, Shape1D path, bool makeSolid = true, bool isFrenet = false, object? binormal = null)
+    public static Solid SweepMulti(IEnumerable<Wire> profiles, Shape1D path, bool makeSolid = true, bool isFrenet = false, object? binormal = null) =>
+        Failures.Doing(() => "multi-section sweep", () => SweepMultiCore(profiles, path, makeSolid, isFrenet, binormal));
+
+    private static Solid SweepMultiCore(IEnumerable<Wire> profiles, Shape1D path, bool makeSolid, bool isFrenet, object? binormal)
     {
         var pathWire = path as Wire ?? new Wire((Edge)path);
         var builder = new MakePipeShell(pathWire.TopoWire);
@@ -447,7 +466,10 @@ public partial class Solid : Shape3D
     /// <paramref name="normalOverride"/> says which way is up, flipping the face's normal if it points the other way.
     /// </summary>
     /// <exception cref="InvalidOperationException">OCCT can't thicken the surface.</exception>
-    public static Solid Thicken(Shape2D surface, double depth, Vector? normalOverride = null)
+    public static Solid Thicken(Shape2D surface, double depth, Vector? normalOverride = null) =>
+        Failures.Doing(() => "thicken", () => ThickenCore(surface, depth, normalOverride));
+
+    private static Solid ThickenCore(Shape2D surface, double depth, Vector? normalOverride)
     {
         var adjusted = depth;
         if (surface is Face face && normalOverride is { } up)

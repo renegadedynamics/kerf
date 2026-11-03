@@ -10,17 +10,20 @@ namespace Build123d.Tests.Errors;
 using Kerf.Modeling;
 
 /// <summary>
-/// An OCCT failure reaches the caller as OCCT.NET's own exception, OCCT's type and message (unit 10B): the native
-/// backend's OcctException, with what was being done, went with it, until results replace exceptions (unit 10F). The tests keep their names, under which native OCCT's
-/// differential log is recorded.
+/// A kernel failure says what was being done, for someone reading it in a cell: the native backend's "box 0.0 × 1.0 ×
+/// 1.0 failed: …", lost in unit 10B (decision 1342), restored in 10F as a KerfException whose diagnostics are the kernel's
+/// and whose inner exception is OCCT.NET's own. The tests keep their names, under which native OCCT's differential log is
+/// recorded.
 /// </summary>
 public class ErrorContextTests
 {
     [Fact]
     public void APrimitiveSaysWhatItWasMaking()
     {
-        var e = Assert.ThrowsAny<FailureException>(() => new Box(0, 1, 1));
-        Assert.Equal("Standard_DomainError", e.OcctType);
+        var e = Assert.Throws<Kerf.KerfException>(() => new Box(0, 1, 1));
+        Assert.Equal("Standard_DomainError", Assert.IsAssignableFrom<FailureException>(e.InnerException).OcctType);
+        Assert.Equal("engine.domain-error", e.Error.Code.Value);
+        Assert.StartsWith("box 0.0 × 1.0 × 1.0 failed: a value is outside what the operation accepts", e.Message);
     }
 
     [Theory]
@@ -37,8 +40,38 @@ public class ErrorContextTests
             "revolve" => () => Solid.Revolve(Face.MakeRect(1, 1).Moved(new Location((5.0, 0.0, 0.0))), 0, Axis.Y),
             _ => () => Solid.Sweep(Wire.MakeCircle(1), Edge.MakeLine((0, 0, 0), (0, 0, 1e-9))),
         };
-        var e = Assert.ThrowsAny<FailureException>(make);
-        Assert.StartsWith(e.OcctType, Kerf.Engine.Foundation.OcctTypeNames.Of(e.GetType()));
+        var e = Assert.Throws<Kerf.KerfException>(make);
+        Assert.StartsWith($"{feature} failed: ", e.Message);
+        var failure = Assert.IsAssignableFrom<FailureException>(e.InnerException);
+        Assert.Equal(Kerf.Engine.Foundation.FailureDiagnostics.CodeOf(failure.GetType()), e.Error.Code);
+    }
+
+    [Fact]
+    public void ANestedOperationSaysBoth()
+    {
+        // An operation inside another says both, outermost first, with the kernel's failure inside
+        var e = Assert.Throws<Kerf.KerfException>(() => Failures.Doing(() => "extrude", () =>
+            Failures.Doing(() => "fuse of a Solid with a Solid", () => throw new NotDoneException("BOPAlgo_AlertBuilderFailed"))));
+        Assert.Equal("extrude / fuse of a Solid with a Solid failed: the algorithm couldn't complete: BOPAlgo_AlertBuilderFailed", e.Message);
+        Assert.IsType<NotDoneException>(e.InnerException);
+        Assert.Equal("engine.not-done", e.Error.Code.Value);
+    }
+
+    [Fact]
+    public void TheLayersOwnErrorsPassThrough()
+    {
+        // The modelling layer's own errors pass through unchanged
+        var e = Assert.Throws<ArgumentException>(() => Failures.Doing<int>(() => "outer", () => throw new ArgumentException("mine")));
+        Assert.Equal("mine", e.Message);
+    }
+
+    [Fact]
+    public void TheContextIsFormattedOnlyOnFailure()
+    {
+        // What was being done is only formatted on failure, and success returns the value
+        bool formatted = false;
+        Assert.Equal(5, Failures.Doing(() => { formatted = true; return "nothing"; }, () => 5));
+        Assert.False(formatted);
     }
 
     [Fact]
@@ -53,11 +86,15 @@ public class ErrorContextTests
     [Fact]
     public void AFailedBooleanNamesOcctsReasons()
     {
-        // OCCT reports why a boolean failed as alerts, where Shape() says only StdFail_NotDone
+        // OCCT reports why a boolean failed as alerts, where Shape() says only StdFail_NotDone: they become diagnostics
         var fuse = new Fuse();
         fuse.Build();
         Assert.True(fuse.HasErrors);
         Assert.Equal("BOPAlgo_AlertTooFewArguments", Extras.AlgoErrors(fuse));
+        var e = Failures.Boolean(fuse);
+        Assert.Equal("boolean.too-few-arguments", e.Error.Code.Value);
+        Assert.Equal("There are no enough arguments to perform the operation", e.Message);
+        Assert.Equal("BOPAlgo_AlertTooFewArguments", Assert.IsType<NotDoneException>(e.InnerException).Message);
         var box = new MakeBox(1, 1, 1);
         var common = new Common(box.Shape(), box.Shape());
         Assert.Null(Extras.AlgoErrors(common));

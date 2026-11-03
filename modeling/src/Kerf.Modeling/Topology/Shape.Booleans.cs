@@ -147,6 +147,18 @@ public abstract partial class Shape
     public Shape Fuse(params Shape[] toFuse) => Fuse((IEnumerable<Shape>)toFuse);
 
     /// <summary>A boolean operation, its result cast to the highest-ranked class among the inputs.</summary>
+    /// <summary>The inputs of a boolean as its error message names them: "a Solid", "2 Faces and a Shell".</summary>
+    private static string Names(IEnumerable<Shape> shapes)
+    {
+        var groups = shapes.GroupBy(s => s.GetType().Name).Select(g => g.Count() == 1 ? $"a {g.Key}" : $"{g.Count()} {g.Key}s").ToList();
+        return groups.Count switch
+        {
+            0 => "nothing",
+            1 => groups[0],
+            _ => string.Join(", ", groups[..^1]) + " and " + groups[^1],
+        };
+    }
+
     private protected Shape BoolOp(IEnumerable<Shape> args, IEnumerable<Shape> tools, BuilderAlgo operation)
     {
         var argList = args.ToList();
@@ -196,8 +208,11 @@ public abstract partial class Shape
             operation.SetRunParallel(true);
             // Non-destructive: where an input needs a larger tolerance, OCCT copies it rather than changing it
             operation.SetNonDestructive(true);
-            operation.Build();
-            TopoUtil.ThrowIfFailed(operation);
+            Failures.Doing(() => $"{TopoUtil.BooleanName(operation)} of {Names(argList)} with {Names(toolList)}", () =>
+            {
+                operation.Build();
+                TopoUtil.ThrowIfFailed(operation);
+            });
             result = TopoUtil.Downcast(operation.Shape());
             history = ShapeHistory.FromBoolean(operation, arg, tool);
         }
