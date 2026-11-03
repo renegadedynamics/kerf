@@ -23,7 +23,8 @@ namespace Kerf.Engine.Exchange.Brep;
 /// </remarks>
 public static class GeomTools
 {
-    private static volatile UndefinedTypeHandler s_activeHandler = new();
+    // OCCT's global handler: a setting of the operation context (unit 10I), by default one that raises on any type
+    internal static readonly ContextKey<UndefinedTypeHandler> HandlerSetting = new("GeomTools.UndefinedTypeHandler", new());
 
     /// <summary>Writes a readable dump of the surface.</summary>
     public static void Dump(Surface s, TextWriter os)
@@ -80,22 +81,19 @@ public static class GeomTools
     }
 
     /// <summary>
-    /// Installs the handler of the curve and surface types GeomTools doesn't know, for every thread (OCCT's handler
-    /// is a global too). A null handler is ignored.
+    /// Installs the handler of the curve and surface types GeomTools doesn't know, for the rest of the current flow of
+    /// execution (<see cref="OperationContext"/>; OCCT's handler is a global). A null handler is ignored.
     /// </summary>
     public static void SetUndefinedTypeHandler(UndefinedTypeHandler? aHandler)
     {
         if (aHandler is not null)
         {
-            s_activeHandler = aHandler;
+            OperationContext.Set(HandlerSetting, aHandler);
         }
     }
 
     /// <summary>The handler of the curve and surface types GeomTools doesn't know.</summary>
-    public static UndefinedTypeHandler GetUndefinedTypeHandler()
-    {
-        return s_activeHandler;
-    }
+    public static UndefinedTypeHandler GetUndefinedTypeHandler() => HandlerSetting.Value;
 
     /// <summary>
     /// The deepest nesting of trimmed, offset and swept geometry the readers accept (a trimmed curve of a line is 2):

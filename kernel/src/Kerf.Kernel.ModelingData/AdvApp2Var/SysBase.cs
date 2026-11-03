@@ -29,13 +29,6 @@ namespace Kerf.Engine.Approximation.Advanced;
 /// </remarks>
 internal sealed class SysBase
 {
-    // Keep legacy behavior: initialize unit tables once before first package usage.
-    static SysBase()
-    {
-        // Allocation tables are local now; keep only units initialization.
-        macinit_(0, 0);
-    }
-
     public SysBase()
     {
         mainial_();
@@ -101,39 +94,17 @@ internal sealed class SysBase
 
     private readonly mcrstac_t mcrstac_;
 
-    // The common block BLANK: reading/writing units and the debug level IBB.
-    private static class mblank__
-    {
-        public static int lec, imp, ibb; // and keyb, mae, jscrn, itblt, which nothing uses
-    }
+    // The common block BLANK (reading/writing units and the debug level IBB) is left out: OCCT's macinit_ writes it and
+    // nothing reads it (mnfndeb_ answers 0), unit 10I.
 
     //=================================================================================================
 
     /// <summary>
     /// Initialization of reading writing units and 'IBB'. IMODE: 0 = default (IMP 6, IBB 0, LEC 5), 1 = force IMP,
-    /// 2 = force IBB, 3 = force LEC, to IVAL.
+    /// 2 = force IBB, 3 = force LEC, to IVAL. Does nothing here: the common block it set is left out (nothing reads it).
     /// </summary>
     public static int macinit_(int imode, int ival)
     {
-        if (imode == 0)
-        {
-            mblank__.imp = 6;
-            mblank__.ibb = 0;
-            mblank__.lec = 5;
-        }
-        else if (imode == 1)
-        {
-            mblank__.imp = ival;
-        }
-        else if (imode == 2)
-        {
-            mblank__.ibb = ival;
-        }
-        else if (imode == 3)
-        {
-            mblank__.lec = ival;
-        }
-
         return 0;
     } /* macinit__ */
 
