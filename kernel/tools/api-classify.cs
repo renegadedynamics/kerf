@@ -43,6 +43,7 @@ string[] dotnetNames = ["Math", "Vector", "Vector2", "Vector3", "Vector4", "Matr
 // where the rules say so explicitly ('allow').
 
 var rows = new List<Row>();
+var crossRefs = new HashSet<(string From, string To, string Type)>();
 foreach (string name in assemblies)
 {
     string dll = Path.Combine(kernel, "src", name, "bin", "Release", "net10.0", name + ".dll");
@@ -75,6 +76,21 @@ foreach (string name in assemblies)
         }
 
         rows.Add(new Row(name, ns, chain, Kind(md, type)));
+    }
+
+    // The kernel's types this assembly uses from another kernel assembly: what an engine without InternalsVisibleTo
+    // between the assemblies would have to keep public.
+    foreach (TypeReferenceHandle handle in md.TypeReferences)
+    {
+        TypeReference reference = md.GetTypeReference(handle);
+        if (reference.ResolutionScope.Kind == HandleKind.AssemblyReference)
+        {
+            string target = md.GetString(md.GetAssemblyReference((AssemblyReferenceHandle)reference.ResolutionScope).Name);
+            if (assemblies.Contains(target))
+            {
+                crossRefs.Add((name, target, md.GetString(reference.Name)));
+            }
+        }
     }
 }
 
@@ -157,6 +173,16 @@ foreach (var area in rows.Where(r => r.Rule is not null && r.Chain.Count == 1).G
 {
     report.AppendLine($"| {area.Key} | " + string.Join(" | ", classes.Select(c => area.Count(r => r.Rule!.Class == c).ToString("N0"))) + " |");
 }
+
+var engineByAssembly = rows.Where(r => r.Chain.Count == 1 && r.Rule is { Class: not "public" })
+    .Select(r => (r.Assembly, r.Chain[0])).ToHashSet();
+var crossEngine = crossRefs.Where(c => engineByAssembly.Contains((c.To, c.Type))).ToList();
+report.AppendLine();
+report.AppendLine($"Engine and removed types used from another kernel assembly: {crossEngine.Select(c => (c.To, c.Type)).Distinct().Count():N0} "
+    + "(" + string.Join(", ", crossEngine.GroupBy(c => c.To).OrderBy(g => Array.IndexOf(assemblies, g.Key))
+        .Select(g => $"{g.Select(c => c.Type).Distinct().Count():N0} of {g.Key.Replace("OcctNet.", "")}'s")) + "), "
+    + $"and {crossRefs.Select(c => (c.To, c.Type)).Distinct().Count(t => !rows.Any(r => r.Assembly == t.To && r.Chain.Count == 1 && r.Chain[0] == t.Type)):N0} "
+    + "internal types reached through InternalsVisibleTo.");
 
 var used = rows.Where(r => r.Modeling.Length > 0).ToList();
 report.AppendLine();

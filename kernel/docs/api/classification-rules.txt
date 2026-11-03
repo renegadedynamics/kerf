@@ -52,7 +52,7 @@ package Precision   engine Foundation          => Kerf.Geometry.Tolerances (new)
 package Quantity    engine Foundation          # colours: Kerf.Exchange.ColorRgba (new)
 type Quantity_Color engine Foundation Color => Kerf.Exchange.ColorRgba (new)
 type Quantity_ColorRGBA engine Foundation ColorWithAlpha => Kerf.Exchange.ColorRgba (new)
-type Quantity_TypeOfColor engine Foundation ColorSpace => Kerf.Exchange.ColorRgba.FromSrgb / FromLinear
+type Quantity_TypeOfColor engine Foundation ColorSpace => Kerf.Exchange.ColorRgba (new)
 package std         engine Foundation/Std      # the port's stand-ins for C++'s standard library
 
 package NCollection removed Collections        # List<T>, HashSet<T>, Dictionary<,>, arrays and spans (10J)
@@ -225,8 +225,8 @@ type Adaptor2d_Curve2d engine Geometry/Adaptors Curve2DAdaptorBase
 package Adaptor3d     engine Geometry/Adaptors
 type Adaptor3d_Curve engine Geometry/Adaptors CurveAdaptorBase
 type Adaptor3d_Surface engine Geometry/Adaptors SurfaceAdaptorBase
-package GeomConvert   engine Geometry/Conversion  => BSplineCurve3D.From(curve), Curve3D.ToBSpline (new)
-package Geom2dConvert engine Geometry/Conversion suf:2D  => BSplineCurve2D.From(curve)
+package GeomConvert   engine Geometry/Conversion  => Curve3D.ToBSpline, BSplineCurve3D.Join (new)
+package Geom2dConvert engine Geometry/Conversion suf:2D  => Curve2D.ToBSpline (new)
 package GeomEval      engine Geometry/Evaluation
 package Geom2dEval    engine Geometry/Evaluation suf:2D
 package GeomGridEval  engine Geometry/Evaluation/Grid suf:Grid
@@ -246,17 +246,17 @@ package BndLib        engine Geometry/Bounds
 package Hermit        engine Approximation
 package CPnts         engine Measurement/Points
 package GCPnts        engine Measurement
-type GCPnts_AbscissaPoint engine Measurement AbscissaPoint => EdgeCurve.ParameterAtLength, Curve3D.Length (new)
+type GCPnts_AbscissaPoint engine Measurement AbscissaPoint => EdgeCurve.Length, EdgeCurve.ParameterAtLength (new)
 type GCPnts_UniformDeflection engine Measurement UniformDeflection => EdgeCurve.Discretize(DiscretizeOptions) (new)
 type GCPnts_QuasiUniformDeflection engine Measurement QuasiUniformDeflection => EdgeCurve.Discretize(DiscretizeOptions) (new)
 package GProp         engine Measurement
 type GProp_GProps engine Measurement Properties => MassProperties (new record)
 type GProp_PrincipalProps engine Measurement PrincipalProperties => MassProperties.PrincipalAxes (new)
-package GC            engine Construction/Curves   => CircleCurve3D.Arc… and the other curve factories (Geometry review)
+package GC            engine Construction/Curves   => TrimmedCurve3D.Arc, ArcThrough, Segment (geometry.md)
 package gce           engine Construction/Values   => the value types' constructors and factories
 package IntAna        engine Intersection
 package IntAna2d      engine Intersection/TwoD
-type IntAna2d_AnaIntersection engine Intersection/TwoD AnalyticIntersection => Line2D.Intersect, Circle2D.Intersect (new)
+type IntAna2d_AnaIntersection engine Intersection/TwoD AnalyticIntersection => Curve2D.Intersect (new)
 package Extrema       engine Extrema
 type Extrema_ExtPC engine Extrema CurvePointExtrema => Curve3D.Project(point) (new)
 package ExtremaPC     engine Extrema/PointCurve
@@ -304,7 +304,7 @@ type TopAbs_Orientation    public Topology Orientation
 type TopAbs_State          public Topology Containment
 package TopExp      engine Topology
 type TopExp_Explorer       engine Topology Explorer     => Shape.Explore, Shape.Faces… (IEnumerable)
-type TopExp                engine Topology Exploration  => Shape.Explore, Shape.FirstVertex, ShapeGraph.Ancestors (new)
+type TopExp                engine Topology Exploration  => Shape.Faces()…, Edge.FirstVertex, ShapeGraph.Ancestors (new)
 package TopTools    removed Collections                  # maps and lists of shapes: .NET collections with ShapeComparer
 type TopTools engine Exchange/Brep ShapeTools
 type TopTools_FormatVersion engine Exchange/Brep FormatVersion
@@ -317,7 +317,7 @@ type BRep_Curve3D engine Topology/Brep Curve3DRepresentation
 type BRep_Tool             engine Topology/Brep Tool    => Vertex.Point, Edge.Curve, Face.Surface, Tolerance… (Topology review)
 package BRepAdaptor engine Topology/Adaptors
 type BRepAdaptor_Curve     engine Topology/Adaptors EdgeCurveAdaptor => Kerf.Topology.EdgeCurve (new)
-type BRepAdaptor_Curve2d   engine Topology/Adaptors EdgeCurve2DAdaptor => Kerf.Topology.EdgeCurve.OnFace (new)
+type BRepAdaptor_Curve2d   engine Topology/Adaptors EdgeCurve2DAdaptor => Edge.TryGetCurveOnFace (new)
 type BRepAdaptor_Surface   engine Topology/Adaptors FaceSurfaceAdaptor => Kerf.Topology.FaceSurface (new)
 type BRepAdaptor_CompCurve engine Topology/Adaptors WireCurveAdaptor => Kerf.Topology.WireCurve (new)
 package BRepLProp   engine Topology/Properties   => FaceSurface.Normal, FaceSurface.Curvature, Edge continuity (new)
@@ -359,7 +359,7 @@ package TopBas      engine Booleans/Legacy
 package TopCnx      engine Booleans/Legacy
 package TopTrans    engine Booleans/Legacy
 package IntTools    engine Intersection/Tools
-type IntTools_FClass2d engine Classification FaceClassifier2D => Face.Classify(uv) (new)
+type IntTools_FClass2d engine Classification FaceClassifier2D => FaceSurface.Classify (new)
 
 package BRepPrimAPI engine Construction/Api
 type BRepPrimAPI_MakeBox      engine Construction/Api MakeBox      => Primitives.Box
@@ -401,8 +401,8 @@ type BRepOffsetAPI_MakeOffsetShape engine Offsets/Api MakeOffsetShape => OffsetO
 type BRepOffsetAPI_MakeThickSolid engine Offsets/Api MakeThickSolid => OffsetOperations.Hollow, OffsetOperations.Thicken
 type BRepOffsetAPI_DraftAngle engine Features/Api DraftAngle     => FeatureOperations.Draft
 type BRepOffsetAPI_MakeDraft  engine Features/Api MakeDraft
-type BRepOffsetAPI_MakeEvolved engine Construction/Api MakeEvolved => Sweeps.Evolve
-type BRepOffsetAPI_NormalProjection engine Construction/Api NormalProjection => Projections.ProjectNormal
+type BRepOffsetAPI_MakeEvolved engine Construction/Api MakeEvolved   # no public face yet (construction.md)
+type BRepOffsetAPI_NormalProjection engine Construction/Api NormalProjection   # no public face yet
 type BRepOffsetAPI_MiddlePath engine Construction/Api MiddlePath
 type BRepOffsetAPI_FindContigousEdges engine Healing FindContiguousEdges
 package BRepOffset  engine Offsets
@@ -441,7 +441,7 @@ package AppBlend    engine Fillets/Blend
 package IAppBlend   engine Fillets/Blend
 
 package GeomAPI     engine Geometry/Api
-type GeomAPI engine Geometry/Api Projections  => Curve3D.ToPlane / Curve2D.OnPlane (new)
+type GeomAPI engine Geometry/Api Projections  => Curve3D.ToCurve2D, Curve2D.ToCurve3D (new)
 type GeomAPI_Interpolate engine Geometry/Api Interpolate => BSplineCurve3D.Interpolate (new)
 type GeomAPI_PointsToBSpline engine Geometry/Api PointsToBSpline => BSplineCurve3D.Approximate (new)
 type GeomAPI_PointsToBSplineSurface engine Geometry/Api PointsToBSplineSurface => BSplineSurface.Approximate (new)
@@ -466,7 +466,7 @@ package GccAna      engine Construction/Constraints/Analytic
 package GccEnt      engine Construction/Constraints
 type GccEnt_Position engine Construction/Constraints Qualifier => Kerf.Geometry.Tangency (new)
 package GccInt      engine Construction/Constraints
-package Geom2dGcc   engine Construction/Constraints  => Circle2D.TangentTo…, Line2D.TangentTo… (Constrained2D, new)
+package Geom2dGcc   engine Construction/Constraints  => Kerf.Geometry.Tangents2D (new)
 package GeomInt     engine Intersection/Surfaces
 package Geom2dInt   engine Intersection/TwoD
 package IntCurve    engine Intersection/Curves
@@ -475,7 +475,7 @@ package IntCurveSurface engine Intersection/CurveSurface
 package IIntCurveSurface engine Intersection/CurveSurface
 package IntCurvesFace engine Intersection/CurveSurface
 package BRepIntCurveSurface engine Intersection/CurveSurface
-type BRepIntCurveSurface_Inter engine Intersection/CurveSurface CurveShapeIntersector => Shape.Intersect(Line3D) (new)
+type BRepIntCurveSurface_Inter engine Intersection/CurveSurface CurveShapeIntersector => MeasureOperations.Intersect(shape, line) (new)
 package IntImp      engine Intersection/Implicit
 package IIntImp     engine Intersection/Implicit
 package IntImpParGen engine Intersection/Implicit
@@ -566,7 +566,7 @@ package Aspect       engine HiddenLines/Presentation
 package STEPControl     engine Exchange/Step
 type STEPControl_Reader engine Exchange/Step Reader => Step.Read
 type STEPControl_Writer engine Exchange/Step Writer => Step.Write
-type STEPControl_StepModelType engine Exchange/Step ModelType => StepWriteOptions.Representation (new)
+type STEPControl_StepModelType engine Exchange/Step ModelType => StepWriteOptions (always as is)
 package STEPCAFControl  engine Exchange/Step/Documents
 package STEPConstruct   engine Exchange/Step/Construct
 package STEPEdit        engine Exchange/Step/Edit

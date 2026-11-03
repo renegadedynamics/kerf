@@ -220,7 +220,7 @@ DataExchange	STEPControl_ActorRead	class	STEPControl	engine	Exchange/Step	Kerf.E
 DataExchange	STEPControl_ActorWrite	class	STEPControl	engine	Exchange/Step	Kerf.Engine.Exchange.Step.ActorWrite			
 DataExchange	STEPControl_Controller	class	STEPControl	engine	Exchange/Step	Kerf.Engine.Exchange.Step.Controller			
 DataExchange	STEPControl_Reader	class	STEPControl	engine	Exchange/Step	Kerf.Engine.Exchange.Step.Reader	named	Step.Read	
-DataExchange	STEPControl_StepModelType	enum	STEPControl	engine	Exchange/Step	Kerf.Engine.Exchange.Step.ModelType		StepWriteOptions.Representation (new)	
+DataExchange	STEPControl_StepModelType	enum	STEPControl	engine	Exchange/Step	Kerf.Engine.Exchange.Step.ModelType		StepWriteOptions (always as is)	
 DataExchange	STEPControl_Writer	class	STEPControl	engine	Exchange/Step	Kerf.Engine.Exchange.Step.Writer	named	Step.Write	
 DataExchange	STEPEdit	static class	STEPEdit	engine	Exchange/Step/Edit	Kerf.Engine.Exchange.Step.Edit.StepEdit			
 DataExchange	STEPEdit_EditContext	class	STEPEdit	engine	Exchange/Step/Edit	Kerf.Engine.Exchange.Step.Edit.EditContext			
@@ -1677,7 +1677,7 @@ Foundation	Precision	static class	Precision	engine	Foundation	Kerf.Engine.Founda
 Foundation	Quantity_Color	struct	Quantity	engine	Foundation	Kerf.Engine.Foundation.Color		Kerf.Exchange.ColorRgba (new)	
 Foundation	Quantity_ColorRGBA	struct	Quantity	engine	Foundation	Kerf.Engine.Foundation.ColorWithAlpha		Kerf.Exchange.ColorRgba (new)	
 Foundation	Quantity_NameOfColor	enum	Quantity	engine	Foundation	Kerf.Engine.Foundation.NameOfColor			colours: Kerf.Exchange.ColorRgba (new)
-Foundation	Quantity_TypeOfColor	enum	Quantity	engine	Foundation	Kerf.Engine.Foundation.ColorSpace		Kerf.Exchange.ColorRgba.FromSrgb / FromLinear	
+Foundation	Quantity_TypeOfColor	enum	Quantity	engine	Foundation	Kerf.Engine.Foundation.ColorSpace		Kerf.Exchange.ColorRgba (new)	
 Foundation	Resource_Manager	class	Resource	engine	Foundation/Resources	Kerf.Engine.Foundation.Resources.Manager			
 Foundation	Resource_NoSuchResource	class	Resource	engine	Foundation/Resources	Kerf.Engine.Foundation.Resources.NoSuchResource			
 Foundation	Standard	static class	Standard	engine	Foundation	Kerf.Engine.Foundation.Standard			Standard_Transient stays the engine's base; exceptions go to .NET's in 10F
@@ -2182,7 +2182,7 @@ ModelingAlgorithms	BRepGProp_TFunction	class	BRepGProp	engine	Measurement	Kerf.E
 ModelingAlgorithms	BRepGProp_UFunction	class	BRepGProp	engine	Measurement	Kerf.Engine.Measurement.UFunction			
 ModelingAlgorithms	BRepGProp_Vinert	class	BRepGProp	engine	Measurement	Kerf.Engine.Measurement.Vinert			
 ModelingAlgorithms	BRepGProp_VinertGK	class	BRepGProp	engine	Measurement	Kerf.Engine.Measurement.VinertGK			
-ModelingAlgorithms	BRepIntCurveSurface_Inter	class	BRepIntCurveSurface	engine	Intersection/CurveSurface	Kerf.Engine.Intersection.CurveSurface.CurveShapeIntersector	named	Shape.Intersect(Line3D) (new)	
+ModelingAlgorithms	BRepIntCurveSurface_Inter	class	BRepIntCurveSurface	engine	Intersection/CurveSurface	Kerf.Engine.Intersection.CurveSurface.CurveShapeIntersector	named	MeasureOperations.Intersect(shape, line) (new)	
 ModelingAlgorithms	BRepLib	static class	BRepLib	engine	Construction/Library	Kerf.Engine.Construction.Library.Library	named	automatic in the factories (curves 3D built); Edge.WithCurve3D	
 ModelingAlgorithms	BRepLib_CheckCurveOnSurface	class	BRepLib	engine	Construction/Library	Kerf.Engine.Construction.Library.CheckCurveOnSurface			
 ModelingAlgorithms	BRepLib_Command	class	BRepLib	engine	Construction/Library	Kerf.Engine.Construction.Library.Command			
@@ -2287,7 +2287,7 @@ ModelingAlgorithms	BRepOffset	static class	BRepOffset	engine	Offsets	Kerf.Engine
 ModelingAlgorithms	BRepOffsetAPI_DraftAngle	class	BRepOffsetAPI	engine	Features/Api	Kerf.Engine.Features.Api.DraftAngle	named	FeatureOperations.Draft	
 ModelingAlgorithms	BRepOffsetAPI_FindContigousEdges	class	BRepOffsetAPI	engine	Healing	Kerf.Engine.Healing.FindContiguousEdges			
 ModelingAlgorithms	BRepOffsetAPI_MakeDraft	class	BRepOffsetAPI	engine	Features/Api	Kerf.Engine.Features.Api.MakeDraft			
-ModelingAlgorithms	BRepOffsetAPI_MakeEvolved	class	BRepOffsetAPI	engine	Construction/Api	Kerf.Engine.Construction.Api.MakeEvolved		Sweeps.Evolve	
+ModelingAlgorithms	BRepOffsetAPI_MakeEvolved	class	BRepOffsetAPI	engine	Construction/Api	Kerf.Engine.Construction.Api.MakeEvolved			no public face yet (construction.md)
 ModelingAlgorithms	BRepOffsetAPI_MakeFilling	class	BRepOffsetAPI	engine	Construction/Api	Kerf.Engine.Construction.Api.MakeFilling	named	Surfaces.Fill (new)	
 ModelingAlgorithms	BRepOffsetAPI_MakeOffset	class	BRepOffsetAPI	engine	Offsets/Api	Kerf.Engine.Offsets.Api.MakeWireOffset	named	OffsetOperations.Offset2D	
 ModelingAlgorithms	BRepOffsetAPI_MakeOffsetShape	class	BRepOffsetAPI	engine	Offsets/Api	Kerf.Engine.Offsets.Api.MakeOffsetShape	reached	OffsetOperations.Offset	
@@ -2296,7 +2296,7 @@ ModelingAlgorithms	BRepOffsetAPI_MakePipe	class	BRepOffsetAPI	engine	Constructio
 ModelingAlgorithms	BRepOffsetAPI_MakePipeShell	class	BRepOffsetAPI	engine	Construction/Api	Kerf.Engine.Construction.Api.MakePipeShell	named	Sweeps.Sweep	
 ModelingAlgorithms	BRepOffsetAPI_MakeThickSolid	class	BRepOffsetAPI	engine	Offsets/Api	Kerf.Engine.Offsets.Api.MakeThickSolid	named	OffsetOperations.Hollow, OffsetOperations.Thicken	
 ModelingAlgorithms	BRepOffsetAPI_MiddlePath	class	BRepOffsetAPI	engine	Construction/Api	Kerf.Engine.Construction.Api.MiddlePath			
-ModelingAlgorithms	BRepOffsetAPI_NormalProjection	class	BRepOffsetAPI	engine	Construction/Api	Kerf.Engine.Construction.Api.NormalProjection		Projections.ProjectNormal	
+ModelingAlgorithms	BRepOffsetAPI_NormalProjection	class	BRepOffsetAPI	engine	Construction/Api	Kerf.Engine.Construction.Api.NormalProjection			no public face yet
 ModelingAlgorithms	BRepOffsetAPI_ThruSections	class	BRepOffsetAPI	engine	Construction/Api	Kerf.Engine.Construction.Api.ThruSections	named	Sweeps.Loft	
 ModelingAlgorithms	BRepOffsetSimple_Status	enum	BRepOffsetSimple	engine	Offsets/Simple	Kerf.Engine.Offsets.Simple.Status			
 ModelingAlgorithms	BRepOffset_Analyse	class	BRepOffset	engine	Offsets	Kerf.Engine.Offsets.Analyse			
@@ -2484,35 +2484,35 @@ ModelingAlgorithms	Geom2dAPI_InterCurveCurve	class	Geom2dAPI	engine	Geometry/Api
 ModelingAlgorithms	Geom2dAPI_Interpolate	class	Geom2dAPI	engine	Geometry/Api	Kerf.Engine.Geometry.Api.Interpolate2D			
 ModelingAlgorithms	Geom2dAPI_PointsToBSpline	class	Geom2dAPI	engine	Geometry/Api	Kerf.Engine.Geometry.Api.PointsToBSpline2D			
 ModelingAlgorithms	Geom2dAPI_ProjectPointOnCurve	class	Geom2dAPI	engine	Geometry/Api	Kerf.Engine.Geometry.Api.ProjectPointOnCurve2D	named	Curve2D.Project (new)	
-ModelingAlgorithms	Geom2dGcc	static class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.Geom2dGcc		Circle2D.TangentTo…, Line2D.TangentTo… (Constrained2D, new)	
-ModelingAlgorithms	Geom2dGcc_Circ2d2TanOn	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.Circ2d2TanOn	named	Circle2D.TangentTo…, Line2D.TangentTo… (Constrained2D, new)	
-ModelingAlgorithms	Geom2dGcc_Circ2d2TanOnGeo	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.Circ2d2TanOnGeo		Circle2D.TangentTo…, Line2D.TangentTo… (Constrained2D, new)	
-ModelingAlgorithms	Geom2dGcc_Circ2d2TanOnIter	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.Circ2d2TanOnIter		Circle2D.TangentTo…, Line2D.TangentTo… (Constrained2D, new)	
-ModelingAlgorithms	Geom2dGcc_Circ2d2TanRad	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.Circ2d2TanRad	named	Circle2D.TangentTo…, Line2D.TangentTo… (Constrained2D, new)	
-ModelingAlgorithms	Geom2dGcc_Circ2d2TanRadGeo	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.Circ2d2TanRadGeo		Circle2D.TangentTo…, Line2D.TangentTo… (Constrained2D, new)	
-ModelingAlgorithms	Geom2dGcc_Circ2d3Tan	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.Circ2d3Tan	named	Circle2D.TangentTo…, Line2D.TangentTo… (Constrained2D, new)	
-ModelingAlgorithms	Geom2dGcc_Circ2d3TanIter	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.Circ2d3TanIter		Circle2D.TangentTo…, Line2D.TangentTo… (Constrained2D, new)	
-ModelingAlgorithms	Geom2dGcc_Circ2dTanCen	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.Circ2dTanCen	named	Circle2D.TangentTo…, Line2D.TangentTo… (Constrained2D, new)	
-ModelingAlgorithms	Geom2dGcc_Circ2dTanCenGeo	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.Circ2dTanCenGeo		Circle2D.TangentTo…, Line2D.TangentTo… (Constrained2D, new)	
-ModelingAlgorithms	Geom2dGcc_Circ2dTanOnRad	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.Circ2dTanOnRad	named	Circle2D.TangentTo…, Line2D.TangentTo… (Constrained2D, new)	
-ModelingAlgorithms	Geom2dGcc_Circ2dTanOnRadGeo	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.Circ2dTanOnRadGeo		Circle2D.TangentTo…, Line2D.TangentTo… (Constrained2D, new)	
-ModelingAlgorithms	Geom2dGcc_CurveTool	static class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.CurveTool		Circle2D.TangentTo…, Line2D.TangentTo… (Constrained2D, new)	
-ModelingAlgorithms	Geom2dGcc_FunctionTanCirCu	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.FunctionTanCirCu		Circle2D.TangentTo…, Line2D.TangentTo… (Constrained2D, new)	
-ModelingAlgorithms	Geom2dGcc_FunctionTanCuCu	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.FunctionTanCuCu		Circle2D.TangentTo…, Line2D.TangentTo… (Constrained2D, new)	
-ModelingAlgorithms	Geom2dGcc_FunctionTanCuCuCu	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.FunctionTanCuCuCu		Circle2D.TangentTo…, Line2D.TangentTo… (Constrained2D, new)	
-ModelingAlgorithms	Geom2dGcc_FunctionTanCuCuOnCu	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.FunctionTanCuCuOnCu		Circle2D.TangentTo…, Line2D.TangentTo… (Constrained2D, new)	
-ModelingAlgorithms	Geom2dGcc_FunctionTanCuPnt	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.FunctionTanCuPnt		Circle2D.TangentTo…, Line2D.TangentTo… (Constrained2D, new)	
-ModelingAlgorithms	Geom2dGcc_FunctionTanObl	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.FunctionTanObl		Circle2D.TangentTo…, Line2D.TangentTo… (Constrained2D, new)	
-ModelingAlgorithms	Geom2dGcc_IsParallel	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.IsParallel		Circle2D.TangentTo…, Line2D.TangentTo… (Constrained2D, new)	
-ModelingAlgorithms	Geom2dGcc_Lin2d2Tan	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.Lin2d2Tan	named	Circle2D.TangentTo…, Line2D.TangentTo… (Constrained2D, new)	
-ModelingAlgorithms	Geom2dGcc_Lin2d2TanIter	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.Lin2d2TanIter		Circle2D.TangentTo…, Line2D.TangentTo… (Constrained2D, new)	
-ModelingAlgorithms	Geom2dGcc_Lin2dTanObl	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.Lin2dTanObl	named	Circle2D.TangentTo…, Line2D.TangentTo… (Constrained2D, new)	
-ModelingAlgorithms	Geom2dGcc_Lin2dTanOblIter	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.Lin2dTanOblIter		Circle2D.TangentTo…, Line2D.TangentTo… (Constrained2D, new)	
-ModelingAlgorithms	Geom2dGcc_QCurve	struct	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.QCurve		Circle2D.TangentTo…, Line2D.TangentTo… (Constrained2D, new)	
-ModelingAlgorithms	Geom2dGcc_QualifiedCurve	struct	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.QualifiedCurve	named	Circle2D.TangentTo…, Line2D.TangentTo… (Constrained2D, new)	
-ModelingAlgorithms	Geom2dGcc_Type1	enum	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.Type1		Circle2D.TangentTo…, Line2D.TangentTo… (Constrained2D, new)	
-ModelingAlgorithms	Geom2dGcc_Type2	enum	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.Type2		Circle2D.TangentTo…, Line2D.TangentTo… (Constrained2D, new)	
-ModelingAlgorithms	Geom2dGcc_Type3	enum	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.Type3		Circle2D.TangentTo…, Line2D.TangentTo… (Constrained2D, new)	
+ModelingAlgorithms	Geom2dGcc	static class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.Geom2dGcc		Kerf.Geometry.Tangents2D (new)	
+ModelingAlgorithms	Geom2dGcc_Circ2d2TanOn	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.Circ2d2TanOn	named	Kerf.Geometry.Tangents2D (new)	
+ModelingAlgorithms	Geom2dGcc_Circ2d2TanOnGeo	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.Circ2d2TanOnGeo		Kerf.Geometry.Tangents2D (new)	
+ModelingAlgorithms	Geom2dGcc_Circ2d2TanOnIter	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.Circ2d2TanOnIter		Kerf.Geometry.Tangents2D (new)	
+ModelingAlgorithms	Geom2dGcc_Circ2d2TanRad	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.Circ2d2TanRad	named	Kerf.Geometry.Tangents2D (new)	
+ModelingAlgorithms	Geom2dGcc_Circ2d2TanRadGeo	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.Circ2d2TanRadGeo		Kerf.Geometry.Tangents2D (new)	
+ModelingAlgorithms	Geom2dGcc_Circ2d3Tan	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.Circ2d3Tan	named	Kerf.Geometry.Tangents2D (new)	
+ModelingAlgorithms	Geom2dGcc_Circ2d3TanIter	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.Circ2d3TanIter		Kerf.Geometry.Tangents2D (new)	
+ModelingAlgorithms	Geom2dGcc_Circ2dTanCen	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.Circ2dTanCen	named	Kerf.Geometry.Tangents2D (new)	
+ModelingAlgorithms	Geom2dGcc_Circ2dTanCenGeo	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.Circ2dTanCenGeo		Kerf.Geometry.Tangents2D (new)	
+ModelingAlgorithms	Geom2dGcc_Circ2dTanOnRad	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.Circ2dTanOnRad	named	Kerf.Geometry.Tangents2D (new)	
+ModelingAlgorithms	Geom2dGcc_Circ2dTanOnRadGeo	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.Circ2dTanOnRadGeo		Kerf.Geometry.Tangents2D (new)	
+ModelingAlgorithms	Geom2dGcc_CurveTool	static class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.CurveTool		Kerf.Geometry.Tangents2D (new)	
+ModelingAlgorithms	Geom2dGcc_FunctionTanCirCu	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.FunctionTanCirCu		Kerf.Geometry.Tangents2D (new)	
+ModelingAlgorithms	Geom2dGcc_FunctionTanCuCu	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.FunctionTanCuCu		Kerf.Geometry.Tangents2D (new)	
+ModelingAlgorithms	Geom2dGcc_FunctionTanCuCuCu	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.FunctionTanCuCuCu		Kerf.Geometry.Tangents2D (new)	
+ModelingAlgorithms	Geom2dGcc_FunctionTanCuCuOnCu	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.FunctionTanCuCuOnCu		Kerf.Geometry.Tangents2D (new)	
+ModelingAlgorithms	Geom2dGcc_FunctionTanCuPnt	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.FunctionTanCuPnt		Kerf.Geometry.Tangents2D (new)	
+ModelingAlgorithms	Geom2dGcc_FunctionTanObl	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.FunctionTanObl		Kerf.Geometry.Tangents2D (new)	
+ModelingAlgorithms	Geom2dGcc_IsParallel	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.IsParallel		Kerf.Geometry.Tangents2D (new)	
+ModelingAlgorithms	Geom2dGcc_Lin2d2Tan	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.Lin2d2Tan	named	Kerf.Geometry.Tangents2D (new)	
+ModelingAlgorithms	Geom2dGcc_Lin2d2TanIter	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.Lin2d2TanIter		Kerf.Geometry.Tangents2D (new)	
+ModelingAlgorithms	Geom2dGcc_Lin2dTanObl	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.Lin2dTanObl	named	Kerf.Geometry.Tangents2D (new)	
+ModelingAlgorithms	Geom2dGcc_Lin2dTanOblIter	class	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.Lin2dTanOblIter		Kerf.Geometry.Tangents2D (new)	
+ModelingAlgorithms	Geom2dGcc_QCurve	struct	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.QCurve		Kerf.Geometry.Tangents2D (new)	
+ModelingAlgorithms	Geom2dGcc_QualifiedCurve	struct	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.QualifiedCurve	named	Kerf.Geometry.Tangents2D (new)	
+ModelingAlgorithms	Geom2dGcc_Type1	enum	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.Type1		Kerf.Geometry.Tangents2D (new)	
+ModelingAlgorithms	Geom2dGcc_Type2	enum	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.Type2		Kerf.Geometry.Tangents2D (new)	
+ModelingAlgorithms	Geom2dGcc_Type3	enum	Geom2dGcc	engine	Construction/Constraints	Kerf.Engine.Construction.Constraints.Type3		Kerf.Geometry.Tangents2D (new)	
 ModelingAlgorithms	Geom2dHatch_Classifier	class	Geom2dHatch	engine	Classification/Hatching	Kerf.Engine.Classification.Hatching.Classifier2D			
 ModelingAlgorithms	Geom2dHatch_Element	struct	Geom2dHatch	engine	Classification/Hatching	Kerf.Engine.Classification.Hatching.Element2D			
 ModelingAlgorithms	Geom2dHatch_Elements	class	Geom2dHatch	engine	Classification/Hatching	Kerf.Engine.Classification.Hatching.Elements2D			
@@ -2532,7 +2532,7 @@ ModelingAlgorithms	Geom2dInt_TheIntPCurvePCurveOfGInter	class	Geom2dInt	engine	I
 ModelingAlgorithms	Geom2dInt_TheIntersectorOfTheIntConicCurveOfGInter	class	Geom2dInt	engine	Intersection/TwoD	Kerf.Engine.Intersection.TwoD.TheIntersectorOfTheIntConicCurveOfGInter			
 ModelingAlgorithms	Geom2dInt_ThePolygon2dOfTheIntPCurvePCurveOfGInter	class	Geom2dInt	engine	Intersection/TwoD	Kerf.Engine.Intersection.TwoD.ThePolygon2dOfTheIntPCurvePCurveOfGInter			
 ModelingAlgorithms	Geom2dInt_TheProjPCurOfGInter	struct	Geom2dInt	engine	Intersection/TwoD	Kerf.Engine.Intersection.TwoD.TheProjPCurOfGInter			
-ModelingAlgorithms	GeomAPI	static class	GeomAPI	engine	Geometry/Api	Kerf.Engine.Geometry.Api.Projections	named	Curve3D.ToPlane / Curve2D.OnPlane (new)	
+ModelingAlgorithms	GeomAPI	static class	GeomAPI	engine	Geometry/Api	Kerf.Engine.Geometry.Api.Projections	named	Curve3D.ToCurve2D, Curve2D.ToCurve3D (new)	
 ModelingAlgorithms	GeomAPI_ExtremaCurveCurve	class	GeomAPI	engine	Geometry/Api	Kerf.Engine.Geometry.Api.ExtremaCurveCurve			
 ModelingAlgorithms	GeomAPI_ExtremaCurveSurface	class	GeomAPI	engine	Geometry/Api	Kerf.Engine.Geometry.Api.ExtremaCurveSurface			
 ModelingAlgorithms	GeomAPI_ExtremaSurfaceSurface	class	GeomAPI	engine	Geometry/Api	Kerf.Engine.Geometry.Api.ExtremaSurfaceSurface			
@@ -2944,7 +2944,7 @@ ModelingAlgorithms	IntTools_CurveRangeLocalizeData	class	IntTools	engine	Interse
 ModelingAlgorithms	IntTools_CurveRangeSample	struct	IntTools	engine	Intersection/Tools	Kerf.Engine.Intersection.Tools.CurveRangeSample			
 ModelingAlgorithms	IntTools_EdgeEdge	class	IntTools	engine	Intersection/Tools	Kerf.Engine.Intersection.Tools.EdgeEdge			
 ModelingAlgorithms	IntTools_EdgeFace	class	IntTools	engine	Intersection/Tools	Kerf.Engine.Intersection.Tools.EdgeFace			
-ModelingAlgorithms	IntTools_FClass2d	class	IntTools	engine	Classification	Kerf.Engine.Classification.FaceClassifier2D	named	Face.Classify(uv) (new)	
+ModelingAlgorithms	IntTools_FClass2d	class	IntTools	engine	Classification	Kerf.Engine.Classification.FaceClassifier2D	named	FaceSurface.Classify (new)	
 ModelingAlgorithms	IntTools_FaceFace	class	IntTools	engine	Intersection/Tools	Kerf.Engine.Intersection.Tools.FaceFace			
 ModelingAlgorithms	IntTools_MarkedRangeSet	class	IntTools	engine	Intersection/Tools	Kerf.Engine.Intersection.Tools.MarkedRangeSet			
 ModelingAlgorithms	IntTools_PntOn2Faces	struct	IntTools	engine	Intersection/Tools	Kerf.Engine.Intersection.Tools.PntOn2Faces			
@@ -3334,7 +3334,7 @@ ModelingData	Approx_SweepApproximation	class	Approx	engine	Approximation	Kerf.En
 ModelingData	Approx_SweepFunction	class	Approx	engine	Approximation	Kerf.Engine.Approximation.SweepFunction			
 ModelingData	BRepAdaptor_CompCurve	class	BRepAdaptor	engine	Topology/Adaptors	Kerf.Engine.Topology.Adaptors.WireCurveAdaptor	named	Kerf.Topology.WireCurve (new)	
 ModelingData	BRepAdaptor_Curve	class	BRepAdaptor	engine	Topology/Adaptors	Kerf.Engine.Topology.Adaptors.EdgeCurveAdaptor	named	Kerf.Topology.EdgeCurve (new)	
-ModelingData	BRepAdaptor_Curve2d	class	BRepAdaptor	engine	Topology/Adaptors	Kerf.Engine.Topology.Adaptors.EdgeCurve2DAdaptor	named	Kerf.Topology.EdgeCurve.OnFace (new)	
+ModelingData	BRepAdaptor_Curve2d	class	BRepAdaptor	engine	Topology/Adaptors	Kerf.Engine.Topology.Adaptors.EdgeCurve2DAdaptor	named	Edge.TryGetCurveOnFace (new)	
 ModelingData	BRepAdaptor_Surface	class	BRepAdaptor	engine	Topology/Adaptors	Kerf.Engine.Topology.Adaptors.FaceSurfaceAdaptor	named	Kerf.Topology.FaceSurface (new)	
 ModelingData	BRepLProp	static class	BRepLProp	engine	Topology/Properties	Kerf.Engine.Topology.Properties.BRepLProp	named	FaceSurface.Normal, FaceSurface.Curvature, Edge continuity (new)	
 ModelingData	BRepLProp_CLProps	class	BRepLProp	engine	Topology/Properties	Kerf.Engine.Topology.Properties.CLProps		FaceSurface.Normal, FaceSurface.Curvature, Edge continuity (new)	
@@ -3488,7 +3488,7 @@ ModelingData	FEmTool_LinearJerk	class	FEmTool	engine	Approximation/FiniteElement
 ModelingData	FEmTool_LinearTension	class	FEmTool	engine	Approximation/FiniteElements	Kerf.Engine.Approximation.FiniteElements.LinearTension			
 ModelingData	FEmTool_ProfileMatrix	class	FEmTool	engine	Approximation/FiniteElements	Kerf.Engine.Approximation.FiniteElements.ProfileMatrix			
 ModelingData	FEmTool_SparseMatrix	class	FEmTool	engine	Approximation/FiniteElements	Kerf.Engine.Approximation.FiniteElements.SparseMatrix			
-ModelingData	GCPnts_AbscissaPoint	class	GCPnts	engine	Measurement	Kerf.Engine.Measurement.AbscissaPoint	named	EdgeCurve.ParameterAtLength, Curve3D.Length (new)	
+ModelingData	GCPnts_AbscissaPoint	class	GCPnts	engine	Measurement	Kerf.Engine.Measurement.AbscissaPoint	named	EdgeCurve.Length, EdgeCurve.ParameterAtLength (new)	
 ModelingData	GCPnts_AbscissaType	enum	GCPnts	engine	Measurement	Kerf.Engine.Measurement.AbscissaType			
 ModelingData	GCPnts_DeflectionType	enum	GCPnts	engine	Measurement	Kerf.Engine.Measurement.DeflectionType			
 ModelingData	GCPnts_DistFunction	class	GCPnts	engine	Measurement	Kerf.Engine.Measurement.DistFunction			
@@ -3500,39 +3500,39 @@ ModelingData	GCPnts_QuasiUniformDeflection	class	GCPnts	engine	Measurement	Kerf.
 ModelingData	GCPnts_TangentialDeflection	class	GCPnts	engine	Measurement	Kerf.Engine.Measurement.TangentialDeflection			
 ModelingData	GCPnts_UniformAbscissa	class	GCPnts	engine	Measurement	Kerf.Engine.Measurement.UniformAbscissa			
 ModelingData	GCPnts_UniformDeflection	class	GCPnts	engine	Measurement	Kerf.Engine.Measurement.UniformDeflection	named	EdgeCurve.Discretize(DiscretizeOptions) (new)	
-ModelingData	GC_MakeArcOfCircle	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeArcOfCircle	named	CircleCurve3D.Arc… and the other curve factories (Geometry review)	
-ModelingData	GC_MakeArcOfCircle2d	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeArcOfCircle2d		CircleCurve3D.Arc… and the other curve factories (Geometry review)	
-ModelingData	GC_MakeArcOfEllipse	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeArcOfEllipse	named	CircleCurve3D.Arc… and the other curve factories (Geometry review)	
-ModelingData	GC_MakeArcOfEllipse2d	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeArcOfEllipse2d		CircleCurve3D.Arc… and the other curve factories (Geometry review)	
-ModelingData	GC_MakeArcOfHyperbola	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeArcOfHyperbola	named	CircleCurve3D.Arc… and the other curve factories (Geometry review)	
-ModelingData	GC_MakeArcOfHyperbola2d	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeArcOfHyperbola2d		CircleCurve3D.Arc… and the other curve factories (Geometry review)	
-ModelingData	GC_MakeArcOfParabola	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeArcOfParabola	named	CircleCurve3D.Arc… and the other curve factories (Geometry review)	
-ModelingData	GC_MakeArcOfParabola2d	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeArcOfParabola2d		CircleCurve3D.Arc… and the other curve factories (Geometry review)	
-ModelingData	GC_MakeCircle	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeCircle		CircleCurve3D.Arc… and the other curve factories (Geometry review)	
-ModelingData	GC_MakeCircle2d	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeCircle2d		CircleCurve3D.Arc… and the other curve factories (Geometry review)	
-ModelingData	GC_MakeConicalSurface	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeConicalSurface		CircleCurve3D.Arc… and the other curve factories (Geometry review)	
-ModelingData	GC_MakeCylindricalSurface	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeCylindricalSurface		CircleCurve3D.Arc… and the other curve factories (Geometry review)	
-ModelingData	GC_MakeEllipse	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeEllipse		CircleCurve3D.Arc… and the other curve factories (Geometry review)	
-ModelingData	GC_MakeEllipse2d	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeEllipse2d		CircleCurve3D.Arc… and the other curve factories (Geometry review)	
-ModelingData	GC_MakeHyperbola	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeHyperbola		CircleCurve3D.Arc… and the other curve factories (Geometry review)	
-ModelingData	GC_MakeHyperbola2d	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeHyperbola2d		CircleCurve3D.Arc… and the other curve factories (Geometry review)	
-ModelingData	GC_MakeLine	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeLine		CircleCurve3D.Arc… and the other curve factories (Geometry review)	
-ModelingData	GC_MakeLine2d	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeLine2d		CircleCurve3D.Arc… and the other curve factories (Geometry review)	
-ModelingData	GC_MakeMirror	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeMirror		CircleCurve3D.Arc… and the other curve factories (Geometry review)	
-ModelingData	GC_MakeMirror2d	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeMirror2d		CircleCurve3D.Arc… and the other curve factories (Geometry review)	
-ModelingData	GC_MakeParabola2d	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeParabola2d		CircleCurve3D.Arc… and the other curve factories (Geometry review)	
-ModelingData	GC_MakePlane	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakePlane		CircleCurve3D.Arc… and the other curve factories (Geometry review)	
-ModelingData	GC_MakeRotation	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeRotation		CircleCurve3D.Arc… and the other curve factories (Geometry review)	
-ModelingData	GC_MakeRotation2d	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeRotation2d		CircleCurve3D.Arc… and the other curve factories (Geometry review)	
-ModelingData	GC_MakeScale	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeScale		CircleCurve3D.Arc… and the other curve factories (Geometry review)	
-ModelingData	GC_MakeScale2d	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeScale2d		CircleCurve3D.Arc… and the other curve factories (Geometry review)	
-ModelingData	GC_MakeSegment	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeSegment		CircleCurve3D.Arc… and the other curve factories (Geometry review)	
-ModelingData	GC_MakeSegment2d	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeSegment2d		CircleCurve3D.Arc… and the other curve factories (Geometry review)	
-ModelingData	GC_MakeTranslation	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeTranslation		CircleCurve3D.Arc… and the other curve factories (Geometry review)	
-ModelingData	GC_MakeTranslation2d	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeTranslation2d		CircleCurve3D.Arc… and the other curve factories (Geometry review)	
-ModelingData	GC_MakeTrimmedCone	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeTrimmedCone		CircleCurve3D.Arc… and the other curve factories (Geometry review)	
-ModelingData	GC_MakeTrimmedCylinder	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeTrimmedCylinder		CircleCurve3D.Arc… and the other curve factories (Geometry review)	
-ModelingData	GC_Root	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.Root	reached	CircleCurve3D.Arc… and the other curve factories (Geometry review)	
+ModelingData	GC_MakeArcOfCircle	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeArcOfCircle	named	TrimmedCurve3D.Arc, ArcThrough, Segment (geometry.md)	
+ModelingData	GC_MakeArcOfCircle2d	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeArcOfCircle2d		TrimmedCurve3D.Arc, ArcThrough, Segment (geometry.md)	
+ModelingData	GC_MakeArcOfEllipse	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeArcOfEllipse	named	TrimmedCurve3D.Arc, ArcThrough, Segment (geometry.md)	
+ModelingData	GC_MakeArcOfEllipse2d	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeArcOfEllipse2d		TrimmedCurve3D.Arc, ArcThrough, Segment (geometry.md)	
+ModelingData	GC_MakeArcOfHyperbola	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeArcOfHyperbola	named	TrimmedCurve3D.Arc, ArcThrough, Segment (geometry.md)	
+ModelingData	GC_MakeArcOfHyperbola2d	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeArcOfHyperbola2d		TrimmedCurve3D.Arc, ArcThrough, Segment (geometry.md)	
+ModelingData	GC_MakeArcOfParabola	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeArcOfParabola	named	TrimmedCurve3D.Arc, ArcThrough, Segment (geometry.md)	
+ModelingData	GC_MakeArcOfParabola2d	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeArcOfParabola2d		TrimmedCurve3D.Arc, ArcThrough, Segment (geometry.md)	
+ModelingData	GC_MakeCircle	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeCircle		TrimmedCurve3D.Arc, ArcThrough, Segment (geometry.md)	
+ModelingData	GC_MakeCircle2d	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeCircle2d		TrimmedCurve3D.Arc, ArcThrough, Segment (geometry.md)	
+ModelingData	GC_MakeConicalSurface	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeConicalSurface		TrimmedCurve3D.Arc, ArcThrough, Segment (geometry.md)	
+ModelingData	GC_MakeCylindricalSurface	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeCylindricalSurface		TrimmedCurve3D.Arc, ArcThrough, Segment (geometry.md)	
+ModelingData	GC_MakeEllipse	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeEllipse		TrimmedCurve3D.Arc, ArcThrough, Segment (geometry.md)	
+ModelingData	GC_MakeEllipse2d	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeEllipse2d		TrimmedCurve3D.Arc, ArcThrough, Segment (geometry.md)	
+ModelingData	GC_MakeHyperbola	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeHyperbola		TrimmedCurve3D.Arc, ArcThrough, Segment (geometry.md)	
+ModelingData	GC_MakeHyperbola2d	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeHyperbola2d		TrimmedCurve3D.Arc, ArcThrough, Segment (geometry.md)	
+ModelingData	GC_MakeLine	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeLine		TrimmedCurve3D.Arc, ArcThrough, Segment (geometry.md)	
+ModelingData	GC_MakeLine2d	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeLine2d		TrimmedCurve3D.Arc, ArcThrough, Segment (geometry.md)	
+ModelingData	GC_MakeMirror	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeMirror		TrimmedCurve3D.Arc, ArcThrough, Segment (geometry.md)	
+ModelingData	GC_MakeMirror2d	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeMirror2d		TrimmedCurve3D.Arc, ArcThrough, Segment (geometry.md)	
+ModelingData	GC_MakeParabola2d	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeParabola2d		TrimmedCurve3D.Arc, ArcThrough, Segment (geometry.md)	
+ModelingData	GC_MakePlane	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakePlane		TrimmedCurve3D.Arc, ArcThrough, Segment (geometry.md)	
+ModelingData	GC_MakeRotation	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeRotation		TrimmedCurve3D.Arc, ArcThrough, Segment (geometry.md)	
+ModelingData	GC_MakeRotation2d	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeRotation2d		TrimmedCurve3D.Arc, ArcThrough, Segment (geometry.md)	
+ModelingData	GC_MakeScale	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeScale		TrimmedCurve3D.Arc, ArcThrough, Segment (geometry.md)	
+ModelingData	GC_MakeScale2d	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeScale2d		TrimmedCurve3D.Arc, ArcThrough, Segment (geometry.md)	
+ModelingData	GC_MakeSegment	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeSegment		TrimmedCurve3D.Arc, ArcThrough, Segment (geometry.md)	
+ModelingData	GC_MakeSegment2d	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeSegment2d		TrimmedCurve3D.Arc, ArcThrough, Segment (geometry.md)	
+ModelingData	GC_MakeTranslation	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeTranslation		TrimmedCurve3D.Arc, ArcThrough, Segment (geometry.md)	
+ModelingData	GC_MakeTranslation2d	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeTranslation2d		TrimmedCurve3D.Arc, ArcThrough, Segment (geometry.md)	
+ModelingData	GC_MakeTrimmedCone	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeTrimmedCone		TrimmedCurve3D.Arc, ArcThrough, Segment (geometry.md)	
+ModelingData	GC_MakeTrimmedCylinder	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.MakeTrimmedCylinder		TrimmedCurve3D.Arc, ArcThrough, Segment (geometry.md)	
+ModelingData	GC_Root	class	GC	engine	Construction/Curves	Kerf.Engine.Construction.Curves.Root	reached	TrimmedCurve3D.Arc, ArcThrough, Segment (geometry.md)	
 ModelingData	GProp	static class	GProp	engine	Measurement	Kerf.Engine.Measurement.GProp			
 ModelingData	GProp_CelGProps	class	GProp	engine	Measurement	Kerf.Engine.Measurement.CelGProps			
 ModelingData	GProp_GProps	class	GProp	engine	Measurement	Kerf.Engine.Measurement.Properties	named	MassProperties (new record)	
@@ -3546,14 +3546,14 @@ ModelingData	GProp_ValueType	enum	GProp	engine	Measurement	Kerf.Engine.Measureme
 ModelingData	GProp_VelGProps	class	GProp	engine	Measurement	Kerf.Engine.Measurement.VelGProps			
 ModelingData	Geom2dAdaptor	static class	Geom2dAdaptor	engine	Geometry/Adaptors	Kerf.Engine.Geometry.Adaptors.Geom2dAdaptor			
 ModelingData	Geom2dAdaptor_Curve	class	Geom2dAdaptor	engine	Geometry/Adaptors	Kerf.Engine.Geometry.Adaptors.CurveAdaptor2D	named	Curve2D's own evaluation members	
-ModelingData	Geom2dConvert	static class	Geom2dConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.Geom2dConvert2D	reached	BSplineCurve2D.From(curve)	
-ModelingData	Geom2dConvert_ApproxArcsSegments	class	Geom2dConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.ApproxArcsSegments2D		BSplineCurve2D.From(curve)	
+ModelingData	Geom2dConvert	static class	Geom2dConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.Geom2dConvert2D	reached	Curve2D.ToBSpline (new)	
+ModelingData	Geom2dConvert_ApproxArcsSegments	class	Geom2dConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.ApproxArcsSegments2D		Curve2D.ToBSpline (new)	
 ModelingData	Geom2dConvert_ApproxArcsSegments+Status	enum	Geom2dConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.ApproxArcsSegments2D.Status			
-ModelingData	Geom2dConvert_ApproxCurve	class	Geom2dConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.ApproxCurve2D		BSplineCurve2D.From(curve)	
-ModelingData	Geom2dConvert_BSplineCurveKnotSplitting	class	Geom2dConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.BSplineCurveKnotSplitting2D		BSplineCurve2D.From(curve)	
-ModelingData	Geom2dConvert_BSplineCurveToBezierCurve	class	Geom2dConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.BSplineCurveToBezierCurve2D		BSplineCurve2D.From(curve)	
-ModelingData	Geom2dConvert_CompCurveToBSplineCurve	class	Geom2dConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.CompCurveToBSplineCurve2D		BSplineCurve2D.From(curve)	
-ModelingData	Geom2dConvert_PPoint	struct	Geom2dConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.PPoint2D		BSplineCurve2D.From(curve)	
+ModelingData	Geom2dConvert_ApproxCurve	class	Geom2dConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.ApproxCurve2D		Curve2D.ToBSpline (new)	
+ModelingData	Geom2dConvert_BSplineCurveKnotSplitting	class	Geom2dConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.BSplineCurveKnotSplitting2D		Curve2D.ToBSpline (new)	
+ModelingData	Geom2dConvert_BSplineCurveToBezierCurve	class	Geom2dConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.BSplineCurveToBezierCurve2D		Curve2D.ToBSpline (new)	
+ModelingData	Geom2dConvert_CompCurveToBSplineCurve	class	Geom2dConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.CompCurveToBSplineCurve2D		Curve2D.ToBSpline (new)	
+ModelingData	Geom2dConvert_PPoint	struct	Geom2dConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.PPoint2D		Curve2D.ToBSpline (new)	
 ModelingData	Geom2dEval_AHTBezierCurve	class	Geom2dEval	engine	Geometry/Evaluation	Kerf.Engine.Geometry.Evaluation.AhtBezierCurve2D			
 ModelingData	Geom2dEval_ArchimedeanSpiralCurve	class	Geom2dEval	engine	Geometry/Evaluation	Kerf.Engine.Geometry.Evaluation.ArchimedeanSpiralCurve2D			
 ModelingData	Geom2dEval_CircleInvoluteCurve	class	Geom2dEval	engine	Geometry/Evaluation	Kerf.Engine.Geometry.Evaluation.CircleInvoluteCurve2D			
@@ -3645,22 +3645,22 @@ ModelingData	GeomBndLib_Surface	class	GeomBndLib	engine	Geometry/Bounds/Computat
 ModelingData	GeomBndLib_SurfaceOfExtrusion	class	GeomBndLib	engine	Geometry/Bounds/Computation	Kerf.Engine.Geometry.Bounds.Computation.SurfaceOfExtrusionBounds			
 ModelingData	GeomBndLib_SurfaceOfRevolution	class	GeomBndLib	engine	Geometry/Bounds/Computation	Kerf.Engine.Geometry.Bounds.Computation.SurfaceOfRevolutionBounds			
 ModelingData	GeomBndLib_Torus	class	GeomBndLib	engine	Geometry/Bounds/Computation	Kerf.Engine.Geometry.Bounds.Computation.TorusBounds			
-ModelingData	GeomConvert	static class	GeomConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.GeomConvert	reached	BSplineCurve3D.From(curve), Curve3D.ToBSpline (new)	
-ModelingData	GeomConvert_ApproxCurve	class	GeomConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.ApproxCurve	named	BSplineCurve3D.From(curve), Curve3D.ToBSpline (new)	
-ModelingData	GeomConvert_ApproxSurface	class	GeomConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.ApproxSurface		BSplineCurve3D.From(curve), Curve3D.ToBSpline (new)	
-ModelingData	GeomConvert_BSplineCurveKnotSplitting	class	GeomConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.BSplineCurveKnotSplitting		BSplineCurve3D.From(curve), Curve3D.ToBSpline (new)	
-ModelingData	GeomConvert_BSplineCurveToBezierCurve	class	GeomConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.BSplineCurveToBezierCurve		BSplineCurve3D.From(curve), Curve3D.ToBSpline (new)	
-ModelingData	GeomConvert_BSplineSurfaceKnotSplitting	class	GeomConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.BSplineSurfaceKnotSplitting		BSplineCurve3D.From(curve), Curve3D.ToBSpline (new)	
-ModelingData	GeomConvert_BSplineSurfaceToBezierSurface	class	GeomConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.BSplineSurfaceToBezierSurface		BSplineCurve3D.From(curve), Curve3D.ToBSpline (new)	
-ModelingData	GeomConvert_CompBezierSurfacesToBSplineSurface	class	GeomConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.CompBezierSurfacesToBSplineSurface		BSplineCurve3D.From(curve), Curve3D.ToBSpline (new)	
-ModelingData	GeomConvert_CompCurveToBSplineCurve	class	GeomConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.CompCurveToBSplineCurve	named	BSplineCurve3D.From(curve), Curve3D.ToBSpline (new)	
-ModelingData	GeomConvert_ConvType	enum	GeomConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.ConvType		BSplineCurve3D.From(curve), Curve3D.ToBSpline (new)	
-ModelingData	GeomConvert_CurveToAnaCurve	class	GeomConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.CurveToAnaCurve		BSplineCurve3D.From(curve), Curve3D.ToBSpline (new)	
-ModelingData	GeomConvert_FuncConeLSDist	class	GeomConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.FuncConeLSDist		BSplineCurve3D.From(curve), Curve3D.ToBSpline (new)	
-ModelingData	GeomConvert_FuncCylinderLSDist	class	GeomConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.FuncCylinderLSDist		BSplineCurve3D.From(curve), Curve3D.ToBSpline (new)	
-ModelingData	GeomConvert_FuncSphereLSDist	class	GeomConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.FuncSphereLSDist		BSplineCurve3D.From(curve), Curve3D.ToBSpline (new)	
-ModelingData	GeomConvert_SurfToAnaSurf	class	GeomConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.SurfToAnaSurf		BSplineCurve3D.From(curve), Curve3D.ToBSpline (new)	
-ModelingData	GeomConvert_Units	static class	GeomConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.Units		BSplineCurve3D.From(curve), Curve3D.ToBSpline (new)	
+ModelingData	GeomConvert	static class	GeomConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.GeomConvert	reached	Curve3D.ToBSpline, BSplineCurve3D.Join (new)	
+ModelingData	GeomConvert_ApproxCurve	class	GeomConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.ApproxCurve	named	Curve3D.ToBSpline, BSplineCurve3D.Join (new)	
+ModelingData	GeomConvert_ApproxSurface	class	GeomConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.ApproxSurface		Curve3D.ToBSpline, BSplineCurve3D.Join (new)	
+ModelingData	GeomConvert_BSplineCurveKnotSplitting	class	GeomConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.BSplineCurveKnotSplitting		Curve3D.ToBSpline, BSplineCurve3D.Join (new)	
+ModelingData	GeomConvert_BSplineCurveToBezierCurve	class	GeomConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.BSplineCurveToBezierCurve		Curve3D.ToBSpline, BSplineCurve3D.Join (new)	
+ModelingData	GeomConvert_BSplineSurfaceKnotSplitting	class	GeomConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.BSplineSurfaceKnotSplitting		Curve3D.ToBSpline, BSplineCurve3D.Join (new)	
+ModelingData	GeomConvert_BSplineSurfaceToBezierSurface	class	GeomConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.BSplineSurfaceToBezierSurface		Curve3D.ToBSpline, BSplineCurve3D.Join (new)	
+ModelingData	GeomConvert_CompBezierSurfacesToBSplineSurface	class	GeomConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.CompBezierSurfacesToBSplineSurface		Curve3D.ToBSpline, BSplineCurve3D.Join (new)	
+ModelingData	GeomConvert_CompCurveToBSplineCurve	class	GeomConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.CompCurveToBSplineCurve	named	Curve3D.ToBSpline, BSplineCurve3D.Join (new)	
+ModelingData	GeomConvert_ConvType	enum	GeomConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.ConvType		Curve3D.ToBSpline, BSplineCurve3D.Join (new)	
+ModelingData	GeomConvert_CurveToAnaCurve	class	GeomConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.CurveToAnaCurve		Curve3D.ToBSpline, BSplineCurve3D.Join (new)	
+ModelingData	GeomConvert_FuncConeLSDist	class	GeomConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.FuncConeLSDist		Curve3D.ToBSpline, BSplineCurve3D.Join (new)	
+ModelingData	GeomConvert_FuncCylinderLSDist	class	GeomConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.FuncCylinderLSDist		Curve3D.ToBSpline, BSplineCurve3D.Join (new)	
+ModelingData	GeomConvert_FuncSphereLSDist	class	GeomConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.FuncSphereLSDist		Curve3D.ToBSpline, BSplineCurve3D.Join (new)	
+ModelingData	GeomConvert_SurfToAnaSurf	class	GeomConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.SurfToAnaSurf		Curve3D.ToBSpline, BSplineCurve3D.Join (new)	
+ModelingData	GeomConvert_Units	static class	GeomConvert	engine	Geometry/Conversion	Kerf.Engine.Geometry.Conversion.Units		Curve3D.ToBSpline, BSplineCurve3D.Join (new)	
 ModelingData	GeomEval_AHTBezierCurve	class	GeomEval	engine	Geometry/Evaluation	Kerf.Engine.Geometry.Evaluation.AhtBezierCurve			
 ModelingData	GeomEval_AHTBezierSurface	class	GeomEval	engine	Geometry/Evaluation	Kerf.Engine.Geometry.Evaluation.AhtBezierSurface			
 ModelingData	GeomEval_CircularHelicoidSurface	class	GeomEval	engine	Geometry/Evaluation	Kerf.Engine.Geometry.Evaluation.CircularHelicoidSurface			
@@ -3792,7 +3792,7 @@ ModelingData	Geom_VectorWithMagnitude	class	Geom	engine	Geometry/Objects	Kerf.En
 ModelingData	Hermit	static class	Hermit	engine	Approximation	Kerf.Engine.Approximation.Hermit			
 ModelingData	IAppParCurves_LineTool`1	interface	IAppParCurves	engine	Approximation	Kerf.Engine.Approximation.LineTool			
 ModelingData	IApprox_LineTool`1	interface	IApprox	engine	Approximation/Interfaces	Kerf.Engine.Approximation.Interfaces.LineTool			
-ModelingData	IntAna2d_AnaIntersection	class	IntAna2d	engine	Intersection/TwoD	Kerf.Engine.Intersection.TwoD.AnalyticIntersection	named	Line2D.Intersect, Circle2D.Intersect (new)	
+ModelingData	IntAna2d_AnaIntersection	class	IntAna2d	engine	Intersection/TwoD	Kerf.Engine.Intersection.TwoD.AnalyticIntersection	named	Curve2D.Intersect (new)	
 ModelingData	IntAna2d_Conic	struct	IntAna2d	engine	Intersection/TwoD	Kerf.Engine.Intersection.TwoD.Conic			
 ModelingData	IntAna2d_IntPoint	struct	IntAna2d	engine	Intersection/TwoD	Kerf.Engine.Intersection.TwoD.IntPoint	reached		
 ModelingData	IntAna_Curve	struct	IntAna	engine	Intersection	Kerf.Engine.Intersection.Curve			
@@ -3830,7 +3830,7 @@ ModelingData	TopAbs	static class	TopAbs	engine	Topology	Kerf.Engine.Topology.Top
 ModelingData	TopAbs_Orientation	enum	TopAbs	public	Topology	Kerf.Topology.Orientation			
 ModelingData	TopAbs_ShapeEnum	enum	TopAbs	public	Topology	Kerf.Topology.ShapeType			
 ModelingData	TopAbs_State	enum	TopAbs	public	Topology	Kerf.Topology.Containment			
-ModelingData	TopExp	static class	TopExp	engine	Topology	Kerf.Engine.Topology.Exploration	named	Shape.Explore, Shape.FirstVertex, ShapeGraph.Ancestors (new)	
+ModelingData	TopExp	static class	TopExp	engine	Topology	Kerf.Engine.Topology.Exploration	named	Shape.Faces()…, Edge.FirstVertex, ShapeGraph.Ancestors (new)	
 ModelingData	TopExp_Explorer	class	TopExp	engine	Topology	Kerf.Engine.Topology.Explorer	named	Shape.Explore, Shape.Faces… (IEnumerable)	
 ModelingData	TopTools	static class	TopTools	engine	Exchange/Brep	Kerf.Engine.Exchange.Brep.ShapeTools			
 ModelingData	TopTools_FormatVersion	enum	TopTools	engine	Exchange/Brep	Kerf.Engine.Exchange.Brep.FormatVersion			
