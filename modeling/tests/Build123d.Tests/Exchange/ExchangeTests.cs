@@ -178,7 +178,7 @@ public partial class ExchangeTests
     // ---- STL, glTF and 3MF ----
 
     [Fact]
-    public void StepKeepsLabelsColoursAndAssemblies()
+    public void StepKeepsLabelsColoursAndAssembliesOnOcctNetOnly()
     {
         var pair = Compound.Assembly([new Box(1, 1, 1).WithLabel("a").WithColor(new Color("red")),
                                       new Sphere(1).Moved(new Location((3.0, 0.0, 0.0))).WithLabel("b")], "pair");

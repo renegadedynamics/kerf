@@ -10,7 +10,7 @@ namespace Build123d.Tests.Errors;
 public class MemoryPressureTests
 {
     [Fact]
-    public void SmallShapesEstimateSmall()
+    public void SmallShapesArentWorthTelling()
     {
         var line = Edge.MakeLine((0, 0, 0), (1, 0, 0)).Wrapped;
         Assert.InRange(Extras.EstimateMemory(line), 1, 4095);

@@ -170,6 +170,17 @@ public class ShapeMeshTests
     }
 
     [Fact]
+    public void AWireTriangulates()
+    {
+        // It threw until unit 10B: the binding wrapped the meshed copy as a plain shape, which a wire's edges couldn't cast
+        var wire = Wire.MakeRect(2, 4);
+        var mesh = wire.Triangulate();
+        Assert.Empty(mesh.Faces);
+        Assert.Equal(4, mesh.Edges.Count);
+        Assert.Equal(4, wire.TriangulateTree().Mesh!.Edges.Count);
+    }
+
+    [Fact]
     public void ABigMeshComesOutQuickly()
     {
         // Meshing itself is OCCT's: what's timed is copying the mesh out, the part that is the library's

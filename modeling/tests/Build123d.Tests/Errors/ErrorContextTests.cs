@@ -5,12 +5,13 @@ namespace Build123d.Tests.Errors;
 
 /// <summary>
 /// An OCCT failure reaches the caller as OCCT.NET's own exception, OCCT's type and message (unit 10B): the native
-/// backend's OcctException, with what was being done, went with it, until results replace exceptions (unit 10F).
+/// backend's OcctException, with what was being done, went with it, until results replace exceptions (unit 10F). The tests keep their names, under which native OCCT's
+/// differential log is recorded.
 /// </summary>
 public class ErrorContextTests
 {
     [Fact]
-    public void APrimitiveFailsWithOcctsException()
+    public void APrimitiveSaysWhatItWasMaking()
     {
         var e = Assert.ThrowsAny<Standard_Failure>(() => new Box(0, 1, 1));
         Assert.Equal("Standard_DomainError", e.OcctType);
@@ -21,7 +22,7 @@ public class ErrorContextTests
     [InlineData("loft")]
     [InlineData("revolve")]
     [InlineData("sweep")]
-    public void AFeatureFailsWithOcctsException(string feature)
+    public void AFeatureSaysWhichItWas(string feature)
     {
         Action make = feature switch
         {

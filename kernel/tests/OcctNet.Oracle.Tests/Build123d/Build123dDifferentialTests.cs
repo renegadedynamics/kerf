@@ -44,6 +44,10 @@ public sealed class Build123dDifferentialTests(ITestOutputHelper output)
         ("StepNativeTests.WritesAsNative",
          "the theory's compound row returns at once on OCCT.NET (#if OCCTNET), so its rows' shapes, logged under one name, "
          + "don't line up (decision 1306)"),
+        ("InputsUnchangedTests.NoParameterlessMemberChangesItsShape",
+         "Triangulate and TriangulateTree on a wire threw on both backends until unit 10B, whose binding wrapped the meshed "
+         + "copy as a plain TopoDS_Shape that Wire.Edges couldn't cast to TopoDS_Wire; on OCCT.NET's structs they work, so "
+         + "they log the copy's edges native never reached (decision 15104)"),
         ("Fillet2DTests.FilletRecord",
          "the test fails on OCCT.NET at its first assertion, as before (build123d.NET's design.md: the 2D fillet's history "
          + "has two shapes for a vertex native modifies in place), so it logs 9 shapes, all native's, to native's 103 "
