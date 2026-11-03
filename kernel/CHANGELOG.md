@@ -1709,3 +1709,12 @@ Phase 10 (part): the working overlay (unit 10H1).
   convert). Without an open overlay nothing changes.
 - ShapeFix_Edge's and ShapeFix_ShapeTolerance's twins (`AddPCurveFixed`, `VertexToleranceFixed`, `ToleranceLimited`, …)
   run on it instead of a copy of their input: the same results, faster.
+Phase 10 (part): no copy at entry in the Booleans (unit 10H2).
+- The Booleans no longer copy their inputs anywhere: the self-check (`BOPAlgo_CheckerSI`, `BRepAlgoAPI_Check`,
+  `bopargcheck`), the wire tools (`BOPAlgo_Tools::WiresToFaces`, `BRepAlgo::ConcatenateWireC0`,
+  `BRepAlgo_FaceRestrictor`, `TopOpeBRepBuild_WireToFace`), the cells builder, defeaturing's removal of internal wires,
+  and the periodicity's trim and repetitions (`BOPAlgo_MakePeriodic`, `BOPAlgo_MakeConnected`) run OCCT's in-place code
+  in a working overlay. Results are as before; the periodic and connected shapes' histories now record a sub-shape as
+  modified only when it changed.
+- The general fuse and `BRepAlgoAPI_*` keep OCCT's non-destructive mode on frozen arguments; a Boolean run inside
+  another operation's overlay is destructive, as OCCT's on an unlocked shape.

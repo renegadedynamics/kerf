@@ -14006,3 +14006,64 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        removes `CopyAtEntry`, `ExactCopyForWrite`, `KeepUnchanged…`, `CopyFrozenForWrite`, `HoldsFrozen` and the
        `…Unfrozen`/`…OfFrozen` builder forms; the frozen-shape exceptions stay as long as a write outside an overlay can
        reach a frozen shape.
+
+## Phase 10: unit 10H2, no copy at entry in the Booleans
+
+15701. **The general fuse keeps OCCT's non-destructive mode, asked of the overlay.** The pave filler, the builders,
+       the splitter, sections, cells and `BRepAlgoAPI_*` never copied at entry: frozen arguments are locked, which
+       turns OCCT's own non-destructive mode on (decisions 577, 1056), and the result shares every argument sub-shape it
+       didn't change. That stays: opening an overlay at their public entry would make every Boolean destructive and
+       change results that native's non-destructive runs pinned. `SetNonDestructive` now asks what OCCT's `Locked()`
+       means, whether a write would be refused: `WorkingOverlay.IsLocked` on the argument, and outside an overlay any
+       frozen sub-shape (decision 1056's walk, now `HoldsLocked`, in place of `BrepTools.HoldsFrozen`). Inside an
+       operation's overlay a frozen argument takes writes, so a Boolean that the operation runs (the periodicity's trim
+       and gluing) is destructive, as OCCT's on an unlocked shape: the same results the copies gave, since they were
+       unfrozen. Outside an overlay nothing changes.
+15702. **The Booleans' copy-at-entry sites run in working overlays** (overlay-survey.md section 6), all 14 of them:
+       - `BOPAlgo_CheckerSI`: the check runs on the argument in an overlay that takes the filler's stray tolerance
+         writes (`PutPaveOnCurve`, occt-issues.md) and is dropped unfinished: the checker hands out no shape built from
+         them. The data structure holds the argument's own sub-shapes, so `Original` is gone, and with it the mapping in
+         `BOPAlgo_ArgumentAnalyzer` and Draw-lite's `bopcheck`.
+       - `BOPAlgo_Tools::WiresToFaces`, `BRepAlgo::ConcatenateWireC0`, `BRepAlgo_FaceRestrictor::Perform`,
+         `TopOpeBRepBuild_WireToFace::MakeFaces` (decision 793): OCCT's code on the caller's wires, the faces or edge
+         handed out through `Finish`/`Final`. `WireToFace.HolderOf`, the Booleans' one direct `_shapes` edit, is gone:
+         an overlay may now be opened without an input (15703).
+       - `BOPAlgo_CellsBuilder::AddToResult`: a published result takes new parts in an overlay (`UnfreezeResult` is
+         gone); the next result is a new compound holding the old parts and the new.
+       - `BOPAlgo_RemoveFeatures`' `RemoveInternalWires`: OCCT's in-place removal again, in an overlay, in place of the
+         frozen-face copies and `ReplaceFaces`; the faces it replaced are recorded as before.
+       - `BOPAlgo_MakePeriodic`: the trim (a Common) and the gluing of the repetitions run in overlays in place of
+         `CopyFrozenForWrite`. At each end the periodic, repeated and input shapes are what stands for them, the
+         histories are merged with the overlay's images, and the twins mapped. `BOPAlgo_MakeConnected` no longer copies
+         the connected shape: it reads it back from the tool, and brings the gluing history up to date with the
+         sub-shapes the tool changed in place when the shape is made periodic again.
+15703. **Two additions to `WorkingOverlay`.** `Begin` takes a null input, for an operation on several shapes that keeps
+       no history over them (the wire tools: what they hand out goes through `Finish`'s others and `Final`).
+       `Images(shapes)` gives, after `Finish`, each of the given shapes (mapped before `Finish`, as placed) whose TShape
+       was replaced, modified into what stands for it: merged into a history kept over the operation's own shapes
+       (translated copies, glued results), it brings that history up to date, as `Composed` does for one over the
+       input's sub-shapes.
+15704. **Histories are direct.** The periodicity's and the connected shape's histories record a sub-shape as modified
+       only when it changed (natively it is the same shape, changed in place); with the copies every frozen sub-shape was
+       "modified" into its copy. A shape that is an initial shape of the history with only generated shapes (the
+       repetitions' `AddGenerated(s, s)`) is modified into what stands for it. `BOPAlgo_ConnectedNativeTests` (126
+       cases, 499 steps, published and unpublished) still match native's recordings in every step, within the categories the test accepts (identical, Free
+       masked, history as sets, twins order, in-place); no test moved to level 2.
+15705. **The tests**: `BooleanInputsUnchangedTests` checks after each kind (fuse, cut, common, section, splitter,
+       general fuse, cells, the checks, defeaturing, connected and periodic shapes, the wire tools) that the arguments
+       are unchanged TShape for TShape and value for value (`ShapeSnapshot`), and that the result holds the arguments'
+       own sub-shapes where the operation didn't change them. Defeaturing's faces are still copies where
+       UnifySameDomain adds p-curves (healing's copy at entry, 10H4).
+15706. **The survey recounted** (overlay-survey.md): `tools/overlay-survey.py` missed the target-typed constructor
+       (`CopyAtEntry entry = new(input)`); with it 119 sites were left after 10H1 (Booleans 14, construction 38,
+       features 7, not 10, 34 and 6). After 10H2: 105, none in the Booleans; frozen-shape checks 221 (Booleans 2, the
+       pave filler's own). The `_shapes` sites BOPTools' `ConnexityBlock` and `ToolSet` show are those classes' fields,
+       not a TShape's.
+15707. **Measured** (`benchmarks/Kerf.Kernel.Benchmarks -- booleans`, Release, back to back on a shared machine):
+       Allocation is unchanged, 11.92 MB per Boolean on the complex grid (193 cases) and
+       8.25 to 8.26 MB on the simple (407): the general fuse never copied, and its one change (the locking walk asks
+       the overlay) costs what `HoldsFrozen` did. Serial time 2,989 ms before and 2,541 ms after on the complex grid,
+       3,288 and 3,114 ms on the simple; parallel 1,996 and 1,675 ms, 2,564 and 2,286 ms: the differences are the
+       machine's noise (other units ran beside), not the change. The converted sites (the checks, the wire tools,
+       cells, defeaturing's wires, the periodicity) are outside the benchmark; each now copies only the TShapes it
+       writes, where it copied the whole input (10H1's pilot measured 25 to 43% less allocation for that change).
